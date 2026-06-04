@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #855cd6;
+  --primary-dark: #6b4ba8;
+  --secondary: #ffb840;
+  --secondary-dark: #e5a036;
+  --tertiary: #4ecdc4;
+  --tertiary-dark: #3db8b0;
+  --neutral: #2d3748;
+  --neutral-light: #718096;
+  --neutral-dark: #1a202c;
+  --white: #ffffff;
+  --gray-50: #f7fafc;
+  --gray-100: #edf2f7;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e0;
+  --gray-400: #a0aec0;
+  --gray-500: #718096;
+  --gray-600: #4a5568;
+  --gray-700: #2d3748;
+  --gray-800: #1a202c;
+  --gray-900: #171923;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f6f3fa;
+  color: #221f2a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@layer utilities {
+  .text-primary {
+    color: var(--primary);
+  }
+
+  .text-primary-dark {
+    color: var(--primary-dark);
+  }
+
+  .text-secondary {
+    color: var(--secondary);
+  }
+
+  .text-secondary-dark {
+    color: var(--secondary-dark);
+  }
+
+  .text-tertiary {
+    color: var(--tertiary);
+  }
+
+  .text-tertiary-dark {
+    color: var(--tertiary-dark);
+  }
+
+  .text-neutral {
+    color: var(--neutral);
+  }
+
+  .text-neutral-light {
+    color: var(--neutral-light);
+  }
+
+  .text-neutral-dark {
+    color: var(--neutral-dark);
+  }
+
+  .bg-primary {
+    background-color: var(--primary);
+  }
+
+  .bg-primary-dark {
+    background-color: var(--primary-dark);
+  }
+
+  .bg-secondary {
+    background-color: var(--secondary);
+  }
+
+  .bg-secondary-dark {
+    background-color: var(--secondary-dark);
+  }
+
+  .bg-tertiary {
+    background-color: var(--tertiary);
+  }
+
+  .bg-tertiary-dark {
+    background-color: var(--tertiary-dark);
+  }
+
+  .bg-neutral {
+    background-color: var(--neutral);
+  }
+
+  .bg-neutral-light {
+    background-color: var(--neutral-light);
+  }
+
+  .bg-neutral-dark {
+    background-color: var(--neutral-dark);
+  }
+
+  .hover\:bg-primary-dark:hover {
+    background-color: var(--primary-dark);
+  }
+
+  .hover\:bg-secondary-dark:hover {
+    background-color: var(--secondary-dark);
+  }
+
+  .hover\:bg-tertiary-dark:hover {
+    background-color: var(--tertiary-dark);
+  }
+
+  .hover\:text-primary-dark:hover {
+    color: var(--primary-dark);
+  }
+
+  .hover\:text-secondary-dark:hover {
+    color: var(--secondary-dark);
+  }
+
+  .hover\:text-tertiary-dark:hover {
+    color: var(--tertiary-dark);
+  }
+}
