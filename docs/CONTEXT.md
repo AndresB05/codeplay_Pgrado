@@ -581,6 +581,15 @@ modo que la solicitud de un niño llegue al tutor desde otro dispositivo.
    cambia**, así que ninguna vista se toca.
 3. Sustituir `CURRENT_STUDENT_ID = 'guest-child'` por el id del usuario real.
 4. Retirar la semilla de `classroomsData.ts` conservando las funciones puras.
+5. Llevar el invariante «un alumno, un salón» al modelo. Añadir la guarda en el
+   store al solicitar ingreso y, mejor aún, imponerla en la base de datos:
+   `UNIQUE (student_id)` en `class_memberships` y un índice único parcial sobre
+   `join_requests` restringido a las solicitudes pendientes. Hoy `requestJoin()`
+   sobrescribe `membership` sin comprobar la pertenencia actual: quien sostiene
+   el invariante es el enrutado de `StudentClassroomModule`, que sólo monta el
+   buscador cuando `membership.status === 'none'`. Al pasar a Supabase la vista
+   deja de ser el único camino hasta la escritura, así que esa protección se
+   pierde si no se traslada.
 
 **Dependencias.** P1 (tablas de salones) y P2 (identidad del usuario).
 
