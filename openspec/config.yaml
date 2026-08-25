@@ -113,7 +113,8 @@ rules:
 operations:
   apply:
     guidance:
-      - Ejecuta npm run lint y npm run build antes de dar por terminado.
+      - Ejecuta npm run lint, npm run test:run y npm run build antes de dar
+        por terminado.
       - Si el cambio toca UI, respeta los tokens del sistema visual en vez de
         introducir colores o tamaños nuevos.
   archive:

@@ -65,7 +65,7 @@ OpenSpec 1.10.0, esquema `spec-driven`. Criterio para decidir la vía:
 
 Al terminar cualquier cambio funcional:
 
-1. Ejecuta `npm run lint` y `npm run build`.
+1. Ejecuta `npm run lint`, `npm run test:run` y `npm run build`.
 2. Actualiza `docs/CONTEXT.md` según el tipo de cambio:
    - **Afecta a una capacidad del producto** → mueve la entrada de «por
      aplicar» a «aplicadas», con la ruta real de los archivos.
