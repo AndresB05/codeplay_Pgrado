@@ -44,8 +44,11 @@ OpenSpec **ya está inicializado**, versión **1.10.0**, esquema `spec-driven`
 | --- | --- | --- |
 | §1 Contexto general | Clave `context:` de `openspec/config.yaml` (versión resumida) | ✅ **Integrado** |
 | §1.4 Convenciones | Claves `rules:` y `operations:` de `config.yaml` | ✅ **Integrado** |
-| §2 Especificaciones aplicadas | `openspec/specs/<capability>/spec.md` | ⛔ Pendiente |
+| §2 Especificaciones aplicadas | `openspec/specs/<capability>/spec.md` — 7 capacidades, 40 requisitos | ✅ **Sembrado** |
 | §3 Especificaciones por aplicar | `openspec/changes/<id>/` vía `/opsx:propose` | ⛔ Pendiente |
+
+A partir de aquí, **`openspec/specs/` es la verdad sobre el comportamiento** y §2
+queda como su lectura en prosa. Si ambos se contradicen, manda el spec.
 
 Los identificadores de capacidad de §2 (`sistema-visual`, `auth-sesion`,
 `salones-tutor`, …) y los de §3 (`backend-supabase-real`, `auth-real`, …) están
@@ -625,8 +628,7 @@ El build de WebGL va a `apps/web/public/game/`, carpeta ignorada por git.
 | Pertenecer a varios salones | El modelo actual admite uno solo; cambiarlo afecta a `StudentMembership` | P3 |
 | Recursos educativos con destino | Hoy son tarjetas informativas sin enlace | Contenido |
 | CI en GitHub Actions | Verificar lint y build en cada push | Ninguna |
-| Sembrar `openspec/specs/` | Traducir §2 a specs principales, una capacidad por carpeta | Ninguna |
-| Abrir los cambios en OpenSpec | Convertir P1–P4 en `openspec/changes/` con `/opsx:propose` | Specs sembrados |
+| Abrir los cambios en OpenSpec | Convertir P1–P4 en `openspec/changes/` con `/opsx:propose` | Ninguna |
 
 ### P6 — `assets-graficos`: ilustraciones generadas por IA
 
