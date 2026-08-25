@@ -76,3 +76,9 @@ Al terminar cualquier cambio funcional:
    cambio en `openspec/config.yaml`**. Es el único punto de duplicación
    deliberada del proyecto. Comprueba con `npx openspec doctor` que el YAML
    sigue parseando.
+4. Al preparar el commit, **enumera las rutas** en `git add`, no uses
+   `git add -A`. El commit `982a299` («Subir las actions de CI a @v5») se llevó
+   por delante los cuatro artefactos de `backend-supabase-real`, que estaban sin
+   commitear en el árbol: el mensaje no los mencionaba y ahí siguen. Con varios
+   cambios de OpenSpec vivos a la vez, el árbol casi nunca contiene sólo lo que
+   estás commiteando.
