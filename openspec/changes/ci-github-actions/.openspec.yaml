@@ -1,0 +1,6 @@
+schema: spec-driven
+created: 2026-08-25
+# Cambio de herramienta: monta la verificación automática de comandos que ya
+# existen. No altera ninguna capacidad del producto, así que no tiene deltas de
+# spec y no se inventa ningún requisito para que `validate` pase.
+skip_specs: true

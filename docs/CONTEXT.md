@@ -149,9 +149,17 @@ Entorno de referencia: **Node.js 22.17.1**, **npm 10.9.2** (`engines` exige `>=1
 | Validación | `zod` | 3.25.76 |
 | Calidad | `eslint` 8.57.1 (config heredada) + `prettier` 3.9.6 | — |
 | Tests | `vitest` + `jsdom` + `@testing-library/react` | 3.2.7 / 30.0.1 / 16.3.2 |
+| CI | GitHub Actions (`ubuntu-latest`) | Node fijado a 22.17.1 |
 
 Monorepo con **npm workspaces**, un solo `node_modules` compartido en la raíz.
 Sin Turborepo ni Nx: se descartaron por sobredimensionados para dos apps.
+
+`lint`, `test:run` y `build` se ejecutan además en CI en cada push a `main` y
+en cada pull request contra `main`. El workflow fija Node 22.17.1 en vez de
+heredar la del runner, e instala con `npm ci` para que el `package-lock.json`
+mande. Al build se le pasan los valores de relleno de `apps/web/.env.example`:
+`.env` no está en el repositorio y sin esas variables el bundle se genera con
+`undefined` y revienta al abrirlo.
 
 ### 1.3 Estructura de carpetas
 
@@ -165,6 +173,7 @@ codeplayPGrado/
 │   ├── migrations/           9 migraciones SQL
 │   └── seed.sql              Mundos y niveles iniciales
 ├── docs/                     CONTEXT.md (este) + ESTADO-DEL-PROYECTO.md
+├── .github/workflows/ci.yml  CI: lint, tests y build en push y pull request
 ├── .claude/launch.json       Config del preview: npm run dev, puerto 5173
 ├── package.json              Raíz del monorepo (workspaces + scripts proxy)
 ├── .eslintrc.cjs             ESLint compartido

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Sólo lee el código: no comenta en PRs, no escribe tags y no publica nada.
+permissions:
+  contents: read
+
+# Si llegan dos pushes seguidos, la comprobación que importa es la del último.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.17.1'
+          cache: 'npm'
+
+      # En la raíz y sin -w: con workspaces, una instalación cubre apps/web.
+      # `ci` y no `install` porque debe fallar si el lock y los package.json
+      # divergen, en vez de reconciliarlos en silencio.
+      - name: Instalar dependencias
+        run: npm ci
+
+      # Los tres pasos se ejecutan aunque uno falle, para que un pull request
+      # muestre todos los problemas de una vez en lugar de uno por vuelta.
+      - name: Lint
+        if: ${{ !cancelled() }}
+        run: npm run lint
+
+      - name: Tests
+        if: ${{ !cancelled() }}
+        run: npm run test:run
+
+      # Valores de relleno de apps/web/.env.example, no secretos: .env está en
+      # .gitignore y aquí no existe. Vite sustituye import.meta.env.* al
+      # empaquetar, así que sin ellos el build pasaría igual pero produciría un
+      # bundle que revienta al abrirlo.
+      - name: Build
+        if: ${{ !cancelled() }}
+        env:
+          VITE_SUPABASE_URL: https://your-project-ref.supabase.co
+          VITE_SUPABASE_ANON_KEY: your-public-anon-key
+        run: npm run build

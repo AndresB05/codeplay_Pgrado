@@ -20,6 +20,11 @@ context: |
   ESLint 8.57 (config heredada) + Prettier 3.9. Node >= 18.18.
   Tests: Vitest 3.2 + jsdom + Testing Library. Los tests se colocan junto al
   archivo que prueban; src/test/ guarda el setup y el helper renderClassrooms.
+  CI: GitHub Actions en .github/workflows/ci.yml ejecuta lint, test:run y
+  build en cada push a main y en cada pull request contra main, sobre
+  ubuntu-latest con Node fijado a 22.17.1 e instalación con npm ci. Al build
+  se le pasan los valores de relleno de apps/web/.env.example, porque .env no
+  está en el repositorio. El workflow no despliega nada.
 
   ESTRUCTURA (monorepo con npm workspaces, node_modules compartido en la raíz)
   apps/web/        front-end, workspace @codeplay/web
@@ -28,6 +33,7 @@ context: |
   supabase/        migrations/ (9 migraciones SQL) y seed.sql
   docs/            CONTEXT.md (estado y prioridades) y ESTADO-DEL-PROYECTO.md
   openspec/        specs y changes
+  .github/         workflows de GitHub Actions (sólo ci.yml)
 
   Dentro de apps/web/src: components/ (dashboard/{teacher,student,shared},
   decor, home, auth, ui), context/, hooks/, services/, types/, router/, pages/,
