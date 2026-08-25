@@ -1,0 +1,29 @@
+# Normaliza finales de linea: LF en el repositorio para todo el equipo.
+# Evita diffs fantasma entre Windows y el entorno de despliegue (Linux).
+* text=auto eol=lf
+
+# Scripts que deben conservar finales de linea nativos de Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binarios: nunca tocar
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text
+*.woff binary
+*.woff2 binary
+*.mp3 binary
+*.wav binary
+*.mp4 binary
+
+# --- Unity (cuando entre apps/game) ---
+# Antes del primer commit de Unity, instalar Git LFS y descomentar:
+# *.unity      merge=unityyamlmerge eol=lf
+# *.prefab     merge=unityyamlmerge eol=lf
+# *.asset      merge=unityyamlmerge eol=lf
+# *.psd        filter=lfs diff=lfs merge=lfs -text
+# *.fbx        filter=lfs diff=lfs merge=lfs -text
+# *.unitypackage filter=lfs diff=lfs merge=lfs -text

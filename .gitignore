@@ -1,6 +1,45 @@
+# --- Dependencias ---
 node_modules/
+
+# --- Variables de entorno (nunca se suben) ---
 .env
+.env.*
+!.env.example
+
+# --- Build y caches del front ---
 dist/
-.DS_Store
-*.log
 .vite/
+*.tsbuildinfo
+
+# --- Build de Unity WebGL servido por el front (artefacto, se genera) ---
+apps/web/public/game/
+
+# --- Unity (apps/game) ---
+apps/game/Library/
+apps/game/Temp/
+apps/game/Obj/
+apps/game/Build/
+apps/game/Builds/
+apps/game/Logs/
+apps/game/UserSettings/
+apps/game/MemoryCaptures/
+apps/game/Recordings/
+apps/game/*.csproj
+apps/game/*.sln
+apps/game/*.unityproj
+apps/game/*.user
+
+# --- Supabase CLI (estado local) ---
+supabase/.temp/
+supabase/.branches/
+
+# --- Logs y sistema ---
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# --- Editores ---
+.idea/
+.vscode/*
+!.vscode/extensions.json

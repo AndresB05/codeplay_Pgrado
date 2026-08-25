@@ -1,0 +1,392 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Sistema visual de CodePlay: paleta viva y saturada, tipografías redondeadas y
+ * componentes "chunky" (relieve inferior sólido) al estilo de las plataformas
+ * infantiles de programación.
+ */
+:root {
+  /* Paleta viva */
+  --grape: #7b3fe4;
+  --grape-dark: #5620b0;
+  --grape-light: #a77bf3;
+  --grape-soft: #f0e6ff;
+
+  --sun: #ffc93c;
+  --sun-dark: #d99a00;
+  --sun-soft: #fff4d6;
+
+  --coral: #ff5a5a;
+  --coral-dark: #c72c2c;
+  --coral-soft: #ffe6e6;
+
+  --mint: #17c3b2;
+  --mint-dark: #0c8577;
+  --mint-soft: #d6f7f3;
+
+  --sky: #3b9df8;
+  --sky-dark: #1c6dc4;
+  --sky-soft: #ddeeff;
+
+  --lime: #7ed957;
+  --lime-dark: #4a9f28;
+  --lime-soft: #e6f9dd;
+
+  --bubble: #ff7bc2;
+  --bubble-dark: #cf3f92;
+  --bubble-soft: #ffe4f3;
+
+  /* Selva tropical: verdes de dosel y acentos de fruta madura */
+  --jungle: #1f9d5b;
+  --jungle-dark: #12703d;
+  --jungle-light: #4ecb85;
+  --jungle-soft: #ddf7e7;
+
+  --papaya: #ff8a3d;
+  --papaya-dark: #d15b12;
+  --papaya-soft: #ffe8d6;
+
+  /* Neutros con tinte violeta, para que nada se vea gris apagado */
+  --ink: #2a1b45;
+  --ink-soft: #5a5170;
+  --ink-faint: #8b82a6;
+  --cream: #fff9ef;
+  --lavender: #f4eeff;
+  --line: #e3d9f7;
+
+  /* Compatibilidad con las utilidades previas */
+  --primary: var(--grape);
+  --primary-dark: var(--grape-dark);
+  --secondary: var(--sun);
+  --secondary-dark: var(--sun-dark);
+  --tertiary: var(--mint);
+  --tertiary-dark: var(--mint-dark);
+  --neutral: var(--ink);
+  --neutral-light: var(--ink-soft);
+  --neutral-dark: var(--ink);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Quicksand', 'Segoe UI', sans-serif;
+  font-weight: 600;
+  background-color: var(--lavender);
+  /*
+   * Dos capas: el resplandor verde del dosel de la selva cayendo desde arriba
+   * y los lunares suaves de siempre, para que el fondo nunca sea un plano liso.
+   */
+  background-image:
+    radial-gradient(circle at 50% -15%, rgba(31, 157, 91, 0.16), transparent 58%),
+    radial-gradient(var(--line) 1.5px, transparent 1.5px);
+  background-size:
+    100% 620px,
+    26px 26px;
+  background-repeat: no-repeat, repeat;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Fredoka', 'Quicksand', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@layer components {
+  /* ---------- Botones con relieve ---------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 text-[16px] font-bold text-white transition-all duration-100;
+    height: 52px;
+    font-family: 'Fredoka', 'Quicksand', sans-serif;
+    border-bottom-width: 5px;
+    border-bottom-style: solid;
+  }
+
+  .btn:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(3px);
+    border-bottom-width: 2px;
+  }
+
+  .btn:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+    opacity: 0.65;
+  }
+
+  .btn-sm {
+    height: 40px;
+    @apply px-4 text-[14px];
+    border-bottom-width: 4px;
+  }
+
+  .btn-grape {
+    background-color: var(--grape);
+    border-bottom-color: var(--grape-dark);
+  }
+
+  .btn-mint {
+    background-color: var(--mint);
+    border-bottom-color: var(--mint-dark);
+  }
+
+  .btn-sun {
+    background-color: var(--sun);
+    border-bottom-color: var(--sun-dark);
+    color: var(--ink);
+  }
+
+  .btn-coral {
+    background-color: var(--coral);
+    border-bottom-color: var(--coral-dark);
+  }
+
+  .btn-sky {
+    background-color: var(--sky);
+    border-bottom-color: var(--sky-dark);
+  }
+
+  .btn-ghost {
+    background-color: var(--grape-soft);
+    border-bottom-color: #cdb8f0;
+    color: var(--grape-dark);
+  }
+
+  .btn-leaf {
+    background-color: var(--jungle);
+    border-bottom-color: var(--jungle-dark);
+  }
+
+  .btn-papaya {
+    background-color: var(--papaya);
+    border-bottom-color: var(--papaya-dark);
+  }
+
+  /* ---------- Tarjetas ---------- */
+  .card {
+    @apply rounded-[26px] bg-white;
+    border: 3px solid var(--ink);
+    box-shadow: 0 8px 0 rgba(42, 27, 69, 0.12);
+  }
+
+  .card-flat {
+    @apply rounded-[22px] bg-white;
+    border: 2px solid var(--line);
+  }
+
+  /* ---------- Superficies de selva ---------- */
+
+  /*
+   * Fondo de sección: la luz que se cuela entre las hojas. Se usa en las
+   * pantallas de ancho completo (landing, acceso, paneles) sobre el lavanda.
+   */
+  .jungle-surface {
+    background-color: var(--lavender);
+    background-image:
+      radial-gradient(circle at 8% 0%, rgba(23, 195, 178, 0.18), transparent 42%),
+      radial-gradient(circle at 92% 4%, rgba(126, 217, 87, 0.2), transparent 40%),
+      radial-gradient(circle at 50% 100%, rgba(255, 201, 60, 0.16), transparent 45%),
+      radial-gradient(var(--line) 1.5px, transparent 1.5px);
+    background-size:
+      auto,
+      auto,
+      auto,
+      26px 26px;
+  }
+
+  /* Franja de tierra húmeda bajo el dosel, para separar bloques de la landing. */
+  .jungle-band {
+    background-image: linear-gradient(180deg, var(--jungle-soft) 0%, #ffffff 100%);
+  }
+
+  /*
+   * Marco de los espacios reservados para la mascota: son huecos a la espera de
+   * ilustración, así que se marcan con contorno discontinuo y nunca se rellenan.
+   */
+  .mascot-slot {
+    @apply flex items-center justify-center rounded-[22px] text-center font-display text-[14px] text-ink-faint;
+    background-color: var(--cream);
+    border: 3px dashed var(--line);
+  }
+
+  /* ---------- Etiquetas ---------- */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-bold;
+    font-family: 'Fredoka', 'Quicksand', sans-serif;
+  }
+
+  .chip-grape {
+    background-color: var(--grape-soft);
+    color: var(--grape-dark);
+  }
+
+  .chip-mint {
+    background-color: var(--mint-soft);
+    color: var(--mint-dark);
+  }
+
+  .chip-sun {
+    background-color: var(--sun-soft);
+    color: var(--sun-dark);
+  }
+
+  .chip-coral {
+    background-color: var(--coral-soft);
+    color: var(--coral-dark);
+  }
+
+  .chip-sky {
+    background-color: var(--sky-soft);
+    color: var(--sky-dark);
+  }
+
+  .chip-leaf {
+    background-color: var(--jungle-soft);
+    color: var(--jungle-dark);
+  }
+
+  .chip-papaya {
+    background-color: var(--papaya-soft);
+    color: var(--papaya-dark);
+  }
+
+  /* ---------- Campos de formulario ---------- */
+  .field {
+    @apply w-full rounded-[16px] px-5 text-[16px] font-semibold text-[color:var(--ink)] outline-none transition-colors;
+    height: 52px;
+    background-color: var(--cream);
+    border: 3px solid var(--line);
+  }
+
+  .field::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .field:focus {
+    border-color: var(--grape-light);
+    background-color: #fff;
+  }
+
+  .field-label {
+    @apply text-[14px] font-bold text-[color:var(--ink-soft)];
+  }
+
+  /* ---------- Títulos de sección ---------- */
+  .title-xl {
+    @apply text-[32px] leading-tight text-[color:var(--grape-dark)];
+  }
+
+  .title-lg {
+    @apply text-[24px] leading-tight text-[color:var(--ink)];
+  }
+
+  .subtitle {
+    @apply text-[16px] font-semibold text-[color:var(--ink-soft)];
+  }
+}
+
+@layer utilities {
+  .text-primary {
+    color: var(--primary);
+  }
+
+  .text-primary-dark {
+    color: var(--primary-dark);
+  }
+
+  .text-secondary {
+    color: var(--secondary);
+  }
+
+  .text-tertiary {
+    color: var(--tertiary);
+  }
+
+  .text-neutral {
+    color: var(--neutral);
+  }
+
+  .text-neutral-light {
+    color: var(--neutral-light);
+  }
+
+  .text-neutral-dark {
+    color: var(--neutral-dark);
+  }
+
+  .bg-primary {
+    background-color: var(--primary);
+  }
+
+  .bg-primary-dark {
+    background-color: var(--primary-dark);
+  }
+
+  .bg-secondary {
+    background-color: var(--secondary);
+  }
+
+  .bg-tertiary {
+    background-color: var(--tertiary);
+  }
+
+  .bg-neutral {
+    background-color: var(--neutral);
+  }
+
+  .bg-neutral-light {
+    background-color: var(--neutral-light);
+  }
+
+  .bg-neutral-dark {
+    background-color: var(--neutral-dark);
+  }
+
+  .hover\:bg-primary-dark:hover {
+    background-color: var(--primary-dark);
+  }
+
+  .hover\:bg-tertiary-dark:hover {
+    background-color: var(--tertiary-dark);
+  }
+
+  .hover\:text-primary-dark:hover {
+    color: var(--primary-dark);
+  }
+}
