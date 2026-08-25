@@ -131,9 +131,26 @@ un generador externo con permisos de despliegue.
 ### 8. `ubuntu-latest`, con las actions fijadas a su major
 
 Ubuntu es el runner más rápido y barato, y consume la cuota de minutos a tarifa
-sencilla frente a Windows. Se usan `actions/checkout@v4` y
-`actions/setup-node@v4` fijadas a major: reciben parches de seguridad sin
-cambios rompedores.
+sencilla frente a Windows. Las actions se fijan a su major, que recibe parches
+sin cambios rompedores.
+
+**Corregido después del primer run.** Esta decisión fijó primero `@v4` en ambas
+actions, razonando que un major sigue recibiendo mantenimiento. El primer run
+demostró que la premisa era falsa: emitió el aviso «Node.js 20 is deprecated.
+The following actions target Node.js 20 but are being forced to run on Node.js
+24: actions/checkout@v4, actions/setup-node@v4». Es decir, v4 declara un runtime
+deprecado y GitHub lo sostiene por compatibilidad, no por soporte.
+
+Se sube a `actions/checkout@v5` y `actions/setup-node@v5`, que declaran
+`using: node24` y no emiten el aviso. El argumento que decide no es la
+deprecación en sí —el job pasaba en verde igualmente— sino el ruido: un warning
+en cada ejecución enseña a ignorar el CI, que es exactamente el fallo que el
+Context y los Risks de este documento señalan al recordar `main_gym.yml`.
+
+Nota para la próxima vez que se toquen: en el momento del cambio,
+`actions/checkout` iba ya por v7.0.1. Se eligió v5 porque resuelve el problema
+—declara `node24`— sin arrastrar los cambios de dos majors que nadie ha
+revisado. Subir más es una decisión aparte, no un efecto secundario de ésta.
 
 ## Risks / Trade-offs
 
