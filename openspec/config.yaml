@@ -1,0 +1,113 @@
+schema: spec-driven
+
+# Contexto del proyecto. OpenSpec lo muestra a la IA al crear artefactos, así
+# que se mantiene corto a propósito: el detalle largo vive en docs/CONTEXT.md.
+context: |
+  CodePlay es una plataforma web para enseñar pensamiento computacional a niños.
+  Es un proyecto de grado. Consta de tres piezas: un front-end en React, un
+  backend en Supabase y un juego de Unity que se embeberá como build de WebGL.
+
+  ESTADO ACTUAL (verificado el 25-ago-2026)
+  La aplicación funciona SIN backend conectado. No hay login real: se entra con
+  una sesión de invitado que sólo existe en desarrollo. Todo el estado de
+  salones vive en localStorage sembrado con datos de ejemplo. Las pantallas son
+  reales y navegables; los datos, no. `npm run build` y `npm run lint` pasan.
+
+  STACK
+  React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
+  react-router-dom 6.30, @supabase/supabase-js 2.112, zod 3.25.
+  ESLint 8.57 (config heredada) + Prettier 3.9. Node >= 18.18.
+
+  ESTRUCTURA (monorepo con npm workspaces, node_modules compartido en la raíz)
+  apps/web/        front-end, workspace @codeplay/web
+  apps/game/       proyecto de Unity — NO EXISTE TODAVÍA
+  packages/        código compartido — vacío
+  supabase/        migrations/ (9 migraciones SQL) y seed.sql
+  docs/            CONTEXT.md (estado y prioridades) y ESTADO-DEL-PROYECTO.md
+  openspec/        specs y changes
+
+  Dentro de apps/web/src: components/ (dashboard/{teacher,student,shared},
+  decor, home, auth, ui), context/, hooks/, services/, types/, router/, pages/,
+  constants/, config/, lib/, errors/.
+
+  CONVENCIONES OBLIGATORIAS
+  - Idioma: código en inglés (identificadores, tipos, archivos). Comentarios,
+    documentación e interfaz en español.
+  - Comentarios: explican POR QUÉ, nunca QUÉ. El repo es parco en ellos a
+    propósito; no añadir comentarios redundantes.
+  - Componentes: `export const Foo = () => {}`, nunca export default. Props
+    tipadas con interface o type justo encima del componente.
+  - Servicios: todos devuelven `{ data, error }` con AppError. Nunca lanzan.
+  - Estilos: Tailwind con los nombres de color del tema, nunca hex sueltos. Los
+    tokens están duplicados a propósito en src/main.css (variables CSS) y en
+    tailwind.config.js. Las clases .btn/.card/.chip/.field viven en main.css.
+  - Adornos SVG en components/decor/, con aria-hidden y sin capturar el puntero.
+  - Los huecos de la mascota (.mascot-slot, ImagePlaceholder) se dejan VACÍOS a
+    propósito hasta que existan las ilustraciones definitivas.
+  - Store de salones: ningún componente lee localStorage directamente, todo pasa
+    por useClassrooms(). ClassroomsProvider es el único archivo que cambia de
+    raíz al conectar Supabase. No romper esa frontera.
+  - Variables de entorno: config/env.ts valida con zod y LANZA al importarse.
+    Sin VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY válidas la app no arranca.
+
+  COMANDOS (desde la raíz)
+  npm run dev | build | lint | preview | format
+  Para un workspace: npm run <script> -w @codeplay/web
+
+  PRIORIDADES DEL HITO ACTUAL
+  Funcionalidades completas de punta a punta, en este orden:
+  1. Base de datos real en Supabase: falta la columna profiles.role y las tablas
+     de salones (class_groups, class_memberships, join_requests, invitations).
+  2. Auth y roles funcionales verificados en servidor.
+  3. Mover el store de salones de localStorage a Supabase.
+  4. Apartado web de integración de los niveles del juego (el juego sigue en
+     desarrollo; aquí sólo entra el contenedor y el contrato de datos).
+  El apartado gráfico queda FUERA de este hito a propósito.
+
+  DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO
+  - types/database.types.ts está escrito a mano y NO describe las migraciones
+    reales: declara role, email, avatar_url, streak_days y xp, pero profiles
+    tiene username, full_name, avatar_key, country_code, total_xp,
+    current_streak y max_streak. No hay columna role. Debe regenerarse con
+    `supabase gen types typescript`, nunca editarse a mano.
+  - No existe ninguna tabla de salones, que es el módulo más desarrollado.
+  - La landing viva es components/home/, montada desde pages/Home/HomePage.tsx.
+
+  DOCUMENTOS DE REFERENCIA
+  - docs/CONTEXT.md: estado detallado, decisiones de diseño y prioridades.
+  - docs/ESTADO-DEL-PROYECTO.md §2: guía de estilos completa (paleta,
+    tipografía, componentes, espaciado). Consultarla antes de tocar UI.
+  - supabase/README.md: detalle migración por migración.
+
+# Reglas por artefacto.
+rules:
+  proposal:
+    - Redacta la prosa en español, como el resto de la documentación del repo.
+    - Nombra rutas de archivo reales y verificadas del repo en la sección Impact.
+    - 'Di explícitamente si el cambio depende de que exista el proyecto de
+      Supabase enlazado: hoy no lo está y bloquea casi todo el backend.'
+  specs:
+    - 'Los identificadores de OpenSpec van en inglés: los encabezados
+      "### Requirement:" y "#### Scenario:", y las palabras clave SHALL, WHEN y
+      THEN. El texto del requisito y del escenario va en español.'
+    - 'Usa los nombres de dominio tal y como están en el código: child, tutor,
+      membership (none/pending/member), ClassGroup, JoinRequest.'
+  tasks:
+    - Agrupa las tareas por archivo o por capa, no por orden cronológico suelto.
+    - 'Incluye siempre una tarea final de verificación con npm run lint y
+      npm run build: ambos pasan hoy y no deben romperse.'
+  design:
+    - Justifica las decisiones que afecten a la frontera del store de salones o
+      al esquema de base de datos; son las dos más caras de revertir.
+
+# Guía por operación.
+operations:
+  apply:
+    guidance:
+      - Ejecuta npm run lint y npm run build antes de dar por terminado.
+      - Si el cambio toca UI, respeta los tokens del sistema visual en vez de
+        introducir colores o tamaños nuevos.
+  archive:
+    guidance:
+      - 'Actualiza docs/CONTEXT.md al archivar: mueve lo implementado de la
+        sección "por aplicar" a "aplicadas" con la ruta real de los archivos.'

@@ -1,0 +1,74 @@
+# CodePlay
+
+Plataforma web para enseñar pensamiento computacional a niños. Proyecto de grado.
+Monorepo con npm workspaces: `apps/web` (React + TS + Vite + Tailwind),
+`supabase/` (esquema SQL) y `apps/game/` (Unity, todavía no existe).
+
+## Antes de tocar nada
+
+**Lee [`docs/CONTEXT.md`](docs/CONTEXT.md).** Es la fuente de verdad del estado
+del proyecto: qué está implementado y dónde vive, qué falta, con qué prioridad y
+qué deuda técnica condiciona cualquier diseño nuevo.
+
+| Si vas a… | Lee además |
+| --- | --- |
+| Tocar interfaz | `docs/ESTADO-DEL-PROYECTO.md` §2 — guía de estilos completa |
+| Tocar la base de datos | `supabase/README.md` — detalle migración por migración |
+| Crear specs o cambios | `openspec/config.yaml` — contexto y reglas que consume OpenSpec |
+
+## Estado actual
+
+La aplicación funciona **sin backend conectado**. No hay login real: se entra con
+una sesión de invitado que sólo existe en desarrollo. El estado de salones vive
+en `localStorage` sembrado con datos de ejemplo. Las pantallas son reales y
+navegables; los datos, no.
+
+`npm run build` y `npm run lint` pasan. No los rompas.
+
+## Reglas que no debes romper
+
+- **Idioma:** código en inglés; comentarios, documentación e interfaz en español.
+- **Comentarios:** explican *por qué*, nunca *qué*. El repo es parco en ellos a
+  propósito. No añadas comentarios redundantes.
+- **Componentes:** `export const Foo = () => {}`, nunca `export default`.
+- **Servicios:** devuelven `{ data, error }` con `AppError`. Nunca lanzan.
+- **Estilos:** usa los nombres de color del tema, nunca hex sueltos. Los tokens
+  están duplicados a propósito en `src/main.css` y `tailwind.config.js`.
+- **Adornos SVG:** van en `components/decor/`, con `aria-hidden` y sin capturar
+  el puntero.
+- **Huecos de la mascota** (`.mascot-slot`, `ImagePlaceholder`): se dejan
+  **vacíos** hasta que existan las ilustraciones definitivas. No los rellenes.
+- **Store de salones:** ningún componente lee `localStorage` directamente, todo
+  pasa por `useClassrooms()`. `ClassroomsProvider` es el único archivo que cambia
+  de raíz al conectar Supabase. No rompas esa frontera.
+- **`types/database.types.ts` se regenera con la CLI de Supabase, nunca se edita
+  a mano.** Hoy está desincronizado del esquema real: ver `docs/CONTEXT.md` §4.1
+  antes de fiarte de él.
+
+## Comandos
+
+Todos desde la raíz. Para un workspace concreto: `npm run <script> -w @codeplay/web`.
+
+```bash
+npm run dev
+```
+
+`dev` (Vite, puerto 5173) · `build` (`tsc` + build) · `lint` (0 warnings) ·
+`preview` · `format`
+
+## Flujo de trabajo
+
+OpenSpec 1.10.0, esquema `spec-driven`. Criterio para decidir la vía:
+
+- **Cambia lo que hace la aplicación** → propuesta de OpenSpec (`/opsx:propose`).
+- **Herramienta, documentación o limpieza** → directo, sin ceremonia.
+
+Al terminar cualquier cambio funcional:
+
+1. Ejecuta `npm run lint` y `npm run build`.
+2. Actualiza `docs/CONTEXT.md`: mueve lo implementado de «por aplicar» a
+   «aplicadas», con la ruta real de los archivos.
+3. Si cambiaste stack, estructura, convenciones o prioridades, **replica el
+   cambio en `openspec/config.yaml`**. Es el único punto de duplicación
+   deliberada del proyecto. Comprueba con `npx openspec doctor` que el YAML
+   sigue parseando.
