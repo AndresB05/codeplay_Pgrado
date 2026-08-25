@@ -494,8 +494,10 @@ progreso conseguido.
 **Propósito.** Definir el esquema, las políticas de seguridad y las operaciones
 seguras del backend.
 
-**Estado global: escrito, nunca aplicado.** No hay proyecto de Supabase enlazado.
-Ninguna migración se ha ejecutado contra una base real.
+**Estado global: aplicado.** El proyecto de Supabase existe, está enlazado con la
+CLI y las doce migraciones se ejecutaron contra la base real (`backend-supabase-real`,
+25-ago-2026). Verificado por HTTP: ninguna tabla devuelve `PGRST205`, y `worlds` y
+`levels` responden con los 3 mundos y los 9 niveles de la siembra.
 
 | Requisito | Estado | Dónde vive |
 | --- | --- | --- |
@@ -507,16 +509,28 @@ Ninguna migración se ha ejecutado contra una base real.
 | RPCs `update_my_profile`, `create_level_attempt`, `upsert_my_progress` | ✅ escrito | `…0006_create_rpc_functions.sql` |
 | Trigger `on_auth_user_created` que crea el perfil | ✅ escrito | `…0007_create_profile_trigger.sql` |
 | Vista `leaderboard_weekly` | ✅ escrito | `…0008_create_weekly_leaderboard_view.sql` |
-| RLS, políticas y permisos | ✅ escrito | `…0009_enable_rls_and_policies.sql` |
-| Seed de mundos y niveles | ✅ escrito | `seed.sql` |
-| Cliente y 7 servicios tipados | ✅ | `lib/supabase.ts`, `services/*.ts` |
+| RLS, políticas y permisos | ✅ aplicado | `…0009_enable_rls_and_policies.sql` |
+| Columna `profiles.role` y disparador que la rellena | ✅ aplicado | `…0010_add_profile_role.sql` |
+| Enum `user_role` y retirada del check redundante | ✅ aplicado | `…0011_profile_role_enum.sql` |
+| Siembra de mundos y niveles | ✅ aplicado | `…0012_seed_learning_content.sql` |
+| Cliente y 7 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
+| `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
 **Decisiones de diseño**
 
 - Las escrituras principales quedan encapsuladas en **RPCs** en vez de permitir
   escritura directa desde el cliente, para reducir la manipulación.
 - `achievements` es de sólo lectura para el cliente autenticado; otorgarlos
-  requerirá lógica segura adicional (Edge Function o SQL controlado).
+  requerirá lógica segura adicional (Edge Function o SQL controlado). Es el
+  **registro de logros concedidos**, no un catálogo: no existe la tabla que
+  enumere los posibles, así que la sala de trofeos sólo lista lo conseguido
+  (§4.2.1).
+- `role` es un **enum** `user_role`, no un `text` con `check`: sólo el enum llega
+  a los tipos generados, y una unión escrita a mano junto a un check de la base
+  volvería a abrir la brecha entre tipo y realidad.
+- Las escrituras del cliente pasan por RPC también en progreso e intentos, no
+  sólo en el perfil: la migración 0009 revoca `insert/update/delete` sobre las
+  tres tablas.
 - `leaderboard_weekly` es una vista que expone únicamente campos seguros.
 - `levels` guarda `starter_code`, `validation_rules` y `programming_language`:
   el esquema se diseñó para un **editor de código en el navegador**, no para un
@@ -537,24 +551,27 @@ El **apartado gráfico queda fuera de este hito a propósito** (P6): la
 herramienta ya está elegida, pero las ilustraciones no se abordan hasta que las
 funcionalidades estén completas.
 
-### P1 — `backend-supabase-real`: levantar la base de datos y aplicar el esquema
+### P1 — `tablas-salones`: migración de las cuatro tablas que faltan
 
-**Descripción.** Crear el proyecto de Supabase, enlazarlo con el CLI, corregir el
-esquema (§4.1 y §4.2) y aplicar migraciones y seed.
+**Lo que ya está hecho.** Levantar la base, aplicar el esquema, la columna
+`profiles.role` y la regeneración de tipos se completaron en
+`backend-supabase-real` (25-ago-2026) y viven en §2.7. Lo único que queda de P1
+es el esquema del módulo de salones. Es el **paso 9** del roadmap.
+
+**Descripción.** Añadir la migración de las cuatro tablas de salones, con sus
+políticas de RLS y sus `grant`.
 
 **Tareas**
 
-1. Crear el proyecto en Supabase y enlazarlo (`supabase link`). Poner
-   `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` reales en `apps/web/.env`.
-2. Añadir migración con la columna `profiles.role` (`'child' | 'tutor'`, por
-   defecto `'child'`) y actualizar el trigger `handle_new_user_profile()` para
-   que tome el rol de los metadatos del registro.
-3. Añadir migración con las tablas de salones y sus políticas RLS.
-4. `supabase db reset` en local y `supabase db push` al remoto.
-5. Regenerar los tipos:
-   `supabase gen types typescript --local > apps/web/src/types/database.types.ts`.
-6. Ajustar `types/user.types.ts` y todo lo que consuma `user.xp`,
-   `user.streakDays` y `user.email` a los nombres reales de columna.
+1. Migración con las cuatro tablas, sus índices y sus restricciones.
+2. Políticas de RLS y sentencias `grant` **en la misma migración**: el proyecto
+   se creó con RLS automática y sin exposición automática de tablas, así que una
+   tabla sin ellas existe pero es inaccesible.
+3. Restricción que imponga «un alumno, un salón»: `UNIQUE (student_id)` en
+   `class_memberships` y un índice único parcial sobre `join_requests` limitado
+   a las solicitudes pendientes. Hoy ese invariante lo sostiene el enrutado de
+   `StudentClassroomModule`, no el modelo, y se perdería al mover el store.
+4. `npx supabase db push` y regenerar `database.types.ts`.
 
 **Tablas de salones que faltan**
 
@@ -565,10 +582,7 @@ esquema (§4.1 y §4.2) y aplicar migraciones y seed.
 | `join_requests` | Solicitudes pendientes con su estado |
 | `invitations` | Invitaciones por correo con token y caducidad |
 
-**Dependencias.** Ninguna. Es el bloqueo de todo lo demás.
-
-**Bloqueo conocido.** La creación de la cuenta y del proyecto en supabase.com la
-tiene que hacer una persona: implica registrarse e introducir credenciales.
+**Dependencias.** Ninguna: la base ya está en pie. Bloquea a P3.
 
 ### P2 — `auth-real`: login, registro y roles verificados en servidor
 
@@ -586,7 +600,8 @@ sesión de invitado.
    y `PrivateRoute` deben funcionar sin ella.
 5. Verificar que `PrivateRoute` redirige correctamente con roles reales.
 
-**Dependencias.** P1 — hace falta la columna `role`.
+**Dependencias.** Ninguna: la columna `role` ya existe y el disparador la
+rellena desde los metadatos del registro.
 
 ### P3 — `salones-persistentes`: mover el store de salones a Supabase
 
@@ -635,7 +650,8 @@ cubre sólo el apartado de integración del lado web.
    `levels.programming_language`, pensados para un editor de código y no para
    Unity: ampliar el esquema o reinterpretar esos campos.
 
-**Dependencias.** P1, por las tablas `levels`, `user_progress` y `level_attempts`.
+**Dependencias.** Ninguna: `levels`, `user_progress` y `level_attempts` ya
+existen en la base real.
 No depende de que el juego esté terminado: el contrato se define primero.
 
 **Bloqueos conocidos.** El proyecto de Unity no existe todavía en `apps/game/`.
@@ -717,7 +733,9 @@ npx supabase gen types typescript --linked > apps/web/src/types/database.types.t
 
 Nada en `supabase/migrations/` corresponde a `ClassGroup`, `JoinRequest`,
 `EmailInvitation` ni `StudentMembership`. Todo el módulo de salones —la parte más
-desarrollada de la aplicación— no tiene esquema. Es P3.
+desarrollada de la aplicación— sigue sin esquema, y es lo único que queda de P1:
+el **paso 9** del roadmap. Hasta que exista, el store de salones seguirá en
+`localStorage` y P3 no puede empezar.
 
 ### 4.2.1 No hay catálogo de logros
 
