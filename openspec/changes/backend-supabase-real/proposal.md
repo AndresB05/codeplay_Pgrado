@@ -55,6 +55,13 @@ Ninguna.
   que el esquema establece, no un sistema en funcionamiento». Con este cambio
   deja de ser cierto y hay que reescribirlo. Además se añade el requisito del
   rol en el perfil, que hoy no existe en ninguna parte del esquema.
+- `contenido-mundos`: el requisito «Sala de trofeos» promete listar los logros
+  «distinguiendo los obtenidos de los pendientes». Al aplicar el esquema se
+  descubre que la tabla `achievements` es el registro de logros concedidos y no
+  un catálogo de definiciones, así que no hay forma de saber qué está pendiente.
+  El requisito se reescribe para describir lo que el sistema hace de verdad —
+  listar lo conseguido— en vez de mantener una promesa que el esquema no
+  sostiene.
 
 ## Impact
 

@@ -2,18 +2,18 @@ import { useEffect, useState } from 'react';
 import type { AppError } from '../errors/AppError';
 import {
   achievementsService,
-  type AchievementWithProgress,
+  type UnlockedAchievement,
 } from '../services/achievements.service';
 
 interface UseAchievementsReturn {
-  achievements: AchievementWithProgress[];
+  achievements: UnlockedAchievement[];
   loading: boolean;
   error: AppError | null;
   refresh: () => Promise<void>;
 }
 
 export const useAchievements = (userId: string | null): UseAchievementsReturn => {
-  const [achievements, setAchievements] = useState<AchievementWithProgress[]>([]);
+  const [achievements, setAchievements] = useState<UnlockedAchievement[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
 
@@ -26,7 +26,7 @@ export const useAchievements = (userId: string | null): UseAchievementsReturn =>
     setLoading(true);
     setError(null);
 
-    const result = await achievementsService.getAchievementsForUser(userId);
+    const result = await achievementsService.getUnlockedAchievements(userId);
 
     if (result.error) {
       setError(result.error);

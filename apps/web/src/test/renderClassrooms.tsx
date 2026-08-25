@@ -31,14 +31,17 @@ const buildAuthValue = (user: User | null): AuthContextValue => ({
 });
 
 export const buildUser = (overrides: Partial<User> = {}): User => ({
-  avatarUrl: null,
+  avatarKey: 'colibri',
+  countryCode: 'CO',
   createdAt: '2026-01-01T00:00:00.000Z',
   email: 'nina@codeplay.test',
   fullName: 'Nina Prueba',
   id: 'user-test',
+  maxStreak: 0,
   role: 'child',
   streakDays: 0,
   updatedAt: '2026-01-01T00:00:00.000Z',
+  username: 'nina',
   xp: 0,
   ...overrides,
 });

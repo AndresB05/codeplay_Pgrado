@@ -5,44 +5,39 @@ import type { Database } from '../types/database.types';
 import type { LevelAttempt } from '../types/progress.types';
 
 type LevelAttemptRow = Database['public']['Tables']['level_attempts']['Row'];
-type LevelAttemptInsert = Database['public']['Tables']['level_attempts']['Insert'];
 
 const mapLevelAttemptRow = (attempt: LevelAttemptRow): LevelAttempt => {
   return {
-    code: attempt.code,
+    code: attempt.submitted_code,
     createdAt: attempt.created_at,
     id: attempt.id,
     levelId: attempt.level_id,
-    success: attempt.success,
+    runtimeMs: attempt.runtime_ms,
+    score: attempt.score,
+    success: attempt.is_success,
     userId: attempt.user_id,
   };
 };
 
-const buildAttemptPayload = (
-  userId: string,
-  levelId: string,
-  success: boolean,
-  code: string
-): LevelAttemptInsert => {
-  return {
-    code,
-    level_id: levelId,
-    success,
-    user_id: userId,
-  };
-};
-
 export const attemptsService = {
+  /**
+   * Pasa por la función RPC: la migración que activa RLS revoca la escritura
+   * directa sobre `level_attempts` al rol `authenticated`. La función toma el
+   * usuario de la sesión, así que no se le pasa.
+   */
   async createAttempt(
-    userId: string,
     levelId: string,
     success: boolean,
-    code: string
+    code: string,
+    score = 0
   ): ServiceResult<LevelAttempt> {
     const { data, error } = await supabase
-      .from('level_attempts')
-      .insert(buildAttemptPayload(userId, levelId, success, code))
-      .select('*')
+      .rpc('create_level_attempt', {
+        input_level_id: levelId,
+        input_submitted_code: code,
+        input_is_success: success,
+        input_score: score,
+      })
       .single();
 
     if (error) {

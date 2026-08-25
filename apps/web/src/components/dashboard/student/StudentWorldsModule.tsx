@@ -202,10 +202,16 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
     let mounted = true;
 
     const loadStats = async (): Promise<void> => {
-      const list =
-        fetchedWorlds && fetchedWorlds.length > 0
-          ? fetchedWorlds.map((world) => ({ id: world.id }))
-          : fallbackWorlds.map((world) => ({ id: world.id }));
+      /*
+       * Sólo se consultan los mundos que vienen del backend. Los de
+       * `fallbackWorlds` llevan identificadores de maqueta y `levels.world_id`
+       * es un uuid, así que preguntar por ellos devuelve 400 sin excepción.
+       */
+      const list = (fetchedWorlds ?? []).map((world) => ({ id: world.id }));
+
+      if (list.length === 0) {
+        return;
+      }
 
       const entries = await Promise.all(
         list.map(async (world) => {

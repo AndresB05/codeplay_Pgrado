@@ -2,8 +2,12 @@
 
 Este directorio contiene solo la capa backend basada en Supabase:
 
-- `migrations/`: esquema SQL, funciones RPC, trigger, RLS y vista del leaderboard.
-- `seed.sql`: contenido inicial de mundos y niveles.
+- `migrations/`: esquema SQL, funciones RPC, trigger, RLS, vista del leaderboard
+  y el contenido inicial de mundos y niveles.
+
+No hay `seed.sql`. `db push` no ejecuta el seed —sólo lo hace `db reset` en
+local—, así que el contenido nunca llegaba al proyecto remoto. Vive en la
+migración 0012 y se aplica como todo lo demás.
 
 ## Estructura
 
@@ -25,6 +29,12 @@ Este directorio contiene solo la capa backend basada en Supabase:
    - Vista `leaderboard_weekly`.
 9. `202606030009_enable_rls_and_policies.sql`
    - RLS, políticas y permisos.
+10. `202606030010_add_profile_role.sql`
+    - Columna `profiles.role` y disparador que la rellena desde el registro.
+11. `202606030011_profile_role_enum.sql`
+    - Convierte `role` al enum `user_role` y retira el check redundante.
+12. `202606030012_seed_learning_content.sql`
+    - Mundos y niveles iniciales. Era `seed.sql`.
 
 ## Cómo aplicarlo
 
@@ -34,11 +44,16 @@ Si ya tienes el proyecto Supabase enlazado con la CLI:
 supabase db push
 ```
 
-Si quieres reiniciar y cargar el seed en local:
+Para reiniciar en local, aplicando de nuevo las doce migraciones —siembra
+incluida—:
 
 ```sh
 supabase db reset
 ```
+
+**Toda migración nueva debe traer sus propias políticas y sus `grant`.** El
+proyecto se creó con RLS automática y sin exposición automática de tablas, así
+que una tabla sin ellos existe pero es inaccesible.
 
 ## Notas de seguridad
 

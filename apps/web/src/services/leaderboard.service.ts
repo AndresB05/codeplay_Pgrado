@@ -8,11 +8,14 @@ type LeaderboardRow = Database['public']['Views']['leaderboard_weekly']['Row'];
 
 const mapLeaderboardRow = (entry: LeaderboardRow): LeaderboardEntry => {
   return {
-    avatarUrl: entry.avatar_url,
-    fullName: entry.full_name,
+    avatarKey: entry.avatar_key,
+    completedLevels: entry.completed_levels,
+    countryCode: entry.country_code,
     rank: entry.rank,
+    unlockedAchievements: entry.unlocked_achievements,
     userId: entry.user_id,
-    xp: entry.xp,
+    username: entry.username,
+    xp: entry.weekly_xp,
   };
 };
 
@@ -21,7 +24,7 @@ export const leaderboardService = {
     const { data, error } = await supabase
       .from('leaderboard_weekly')
       .select('*')
-      .order('xp', { ascending: false })
+      .order('weekly_xp', { ascending: false })
       .limit(10);
 
     if (error) {

@@ -62,26 +62,64 @@ es sembrar el problema. Una migración es un hecho consumado, no un borrador.
 añade, en la misma tanda. Es ruido en el historial a cambio de una regla que se
 sostiene sola.
 
-### 2. `role` como columna con `check`, no como tipo enum
+### 2. `role` como enum de PostgreSQL
 
-Un `enum` de PostgreSQL da el mismo control de valores, pero añadir un valor
-nuevo después obliga a `alter type`, que arrastra restricciones dentro de
-transacciones. Un `text` con `check (role in ('child','tutor'))` y `default
-'child'` cubre el requisito, se refleja igual de bien en los tipos generados
-—`'child' | 'tutor'`— y es más fácil de ampliar.
+**Corregido después de regenerar los tipos.** Esta decisión eligió primero un
+`text` con `check (role in ('child','tutor'))`, razonando que «se refleja igual
+de bien en los tipos generados —`'child' | 'tutor'`—». El generador desmintió la
+premisa: produjo `role: string` y dejó `Enums: {}` vacío, porque PostgREST no
+puede leer un `check` como si fuera un dominio. Con eso, `UserRole` degeneraba a
+`string` y `isChild()`, `isTutor()` y el enrutado por rol perdían la
+comprobación de tipos.
 
-Se declara `not null`. La columna se añade a una tabla vacía, así que no hace
-falta rellenar filas existentes.
+Un tipo `user_role` como enum sí llega al generador, y `UserRole` se deriva de
+`Database['public']['Enums']['user_role']`. El argumento que decide: una unión
+`'child' | 'tutor'` escrita a mano junto a un `check` de la base es exactamente
+la clase de divergencia que este cambio existe para eliminar. La columna se
+declara `not null` y se añade sobre una tabla vacía, así que no hay filas que
+rellenar.
+
+**Coste asumido.** Los enums de PostgreSQL son rígidos: si algún día `tutor` se
+separa en `padre` y `profesor`, hará falta `alter type ... add value`, que no se
+puede ejecutar dentro de una transacción junto a otras sentencias y obliga a una
+migración dedicada. Hoy esa separación no está planeada. Queda escrito aquí para
+que quien la necesite sepa que este documento la contempló y la descartó por
+falta de necesidad, no por descuido.
+
+**El `check` se retira.** `profiles_role_valid` sobra en cuanto existe el enum:
+el tipo ya restringe el dominio, y mantener los dos obliga a tocar dos sitios
+para añadir un valor —con el riesgo de que uno se olvide y queden en desacuerdo.
+Una sola fuente por invariante.
+
+**El orden de las sentencias es el contenido de esta migración.** Convertir una
+columna a un tipo nuevo obliga a desmontar primero todo lo que la menciona,
+porque `alter column type` no actúa sobre la columna aislada. Dos tropiezos, en
+este orden:
+
+1. **El `check` se retira antes de convertir, no después.** `alter column type`
+   revalida los constraints que mencionan la columna, y `profiles_role_valid` la
+   compara con literales de texto. Con el check todavía vivo, PostgreSQL intenta
+   evaluar `user_role = text`, operador que no existe, y aborta con `42883`. La
+   primera versión de la migración lo retiraba al final y `db push` falló ahí.
+2. **El `default` se retira antes de convertir, y se repone después.**
+   `default 'child'` es un literal `text` y no se convierte solo.
+
+La regla general, que vale para la próxima columna que cambie de tipo: **todo lo
+que dependa de una columna —constraints, defaults— se desmonta antes de la
+conversión y se rehace después.** No es una peculiaridad de los enums.
+
+Está así en la migración 0011: `drop constraint` → `drop default` →
+`alter type ... using` → `set default`.
 
 ### 3. El disparador lee el rol, y valida
 
 `handle_new_user_profile()` pasa a leer `new.raw_user_meta_data ->> 'role'`. El
 valor viene del cliente, así que no se inserta a ciegas: si no es `child` ni
 `tutor` —o falta— se cae a `'child'`. Sin esa comprobación, un registro
-manipulado haría fallar el `check` y el alta entera reventaría con un error de
-base de datos en vez de crear un perfil con el rol por defecto.
+manipulado haría fallar la conversión al enum y el alta entera reventaría con un
+error de base de datos en vez de crear un perfil con el rol por defecto.
 
-El `check` de la columna sigue siendo la última defensa; la validación en el
+El tipo `user_role` sigue siendo la última defensa; la validación en el
 disparador es para que el camino normal degrade con elegancia.
 
 ### 4. La aplicación del esquema la ejecuta una persona, y el cambio se parte ahí
@@ -154,6 +192,48 @@ desarrollo queda con versión fijada en el lock, disponible vía `npx supabase`
 para cualquiera que clone, y sin instalación global que se desincronice entre
 máquinas. El coste es un binario grande en `node_modules`; a cambio, el comando
 de regenerar tipos es reproducible.
+
+### 9. La siembra viaja como migración, y `seed.sql` desaparece
+
+`supabase db push` no ejecuta el seed: sólo lo hace `db reset` en local. Con el
+contenido en `supabase/seed.sql`, mundos y niveles nunca llegaban al proyecto
+remoto — comprobado, las dos tablas respondían 200 con `[]` después del primer
+push.
+
+Mundos y niveles no son datos de ejemplo, son contenido de referencia, así que su
+sitio es una migración. El archivo se **movió** con `git mv` a
+`202606030012_seed_learning_content.sql`, no se copió: tener el mismo contenido
+en dos lugares es precisamente la divergencia que este cambio vino a resolver en
+`database.types.ts`. Una sola fuente o ninguna. Sus `on conflict ... do update`
+ya lo hacían repetible, así que sirve como migración sin tocar el SQL.
+
+### 10. Las escrituras de progreso e intentos también pasan a RPC
+
+Al aplicar el esquema se comprobó que `progress.service.ts` y
+`attempts.service.ts` escriben directamente sobre `user_progress` y
+`level_attempts`, y que la migración 009 revoca `insert, update, delete` sobre
+ambas al rol `authenticated`. Es el mismo caso que `updateProfile`, y el mismo
+requisito ya escrito en `openspec/specs/backend-supabase/spec.md` lo cubre: las
+escrituras del cliente pasan por `upsert_my_progress` y `create_level_attempt`.
+Las tres funciones toman el usuario de la sesión, así que los servicios dejan de
+recibir `userId` al escribir.
+
+### 11. La sala de trofeos se recorta a lo que el esquema sostiene
+
+`achievements.service.ts` trataba la tabla `achievements` como un catálogo de
+definiciones con `requirement_type`, `requirement_value` y `category`, y
+calculaba en el navegador el avance hacia cada logro bloqueado. La tabla real es
+el registro de logros **concedidos** a cada niño, con `unique (user_id,
+achievement_key)`. No hay catálogo en el esquema.
+
+Diseñar ese catálogo es producto, no una consecuencia de aplicar el esquema, y
+tiene sitio propio: el paso 22 del roadmap. Aquí el servicio se reduce a listar
+lo conseguido, y `AchievementList` deja de agrupar por categoría y de pintar
+barras de progreso.
+
+Esto obliga a modificar el requisito «Sala de trofeos» de `contenido-mundos`, que
+prometía distinguir obtenidos de pendientes. Dejarlo intacto sería mantener en la
+fuente de verdad una promesa que el esquema no puede cumplir.
 
 ## Risks / Trade-offs
 

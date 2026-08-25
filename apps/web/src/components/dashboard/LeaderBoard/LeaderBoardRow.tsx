@@ -21,14 +21,14 @@ export const LeaderBoardRow = ({ entry }: LeaderBoardRowProps) => {
 
   return (
     <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all">
-      <div className={`text-2xl font-bold ${getRankColor(entry.rank)} w-12 text-center`}>
-        {getRankIcon(entry.rank)}
+      <div className={`text-2xl font-bold ${getRankColor(entry.rank ?? 0)} w-12 text-center`}>
+        {getRankIcon(entry.rank ?? 0)}
       </div>
       <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
         <span className="text-xl">🎭</span>
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-neutral">{entry.fullName}</p>
+        <p className="font-semibold text-neutral">{entry.username}</p>
       </div>
       <div className="text-right">
         <p className="font-bold text-secondary">{entry.xp} XP</p>

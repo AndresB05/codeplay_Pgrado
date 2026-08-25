@@ -5,34 +5,20 @@ import type { Database } from '../types/database.types';
 import type { UserProgress } from '../types/progress.types';
 
 type UserProgressRow = Database['public']['Tables']['user_progress']['Row'];
-type UserProgressInsert = Database['public']['Tables']['user_progress']['Insert'];
 
 const mapUserProgressRow = (progress: UserProgressRow): UserProgress => {
   return {
-    completed: progress.completed,
+    attemptCount: progress.attempt_count,
+    bestScore: progress.best_score,
     completedAt: progress.completed_at,
+    completionStatus: progress.completion_status,
     createdAt: progress.created_at,
     id: progress.id,
+    lastAttemptAt: progress.last_attempt_at,
     levelId: progress.level_id,
-    stars: progress.stars,
+    stars: progress.stars_earned,
     updatedAt: progress.updated_at,
     userId: progress.user_id,
-  };
-};
-
-const buildProgressPayload = (
-  userId: string,
-  levelId: string,
-  completed: boolean,
-  stars: number
-): UserProgressInsert => {
-  return {
-    completed,
-    completed_at: completed ? new Date().toISOString() : null,
-    level_id: levelId,
-    stars,
-    updated_at: new Date().toISOString(),
-    user_id: userId,
   };
 };
 
@@ -54,18 +40,24 @@ export const progressService = {
     return { data: data.map(mapUserProgressRow), error: null };
   },
 
+  /**
+   * Pasa por la función RPC: la migración que activa RLS revoca la escritura
+   * directa sobre `user_progress` al rol `authenticated`. La función toma el
+   * usuario de la sesión, así que no se le pasa.
+   */
   async upsertProgress(
-    userId: string,
     levelId: string,
-    completed: boolean,
+    completionStatus: string,
+    bestScore: number,
     stars: number
   ): ServiceResult<UserProgress> {
     const { data, error } = await supabase
-      .from('user_progress')
-      .upsert(buildProgressPayload(userId, levelId, completed, stars), {
-        onConflict: 'user_id,level_id',
+      .rpc('upsert_my_progress', {
+        input_level_id: levelId,
+        input_completion_status: completionStatus,
+        input_best_score: bestScore,
+        input_stars_earned: stars,
       })
-      .select('*')
       .single();
 
     if (error) {

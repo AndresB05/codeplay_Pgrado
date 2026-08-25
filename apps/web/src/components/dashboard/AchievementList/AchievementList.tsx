@@ -1,42 +1,28 @@
 import { AchievementItem } from './AchievementItem';
-
-interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  category: string;
-  unlocked: boolean;
-  progress?: number;
-  target?: number;
-}
+import type { UnlockedAchievement } from '../../../services/achievements.service';
 
 interface AchievementListProps {
-  achievements: Achievement[];
+  achievements: UnlockedAchievement[];
 }
 
+/**
+ * Sólo lista los logros conseguidos. Agrupar por categoría o mostrar el avance
+ * hacia los pendientes exige un catálogo de definiciones que el esquema no
+ * tiene: es el paso 22 del roadmap.
+ */
 export const AchievementList = ({ achievements }: AchievementListProps) => {
-  const categories = Array.from(new Set(achievements.map((a) => a.category)));
+  if (achievements.length === 0) {
+    return (
+      <p className="card px-5 py-10 text-center text-[16px] font-semibold text-ink-faint">
+        Todavía no hay logros por aquí. ¡Sal a explorar la selva!
+      </p>
+    );
+  }
 
   return (
-    <div className="space-y-7">
-      {categories.length === 0 ? (
-        <p className="card px-5 py-10 text-center text-[16px] font-semibold text-ink-faint">
-          Todavía no hay logros por aquí. ¡Sal a explorar la selva!
-        </p>
-      ) : null}
-
-      {categories.map((category) => (
-        <div key={category}>
-          <h3 className="mb-4 font-display text-[20px] capitalize text-grape-dark">{category}</h3>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {achievements
-              .filter((a) => a.category === category)
-              .map((achievement) => (
-                <AchievementItem key={achievement.id} achievement={achievement} />
-              ))}
-          </div>
-        </div>
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+      {achievements.map((achievement) => (
+        <AchievementItem key={achievement.id} achievement={achievement} />
       ))}
     </div>
   );

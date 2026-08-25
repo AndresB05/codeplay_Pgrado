@@ -1,3 +1,15 @@
+/*
+ * Mundos y niveles iniciales. Vivía en supabase/seed.sql, pero `db push` no
+ * ejecuta el seed: sólo lo hace `db reset` en local, así que el contenido nunca
+ * llegaba al proyecto remoto. Mundos y niveles no son datos de ejemplo, son
+ * contenido de referencia, y su sitio es una migración.
+ *
+ * El archivo se movió, no se copió: tener el mismo contenido en dos sitios es
+ * la divergencia que este cambio vino a resolver en database.types.ts.
+ *
+ * Los `on conflict ... do update` hacen la migración repetible sin duplicar.
+ */
+
 insert into public.worlds (
     slug,
     title,

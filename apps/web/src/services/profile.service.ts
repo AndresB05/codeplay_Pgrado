@@ -5,32 +5,30 @@ import type { Database } from '../types/database.types';
 import type { User, UserProfileUpdate } from '../types/user.types';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
-type ProfileUpdateRow = Database['public']['Tables']['profiles']['Update'];
 
-const mapProfileRowToUser = (profile: ProfileRow): User => {
+/**
+ * El correo no está en `profiles`: vive en la capa de autenticación, así que
+ * quien lo tenga a mano lo pasa aparte.
+ */
+const mapProfileRowToUser = (profile: ProfileRow, email: string | null = null): User => {
   return {
-    avatarUrl: profile.avatar_url,
+    avatarKey: profile.avatar_key,
+    countryCode: profile.country_code,
     createdAt: profile.created_at,
-    email: profile.email,
+    email,
     fullName: profile.full_name,
     id: profile.id,
+    maxStreak: profile.max_streak,
     role: profile.role,
-    streakDays: profile.streak_days,
+    streakDays: profile.current_streak,
     updatedAt: profile.updated_at,
-    xp: profile.xp,
-  };
-};
-
-const buildProfileUpdatePayload = (updates: UserProfileUpdate): ProfileUpdateRow => {
-  return {
-    avatar_url: updates.avatarUrl,
-    full_name: updates.fullName,
-    updated_at: new Date().toISOString(),
+    username: profile.username,
+    xp: profile.total_xp,
   };
 };
 
 export const profileService = {
-  async getProfile(userId: string): ServiceResult<User> {
+  async getProfile(userId: string, email: string | null = null): ServiceResult<User> {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -48,15 +46,22 @@ export const profileService = {
       return { data: null, error: null };
     }
 
-    return { data: mapProfileRowToUser(data), error: null };
+    return { data: mapProfileRowToUser(data, email), error: null };
   },
 
-  async updateProfile(userId: string, updates: UserProfileUpdate): ServiceResult<User> {
+  /**
+   * Pasa por la función RPC y no por un `update` sobre la tabla: la migración
+   * que activa RLS revoca la escritura directa sobre `profiles` al rol
+   * `authenticated`, de modo que `update_my_profile` es la única vía.
+   */
+  async updateProfile(updates: UserProfileUpdate, email: string | null = null): ServiceResult<User> {
     const { data, error } = await supabase
-      .from('profiles')
-      .update(buildProfileUpdatePayload(updates))
-      .eq('id', userId)
-      .select('*')
+      .rpc('update_my_profile', {
+        input_username: updates.username ?? undefined,
+        input_full_name: updates.fullName ?? undefined,
+        input_avatar_key: updates.avatarKey ?? undefined,
+        input_country_code: updates.countryCode ?? undefined,
+      })
       .single();
 
     if (error) {
@@ -66,6 +71,6 @@ export const profileService = {
       };
     }
 
-    return { data: mapProfileRowToUser(data), error: null };
+    return { data: mapProfileRowToUser(data, email), error: null };
   },
 };

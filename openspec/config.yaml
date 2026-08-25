@@ -8,11 +8,12 @@ context: |
   backend en Supabase y un juego de Unity que se embeberá como build de WebGL.
 
   ESTADO ACTUAL (verificado el 25-ago-2026)
-  La aplicación funciona SIN backend conectado. No hay login real: se entra con
-  una sesión de invitado que sólo existe en desarrollo. Todo el estado de
-  salones vive en localStorage sembrado con datos de ejemplo. Las pantallas son
-  reales y navegables; los datos, no. `npm run build`, `npm run lint` y
-  `npm run test:run` pasan.
+  El esquema de Supabase está APLICADO en un proyecto real: tablas, RPC, RLS y
+  el contenido inicial de mundos y niveles. Pero la aplicación todavía no lo
+  consume: no hay login real, se entra con una sesión de invitado que sólo
+  existe en desarrollo, y el estado de salones sigue en localStorage. Los
+  servicios están tipados contra el esquema real y escriben por RPC.
+  `npm run build`, `npm run lint` y `npm run test:run` pasan.
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
@@ -74,12 +75,13 @@ context: |
   El apartado gráfico queda FUERA de este hito a propósito.
 
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO
-  - types/database.types.ts está escrito a mano y NO describe las migraciones
-    reales: declara role, email, avatar_url, streak_days y xp, pero profiles
-    tiene username, full_name, avatar_key, country_code, total_xp,
-    current_streak y max_streak. No hay columna role. Debe regenerarse con
-    `supabase gen types typescript`, nunca editarse a mano.
+  - types/database.types.ts se GENERA con la CLI y nunca se edita a mano:
+    `npx supabase gen types typescript --linked`. Describe el esquema real.
   - No existe ninguna tabla de salones, que es el módulo más desarrollado.
+  - No existe catálogo de logros: la tabla achievements registra los concedidos
+    a cada niño, no los posibles. La sala de trofeos sólo lista lo conseguido.
+  - Toda migración nueva debe traer sus políticas de RLS y sus grant: el
+    proyecto se creó con RLS automática y sin exposición automática de tablas.
   - La landing viva es components/home/, montada desde pages/Home/HomePage.tsx.
 
   DOCUMENTOS DE REFERENCIA

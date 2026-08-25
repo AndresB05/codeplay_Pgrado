@@ -6,13 +6,18 @@ type LevelRow = Database['public']['Tables']['levels']['Row'];
 export type Difficulty = LevelRow['difficulty'];
 
 export interface World {
-  color: WorldRow['color'];
+  accentColor: WorldRow['accent_color'];
   createdAt: WorldRow['created_at'];
   description: WorldRow['description'];
-  icon: WorldRow['icon'];
   id: WorldRow['id'];
-  name: WorldRow['name'];
-  orderIndex: WorldRow['order_index'];
+  isPublished: WorldRow['is_published'];
+  /** Identificador de la ilustración, no una URL. */
+  mascot: WorldRow['mascot'];
+  name: WorldRow['title'];
+  orderIndex: WorldRow['sort_order'];
+  regionLabel: WorldRow['region_label'];
+  slug: WorldRow['slug'];
+  themeColor: WorldRow['theme_color'];
 }
 
 export interface Level {
@@ -20,8 +25,11 @@ export interface Level {
   description: LevelRow['description'];
   difficulty: LevelRow['difficulty'];
   id: LevelRow['id'];
-  name: LevelRow['name'];
-  orderIndex: LevelRow['order_index'];
+  isPublished: LevelRow['is_published'];
+  name: LevelRow['title'];
+  orderIndex: LevelRow['sort_order'];
+  slug: LevelRow['slug'];
+  starsReward: LevelRow['stars_reward'];
   worldId: LevelRow['world_id'];
   xpReward: LevelRow['xp_reward'];
 }

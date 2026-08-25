@@ -5,10 +5,14 @@
 Definir el esquema de datos de CodePlay, sus políticas de seguridad y las
 operaciones de escritura permitidas al cliente.
 
-El esquema está escrito como migraciones versionadas pero **todavía no se ha
-aplicado a ninguna base de datos**: no hay proyecto de Supabase enlazado. Los
-requisitos describen el contrato que el esquema establece, no un sistema en
-funcionamiento.
+El esquema vive como migraciones versionadas y **está aplicado** a un proyecto de
+Supabase enlazado: las tablas, las funciones RPC, las políticas de RLS y el
+contenido inicial de mundos y niveles existen en la base real. Los requisitos
+describen un sistema en funcionamiento.
+
+Lo que todavía no cubre: no hay tablas para el módulo de salones, y `achievements`
+registra los logros concedidos pero no existe el catálogo que enumere los
+posibles.
 
 ## Requirements
 

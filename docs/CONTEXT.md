@@ -194,7 +194,7 @@ codeplayPGrado/
 | `context/` | `AuthProvider` (Supabase), `ClassroomsProvider` (store local), helpers de rol y de invitado |
 | `hooks/` | `useAuth`, `useClassrooms`, `useActiveRole` + hooks de datos (`useWorlds`, `useProgress`, `useAchievements`, `useLeaderboard`, `useProfile`) |
 | `services/` | 7 servicios de Supabase, todos con la forma `{ data, error }` |
-| `types/` | `classroom.types.ts` es el modelo vivo; `database.types.ts` está **desincronizado** (§4.1) |
+| `types/` | `classroom.types.ts` es el modelo vivo; `database.types.ts` se **genera** con la CLI (§4.1) |
 | `router/` | `AppRouter` + guardas `PrivateRoute` / `PublicRoute` |
 | `pages/` | Un componente por pantalla de nivel superior |
 | `constants/`, `config/`, `lib/`, `errors/` | Rutas, entorno validado con zod, cliente de Supabase, tipos de error |
@@ -703,33 +703,29 @@ dependencia de código: los huecos ya existen y están marcados.
 
 ## 4. Deuda técnica conocida
 
-### 4.1 `database.types.ts` no describe la base de datos real
+### 4.1 `database.types.ts` desincronizado — RESUELTO
 
-`types/database.types.ts` está escrito a mano y declara para `profiles` campos
-que **no existen** en las migraciones:
-
-| `database.types.ts` declara | La tabla `profiles` tiene realmente |
-| --- | --- |
-| `role`, `email`, `avatar_url`, `streak_days`, `xp` | `username`, `full_name`, `avatar_key`, `country_code`, `total_xp`, `current_streak`, `max_streak` |
-
-Consecuencias: **no hay columna `role`**, así que el backend no puede distinguir
-tutor de alumno; y todo lo que dependa de `user.xp`, `user.streakDays` o
-`user.email` fallará en cuanto Supabase responda de verdad. `types/user.types.ts`
-deriva sus tipos de este archivo, así que el error se propaga a toda la app.
-
-Ese archivo debe **regenerarse, no editarse a mano**:
+Estaba escrito a mano y describía un esquema imaginario. Se regeneró con la CLI
+contra la base real al aplicar P1. Sigue vigente la regla: **se regenera, nunca
+se edita a mano**.
 
 ```bash
-supabase gen types typescript --local > apps/web/src/types/database.types.ts
+npx supabase gen types typescript --linked > apps/web/src/types/database.types.ts
 ```
 
 ### 4.2 Faltan las tablas de salones
 
 Nada en `supabase/migrations/` corresponde a `ClassGroup`, `JoinRequest`,
 `EmailInvitation` ni `StudentMembership`. Todo el módulo de salones —la parte más
-desarrollada de la aplicación— no tiene esquema.
+desarrollada de la aplicación— no tiene esquema. Es P3.
 
-**4.1 y 4.2 se solapan: conviene resolverlos en una sola tanda (P1).**
+### 4.2.1 No hay catálogo de logros
+
+La tabla `achievements` es el registro de logros **concedidos** a cada niño
+(`user_id`, `achievement_key`, `title`, `awarded_xp`, `unlocked_at`, con
+`unique (user_id, achievement_key)`). No existe la tabla que enumere los logros
+posibles con sus condiciones de desbloqueo, así que la sala de trofeos sólo puede
+listar lo conseguido. Diseñarla es el **paso 22** del roadmap.
 
 ### 4.3 Frontera del store: mantenerla
 

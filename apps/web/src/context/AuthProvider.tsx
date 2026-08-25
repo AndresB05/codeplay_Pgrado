@@ -31,7 +31,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return;
     }
 
-    const profileResult = await profileService.getProfile(nextSession.user.id);
+    // El correo no está en `profiles`: vive en la sesión, que es su sitio.
+    const profileResult = await profileService.getProfile(
+      nextSession.user.id,
+      nextSession.user.email ?? null
+    );
 
     if (profileResult.error) {
       setUser(null);

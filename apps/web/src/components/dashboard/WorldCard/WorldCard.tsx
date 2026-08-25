@@ -14,7 +14,7 @@ export const WorldCard = ({ world, onPlay }: WorldCardProps) => {
       className={`relative rounded-2xl overflow-hidden transition-all hover:scale-105 ${
         isLocked ? 'opacity-60 grayscale' : ''
       }`}
-      style={{ backgroundColor: world.color }}
+      style={{ backgroundColor: world.themeColor }}
     >
       <div className="p-6 text-white">
         <div className="flex items-start justify-between mb-4">

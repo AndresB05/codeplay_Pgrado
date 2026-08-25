@@ -2,23 +2,30 @@ import type { Database } from './database.types';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
-export type UserRole = ProfileRow['role'];
+/** Generado desde el enum `user_role` del esquema, nunca escrito a mano. */
+export type UserRole = Database['public']['Enums']['user_role'];
 
 export interface User {
-  avatarUrl: ProfileRow['avatar_url'];
+  avatarKey: ProfileRow['avatar_key'];
+  countryCode: ProfileRow['country_code'];
   createdAt: ProfileRow['created_at'];
-  email: ProfileRow['email'];
+  /** No está en `profiles`: vive en la capa de autenticación. */
+  email: string | null;
   fullName: ProfileRow['full_name'];
   id: ProfileRow['id'];
+  maxStreak: ProfileRow['max_streak'];
   role: UserRole;
-  streakDays: ProfileRow['streak_days'];
+  streakDays: ProfileRow['current_streak'];
   updatedAt: ProfileRow['updated_at'];
-  xp: ProfileRow['xp'];
+  username: ProfileRow['username'];
+  xp: ProfileRow['total_xp'];
 }
 
 export interface UserProfileUpdate {
-  avatarUrl?: ProfileRow['avatar_url'];
+  avatarKey?: ProfileRow['avatar_key'];
+  countryCode?: ProfileRow['country_code'];
   fullName?: ProfileRow['full_name'];
+  username?: ProfileRow['username'];
 }
 
 export interface Avatar {

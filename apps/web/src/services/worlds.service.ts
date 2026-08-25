@@ -9,13 +9,17 @@ type LevelRow = Database['public']['Tables']['levels']['Row'];
 
 const mapWorldRow = (world: WorldRow): World => {
   return {
-    color: world.color,
+    accentColor: world.accent_color,
     createdAt: world.created_at,
     description: world.description,
-    icon: world.icon,
     id: world.id,
-    name: world.name,
-    orderIndex: world.order_index,
+    isPublished: world.is_published,
+    mascot: world.mascot,
+    name: world.title,
+    orderIndex: world.sort_order,
+    regionLabel: world.region_label,
+    slug: world.slug,
+    themeColor: world.theme_color,
   };
 };
 
@@ -25,8 +29,11 @@ const mapLevelRow = (level: LevelRow): Level => {
     description: level.description,
     difficulty: level.difficulty,
     id: level.id,
-    name: level.name,
-    orderIndex: level.order_index,
+    isPublished: level.is_published,
+    name: level.title,
+    orderIndex: level.sort_order,
+    slug: level.slug,
+    starsReward: level.stars_reward,
     worldId: level.world_id,
     xpReward: level.xp_reward,
   };
@@ -38,7 +45,7 @@ export const worldsService = {
       .from('levels')
       .select('*')
       .eq('world_id', worldId)
-      .order('order_index');
+      .order('sort_order');
 
     if (error) {
       return {
@@ -51,7 +58,7 @@ export const worldsService = {
   },
 
   async getWorlds(): ServiceResult<World[]> {
-    const { data, error } = await supabase.from('worlds').select('*').order('order_index');
+    const { data, error } = await supabase.from('worlds').select('*').order('sort_order');
 
     if (error) {
       return {

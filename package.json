@@ -19,5 +19,8 @@
     "test": "npm run test -w @codeplay/web",
     "test:run": "npm run test:run -w @codeplay/web",
     "format": "npm run format -w @codeplay/web"
+  },
+  "devDependencies": {
+    "supabase": "^2.115.0"
   }
 }

@@ -72,8 +72,8 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | 4 | ★ Montar Vitest y Testing Library, 54 tests sobre el store | ✅ | `infraestructura-tests` |
 | 5 | ★ CI en GitHub Actions: lint, tests y build | ✅ | `ci-github-actions` |
 | 6 | Crear el proyecto de Supabase y rellenar `.env` | ✅ | **usuario** |
-| 7 | Columna `profiles.role`, disparador y esquema aplicado | 🔄 | `backend-supabase-real` |
-| 8 | Regenerar `database.types.ts` y arreglar sus consumidores | 🔄 | *(unido al 7)* |
+| 7 | Columna `profiles.role`, disparador y esquema aplicado | ✅ | `backend-supabase-real` |
+| 8 | Regenerar `database.types.ts` y arreglar sus consumidores | ✅ | *(unido al 7)* |
 | 9 | Migración de las 4 tablas de salones + RLS + grants | ⬜ | P1 |
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ⬜ | P3 |
 | 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» | ⬜ | — |
@@ -87,7 +87,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | 19 | Invitaciones por correo reales y enlace canjeable | ⬜ | P5 |
 | 20 | Contrato de integración y pantalla de nivel con contenedor | ⬜ | P4 |
 | 21 | Escritura de progreso y XP desde el juego | ⬜ | P4 |
-| 22 | Diseñar e implementar rachas y logros — **no existe nada** | ⬜ | P4 |
+| 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye la tabla de catálogo | ⬜ | P4 |
 | 23 | Unity en `apps/game/`, Git LFS y build de WebGL | ⬜ | P4 |
 | 24 | Retirar la sesión de invitado | ⬜ | — |
 | 25 | ★ Responsive, accesibilidad y `ErrorBoundary` | ⬜ | — |
@@ -112,6 +112,14 @@ XP tienen la fontanería escrita —las RPC `upsert_my_progress` y
 `create_level_attempt` existen—, pero **rachas y logros no tienen ni una línea**:
 las columnas `current_streak` y `max_streak` están en `profiles` y nada las
 calcula, y no hay lógica que decida cuándo se concede un logro.
+
+Este paso incluye **diseñar la tabla de catálogo de logros**, que no existe. Al
+aplicar el esquema (P1) se comprobó que `achievements` es el registro de lo
+concedido a cada niño —`user_id`, `achievement_key`, `title`, `awarded_xp`,
+`unlocked_at`, con `unique (user_id, achievement_key)`—, no la lista de logros
+posibles con sus condiciones de desbloqueo. Mientras esa tabla no exista, la
+sala de trofeos sólo puede mostrar lo conseguido: el requisito de
+`contenido-mundos` se ajustó a esa realidad y habrá que volver a ampliarlo aquí.
 
 **El apartado gráfico (26) queda casi al final a propósito.** No bloquea ninguna
 funcionalidad y el foco actual son las funcionalidades.
@@ -145,10 +153,9 @@ perderse:
 
 | Hallazgo | Dónde se resuelve |
 | --- | --- |
-| `worlds` y `levels` están **vacías** en remoto: `db push` no ejecuta `seed.sql`, sólo lo hace `db reset` en local. Hay que decidir cómo se siembra el contenido inicial | Paso 7 o, si se aplaza, anotado en `CONTEXT.md` |
-| `updateProfile()` escribe directo sobre `profiles`, pero la migración 009 revoca `update` a `authenticated`. Debe pasar por la RPC `update_my_profile` — el spec ya lo exigía y el código lo incumplía en silencio | Paso 7 |
 | El invariante «un alumno, un salón» lo sostiene el enrutado de `StudentClassroomModule`, no el store: `requestJoin()` no comprueba la pertenencia actual | Paso 10 — tarea 5 de P3 en `CONTEXT.md` |
 | `levels` guarda `starter_code`, `validation_rules` y `programming_language`: el esquema se diseñó para un editor de código en el navegador, no para Unity | Paso 20 |
+| No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones. La sala de trofeos sólo puede listar lo conseguido, y el requisito de `contenido-mundos` se ajustó a eso | Paso 22 |
 
 ---
 

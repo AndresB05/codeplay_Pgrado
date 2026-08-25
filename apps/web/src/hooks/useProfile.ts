@@ -47,7 +47,7 @@ export const useProfile = (userId: string | null): UseProfileReturn => {
     setLoading(true);
     setError(null);
 
-    const result = await profileService.updateProfile(userId, updates);
+    const result = await profileService.updateProfile(updates);
 
     if (result.error) {
       setError(result.error);
