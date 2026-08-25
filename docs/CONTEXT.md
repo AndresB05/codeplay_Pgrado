@@ -101,8 +101,15 @@ npx openspec doctor
 
 ### 0.3 Reglas de mantenimiento
 
-1. Al terminar un cambio funcional, **mueve la entrada de §3 a §2** con la ruta
-   real de los archivos.
+1. Al terminar un cambio, actualiza este documento según lo que el cambio sea:
+   - **Afecta a una capacidad del producto** → **mueve la entrada de §3 a §2**
+     con la ruta real de los archivos.
+   - **Herramienta, documentación o limpieza** → **no toca §2 ni §3**. Esas dos
+     secciones son el mapa de las prioridades P1-P6 y un cambio de herramienta
+     no sale de ahí; meterlo inventa una capacidad que no existe. Propaga lo
+     que corresponda a §1 (stack, estructura o convenciones) y aplica la regla
+     4. La infraestructura de tests de Vitest es el ejemplo: vive en §1.2, §1.3
+     y §5, y en ningún punto de §2.
 2. No des nada por hecho: si algo no se ha verificado ejecutando el código,
    márcalo como no verificado en vez de suponerlo.
 3. Actualiza la fecha de «Última verificación» sólo cuando se hayan vuelto a
@@ -141,6 +148,7 @@ Entorno de referencia: **Node.js 22.17.1**, **npm 10.9.2** (`engines` exige `>=1
 | Backend | `@supabase/supabase-js` | 2.112.3 |
 | Validación | `zod` | 3.25.76 |
 | Calidad | `eslint` 8.57.1 (config heredada) + `prettier` 3.9.6 | — |
+| Tests | `vitest` + `jsdom` + `@testing-library/react` | 3.2.7 / 30.0.1 / 16.3.2 |
 
 Monorepo con **npm workspaces**, un solo `node_modules` compartido en la raíz.
 Sin Turborepo ni Nx: se descartaron por sobredimensionados para dos apps.
@@ -181,6 +189,7 @@ codeplayPGrado/
 | `router/` | `AppRouter` + guardas `PrivateRoute` / `PublicRoute` |
 | `pages/` | Un componente por pantalla de nivel superior |
 | `constants/`, `config/`, `lib/`, `errors/` | Rutas, entorno validado con zod, cliente de Supabase, tipos de error |
+| `test/` | Infraestructura de tests: `setup.ts` y `renderClassrooms.tsx` |
 
 ### 1.4 Convenciones a respetar
 
@@ -236,6 +245,8 @@ npm run dev
 | `npm run dev` | Vite en el puerto 5173 | ✅ |
 | `npm run build` | `tsc && vite build` | ✅ verificado 25-ago-2026 |
 | `npm run lint` | ESLint, 0 warnings permitidos | ✅ verificado 25-ago-2026 |
+| `npm run test` | Vitest en modo watch | ✅ |
+| `npm run test:run` | Vitest, una pasada | ✅ verificado 25-ago-2026 |
 | `npm run preview` | Sirve el build de producción | ✅ |
 | `npm run format` | Prettier sobre `src` | ✅ |
 
@@ -739,6 +750,7 @@ Comprobado el **25 de agosto de 2026** ejecutando los comandos:
 | --- | --- |
 | `npm run build` | ✅ Pasa. 157 módulos, 8,4 s. Sólo avisa del tamaño del chunk |
 | `npm run lint` | ✅ Pasa. Cero errores y cero warnings |
+| `npm run test:run` | ✅ Pasa. 54 tests en 2 archivos |
 
 ### Correcciones sobre `ESTADO-DEL-PROYECTO.md`
 

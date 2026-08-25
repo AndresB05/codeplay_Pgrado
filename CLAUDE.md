@@ -23,7 +23,7 @@ una sesión de invitado que sólo existe en desarrollo. El estado de salones viv
 en `localStorage` sembrado con datos de ejemplo. Las pantallas son reales y
 navegables; los datos, no.
 
-`npm run build` y `npm run lint` pasan. No los rompas.
+`npm run build`, `npm run lint` y `npm run test:run` pasan. No los rompas.
 
 ## Reglas que no debes romper
 
@@ -54,7 +54,7 @@ npm run dev
 ```
 
 `dev` (Vite, puerto 5173) · `build` (`tsc` + build) · `lint` (0 warnings) ·
-`preview` · `format`
+`test` (Vitest en watch) · `test:run` (una pasada) · `preview` · `format`
 
 ## Flujo de trabajo
 
@@ -66,8 +66,12 @@ OpenSpec 1.10.0, esquema `spec-driven`. Criterio para decidir la vía:
 Al terminar cualquier cambio funcional:
 
 1. Ejecuta `npm run lint` y `npm run build`.
-2. Actualiza `docs/CONTEXT.md`: mueve lo implementado de «por aplicar» a
-   «aplicadas», con la ruta real de los archivos.
+2. Actualiza `docs/CONTEXT.md` según el tipo de cambio:
+   - **Afecta a una capacidad del producto** → mueve la entrada de «por
+     aplicar» a «aplicadas», con la ruta real de los archivos.
+   - **Herramienta, documentación o limpieza** → *no* va a esa lista: no sale
+     de las prioridades P1-P6. Propaga lo que corresponda al stack o a las
+     convenciones de §1.
 3. Si cambiaste stack, estructura, convenciones o prioridades, **replica el
    cambio en `openspec/config.yaml`**. Es el único punto de duplicación
    deliberada del proyecto. Comprueba con `npx openspec doctor` que el YAML

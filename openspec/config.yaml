@@ -11,12 +11,15 @@ context: |
   La aplicación funciona SIN backend conectado. No hay login real: se entra con
   una sesión de invitado que sólo existe en desarrollo. Todo el estado de
   salones vive en localStorage sembrado con datos de ejemplo. Las pantallas son
-  reales y navegables; los datos, no. `npm run build` y `npm run lint` pasan.
+  reales y navegables; los datos, no. `npm run build`, `npm run lint` y
+  `npm run test:run` pasan.
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
   react-router-dom 6.30, @supabase/supabase-js 2.112, zod 3.25.
   ESLint 8.57 (config heredada) + Prettier 3.9. Node >= 18.18.
+  Tests: Vitest 3.2 + jsdom + Testing Library. Los tests se colocan junto al
+  archivo que prueban; src/test/ guarda el setup y el helper renderClassrooms.
 
   ESTRUCTURA (monorepo con npm workspaces, node_modules compartido en la raíz)
   apps/web/        front-end, workspace @codeplay/web
@@ -51,7 +54,7 @@ context: |
     Sin VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY válidas la app no arranca.
 
   COMANDOS (desde la raíz)
-  npm run dev | build | lint | preview | format
+  npm run dev | build | lint | test | test:run | preview | format
   Para un workspace: npm run <script> -w @codeplay/web
 
   PRIORIDADES DEL HITO ACTUAL
@@ -109,5 +112,9 @@ operations:
         introducir colores o tamaños nuevos.
   archive:
     guidance:
-      - 'Actualiza docs/CONTEXT.md al archivar: mueve lo implementado de la
-        sección "por aplicar" a "aplicadas" con la ruta real de los archivos.'
+      - 'Al archivar, actualiza docs/CONTEXT.md según el tipo de cambio. Si
+        afecta a una capacidad del producto: mueve la entrada de "por aplicar"
+        a "aplicadas" con la ruta real de los archivos. Si es herramienta,
+        documentación o limpieza: NO va en esa lista, porque no sale de las
+        prioridades P1-P6; propaga lo que corresponda al stack o a las
+        convenciones de la sección 1, y replícalo en este archivo.'

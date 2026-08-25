@@ -1,0 +1,6 @@
+schema: spec-driven
+created: 2026-08-25
+# Cambio de herramienta: no altera ninguna capacidad del producto, así que no
+# tiene deltas de spec. Inventar un requisito sólo para que `validate` pase
+# metería una afirmación falsa en la fuente de verdad.
+skip_specs: true
