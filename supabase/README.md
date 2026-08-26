@@ -51,6 +51,29 @@ migración 0012 y se aplica como todo lo demás.
       **La 0013 no se edita**: ya estaba aplicada, y corregirla en el sitio
       dejaría el repositorio describiendo un esquema que ninguna base ha tenido.
 
+15. `202606030015_create_classroom_read_views.sql`
+    - Dos vistas de sólo lectura: `class_group_directory`, el catálogo de
+      salones más el recuento de alumnos de cada uno, y `classroom_roster`, la
+      lista de un salón vista por su tutor o por quien pertenece a él.
+    - **Por qué vistas y no políticas.** Sin ellas, un niño no puede leer las
+      filas de `class_memberships` de nadie más que él, así que la lista de
+      compañeros sale vacía y el buscador muestra «0 de N cupos» en todos los
+      salones. Ampliar la política de lectura de `class_memberships` con una
+      rama «o pertenezco a ese salón» la haría consultar la tabla que protege:
+      recursión, la misma familia de fallo que arregló la 0014, y que aparece
+      antes al escribir que al leer. Esta migración **no toca ninguna política**.
+    - Ninguna de las dos declara `security_invoker = true`, así que no aplican la
+      RLS de las tablas que consultan: el filtro de a quién alcanza cada una va
+      escrito **dentro** de la vista y es lo primero que hay que leer al
+      revisarlas. El linter de Supabase las marca como `security_definer_view`;
+      está previsto.
+    - **Qué expone el roster:** `full_name`, `avatar_key`, `total_xp` y
+      `current_streak`, y ninguna otra columna de `profiles`. Ni correo, ni
+      país, ni nombre de usuario. XP y racha están para que los niños se
+      comparen dentro de su salón; hoy valen 0 para todos hasta que el juego
+      escriba progreso. El recuento del catálogo es un agregado: dice si un
+      salón está lleno, nunca quién está dentro.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI:
@@ -59,7 +82,7 @@ Si ya tienes el proyecto Supabase enlazado con la CLI:
 supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las catorce migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las quince migraciones —siembra
 incluida—:
 
 ```sh
