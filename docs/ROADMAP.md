@@ -1,7 +1,7 @@
 # CodePlay — Hoja de ruta
 
 > **En qué orden se construye el proyecto y quién hace cada parte.**
-> Última actualización: **25 de agosto de 2026**.
+> Última actualización: **26 de agosto de 2026**.
 
 Este documento responde a *cuándo* y *quién*.
 Para *qué* y *por qué*, ver [`docs/CONTEXT.md`](CONTEXT.md) §3, que describe cada
@@ -74,7 +74,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | 6 | Crear el proyecto de Supabase y rellenar `.env` | ✅ | **usuario** |
 | 7 | Columna `profiles.role`, disparador y esquema aplicado | ✅ | `backend-supabase-real` |
 | 8 | Regenerar `database.types.ts` y arreglar sus consumidores | ✅ | *(unido al 7)* |
-| 9 | Migración de las 4 tablas de salones + RLS + grants — **decidir `joined_at`, ver §3.1** | ⬜ | P1 |
+| 9 | Migración de las 4 tablas de salones + RLS + grants | ✅ | `tablas-salones` |
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ⬜ | P3 |
 | 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» | ⬜ | — |
 | 12 | Login y registro reales con rol | ⬜ | P2 |
@@ -153,12 +153,14 @@ perderse:
 
 | Hallazgo | Dónde se resuelve |
 | --- | --- |
-| El invariante «un alumno, un salón» lo sostiene el enrutado de `StudentClassroomModule`, no el store: `requestJoin()` no comprueba la pertenencia actual | Paso 10 — tarea 5 de P3 en `CONTEXT.md` |
+| El invariante «un alumno, un salón» **ya vive en el modelo** desde el paso 9 —restricción, índice parcial y política—. Lo que falta es que el store deje de contradecirlo: `requestJoin()` sigue sin comprobar la pertenencia actual y ahora fallaría contra la base en vez de sobrescribir en silencio | Paso 10 — tarea 5 de P3 en `CONTEXT.md` |
 | `levels` guarda `starter_code`, `validation_rules` y `programming_language`: el esquema se diseñó para un editor de código en el navegador, no para Unity | Paso 20 |
 | No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones. La sala de trofeos sólo puede listar lo conseguido, y el requisito de `contenido-mundos` se ajustó a eso | Paso 22 |
 | **El progreso no sabe nada de salones**, así que al aceptar a un alumno el tutor pasará a ver *todo* su historial, incluido el anterior al ingreso. Hoy nadie lo ha decidido: se dará por accidente | Paso 17, y ver §3.1 |
 | **El XP casi no tiene superficie en la interfaz.** Existe en la base (`profiles.total_xp`, `levels.xp_reward`, la vista `leaderboard_weekly`) pero sólo se muestra en Ajustes | Paso 21, y ver §3.2 |
 | **PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió. No se ha profundizado en qué envía el juego, en qué formato ni con qué garantía. Decisión previa al paso 20, no un paso nuevo: resolver con `/opsx:explore` | Antes del paso 20, ver §3.2 |
+| **El historial de solicitudes se acumula en filas**: un mismo par `(student_id, group_id)` puede tener una resuelta y una pendiente nueva, porque volver a pedir entrar inserta otra fila. Hay que ordenar por `requested_at` y quedarse con la última — un `.single()` de supabase-js revienta con `PGRST116` en cuanto un niño reintenta | Paso 10 |
+| **Ninguna política de salones está probada de verdad.** El 401 a la clave anónima demuestra que las tablas existen y están cerradas a `anon`, y nada más: que el tutor sólo vea sus salones, que el niño no pueda insertarse una pertenencia y que un rechazo sea inmutable siguen sin verificar | Paso 11, con dos usuarios reales |
 | Cuatro carpetas de componentes **sin ningún consumidor**: `WelcomeBanner`, `WorldCard`, `SidebarPlayerCard` y `LeaderBoard`. Son restos del panel anterior al rediseño | Paso 21 o limpieza aparte |
 
 ### 3.1 Historial previo al ingreso en un salón
@@ -177,8 +179,13 @@ mete «sin actividad previa», pero sólo porque los datos son ficticios.
 Hay que decidirlo explícitamente, y tiene arista de privacidad: un niño que jugó
 tres meses por su cuenta entrega ese historial entero a un profesor al unirse.
 En una plataforma para menores eso se cruza con el paso 14. Las opciones son
-mostrar todo, mostrar sólo desde la fecha de ingreso —lo que exige guardarla en
-`class_memberships`, decisión que toca tomar en el **paso 9**—, o preguntar.
+mostrar todo, mostrar sólo desde la fecha de ingreso, o preguntar.
+
+**La mitad de esto ya está resuelta.** El paso 9 decidió guardar la fecha:
+`class_memberships.joined_at` existe y se rellena al aceptar la solicitud. Lo que
+sigue abierto es **qué se muestra**, y es lo único que queda para el paso 17 —
+las tres opciones siguen disponibles porque el dato está. Guardar la fecha no era
+la decisión de privacidad; era lo que impedía tomarla más tarde sin inventarla.
 
 ### 3.2 El XP no se ve casi en ninguna parte
 

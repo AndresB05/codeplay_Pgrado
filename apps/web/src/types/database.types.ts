@@ -50,6 +50,153 @@ export type Database = {
         }
         Relationships: []
       }
+      class_groups: {
+        Row: {
+          capacity: number
+          created_at: string
+          grade_label: string
+          id: string
+          name: string
+          public_id: string
+          teacher_name: string
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          grade_label?: string
+          id?: string
+          name: string
+          public_id: string
+          teacher_name?: string
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          grade_label?: string
+          id?: string
+          name?: string
+          public_id?: string
+          teacher_name?: string
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      class_memberships: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          joined_at: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          joined_at?: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          joined_at?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_memberships_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          email: string
+          expires_at: string
+          group_id: string
+          id: string
+          invited_by: string
+          sent_at: string
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          email: string
+          expires_at?: string
+          group_id: string
+          id?: string
+          invited_by: string
+          sent_at?: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          email?: string
+          expires_at?: string
+          group_id?: string
+          id?: string
+          invited_by?: string
+          sent_at?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      join_requests: {
+        Row: {
+          group_id: string
+          id: string
+          requested_at: string
+          resolved_at: string | null
+          status: string
+          student_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          requested_at?: string
+          resolved_at?: string | null
+          status?: string
+          student_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          requested_at?: string
+          resolved_at?: string | null
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "join_requests_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       level_attempts: {
         Row: {
           created_at: string
@@ -313,6 +460,22 @@ export type Database = {
       }
     }
     Functions: {
+      accept_join_request: {
+        Args: { input_request_id: string }
+        Returns: {
+          created_at: string
+          group_id: string
+          id: string
+          joined_at: string
+          student_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "class_memberships"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_level_attempt: {
         Args: {
           input_is_success?: boolean

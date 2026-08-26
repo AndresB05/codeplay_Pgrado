@@ -2,7 +2,7 @@
 
 > **Fuente de verdad del estado del proyecto.** Este archivo se mantiene
 > sincronizado entre sesiones de Claude Code y OpenSpec.
-> Última verificación contra el código: **25 de agosto de 2026**.
+> Última verificación contra el código: **26 de agosto de 2026**.
 
 ---
 
@@ -241,7 +241,7 @@ vacíos hasta que haya imágenes reales.
 
 **Store de salones.** Ningún componente lee `localStorage` directamente. Todo
 pasa por `useClassrooms()`. Esa frontera es intencional: es lo único que hay que
-reescribir para conectar Supabase (§4.4).
+reescribir para conectar Supabase (§4.3).
 
 **Comandos** (desde la raíz):
 
@@ -495,9 +495,19 @@ progreso conseguido.
 seguras del backend.
 
 **Estado global: aplicado.** El proyecto de Supabase existe, está enlazado con la
-CLI y las doce migraciones se ejecutaron contra la base real (`backend-supabase-real`,
-25-ago-2026). Verificado por HTTP: ninguna tabla devuelve `PGRST205`, y `worlds` y
-`levels` responden con los 3 mundos y los 9 niveles de la siembra.
+CLI y las trece migraciones se ejecutaron contra la base real
+(`backend-supabase-real` 25-ago-2026, `tablas-salones` 26-ago-2026). Verificado
+por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels` responden con
+los 3 mundos y los 9 niveles de la siembra, y las cuatro tablas de salones
+responden 401 a la clave anónima.
+
+**Qué prueba ese 401 y qué no.** Prueba que la tabla existe y que `anon` no lee
+nada de ella. **No prueba ni una sola política por rol o por pertenencia:** que
+el tutor vea sólo sus salones, que un niño no pueda insertarse una pertenencia,
+que una solicitud rechazada sea inmutable y que el cupo se respete al aceptar
+siguen **sin verificar**. Comprobarlo exige dos usuarios autenticados de verdad,
+uno con rol `tutor` y otro con rol `child`, que llegan en el paso 11 del roadmap.
+Hasta entonces esas políticas son código revisado, no comportamiento observado.
 
 | Requisito | Estado | Dónde vive |
 | --- | --- | --- |
@@ -513,6 +523,7 @@ CLI y las doce migraciones se ejecutaron contra la base real (`backend-supabase-
 | Columna `profiles.role` y disparador que la rellena | ✅ aplicado | `…0010_add_profile_role.sql` |
 | Enum `user_role` y retirada del check redundante | ✅ aplicado | `…0011_profile_role_enum.sql` |
 | Siembra de mundos y niveles | ✅ aplicado | `…0012_seed_learning_content.sql` |
+| Tablas de salones, sus políticas, sus `grant` y `accept_join_request` | ✅ aplicado | `…0013_create_classroom_tables.sql` |
 | Cliente y 7 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
@@ -524,7 +535,7 @@ CLI y las doce migraciones se ejecutaron contra la base real (`backend-supabase-
   requerirá lógica segura adicional (Edge Function o SQL controlado). Es el
   **registro de logros concedidos**, no un catálogo: no existe la tabla que
   enumere los posibles, así que la sala de trofeos sólo lista lo conseguido
-  (§4.2.1).
+  (§4.2).
 - `role` es un **enum** `user_role`, no un `text` con `check`: sólo el enum llega
   a los tipos generados, y una unión escrita a mano junto a un check de la base
   volvería a abrir la brecha entre tipo y realidad.
@@ -537,6 +548,27 @@ CLI y las doce migraciones se ejecutaron contra la base real (`backend-supabase-
   juego de Unity. Hay que decidir si se amplía o se reinterpreta (§3.4).
 - `supabase/` está en la raíz del repo siguiendo la convención del CLI, para que
   `supabase db push` y `supabase db reset` funcionen sin flags.
+- **Los salones escriben por RLS, no por RPC**, al revés que perfil y progreso.
+  La excepción es aceptar una solicitud: escribe dos tablas y comprueba a la vez
+  el cupo, la propiedad del salón y «un alumno, un salón», así que es la única
+  RPC del módulo. Bloquea la fila del salón con `for update` **antes** de contar
+  alumnos; sin ese bloqueo, dos aceptaciones simultáneas se pasan del cupo.
+- **«Un alumno, un salón» vive en tres sitios**: `unique (student_id)` en
+  `class_memberships`, un índice único **parcial** sobre las solicitudes
+  pendientes, y el `with check` de la política de inserción, que impide pedir
+  entrar a otro salón siendo ya miembro. Ninguno sobra.
+- **El historial de solicitudes se acumula en filas.** Una solicitud resuelta es
+  inmutable y volver a pedir entrar inserta una fila nueva, así que un mismo par
+  `(student_id, group_id)` puede tener varias. No hay `unique (group_id,
+  student_id)` a propósito: impedía tanto reintentar tras un rechazo como volver
+  a un salón que el niño había dejado.
+- **`class_memberships` guarda `joined_at`.** Guardar la fecha no decide qué
+  historial ve el tutor de un niño que ya jugaba antes de entrar —eso es del
+  paso 17 del roadmap y tiene arista de privacidad—; sólo evita tener que
+  inventarla después.
+- `profiles` tiene **dos** políticas de lectura: la propia y
+  `profiles_select_own_students`, que deja al tutor leer el perfil de los niños
+  de sus salones. Sin ella la lista del salón saldría sin nombres.
 
 ---
 
@@ -550,39 +582,6 @@ desarrollo: aquí sólo entra el lado web de la integración.
 El **apartado gráfico queda fuera de este hito a propósito** (P6): la
 herramienta ya está elegida, pero las ilustraciones no se abordan hasta que las
 funcionalidades estén completas.
-
-### P1 — `tablas-salones`: migración de las cuatro tablas que faltan
-
-**Lo que ya está hecho.** Levantar la base, aplicar el esquema, la columna
-`profiles.role` y la regeneración de tipos se completaron en
-`backend-supabase-real` (25-ago-2026) y viven en §2.7. Lo único que queda de P1
-es el esquema del módulo de salones. Es el **paso 9** del roadmap.
-
-**Descripción.** Añadir la migración de las cuatro tablas de salones, con sus
-políticas de RLS y sus `grant`.
-
-**Tareas**
-
-1. Migración con las cuatro tablas, sus índices y sus restricciones.
-2. Políticas de RLS y sentencias `grant` **en la misma migración**: el proyecto
-   se creó con RLS automática y sin exposición automática de tablas, así que una
-   tabla sin ellas existe pero es inaccesible.
-3. Restricción que imponga «un alumno, un salón»: `UNIQUE (student_id)` en
-   `class_memberships` y un índice único parcial sobre `join_requests` limitado
-   a las solicitudes pendientes. Hoy ese invariante lo sostiene el enrutado de
-   `StudentClassroomModule`, no el modelo, y se perdería al mover el store.
-4. `npx supabase db push` y regenerar `database.types.ts`.
-
-**Tablas de salones que faltan**
-
-| Tabla | Para qué |
-| --- | --- |
-| `class_groups` | Salón: tutor, nombre, grado, profesor, id público, cupos |
-| `class_memberships` | Relación alumno ↔ salón |
-| `join_requests` | Solicitudes pendientes con su estado |
-| `invitations` | Invitaciones por correo con token y caducidad |
-
-**Dependencias.** Ninguna: la base ya está en pie. Bloquea a P3.
 
 ### P2 — `auth-real`: login, registro y roles verificados en servidor
 
@@ -729,15 +728,7 @@ se edita a mano**.
 npx supabase gen types typescript --linked > apps/web/src/types/database.types.ts
 ```
 
-### 4.2 Faltan las tablas de salones
-
-Nada en `supabase/migrations/` corresponde a `ClassGroup`, `JoinRequest`,
-`EmailInvitation` ni `StudentMembership`. Todo el módulo de salones —la parte más
-desarrollada de la aplicación— sigue sin esquema, y es lo único que queda de P1:
-el **paso 9** del roadmap. Hasta que exista, el store de salones seguirá en
-`localStorage` y P3 no puede empezar.
-
-### 4.2.1 No hay catálogo de logros
+### 4.2 No hay catálogo de logros
 
 La tabla `achievements` es el registro de logros **concedidos** a cada niño
 (`user_id`, `achievement_key`, `title`, `awarded_xp`, `unlocked_at`, con
@@ -767,13 +758,20 @@ importaciones dinámicas por ruta.
 
 ## 5. Estado verificado
 
-Comprobado el **25 de agosto de 2026** ejecutando los comandos:
+Comprobado el **26 de agosto de 2026** ejecutando los comandos:
 
 | Comprobación | Resultado |
 | --- | --- |
-| `npm run build` | ✅ Pasa. 157 módulos, 8,4 s. Sólo avisa del tamaño del chunk |
+| `npm run build` | ✅ Pasa. 157 módulos, 2,1 s. Sólo avisa del tamaño del chunk |
 | `npm run lint` | ✅ Pasa. Cero errores y cero warnings |
 | `npm run test:run` | ✅ Pasa. 54 tests en 2 archivos |
+| Panel del tutor y del niño con la sesión de invitado | ✅ Navegan sin errores en consola. Los mundos se pintan desde Supabase —«Selva Algorítmica», `0/3 NIVELES`—, no desde el respaldo local |
+
+**Cuidado al comprobar la pantalla de mundos:** `useWorlds()` arranca con la
+lista vacía, así que durante la carga se pinta el respaldo de `worldsData.ts`
+—«Bosque de Bucles», `4/10 NIVELES`— y sólo después llegan los datos reales. Ver
+esos nombres no significa que el backend no responda; significa que se miró
+demasiado pronto.
 
 ### Correcciones sobre `ESTADO-DEL-PROYECTO.md`
 

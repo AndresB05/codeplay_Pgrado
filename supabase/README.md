@@ -35,6 +35,13 @@ migración 0012 y se aplica como todo lo demás.
     - Convierte `role` al enum `user_role` y retira el check redundante.
 12. `202606030012_seed_learning_content.sql`
     - Mundos y niveles iniciales. Era `seed.sql`.
+13. `202606030013_create_classroom_tables.sql`
+    - Las cuatro tablas de salones —`class_groups`, `class_memberships`,
+      `join_requests` e `invitations`—, sus índices, sus políticas, sus `grant`
+      y la RPC `accept_join_request`, **todo en un solo archivo**: una tabla y su
+      acceso no deben poder aplicarse por mitades. Añade además una segunda
+      política de lectura a `profiles` para que el tutor vea el nombre de sus
+      alumnos, sin tocar la que ya existía.
 
 ## Cómo aplicarlo
 
@@ -44,7 +51,7 @@ Si ya tienes el proyecto Supabase enlazado con la CLI:
 supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las doce migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las trece migraciones —siembra
 incluida—:
 
 ```sh
@@ -54,6 +61,14 @@ supabase db reset
 **Toda migración nueva debe traer sus propias políticas y sus `grant`.** El
 proyecto se creó con RLS automática y sin exposición automática de tablas, así
 que una tabla sin ellos existe pero es inaccesible.
+
+Al revocar, `revoke ... from public` **no** retira lo concedido directamente a un
+rol: hay que revocar de `anon` aparte, o una tabla podría nacer legible sin
+sesión si el esquema tuviera privilegios por defecto para ese rol. La migración
+0013 lo hace; las anteriores sólo revocan de `public`.
+
+Las funciones también: PostgreSQL concede `execute` a `public` por defecto, así
+que una RPC nueva necesita su `revoke` antes de su `grant`.
 
 ## Notas de seguridad
 

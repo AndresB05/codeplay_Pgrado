@@ -157,6 +157,12 @@ Tres consecuencias que hay que aceptar a la vez:
 venga la escritura del tutor o de la RPC, sin depender de que el cliente se
 acuerde de mandar la marca de tiempo.
 
+**Lo que esto obliga al paso 10:** un mismo par `(student_id, group_id)` puede
+tener varias filas —una resuelta y una pendiente nueva—, así que la solicitud
+vigente se busca ordenando por `requested_at` y quedándose con la última. Una
+consulta con `.single()` de supabase-js reventaría con `PGRST116` en cuanto un
+niño vuelva a pedir entrar a un salón donde ya lo intentó.
+
 **Lo que esto deja abierto:** un niño rechazado puede volver a solicitar tantas
 veces como quiera, de una en una. No hay enfriamiento ni límite. Es molesto para
 el tutor en el peor caso y no tiene arreglo barato que no invente política de

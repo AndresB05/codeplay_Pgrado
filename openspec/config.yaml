@@ -7,12 +7,13 @@ context: |
   Es un proyecto de grado. Consta de tres piezas: un front-end en React, un
   backend en Supabase y un juego de Unity que se embeberá como build de WebGL.
 
-  ESTADO ACTUAL (verificado el 25-ago-2026)
+  ESTADO ACTUAL (verificado el 26-ago-2026)
   El esquema de Supabase está APLICADO en un proyecto real: tablas, RPC, RLS y
-  el contenido inicial de mundos y niveles. Pero la aplicación todavía no lo
-  consume: no hay login real, se entra con una sesión de invitado que sólo
-  existe en desarrollo, y el estado de salones sigue en localStorage. Los
-  servicios están tipados contra el esquema real y escriben por RPC.
+  el contenido inicial de mundos y niveles, incluidas ya las cuatro tablas de
+  salones. Pero la aplicación todavía no lo consume: no hay login real, se entra
+  con una sesión de invitado que sólo existe en desarrollo, y el estado de
+  salones sigue en localStorage. Los servicios están tipados contra el esquema
+  real y escriben por RPC.
   `npm run build`, `npm run lint` y `npm run test:run` pasan.
 
   STACK
@@ -31,7 +32,7 @@ context: |
   apps/web/        front-end, workspace @codeplay/web
   apps/game/       proyecto de Unity — NO EXISTE TODAVÍA
   packages/        código compartido — vacío
-  supabase/        migrations/ (9 migraciones SQL) y seed.sql
+  supabase/        migrations/ (13 migraciones SQL; el seed vive en la 0012)
   docs/            CONTEXT.md (estado y prioridades) y ESTADO-DEL-PROYECTO.md
   openspec/        specs y changes
   .github/         workflows de GitHub Actions (sólo ci.yml)
@@ -66,8 +67,8 @@ context: |
 
   PRIORIDADES DEL HITO ACTUAL
   Funcionalidades completas de punta a punta, en este orden:
-  1. Base de datos real en Supabase: falta la columna profiles.role y las tablas
-     de salones (class_groups, class_memberships, join_requests, invitations).
+  1. Base de datos real en Supabase: HECHO. El esquema entero está aplicado,
+     salones incluidos.
   2. Auth y roles funcionales verificados en servidor.
   3. Mover el store de salones de localStorage a Supabase.
   4. Apartado web de integración de los niveles del juego (el juego sigue en
@@ -77,11 +78,17 @@ context: |
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO
   - types/database.types.ts se GENERA con la CLI y nunca se edita a mano:
     `npx supabase gen types typescript --linked`. Describe el esquema real.
-  - No existe ninguna tabla de salones, que es el módulo más desarrollado.
+  - Los salones ya tienen esquema, pero la aplicación sigue leyendo localStorage:
+    conectarlos es el trabajo pendiente, no crear las tablas.
+  - Ninguna política de salones está verificada por rol ni por pertenencia: hace
+    falta un tutor y un niño reales, que aún no existen.
   - No existe catálogo de logros: la tabla achievements registra los concedidos
     a cada niño, no los posibles. La sala de trofeos sólo lista lo conseguido.
   - Toda migración nueva debe traer sus políticas de RLS y sus grant: el
     proyecto se creó con RLS automática y sin exposición automática de tablas.
+    Y revocar de public no basta: hay que revocar de anon aparte.
+  - pgcrypto está instalada con schema extensions: sus funciones se llaman
+    calificadas (extensions.gen_random_bytes), o el db push muere con 42883.
   - La landing viva es components/home/, montada desde pages/Home/HomePage.tsx.
 
   DOCUMENTOS DE REFERENCIA
@@ -95,8 +102,10 @@ rules:
   proposal:
     - Redacta la prosa en español, como el resto de la documentación del repo.
     - Nombra rutas de archivo reales y verificadas del repo en la sección Impact.
-    - 'Di explícitamente si el cambio depende de que exista el proyecto de
-      Supabase enlazado: hoy no lo está y bloquea casi todo el backend.'
+    - 'Di explícitamente si el cambio depende del proyecto de Supabase: hoy ya
+      está enlazado y con el esquema aplicado, así que lo que queda por decir es
+      si el cambio necesita un db push, que sólo puede lanzar el usuario porque
+      pide credenciales por consola.'
   specs:
     - 'Los identificadores de OpenSpec van en inglés: los encabezados
       "### Requirement:" y "#### Scenario:", y las palabras clave SHALL, WHEN y
