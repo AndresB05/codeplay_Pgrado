@@ -64,6 +64,12 @@ evitado problemas reales:
 Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 ★ = añadido durante la planificación, no estaba en §3 de `CONTEXT.md`
 
+**Manda el orden de las filas, no el número.** Los números son la identidad de
+cada paso —se citan así en `CONTEXT.md`, en los cabos sueltos de §3 y en los
+cambios ya archivados—, así que al reordenar se mueve la fila y el número viaja
+con ella. Una fila fuera de secuencia numérica es deliberada y lleva su motivo
+escrito en §2.1.
+
 | Nº | Paso | Estado | Vía |
 | --- | --- | --- | --- |
 | 1 | Crear `CLAUDE.md` en la raíz | ✅ | directo |
@@ -75,8 +81,8 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | 7 | Columna `profiles.role`, disparador y esquema aplicado | ✅ | `backend-supabase-real` |
 | 8 | Regenerar `database.types.ts` y arreglar sus consumidores | ✅ | *(unido al 7)* |
 | 9 | Migración de las 4 tablas de salones + RLS + grants | ✅ | `tablas-salones` |
+| 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» — **adelantado, ver §2.1** | ⬜ | `usuarios-de-prueba` |
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ⬜ | P3 |
-| 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» | ⬜ | — |
 | 12 | Login y registro reales con rol | ⬜ | P2 |
 | 13 | Recuperar y cambiar contraseña | ⬜ | P2 |
 | 14 | ★ Consentimiento del acudiente y política de privacidad | ⬜ | — |
@@ -95,6 +101,23 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | 27 | ★ Despliegue y URL de demo | ⬜ | — |
 
 ### 2.1 Decisiones de orden que conviene no deshacer
+
+**El paso 11 se adelanta al 10.** Las identidades reales van antes de mover el
+store a Supabase, no después. El paso 10 reescribe `ClassroomsProvider` para que
+escriba contra la base, pero **ninguna de esas escrituras puede comprobarse sin
+una sesión real**: las políticas que trajo el paso 9 preguntan por `auth.uid()`,
+y hoy la aplicación responde `guest-child`, que no existe en `auth.users`. Hacer
+el 10 primero significa escribir el servicio entero a ciegas y descubrir los
+fallos todos juntos, con el store ya reescrito.
+
+Adelantarlo cierra además la deuda que el paso 9 dejó anotada: que ninguna
+política por rol ni por pertenencia está verificada. Con dos cuentas de prueba
+sí se puede comprobar, y esa comprobación es parte del paso 11, no un extra.
+
+**El principio, que es del usuario y vale más allá de este caso: cuando haga
+falta reordenar o añadir pasos para poder comprobar que algo funciona, se hace.**
+Ver funcionar cada paso antes de acumular el siguiente vale más que respetar una
+secuencia escrita antes de saber lo que se sabe ahora.
 
 **Los tests (4) van antes del paso 10**, no después. El paso 10 reescribe
 `ClassroomsProvider` entero, que es el corazón de la aplicación. Los 54 tests
