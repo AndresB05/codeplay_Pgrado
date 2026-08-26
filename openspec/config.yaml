@@ -10,10 +10,12 @@ context: |
   ESTADO ACTUAL (verificado el 26-ago-2026)
   El esquema de Supabase está APLICADO en un proyecto real: tablas, RPC, RLS y
   el contenido inicial de mundos y niveles, incluidas ya las cuatro tablas de
-  salones. Pero la aplicación todavía no lo consume: no hay login real, se entra
-  con una sesión de invitado que sólo existe en desarrollo, y el estado de
-  salones sigue en localStorage. Los servicios están tipados contra el esquema
-  real y escriben por RPC.
+  salones, y sus políticas están verificadas con sesiones reales. Login real
+  todavía no hay (paso 12), pero el botón «Sin login» ya autentica de verdad
+  contra Supabase con cuentas de prueba, y sólo cae en la marca de invitado si
+  no hay credenciales en apps/web/.env. El estado de salones sigue en
+  localStorage: conectarlo es el paso siguiente. Los servicios están tipados
+  contra el esquema real y escriben por RPC.
   `npm run build`, `npm run lint` y `npm run test:run` pasan.
 
   STACK
@@ -80,8 +82,13 @@ context: |
     `npx supabase gen types typescript --linked`. Describe el esquema real.
   - Los salones ya tienen esquema, pero la aplicación sigue leyendo localStorage:
     conectarlos es el trabajo pendiente, no crear las tablas.
-  - Ninguna política de salones está verificada por rol ni por pertenencia: hace
-    falta un tutor y un niño reales, que aún no existen.
+  - Las credenciales de prueba (VITE_DEV_*) NO van en config/env.ts: ese módulo
+    valida al importarse y se ejecuta también en producción. Se leen tras
+    import.meta.env.DEV y como accesos de miembro, nunca copiando
+    import.meta.env.
+  - Cuando una política de RLS consulte otra tabla, el análisis de ciclos se
+    hace desde cada ESCRITURA, no sólo desde las lecturas: así se coló la
+    recursión que arregló la migración 0014.
   - No existe catálogo de logros: la tabla achievements registra los concedidos
     a cada niño, no los posibles. La sala de trofeos sólo lista lo conseguido.
   - Toda migración nueva debe traer sus políticas de RLS y sus grant: el

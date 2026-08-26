@@ -331,6 +331,8 @@ se muestra por salón.
 | Quien entra en un panel ajeno es devuelto al suyo | ✅ | `PrivateRoute.tsx` + `getHomeRouteForRole()` |
 | Rol efectivo unificado (perfil real o invitado) | ✅ | `hooks/useActiveRole.ts` |
 | Sesión de invitado, **sólo en desarrollo** (`import.meta.env.DEV`) | ✅ | `context/guest.helpers.ts` |
+| Acceso «Sin login» que **autentica de verdad** con cuentas de prueba | ✅ | `guest.helpers.ts` (`getDevCredentials`) + `components/home/Navbar.tsx` |
+| Salir cierra también la sesión de Supabase, por los cuatro caminos | ✅ | Las dos barras laterales y las dos pantallas de Ajustes |
 | Formularios de login y registro con validación zod | 🟡 | `pages/Login/`, `pages/Signup/`, `components/auth/*.schema.ts` |
 | Registro por pasos con selección de rol | 🟡 | `components/auth/steps/`, `SignupRoleCard.tsx` |
 | Botón de acceso con Google | 🟡 | `components/auth/GoogleAuthButton.tsx` |
@@ -344,6 +346,25 @@ se muestra por salón.
   comprueba `import.meta.env.DEV`. En producción no hay puerta trasera.
 - `useActiveRole()` prioriza el perfil autenticado y cae en el rol de invitado.
   Cuando el login real entre, esta función es el único punto que hay que revisar.
+- **El botón «Sin login» ya no simula la sesión: inicia sesión de verdad** con la
+  cuenta de prueba del rol pulsado, si hay credenciales en `apps/web/.env`. Sin
+  ellas cae en la marca local, para que quien clone el repositorio sin
+  configurarlas pueda entrar igual. Un fallo de autenticación **no** cae en el
+  invitado: entrar con una sesión simulada dejaría la aplicación aparentando
+  funcionar mientras `auth.uid()` sigue vacío.
+- El rol con el que se navega es **el del perfil que devuelve el servidor**, no
+  el del botón pulsado. Si no coinciden, se ve el desajuste en vez de un rebote
+  de `PrivateRoute` sin explicación.
+- Las cuatro variables `VITE_DEV_*` **no pasan por `config/env.ts`**: ese módulo
+  valida al importarse y se ejecuta también en producción, así que declararlas
+  allí metería correo y contraseña en el paquete publicado. Se leen tras
+  `import.meta.env.DEV` y como accesos de miembro, nunca copiando
+  `import.meta.env`. Comprobado con `grep` sobre `dist/`: cero coincidencias.
+- **Salir tiene que llamar a `signOut()`, no sólo borrar la marca de invitado.**
+  Las dos barras laterales sólo hacían lo segundo, lo que bastaba mientras la
+  marca era la única sesión; con sesión real dejaban entrar de vuelta al panel
+  escribiendo la dirección, porque `isAuthenticated(session)` seguía siendo
+  cierto.
 
 #### Rutas
 
@@ -515,31 +536,31 @@ por eso el fallo pasó dos revisiones. La lección está en `ROADMAP.md` §1.3: 
 análisis de ciclos entre políticas se hace desde cada **escritura**, no sólo
 desde las lecturas.
 
-**Qué está verificado con sesión real, a 26-ago-2026.** Con las cuentas de prueba
-del paso 11, una `tutor` y una `child`:
+**Qué está verificado con sesión real, a 26-ago-2026.** Con las tres cuentas de
+prueba del paso 11 —una `tutor` y dos `child`— y sus tokens, contra el proyecto
+real:
 
 | Comprobado | Resultado |
 | --- | --- |
-| El niño crea una solicitud de ingreso | Pasa, `status = 'pending'` |
-| El tutor ve el perfil del solicitante | Sí, con su nombre — las dos ramas de la función, por solicitud y por pertenencia |
-| El niño lee `profiles` | Una sola fila, la suya: no se ha abierto ningún perfil ajeno |
-| El tutor crea y borra un salón | Pasa, sin `42P17` |
-| El niño intenta crear un salón | Rechazado (`42501`) |
-| El niño intenta insertarse una pertenencia | Rechazado (`42501`) |
-| `accept_join_request` | Crea la pertenencia con `joined_at`, y el disparador rellena `resolved_at` |
+| El tutor crea un salón; el niño lo intenta | 201 y `42501`: la política exige rol `tutor` |
+| El tutor ve el perfil del solicitante, con su nombre | Sí, por las dos ramas: solicitud pendiente y pertenencia |
+| El niño lee `profiles` | Una sola fila, la suya |
+| El niño intenta inscribirse solo | `42501`: no hay política de inserción sobre `class_memberships` |
+| `accept_join_request` | Crea la pertenencia con `joined_at`; el disparador rellena `resolved_at` con el **mismo instante**, o sea que las dos tablas se escriben en una transacción |
+| Siendo miembro, pedir otro salón | `42501`: lo corta el `with check` que consulta `class_memberships` |
+| El niño sale de su salón y vuelve a solicitar | Permitido: sin `unique (group_id, student_id)`, se acumulan filas |
+| El tutor rechaza; el niño intenta borrar y reescribir su rechazo | 0 filas y 0 filas: el rechazo sobrevive |
+| El tutor intenta marcar `accepted` una solicitud **pendiente**, sin la RPC | `42501`: lo corta `with check (status = 'rejected')` |
+| Salón de cupo 1 lleno, aceptar a un segundo niño | `23514 Classroom is full`, y la solicitud sigue `pending`: la RPC aborta antes de escribir |
+| Borrar un salón | Se lleva por delante sus solicitudes y sus pertenencias |
 
-**Qué sigue sin verificar.** Que una solicitud rechazada sea inmutable para el
-niño, que quien ya es miembro no pueda pedir otro salón, y que el cupo se respete
-al aceptar — esta última **necesita una tercera cuenta**, porque exige un segundo
-niño solicitando un salón lleno. Son las tareas 7.4 a 7.7 de `usuarios-de-prueba`,
-que sigue en pausa. Y la carrera del `for update` no se reproduce a mano: el cupo
-se comprobará funcionalmente, no bajo concurrencia.
+**Qué sigue sin verificar.** La carrera del `for update`: dos aceptaciones
+simultáneas sobre el mismo salón no se reproducen a mano. El cupo está
+comprobado **funcionalmente**, no bajo concurrencia.
 
-**Estado en que queda la base de pruebas.** Al reanudar `usuarios-de-prueba`
-**no se parte de cero**: existen los salones `CP-TST1` (cupo 30) y `CP-TST2`
-(«Salón lleno», cupo 1, vacío), una solicitud de la cuenta niño en `CP-TST1` con
-`status = 'accepted'`, y la pertenencia que creó al aceptarla. Quien retome el
-trabajo tiene que contar con eso o diagnosticará un fallo que no existe.
+**Estado de la base de pruebas: limpia.** Los salones de prueba se borraron al
+terminar, y con ellos sus solicitudes y pertenencias. Las tres cuentas siguen
+existiendo, sin salón ninguna. El paso 10 parte de cero.
 
 | Requisito | Estado | Dónde vive |
 | --- | --- | --- |

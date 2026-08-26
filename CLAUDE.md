@@ -18,10 +18,14 @@ qué deuda técnica condiciona cualquier diseño nuevo.
 
 ## Estado actual
 
-La aplicación funciona **sin backend conectado**. No hay login real: se entra con
-una sesión de invitado que sólo existe en desarrollo. El estado de salones vive
-en `localStorage` sembrado con datos de ejemplo. Las pantallas son reales y
-navegables; los datos, no.
+El esquema de Supabase **está aplicado** en un proyecto real —salones incluidos—
+y la aplicación ya lee de él los mundos y los niveles. **El estado de salones
+sigue en `localStorage`** con datos de ejemplo: conectarlo es el paso 10.
+
+**Login real todavía no hay** —eso es el paso 12—, pero el botón «Sin login» ya
+no simula nada: **autentica de verdad** con cuentas de prueba si hay credenciales
+en `apps/web/.env`, y cae en la marca de invitado si no las hay. Sólo existe en
+desarrollo.
 
 `npm run build`, `npm run lint` y `npm run test:run` pasan. No los rompas.
 

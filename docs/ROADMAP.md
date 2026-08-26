@@ -89,7 +89,7 @@ escrito en §2.1.
 | 7 | Columna `profiles.role`, disparador y esquema aplicado | ✅ | `backend-supabase-real` |
 | 8 | Regenerar `database.types.ts` y arreglar sus consumidores | ✅ | *(unido al 7)* |
 | 9 | Migración de las 4 tablas de salones + RLS + grants — **salió con una recursión de RLS, ver §2.1** | ✅ | `tablas-salones` + `arreglo-recursion-rls` |
-| 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» — **adelantado, ver §2.1** | ⬜ | `usuarios-de-prueba` |
+| 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» — **adelantado, ver §2.1** | ✅ | `usuarios-de-prueba` |
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ⬜ | P3 |
 | 12 | Login y registro reales con rol | ⬜ | P2 |
 | 13 | Recuperar y cambiar contraseña | ⬜ | P2 |
@@ -196,7 +196,7 @@ perderse:
 | **El XP casi no tiene superficie en la interfaz.** Existe en la base (`profiles.total_xp`, `levels.xp_reward`, la vista `leaderboard_weekly`) pero sólo se muestra en Ajustes | Paso 21, y ver §3.2 |
 | **PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió. No se ha profundizado en qué envía el juego, en qué formato ni con qué garantía. Decisión previa al paso 20, no un paso nuevo: resolver con `/opsx:explore` | Antes del paso 20, ver §3.2 |
 | **El historial de solicitudes se acumula en filas**: un mismo par `(student_id, group_id)` puede tener una resuelta y una pendiente nueva, porque volver a pedir entrar inserta otra fila. Hay que ordenar por `requested_at` y quedarse con la última — un `.single()` de supabase-js revienta con `PGRST116` en cuanto un niño reintenta | Paso 10 |
-| **Las políticas de salones están probadas a medias.** Con las cuentas de prueba se verificó lo esencial —y así apareció la recursión que arregló `arreglo-recursion-rls`—, pero siguen sin comprobar la inmutabilidad de un rechazo, la restricción de pedir otro salón siendo miembro, y el cupo, que **necesita una tercera cuenta**. Inventario completo en `CONTEXT.md` §2.7 | Paso 11, al reanudar `usuarios-de-prueba` |
+| **Las políticas de salones están probadas con sesión real**, las once comprobaciones que lista `CONTEXT.md` §2.7, casos negativos incluidos. Lo único que queda fuera es la **carrera** del `for update`: el cupo se probó funcionalmente, no bajo concurrencia | Cerrado en el paso 11 |
 | **A la migración 0009 le falta `revoke ... from anon`**, que la 0013 sí trae: sólo revoca de `public`, y eso no retira lo concedido directamente a un rol. **No hay fuga, está medido:** consultadas con la clave anónima, `profiles`, `user_progress`, `level_attempts` y `achievements` devuelven 401 con código `42501` —permiso denegado a nivel de `grant`, no un vacío por RLS—, y `worlds` y `levels` devuelven 200, que es justo lo que sus políticas `to anon` quieren. Este proyecto no tiene privilegios por defecto para `anon` en el esquema `public`, así que el `revoke` que falta es defensa en profundidad, no un agujero. **Decidido: se anota, no se migra.** Si alguna vez se toca, que sea sabiendo esto y no creyendo que hay algo abierto | Ninguno: queda anotado a propósito |
 | Cuatro carpetas de componentes **sin ningún consumidor**: `WelcomeBanner`, `WorldCard`, `SidebarPlayerCard` y `LeaderBoard`. Son restos del panel anterior al rediseño | Paso 21 o limpieza aparte |
 
