@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { endGuestSession } from '../../../context/guest.helpers';
+import { useAuth } from '../../../hooks/useAuth';
 import type { User } from '../../../types/user.types';
 import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
 
@@ -97,6 +98,7 @@ const FireIcon = () => (
 
 export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const displayName = user?.fullName || 'Explorer Leo';
   const streakDays = user?.streakDays || 42;
@@ -107,8 +109,15 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
     { route: ROUTES.CLASSROOM, label: 'Salón de clases', icon: GraduationIcon },
   ];
 
-  const handleTemporaryLogout = () => {
+  /*
+   * Borrar la marca de invitado no basta: el acceso sin login autentica de
+   * verdad cuando hay cuentas de prueba, y sin `signOut` la sesión de Supabase
+   * sobreviviría. `PrivateRoute` la daría por buena y se volvería al panel
+   * escribiendo la dirección.
+   */
+  const handleTemporaryLogout = async (): Promise<void> => {
     endGuestSession();
+    await signOut();
     navigate(ROUTES.LANDING);
   };
 
@@ -183,7 +192,7 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
       <div className="mt-auto pt-8">
         <button
           type="button"
-          onClick={handleTemporaryLogout}
+          onClick={() => void handleTemporaryLogout()}
           className="flex w-full items-center gap-3 rounded-[18px] border-[3px] border-transparent px-3 py-3 text-left font-display text-[16px] text-coral-dark transition-colors hover:border-coral-soft hover:bg-coral-soft"
         >
           <LogoutIcon />

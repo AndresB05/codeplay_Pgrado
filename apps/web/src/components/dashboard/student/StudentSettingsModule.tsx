@@ -33,8 +33,9 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
   const handleSignOut = async (): Promise<void> => {
     endGuestSession();
 
-    // Sin sesión de Supabase conectada, signOut es inofensivo y deja el flujo
-    // listo para cuando el login real entre en juego.
+    // `signOut` es lo que cierra la sesión de verdad: el acceso sin login
+    // autentica contra Supabase cuando hay cuentas de prueba. `endGuestSession`
+    // queda por el atajo antiguo, que no se retira hasta el paso 24.
     await signOut();
     navigate(ROUTES.LANDING);
   };

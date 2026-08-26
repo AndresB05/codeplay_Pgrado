@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { endGuestSession } from '../../../context/guest.helpers';
+import { useAuth } from '../../../hooks/useAuth';
 import type { ClassGroup } from '../../../types/classroom.types';
 import type { User } from '../../../types/user.types';
 import { GroupBadge } from '../shared/GroupBadge';
@@ -24,6 +25,7 @@ export const TeacherSidebar = ({
   activeSection,
 }: TeacherSidebarProps) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const displayName = user?.fullName || 'Sr. Robot';
   const totalStudents = groups.reduce((total, group) => total + group.students.length, 0);
@@ -31,8 +33,10 @@ export const TeacherSidebar = ({
 
   const isGroupsSection = activeSection === ROUTES.TEACHER_GROUPS;
 
-  const handleLogout = () => {
+  /* Ver `Sidebar.tsx`: sin `signOut` la sesión de Supabase sobreviviría. */
+  const handleLogout = async (): Promise<void> => {
     endGuestSession();
+    await signOut();
     navigate(ROUTES.LANDING);
   };
 
@@ -167,7 +171,7 @@ export const TeacherSidebar = ({
       <div className="mt-auto pt-8">
         <button
           type="button"
-          onClick={handleLogout}
+          onClick={() => void handleLogout()}
           className="flex w-full items-center gap-3 rounded-[18px] border-[3px] border-transparent px-3 py-3 text-left font-display text-[16px] text-coral-dark transition-colors hover:border-coral-soft hover:bg-coral-soft"
         >
           <LogoutIcon />

@@ -1,21 +1,21 @@
 ## 1. Configuración de entorno
 
-- [ ] 1.1 Añadir a `apps/web/.env.example` los cuatro nombres —`VITE_DEV_TUTOR_EMAIL`, `VITE_DEV_TUTOR_PASSWORD`, `VITE_DEV_CHILD_EMAIL`, `VITE_DEV_CHILD_PASSWORD`— **con el valor vacío** y un comentario de que son opcionales y sólo de desarrollo (design, decisión 2). Verificación: el archivo no contiene ningún valor, sólo nombres; `.env` sigue fuera del repositorio.
-- [ ] 1.2 **No** tocar `apps/web/src/config/env.ts` (design, decisión 3). Verificación: `git diff` no lo incluye. Declararlas ahí las evaluaría también en producción y sus valores acabarían en el paquete publicado.
+- [x] 1.1 Añadir a `apps/web/.env.example` los cuatro nombres —`VITE_DEV_TUTOR_EMAIL`, `VITE_DEV_TUTOR_PASSWORD`, `VITE_DEV_CHILD_EMAIL`, `VITE_DEV_CHILD_PASSWORD`— **con el valor vacío** y un comentario de que son opcionales y sólo de desarrollo (design, decisión 2). Verificación: el archivo no contiene ningún valor, sólo nombres; `.env` sigue fuera del repositorio.
+- [x] 1.2 **No** tocar `apps/web/src/config/env.ts` (design, decisión 3). Verificación: `git diff` no lo incluye. Declararlas ahí las evaluaría también en producción y sus valores acabarían en el paquete publicado.
 
 ## 2. Lectura de las credenciales
 
-- [ ] 2.1 Añadir `getDevCredentials(role)` en `apps/web/src/context/guest.helpers.ts`, que devuelve `null` si no está en desarrollo o si falta cualquiera de las dos variables de ese rol (design, decisión 4). Verificación: la función comprueba `import.meta.env.DEV` antes de leer nada.
-- [ ] 2.2 Leer las variables **como accesos de miembro** (`import.meta.env.VITE_DEV_TUTOR_EMAIL`), nunca desestructurando `import.meta.env` (design, decisión 3). Verificación: el archivo no contiene ninguna desestructuración ni copia de `import.meta.env`; en el build eso se sustituye por el objeto completo.
-- [ ] 2.3 Conservar intactas `isGuestSession`, `getGuestRole`, `startGuestSession` y `endGuestSession`: la sesión de invitado no se retira en este paso. Verificación: las cuatro siguen exportadas con la misma firma y `PrivateRoute` sigue compilando sin cambios.
+- [x] 2.1 Añadir `getDevCredentials(role)` en `apps/web/src/context/guest.helpers.ts`, que devuelve `null` si no está en desarrollo o si falta cualquiera de las dos variables de ese rol (design, decisión 4). Verificación: la función comprueba `import.meta.env.DEV` antes de leer nada.
+- [x] 2.2 Leer las variables **como accesos de miembro** (`import.meta.env.VITE_DEV_TUTOR_EMAIL`), nunca desestructurando `import.meta.env` (design, decisión 3). Verificación: el archivo no contiene ninguna desestructuración ni copia de `import.meta.env`; en el build eso se sustituye por el objeto completo.
+- [x] 2.3 Conservar intactas `isGuestSession`, `getGuestRole`, `startGuestSession` y `endGuestSession`: la sesión de invitado no se retira en este paso. Verificación: las cuatro siguen exportadas con la misma firma y `PrivateRoute` sigue compilando sin cambios.
 
 ## 3. El botón «Sin login»
 
-- [ ] 3.1 Reescribir `handleGuestEntry` en `apps/web/src/components/home/Navbar.tsx`: si hay credenciales para el rol pulsado, llamar a `signIn()` del contexto de autenticación; si no, hacer lo de hoy —marca local y navegar— (design, decisión 4). Verificación: los dos caminos existen y el de invitado sigue siendo el que se toma sin `.env` configurado.
-- [ ] 3.2 Navegar con el rol **del perfil cargado**, no con el del botón (design, decisión 5). Verificación: entrar con una cuenta cuyo perfil no coincide con el botón lleva al panel del perfil, sin rebote de `PrivateRoute`.
-- [ ] 3.3 Si el `signIn` falla, **no** caer en la sesión de invitado: quedarse y mostrar el error del contexto (design, decisión 6). Verificación: con una contraseña incorrecta en `.env` no se entra a ningún panel y el motivo se lee en pantalla.
-- [ ] 3.4 Deshabilitar los dos botones mientras la petición está en curso, con el `loading` que el contexto ya expone (design, Risks). Verificación: dos clics seguidos no lanzan dos `signIn`.
-- [ ] 3.5 No tocar `AuthProvider.tsx`, `useActiveRole.ts` ni `PrivateRoute.tsx`: los tres ya hacen lo que hace falta (design, Context). Verificación: `git diff` no los incluye.
+- [x] 3.1 Reescribir `handleGuestEntry` en `apps/web/src/components/home/Navbar.tsx`: si hay credenciales para el rol pulsado, llamar a `signIn()` del contexto de autenticación; si no, hacer lo de hoy —marca local y navegar— (design, decisión 4). Verificación: los dos caminos existen y el de invitado sigue siendo el que se toma sin `.env` configurado.
+- [x] 3.2 Navegar con el rol **del perfil cargado**, no con el del botón (design, decisión 5). Verificación: entrar con una cuenta cuyo perfil no coincide con el botón lleva al panel del perfil, sin rebote de `PrivateRoute`.
+- [x] 3.3 Si el `signIn` falla, **no** caer en la sesión de invitado: quedarse y mostrar el error del contexto (design, decisión 6). Verificación: con una contraseña incorrecta en `.env` no se entra a ningún panel y el motivo se lee en pantalla.
+- [x] 3.4 Deshabilitar los dos botones mientras la petición está en curso, con el `loading` que el contexto ya expone (design, Risks). Verificación: dos clics seguidos no lanzan dos `signIn`.
+- [x] 3.5 No tocar `AuthProvider.tsx`, `useActiveRole.ts` ni `PrivateRoute.tsx`: los tres ya hacen lo que hace falta (design, Context). Verificación: `git diff` no los incluye.
 
 ## 4. El botón «Salir» tiene que cerrar la sesión
 
@@ -23,33 +23,33 @@ Hoy las dos barras laterales sólo borran la marca de invitado. En cuanto el
 acceso autentique de verdad, eso deja viva la sesión de Supabase (design,
 decisión 8).
 
-- [ ] 4.1 En `apps/web/src/components/dashboard/Sidebar/Sidebar.tsx`, `handleTemporaryLogout` pasa a llamar también a `signOut()` del contexto, como ya hacen las dos pantallas de Ajustes. Verificación: tras salir, volver al panel escribiendo la URL redirige a `/login`; hoy dejaría entrar porque `isAuthenticated(session)` seguiría siendo cierto.
-- [ ] 4.2 Lo mismo en `apps/web/src/components/dashboard/teacher/TeacherSidebar.tsx`, en `handleLogout`. Verificación: idéntica a la anterior desde el panel del tutor.
-- [ ] 4.3 Actualizar el comentario de `StudentSettingsModule.tsx` y `TeacherSettingsModule.tsx`: dicen que sin sesión de Supabase conectada `signOut` es «inofensivo» y deja el flujo listo para el login real. A partir de este cambio `signOut` es **lo único que hace efecto**, y `endGuestSession` pasa a ser el residuo del atajo. Verificación: el comentario explica el porqué nuevo, no el anterior.
+- [x] 4.1 En `apps/web/src/components/dashboard/Sidebar/Sidebar.tsx`, `handleTemporaryLogout` pasa a llamar también a `signOut()` del contexto, como ya hacen las dos pantallas de Ajustes. Verificación: tras salir, volver al panel escribiendo la URL redirige a `/login`; hoy dejaría entrar porque `isAuthenticated(session)` seguiría siendo cierto.
+- [x] 4.2 Lo mismo en `apps/web/src/components/dashboard/teacher/TeacherSidebar.tsx`, en `handleLogout`. Verificación: idéntica a la anterior desde el panel del tutor.
+- [x] 4.3 Actualizar el comentario de `StudentSettingsModule.tsx` y `TeacherSettingsModule.tsx`: dicen que sin sesión de Supabase conectada `signOut` es «inofensivo» y deja el flujo listo para el login real. A partir de este cambio `signOut` es **lo único que hace efecto**, y `endGuestSession` pasa a ser el residuo del atajo. Verificación: el comentario explica el porqué nuevo, no el anterior.
 - [ ] 4.4 Comprobar que salir funciona por los cuatro caminos: las dos barras laterales y las dos pantallas de Ajustes. Verificación: en los cuatro, tras salir no queda sesión en `localStorage` y `/dashboard/worlds` redirige a `/login`.
 
 ## 5. PAUSA: crear las cuentas (lo hace el usuario)
 
 Crear cuentas y manejar contraseñas queda fuera de lo que hace esta sesión.
 
-- [ ] 5.1 Entregar al usuario los pasos exactos y **detener la implementación**: crear dos cuentas en *Authentication → Users → Add user* con **Auto Confirm User** marcado, ejecutar en el editor SQL la sentencia que pone `role = 'tutor'` en el perfil del tutor, y rellenar las cuatro variables de su `.env` (design, decisión 1). Verificación: los pasos y la sentencia están escritos en el chat, con el correo como hueco a rellenar por el usuario, y la implementación está detenida.
-- [ ] 5.2 Explicar por qué hace falta la sentencia: una cuenta creada desde el panel no lleva metadatos, así que `handle_new_user_profile` cae al rol por defecto y **las dos cuentas nacen `child`** (design, decisión 1). Verificación: la explicación acompaña a la sentencia, no va suelta.
+- [x] 5.1 Entregar al usuario los pasos exactos y **detener la implementación**: crear dos cuentas en *Authentication → Users → Add user* con **Auto Confirm User** marcado, ejecutar en el editor SQL la sentencia que pone `role = 'tutor'` en el perfil del tutor, y rellenar las cuatro variables de su `.env` (design, decisión 1). Verificación: los pasos y la sentencia están escritos en el chat, con el correo como hueco a rellenar por el usuario, y la implementación está detenida.
+- [x] 5.2 Explicar por qué hace falta la sentencia: una cuenta creada desde el panel no lleva metadatos, así que `handle_new_user_profile` cae al rol por defecto y **las dos cuentas nacen `child`** (design, decisión 1). Verificación: la explicación acompaña a la sentencia, no va suelta.
 
 ## 6. Verificar el rol real de cada cuenta
 
-- [ ] 6.1 Comprobar el `profiles.role` de cada cuenta leyéndolo **con su propia sesión**, no suponiéndolo (design, decisión 1). Verificación: el tutor devuelve `tutor` y el niño `child`. Si el tutor sale `child`, parar aquí: la política de inserción de `class_groups` lo rechazaría y nada de lo que sigue tendría sentido.
-- [ ] 6.2 Comprobar que la aplicación entra de verdad: pulsar cada botón y confirmar que hay sesión con `access_token`, no marca de invitado. Verificación: `dev:skipAuth` **no** está en `localStorage` y el panel muestra el nombre real de la cuenta.
+- [x] 6.1 Comprobar el `profiles.role` de cada cuenta leyéndolo **con su propia sesión**, no suponiéndolo (design, decisión 1). Verificación: el tutor devuelve `tutor` y el niño `child`. Si el tutor sale `child`, parar aquí: la política de inserción de `class_groups` lo rechazaría y nada de lo que sigue tendría sentido.
+- [x] 6.2 Comprobar que la aplicación entra de verdad: pulsar cada botón y confirmar que hay sesión con `access_token`, no marca de invitado. Verificación: `dev:skipAuth` **no** está en `localStorage` y el panel muestra el nombre real de la cuenta.
 
 ## 7. Verificar las políticas del paso 9
 
 Con el `access_token` que cada sesión dejó en el navegador (design, decisión 2).
 Es la razón de adelantar este paso, no un extra.
 
-- [ ] 7.1 Obtener el `access_token` de la sesión activa leyendo del navegador la clave `sb-<project-ref>-auth-token` que escribe supabase-js, donde `<project-ref>` es el subdominio de `VITE_SUPABASE_URL`. Verificación: el token se obtiene sin teclear ninguna contraseña y sin pedirla por chat. Si esa clave no estuviera donde se espera, **parar y decirlo** en vez de improvisar otra vía.
+- [x] 7.1 Obtener el `access_token` de la sesión activa leyendo del navegador la clave `sb-<project-ref>-auth-token` que escribe supabase-js, donde `<project-ref>` es el subdominio de `VITE_SUPABASE_URL`. Verificación: el token se obtiene sin teclear ninguna contraseña y sin pedirla por chat. Si esa clave no estuviera donde se espera, **parar y decirlo** en vez de improvisar otra vía.
 
-- [ ] 7.2 El tutor crea un salón: aceptado. El niño intenta crear uno: rechazado. Verificación: 201 y 403 respectivamente; el segundo prueba que la política exige rol `tutor`.
+- [x] 7.2 El tutor crea un salón: aceptado. El niño intenta crear uno: rechazado. Verificación: 201 y 403 respectivamente; el segundo prueba que la política exige rol `tutor`.
 - [ ] 7.3 El niño solicita ingreso y el tutor ve la solicitud; comprobar que el tutor lee el **nombre** del niño, que es lo que justifica `profiles_select_own_students`. Verificación: la solicitud aparece con nombre, no con un identificador suelto.
-- [ ] 7.4 El niño intenta insertar directamente su pertenencia: rechazado (specs del paso 9, «El ingreso pasa siempre por una solicitud aceptada»). Verificación: 403; no existe política de inserción sobre `class_memberships`.
+- [x] 7.4 El niño intenta insertar directamente su pertenencia: rechazado (specs del paso 9, «El ingreso pasa siempre por una solicitud aceptada»). Verificación: 403; no existe política de inserción sobre `class_memberships`.
 - [ ] 7.5 El tutor acepta con `accept_join_request`: pertenencia creada y con `joined_at` relleno. Verificación: la fila existe y la solicitud queda `accepted` con `resolved_at`, que lo pone el disparador.
 - [ ] 7.6 Siendo ya miembro, el niño intenta solicitar otro salón: rechazado (design del paso 9, «un alumno, un salón»). Verificación: la escritura falla por la subconsulta del `with check`, no por la interfaz.
 - [ ] 7.7 El tutor rechaza una solicitud y el niño intenta borrarla: rechazado, el rechazo sobrevive. Verificación: la fila sigue con `status = 'rejected'`.

@@ -23,8 +23,8 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
   const handleSignOut = async (): Promise<void> => {
     endGuestSession();
 
-    // Con la sesión de invitado no hay sesión de Supabase que cerrar, pero
-    // signOut es inofensivo y deja el flujo listo para el login real.
+    // Ver `StudentSettingsModule`: `signOut` es lo que cierra la sesión real y
+    // `endGuestSession` sólo limpia el atajo antiguo.
     await signOut();
     navigate(ROUTES.LANDING);
   };

@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { getHomeRouteForRole } from '../../context/auth.helpers';
-import { startGuestSession } from '../../context/guest.helpers';
+import { getDevCredentials, startGuestSession } from '../../context/guest.helpers';
+import { useAuth } from '../../hooks/useAuth';
 import type { UserRole } from '../../types/user.types';
 import { SectionContainer } from './shared';
 
@@ -27,10 +29,48 @@ const guestEntries: { role: UserRole; label: string; className: string }[] = [
 export const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { clearError, error, loading, signIn, user } = useAuth();
+  const [signingIn, setSigningIn] = useState(false);
 
-  const handleGuestEntry = (role: UserRole) => {
-    startGuestSession(role);
-    navigate(getHomeRouteForRole(role));
+  /*
+   * El rol lo decide el perfil que devuelve el servidor, no el botón pulsado.
+   * Si la cuenta de prueba de tutor quedara con rol `child`, navegar por el
+   * botón llevaría a un panel que `PrivateRoute` rebotaría acto seguido; así
+   * el desajuste se ve en lugar de disimularse.
+   */
+  useEffect(() => {
+    if (!signingIn || !user) {
+      return;
+    }
+
+    setSigningIn(false);
+    navigate(getHomeRouteForRole(user.role));
+  }, [navigate, signingIn, user]);
+
+  const handleGuestEntry = async (role: UserRole): Promise<void> => {
+    const credentials = getDevCredentials(role);
+
+    // Sin credenciales configuradas queda el atajo de siempre, para que quien
+    // clone el repositorio sin `.env` completo pueda entrar igual.
+    if (!credentials) {
+      startGuestSession(role);
+      navigate(getHomeRouteForRole(role));
+      return;
+    }
+
+    clearError();
+    setSigningIn(true);
+
+    /*
+     * Un fallo NO cae en la sesión de invitado: entrar con una sesión simulada
+     * dejaría la aplicación aparentando funcionar mientras `auth.uid()` sigue
+     * vacío, que es justo lo que este acceso viene a resolver.
+     */
+    const signedIn = await signIn(credentials.email, credentials.password);
+
+    if (!signedIn) {
+      setSigningIn(false);
+    }
   };
 
   return (
@@ -99,12 +139,18 @@ export const Navbar = () => {
                 <button
                   key={entry.role}
                   type="button"
-                  onClick={() => handleGuestEntry(entry.role)}
-                  className={`btn btn-sm ${entry.className}`}
+                  onClick={() => void handleGuestEntry(entry.role)}
+                  disabled={signingIn || loading}
+                  className={`btn btn-sm ${entry.className} disabled:opacity-60`}
                 >
                   {entry.label}
                 </button>
               ))}
+              {error ? (
+                <span role="alert" className="max-w-[220px] text-[11px] font-bold text-coral-dark">
+                  {error.message}
+                </span>
+              ) : null}
             </div>
           ) : null}
         </div>
