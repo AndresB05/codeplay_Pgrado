@@ -81,6 +81,16 @@ y eso va a `docs/CONTEXT.md`, no al spec.
 | `apps/web/src/context/guest.helpers.ts` | Añadir la lectura de las credenciales de prueba, gobernada por `import.meta.env.DEV` |
 | `apps/web/src/components/home/Navbar.tsx` | `handleGuestEntry` pasa a autenticar; hoy sólo escribe la marca y navega |
 | `apps/web/src/config/env.ts` | **No se toca.** Añadir ahí las variables nuevas las metería en el bundle de producción |
+| `apps/web/src/components/dashboard/Sidebar/Sidebar.tsx` | «Salir» pasa a llamar también a `signOut()`; hoy sólo borra la marca de invitado |
+| `apps/web/src/components/dashboard/teacher/TeacherSidebar.tsx` | Lo mismo en el panel del tutor |
+| `apps/web/src/components/dashboard/student/StudentSettingsModule.tsx` | Sólo el comentario: `signOut` deja de ser «inofensivo» y pasa a ser lo único que hace efecto |
+| `apps/web/src/components/dashboard/teacher/TeacherSettingsModule.tsx` | Igual que el anterior |
+
+**El botón «Salir» se rompe si no se toca.** Las dos barras laterales sólo
+borran la marca de invitado, lo que hoy basta porque es la única sesión que
+existe; con sesión real dejarían viva la de Supabase y se volvería al panel
+escribiendo la URL. Las dos pantallas de Ajustes ya lo hacen bien, así que el
+arreglo es aplicarles su mismo patrón.
 
 `context/AuthProvider.tsx` ya expone `signIn()` y sincroniza el perfil después
 de autenticar, así que **no hay que tocarlo**. `hooks/useActiveRole.ts` ya
@@ -106,6 +116,10 @@ Si alguno falla, es una señal.
   recoge el acceso de prueba.
 - `docs/ROADMAP.md`: paso 11 a ✅ y el cabo suelto de las políticas sin probar,
   actualizado o retirado según el resultado.
+- `CLAUDE.md`, **sólo su sección «Estado actual»**: dice que la aplicación
+  funciona sin backend conectado —falso desde el paso 7— y que no hay login
+  real, que este paso deja a medias. Es lo primero que lee cualquier sesión
+  nueva, así que no puede quedarse desfasado; el resto del archivo no se toca.
 - `openspec/config.yaml`: el bloque `context` afirma que «no hay login real, se
   entra con una sesión de invitado». Deja de ser exacto.
 

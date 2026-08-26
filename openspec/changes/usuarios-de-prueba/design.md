@@ -94,6 +94,13 @@ aplicación inicia sesión con lo que hay en su `.env`; a partir de ahí, las
 comprobaciones por HTTP usan el `access_token` que la propia sesión dejó en el
 navegador. Esta sesión nunca manipula la contraseña, sólo el token que ya existe.
 
+De dónde sale ese token, concretamente: supabase-js guarda la sesión en
+`localStorage` bajo `sb-<project-ref>-auth-token`, donde `<project-ref>` es el
+subdominio de `VITE_SUPABASE_URL`. Se lee desde el navegador, se saca el
+`access_token` del JSON y se usa como `Authorization: Bearer`. Si esa clave no
+estuviera donde se espera, **se para y se dice**, en vez de buscar una tercera
+vía o pedir credenciales por chat.
+
 ### 3. Las variables nuevas **no** pasan por `config/env.ts`
 
 `config/env.ts` valida con zod y lanza al importarse; si las cuatro variables se
@@ -166,6 +173,27 @@ declarar «verificado» algo que no se ha visto.
 **Los datos que deje la verificación se borran al terminar.** Las cuentas quedan
 limpias para el paso 10, y el borrado es en sí la última comprobación: el tutor
 puede borrar su salón y con él caen sus solicitudes.
+
+### 8. Salir tiene que cerrar la sesión, y hoy dos de los cuatro botones no lo hacen
+
+Este cambio **rompe el botón «Salir»** de las dos barras laterales si no se toca.
+`handleTemporaryLogout` en `Sidebar.tsx` y `handleLogout` en `TeacherSidebar.tsx`
+llaman sólo a `endGuestSession()` y navegan a la landing. Hoy eso basta porque la
+marca de invitado es la única sesión que existe. En cuanto el acceso autentique
+de verdad, borrar la marca deja **viva la sesión de Supabase**: se vuelve al
+panel escribiendo la URL y `PrivateRoute` deja pasar, porque
+`isAuthenticated(session)` sigue siendo cierto.
+
+No hay que inventar el arreglo: el patrón correcto ya está en el repositorio.
+`StudentSettingsModule` y `TeacherSettingsModule` llaman a `signOut()` además de
+`endGuestSession()`. Se aplica el mismo a las dos barras.
+
+Y hay que corregir el comentario de esas dos pantallas, que dice que sin sesión
+de Supabase conectada `signOut` es «inofensivo» y deja el flujo listo para el
+login real. **El porqué se invierte**: a partir de aquí `signOut` es lo único que
+hace efecto, y `endGuestSession` es lo que queda como residuo del atajo hasta el
+paso 24. Un comentario que explica una razón que ya no existe es peor que no
+tener comentario.
 
 ## Risks / Trade-offs
 

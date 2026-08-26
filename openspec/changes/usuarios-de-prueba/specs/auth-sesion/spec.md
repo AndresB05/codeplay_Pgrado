@@ -62,6 +62,26 @@ del perfil.
 
 ## ADDED Requirements
 
+### Requirement: Salir cierra la sesión por completo
+
+El sistema SHALL cerrar **toda** la sesión al salir, tanto la del servidor como
+la marca local, desde cualquiera de los sitios que ofrecen salir. Después de
+salir, volver a una ruta privada SHALL redirigir a `/login`.
+
+NO SHALL bastar con borrar la marca local: dejar viva la sesión del servidor
+haría que la guarda de rutas privadas siguiera dejando pasar.
+
+#### Scenario: Se sale desde la barra lateral
+
+- **WHEN** se pulsa «Salir» en la barra lateral del panel, de niño o de tutor
+- **THEN** no queda sesión de ningún tipo
+- **AND** volver a una ruta privada escribiendo su dirección redirige a `/login`
+
+#### Scenario: Se sale desde la pantalla de ajustes
+
+- **WHEN** se pulsa salir en la pantalla de ajustes, de niño o de tutor
+- **THEN** el resultado es el mismo que desde la barra lateral
+
 ### Requirement: Las credenciales de prueba no llegan a producción
 
 Las credenciales de las cuentas de prueba SHALL quedar fuera del repositorio y
