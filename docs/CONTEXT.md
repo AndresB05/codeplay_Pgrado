@@ -360,6 +360,14 @@ se muestra por salón.
   allí metería correo y contraseña en el paquete publicado. Se leen tras
   `import.meta.env.DEV` y como accesos de miembro, nunca copiando
   `import.meta.env`. Comprobado con `grep` sobre `dist/`: cero coincidencias.
+- **Los 400 y 403 que aparecen en consola al entrar y salir varias veces son de
+  autenticación, no del panel.** Un 400 sale al refrescar un token ya revocado o
+  en un `signIn` fallido; un 403, al cerrar sesión cuando ya estaba cerrada. Se
+  comprobó con sesión válida que las ocho tablas responden 200, así que **no es
+  el panel leyendo Supabase**: es una secuela del ciclo de sesión, y aparece
+  justo al probar los cuatro caminos de salida uno detrás de otro. No es un
+  fallo que el paso 10 herede.
+
 - **Salir tiene que llamar a `signOut()`, no sólo borrar la marca de invitado.**
   Las dos barras laterales sólo hacían lo segundo, lo que bastaba mientras la
   marca era la única sesión; con sesión real dejaban entrar de vuelta al panel
