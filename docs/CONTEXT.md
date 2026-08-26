@@ -501,13 +501,45 @@ por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels` responden con
 los 3 mundos y los 9 niveles de la siembra, y las cuatro tablas de salones
 responden 401 a la clave anónima.
 
-**Qué prueba ese 401 y qué no.** Prueba que la tabla existe y que `anon` no lee
-nada de ella. **No prueba ni una sola política por rol o por pertenencia:** que
-el tutor vea sólo sus salones, que un niño no pueda insertarse una pertenencia,
-que una solicitud rechazada sea inmutable y que el cupo se respete al aceptar
-siguen **sin verificar**. Comprobarlo exige dos usuarios autenticados de verdad,
-uno con rol `tutor` y otro con rol `child`, que llegan en el paso 11 del roadmap.
-Hasta entonces esas políticas son código revisado, no comportamiento observado.
+**La 0013 salió con un fallo, y conviene que quede en el registro.** Sus
+políticas formaban un ciclo: la de inserción de `join_requests` consulta
+`profiles` para comprobar el rol, y `profiles_select_own_students` consultaba a
+su vez `join_requests`. Insertar una solicitud moría con
+`42P17: infinite recursion detected in policy`, es decir que **ningún niño podía
+pedir entrar a un salón**. La migración 0014 lo corrige moviendo la condición a
+una función `security definer`, que no expande políticas.
+
+**Sólo era observable con sesión autenticada.** La verificación de la 0013 llegó
+hasta donde llega una clave anónima —las tablas existen, `anon` no lee ninguna— y
+por eso el fallo pasó dos revisiones. La lección está en `ROADMAP.md` §1.3: el
+análisis de ciclos entre políticas se hace desde cada **escritura**, no sólo
+desde las lecturas.
+
+**Qué está verificado con sesión real, a 26-ago-2026.** Con las cuentas de prueba
+del paso 11, una `tutor` y una `child`:
+
+| Comprobado | Resultado |
+| --- | --- |
+| El niño crea una solicitud de ingreso | Pasa, `status = 'pending'` |
+| El tutor ve el perfil del solicitante | Sí, con su nombre — las dos ramas de la función, por solicitud y por pertenencia |
+| El niño lee `profiles` | Una sola fila, la suya: no se ha abierto ningún perfil ajeno |
+| El tutor crea y borra un salón | Pasa, sin `42P17` |
+| El niño intenta crear un salón | Rechazado (`42501`) |
+| El niño intenta insertarse una pertenencia | Rechazado (`42501`) |
+| `accept_join_request` | Crea la pertenencia con `joined_at`, y el disparador rellena `resolved_at` |
+
+**Qué sigue sin verificar.** Que una solicitud rechazada sea inmutable para el
+niño, que quien ya es miembro no pueda pedir otro salón, y que el cupo se respete
+al aceptar — esta última **necesita una tercera cuenta**, porque exige un segundo
+niño solicitando un salón lleno. Son las tareas 7.4 a 7.7 de `usuarios-de-prueba`,
+que sigue en pausa. Y la carrera del `for update` no se reproduce a mano: el cupo
+se comprobará funcionalmente, no bajo concurrencia.
+
+**Estado en que queda la base de pruebas.** Al reanudar `usuarios-de-prueba`
+**no se parte de cero**: existen los salones `CP-TST1` (cupo 30) y `CP-TST2`
+(«Salón lleno», cupo 1, vacío), una solicitud de la cuenta niño en `CP-TST1` con
+`status = 'accepted'`, y la pertenencia que creó al aceptarla. Quien retome el
+trabajo tiene que contar con eso o diagnosticará un fallo que no existe.
 
 | Requisito | Estado | Dónde vive |
 | --- | --- | --- |
@@ -524,6 +556,7 @@ Hasta entonces esas políticas son código revisado, no comportamiento observado
 | Enum `user_role` y retirada del check redundante | ✅ aplicado | `…0011_profile_role_enum.sql` |
 | Siembra de mundos y niveles | ✅ aplicado | `…0012_seed_learning_content.sql` |
 | Tablas de salones, sus políticas, sus `grant` y `accept_join_request` | ✅ aplicado | `…0013_create_classroom_tables.sql` |
+| Arreglo de la recursión entre `profiles` y `join_requests` | ✅ aplicado | `…0014_fix_profiles_policy_recursion.sql` |
 | Cliente y 7 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 

@@ -43,6 +43,14 @@ migración 0012 y se aplica como todo lo demás.
       política de lectura a `profiles` para que el tutor vea el nombre de sus
       alumnos, sin tocar la que ya existía.
 
+14. `202606030014_fix_profiles_policy_recursion.sql`
+    - Corrige una recursión de RLS que traía la 0013: insertar una solicitud de
+      ingreso moría con `42P17`, porque su política consulta `profiles` y
+      `profiles_select_own_students` consultaba a su vez `join_requests`. La
+      condición pasa a una función `security definer`, que no expande políticas.
+      **La 0013 no se edita**: ya estaba aplicada, y corregirla en el sitio
+      dejaría el repositorio describiendo un esquema que ninguna base ha tenido.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI:
@@ -51,7 +59,7 @@ Si ya tienes el proyecto Supabase enlazado con la CLI:
 supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las trece migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las catorce migraciones —siembra
 incluida—:
 
 ```sh
@@ -69,6 +77,10 @@ sesión si el esquema tuviera privilegios por defecto para ese rol. La migració
 
 Las funciones también: PostgreSQL concede `execute` a `public` por defecto, así
 que una RPC nueva necesita su `revoke` antes de su `grant`.
+
+**Cuando una política consulte otra tabla, comprueba el ciclo desde cada
+escritura, no sólo desde las lecturas.** La 0013 se aplicó con una recursión que
+sólo aparecía al insertar, nunca al leer, y por eso pasó dos revisiones.
 
 ## Notas de seguridad
 

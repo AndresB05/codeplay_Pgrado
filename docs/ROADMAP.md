@@ -56,6 +56,14 @@ evitado problemas reales:
 3. Que el alcance no se desborde más allá de lo encargado.
 4. Que las herramientas que usan las verificaciones **existan en la máquina**.
    Ya pasó: una tarea verificaba con `gh`, que no está instalado.
+5. Que el análisis de ciclos entre políticas de RLS se haya hecho **desde cada
+   operación de escritura, no sólo desde las lecturas**. Cuando una política
+   consulta otra tabla, el ciclo puede cerrarse en una dirección y no en la
+   otra. El paso 9 se aplicó con una recursión que mataba el `insert` de
+   solicitudes y no aparecía en ningún `select`: el grafo se recorrió desde la
+   lectura de `profiles`, que termina, y nunca desde la escritura de
+   `join_requests`, que es donde se cerraba. **Pasó dos revisiones** porque las
+   dos lo miraron en la misma dirección.
 
 ---
 
@@ -80,7 +88,7 @@ escrito en §2.1.
 | 6 | Crear el proyecto de Supabase y rellenar `.env` | ✅ | **usuario** |
 | 7 | Columna `profiles.role`, disparador y esquema aplicado | ✅ | `backend-supabase-real` |
 | 8 | Regenerar `database.types.ts` y arreglar sus consumidores | ✅ | *(unido al 7)* |
-| 9 | Migración de las 4 tablas de salones + RLS + grants | ✅ | `tablas-salones` |
+| 9 | Migración de las 4 tablas de salones + RLS + grants — **salió con una recursión de RLS, ver §2.1** | ✅ | `tablas-salones` + `arreglo-recursion-rls` |
 | 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» — **adelantado, ver §2.1** | ⬜ | `usuarios-de-prueba` |
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ⬜ | P3 |
 | 12 | Login y registro reales con rol | ⬜ | P2 |
@@ -102,16 +110,21 @@ escrito en §2.1.
 
 ### 2.1 Decisiones de orden que conviene no deshacer
 
-**El paso 11 se adelanta al 10.** Las identidades reales van antes de mover el
-store a Supabase, no después. El paso 10 reescribe `ClassroomsProvider` para que
-escriba contra la base, pero **ninguna de esas escrituras puede comprobarse sin
-una sesión real**: las políticas que trajo el paso 9 preguntan por `auth.uid()`,
+**El paso 11 se adelanta al 10, y valió la pena a la primera.** La primera
+comprobación con sesión real destapó que ningún niño podía solicitar entrar a un
+salón: una recursión de RLS que la migración del paso 9 llevaba dentro y que
+ninguna clave anónima podía enseñar. Se arregló en `arreglo-recursion-rls`.
+
+Las identidades reales van antes de mover el store a Supabase, no después. El
+paso 10 reescribe `ClassroomsProvider` para que escriba contra la base, pero
+**ninguna de esas escrituras puede comprobarse sin una sesión real**: las
+políticas que trajo el paso 9 preguntan por `auth.uid()`,
 y hoy la aplicación responde `guest-child`, que no existe en `auth.users`. Hacer
 el 10 primero significa escribir el servicio entero a ciegas y descubrir los
 fallos todos juntos, con el store ya reescrito.
 
 Adelantarlo cierra además la deuda que el paso 9 dejó anotada: que ninguna
-política por rol ni por pertenencia está verificada. Con dos cuentas de prueba
+política por rol ni por pertenencia estaba verificada. Con dos cuentas de prueba
 sí se puede comprobar, y esa comprobación es parte del paso 11, no un extra.
 
 **El principio, que es del usuario y vale más allá de este caso: cuando haga
@@ -183,7 +196,7 @@ perderse:
 | **El XP casi no tiene superficie en la interfaz.** Existe en la base (`profiles.total_xp`, `levels.xp_reward`, la vista `leaderboard_weekly`) pero sólo se muestra en Ajustes | Paso 21, y ver §3.2 |
 | **PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió. No se ha profundizado en qué envía el juego, en qué formato ni con qué garantía. Decisión previa al paso 20, no un paso nuevo: resolver con `/opsx:explore` | Antes del paso 20, ver §3.2 |
 | **El historial de solicitudes se acumula en filas**: un mismo par `(student_id, group_id)` puede tener una resuelta y una pendiente nueva, porque volver a pedir entrar inserta otra fila. Hay que ordenar por `requested_at` y quedarse con la última — un `.single()` de supabase-js revienta con `PGRST116` en cuanto un niño reintenta | Paso 10 |
-| **Ninguna política de salones está probada de verdad.** El 401 a la clave anónima demuestra que las tablas existen y están cerradas a `anon`, y nada más: que el tutor sólo vea sus salones, que el niño no pueda insertarse una pertenencia y que un rechazo sea inmutable siguen sin verificar | Paso 11, con dos usuarios reales |
+| **Las políticas de salones están probadas a medias.** Con las cuentas de prueba se verificó lo esencial —y así apareció la recursión que arregló `arreglo-recursion-rls`—, pero siguen sin comprobar la inmutabilidad de un rechazo, la restricción de pedir otro salón siendo miembro, y el cupo, que **necesita una tercera cuenta**. Inventario completo en `CONTEXT.md` §2.7 | Paso 11, al reanudar `usuarios-de-prueba` |
 | **A la migración 0009 le falta `revoke ... from anon`**, que la 0013 sí trae: sólo revoca de `public`, y eso no retira lo concedido directamente a un rol. **No hay fuga, está medido:** consultadas con la clave anónima, `profiles`, `user_progress`, `level_attempts` y `achievements` devuelven 401 con código `42501` —permiso denegado a nivel de `grant`, no un vacío por RLS—, y `worlds` y `levels` devuelven 200, que es justo lo que sus políticas `to anon` quieren. Este proyecto no tiene privilegios por defecto para `anon` en el esquema `public`, así que el `revoke` que falta es defensa en profundidad, no un agujero. **Decidido: se anota, no se migra.** Si alguna vez se toca, que sea sabiendo esto y no creyendo que hay algo abierto | Ninguno: queda anotado a propósito |
 | Cuatro carpetas de componentes **sin ningún consumidor**: `WelcomeBanner`, `WorldCard`, `SidebarPlayerCard` y `LeaderBoard`. Son restos del panel anterior al rediseño | Paso 21 o limpieza aparte |
 
