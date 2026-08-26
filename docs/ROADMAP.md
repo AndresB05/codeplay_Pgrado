@@ -85,7 +85,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
 | 18 | ★ Notificaciones en tiempo real (Supabase Realtime) | ⬜ | — |
 | 19 | Invitaciones por correo reales y enlace canjeable | ⬜ | P5 |
-| 20 | Contrato de integración y pantalla de nivel con contenedor | ⬜ | P4 |
+| 20 | Contrato de integración y pantalla de nivel con contenedor — **conectar la selección de niveles al backend, hoy es maqueta. Ver §3.3** | ⬜ | P4 |
 | 21 | Escritura de progreso y XP desde el juego — **ver §3.2** | ⬜ | P4 |
 | 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye el catálogo y retirar las estrellas. **Ver §3.2** | ⬜ | P4 |
 | 23 | Unity en `apps/game/`, Git LFS y build de WebGL | ⬜ | P4 |
@@ -206,15 +206,57 @@ selva. La excepción es `XPBar`, una primitiva pequeña que probablemente se sal
 
 #### Modelo de progreso: decidido
 
-El XP **se queda**, con esta cadena y sin monedas paralelas:
+El XP **se queda** y se consigue por **dos vías independientes**:
 
-```
-completar niveles → se conceden logros → los logros dan XP → el XP ordena el ranking
-```
+| Vía | Cuánta XP |
+| --- | --- |
+| Completar un nivel | Poca, y **mayor cuanto más difícil el mundo** |
+| Conseguir un logro | Variable según el logro: puede ser mucha o poca |
 
-Un solo indicador de avance y un solo camino para conseguirlo. La columna
-`achievements.awarded_xp` es la que implementa este modelo, y `upsert_my_progress`
-ya incrementa `profiles.total_xp` al completar un nivel.
+**Los logros no son por avanzar, son por hacer cosas.** No se ganan por completar
+un nivel —salvo alguno concreto—, sino por comportamientos dentro del juego: por
+ejemplo, «da tres vueltas sobre tu propio eje usando bloques». Premian la
+exploración, no el avance.
+
+Cada logro se gana **una sola vez**: lo impone `unique (user_id, achievement_key)`
+y es lo buscado. Si el proyecto crece hacia misiones diarias repetibles, esa
+restricción habrá que revisarla, pero hoy queda fuera de alcance.
+
+`upsert_my_progress` ya incrementa `profiles.total_xp`, y `achievements.awarded_xp`
+guarda lo que dio cada logro.
+
+**Falta la dificultad del mundo.** La tabla `worlds` **no tiene columna de
+dificultad** — sólo existe `levels.difficulty` con `beginner`/`intermediate`/
+`advanced`. Y en la interfaz, `StudentWorldsModule` fija `worldDifficulty` a
+`'easy'` escrito a mano, así que los tres mundos muestran «Fácil» pase lo que
+pase: no lee nada. Para que el XP dependa de la dificultad del mundo hay que
+añadir la columna, derivarla de sus niveles, o usar `sort_order` como proxy —el
+orden ya va de menos a más—. Decisión del paso 22.
+
+#### Quién concede un logro — recomendación, sin confirmar
+
+El problema: «da tres vueltas sobre tu eje» sólo lo sabe el juego, que corre en
+el navegador del niño. Pero el esquema hace los logros de sólo lectura para el
+cliente justamente para que nadie se los conceda a sí mismo.
+
+Propuesta: **partirlos en dos familias según quién puede saber que se cumplieron.**
+
+| Familia | Quién concede | Falsificable |
+| --- | --- | --- |
+| **A** — derivables del progreso: primer nivel, mundo completo, racha de N días, N niveles | El servidor, leyendo `user_progress` y `level_attempts`. Nadie reporta nada | No |
+| **B** — comportamiento dentro del juego | Unity lo reporta al terminar | Sí, desde la consola |
+
+Mitigación barata para la familia B: que la RPC que concede exija **un intento
+exitoso de ese nivel**. Sube el listón de «escribir en la consola» a «jugar el
+nivel y además escribir en la consola», y cuesta una condición en el SQL.
+
+No se propone validar la partida en el servidor: reimplementar la lógica del
+juego para comprobar cada logro es desproporcionado aquí. Es una plataforma para
+niños, sin dinero de por medio, y quien hace trampa se engaña a sí mismo. El
+único motivo real de preocupación es el ranking — otro argumento para acotarlo al
+salón o convertirlo en meta colectiva.
+
+**Esto afecta al contrato del paso 20**, así que conviene cerrarlo antes.
 
 **Las estrellas por nivel se retiran.** `levels.stars_reward` y
 `user_progress.stars_earned` existen en el esquema y los atraviesan servicios y
@@ -236,7 +278,18 @@ Para un proyecto de grado sobre enseñanza conviene decidirlo y justificarlo en 
 memoria. Alternativas más amables: ranking sólo dentro del salón, mostrar las
 posiciones cercanas a la propia, o convertirlo en meta colectiva del salón.
 
-### 3.3 El contenido sembrado es mínimo
+### 3.3 El contenido sembrado es mínimo, y dos pantallas se contradicen
+
+**La pantalla de selección de niveles es maqueta pura.**
+`StudentWorldLevelsModule` no toca Supabase: importa sólo
+`components/dashboard/student/worlds/worldsData.ts`, un archivo local con
+`totalLevels: 10` escrito a mano y nombres inventados —Plataformas, Saltos,
+Secuencias, «Curso de diseño de juegos»—.
+
+De ahí la contradicción visible: la tarjeta del mundo dice `0/3 NIVELES`, que es
+el dato **real** de Supabase, y al entrar aparecen **10 niveles falsos**. El `3`
+es la verdad; el `10`, la ficción. Conectar esa pantalla al backend es parte del
+paso 20 y es más trabajo del que sugería su enunciado.
 
 La siembra tiene **9 niveles en total, tres por mundo**:
 
