@@ -85,7 +85,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
 | 18 | ★ Notificaciones en tiempo real (Supabase Realtime) | ⬜ | — |
 | 19 | Invitaciones por correo reales y enlace canjeable | ⬜ | P5 |
-| 20 | Contrato de integración y pantalla de nivel con contenedor — **conectar la selección de niveles al backend, hoy es maqueta. Ver §3.3** | ⬜ | P4 |
+| 20 | Contrato de integración y pantalla de nivel con contenedor — **exige cerrar antes la pregunta abierta de §3.2.** Incluye conectar la selección de niveles al backend, hoy maqueta (§3.3) | ⬜ | P4 |
 | 21 | Escritura de progreso y XP desde el juego — **ver §3.2** | ⬜ | P4 |
 | 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye el catálogo y retirar las estrellas. **Ver §3.2** | ⬜ | P4 |
 | 23 | Unity en `apps/game/`, Git LFS y build de WebGL | ⬜ | P4 |
@@ -158,6 +158,7 @@ perderse:
 | No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones. La sala de trofeos sólo puede listar lo conseguido, y el requisito de `contenido-mundos` se ajustó a eso | Paso 22 |
 | **El progreso no sabe nada de salones**, así que al aceptar a un alumno el tutor pasará a ver *todo* su historial, incluido el anterior al ingreso. Hoy nadie lo ha decidido: se dará por accidente | Paso 17, y ver §3.1 |
 | **El XP casi no tiene superficie en la interfaz.** Existe en la base (`profiles.total_xp`, `levels.xp_reward`, la vista `leaderboard_weekly`) pero sólo se muestra en Ajustes | Paso 21, y ver §3.2 |
+| **PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió. No se ha profundizado en qué envía el juego, en qué formato ni con qué garantía. Decisión previa al paso 20, no un paso nuevo: resolver con `/opsx:explore` | Antes del paso 20, ver §3.2 |
 | Cuatro carpetas de componentes **sin ningún consumidor**: `WelcomeBanner`, `WorldCard`, `SidebarPlayerCard` y `LeaderBoard`. Son restos del panel anterior al rediseño | Paso 21 o limpieza aparte |
 
 ### 3.1 Historial previo al ingreso en un salón
@@ -233,13 +234,28 @@ pase: no lee nada. Para que el XP dependa de la dificultad del mundo hay que
 añadir la columna, derivarla de sus niveles, o usar `sort_order` como proxy —el
 orden ya va de menos a más—. Decisión del paso 22.
 
-#### Quién concede un logro — recomendación, sin confirmar
+#### PREGUNTA ABIERTA: cómo se verifica que un logro se consiguió
+
+**Sin decidir y sin profundizar.** Queda pendiente de una conversación propia.
+
+Lo que no se ha explorado: **qué envía exactamente el juego al terminar una
+partida, en qué formato, y con qué garantía de que lo enviado ocurrió de
+verdad.** Eso es lo que falta, no la teoría de abajo.
+
+**No es un paso nuevo de la secuencia**, es una decisión previa al paso 20:
+condiciona el contrato de integración, así que hay que cerrarla antes de
+proponerlo. La vía natural es `/opsx:explore`, el modo de exploración de
+OpenSpec, y de ahí sale el diseño con el que arrancar el 20.
+
+Lo de abajo es **un punto de partida para esa conversación**, no una decisión
+tomada.
 
 El problema: «da tres vueltas sobre tu eje» sólo lo sabe el juego, que corre en
 el navegador del niño. Pero el esquema hace los logros de sólo lectura para el
 cliente justamente para que nadie se los conceda a sí mismo.
 
-Propuesta: **partirlos en dos familias según quién puede saber que se cumplieron.**
+Una posibilidad: **partirlos en dos familias según quién puede saber que se
+cumplieron.**
 
 | Familia | Quién concede | Falsificable |
 | --- | --- | --- |
@@ -250,13 +266,12 @@ Mitigación barata para la familia B: que la RPC que concede exija **un intento
 exitoso de ese nivel**. Sube el listón de «escribir en la consola» a «jugar el
 nivel y además escribir en la consola», y cuesta una condición en el SQL.
 
-No se propone validar la partida en el servidor: reimplementar la lógica del
-juego para comprobar cada logro es desproporcionado aquí. Es una plataforma para
-niños, sin dinero de por medio, y quien hace trampa se engaña a sí mismo. El
-único motivo real de preocupación es el ranking — otro argumento para acotarlo al
-salón o convertirlo en meta colectiva.
-
-**Esto afecta al contrato del paso 20**, así que conviene cerrarlo antes.
+Lo que **no** parece proporcionado aquí es validar la partida entera en el
+servidor: reimplementar la lógica del juego para comprobar cada logro es un
+proyecto en sí mismo. Es una plataforma para niños, sin dinero de por medio, y
+quien hace trampa se engaña a sí mismo. El único motivo real de preocupación es
+el ranking — otro argumento para acotarlo al salón o convertirlo en meta
+colectiva.
 
 **Las estrellas por nivel se retiran.** `levels.stars_reward` y
 `user_progress.stars_earned` existen en el esquema y los atraviesan servicios y
