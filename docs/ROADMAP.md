@@ -156,6 +156,47 @@ perderse:
 | El invariante «un alumno, un salón» lo sostiene el enrutado de `StudentClassroomModule`, no el store: `requestJoin()` no comprueba la pertenencia actual | Paso 10 — tarea 5 de P3 en `CONTEXT.md` |
 | `levels` guarda `starter_code`, `validation_rules` y `programming_language`: el esquema se diseñó para un editor de código en el navegador, no para Unity | Paso 20 |
 | No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones. La sala de trofeos sólo puede listar lo conseguido, y el requisito de `contenido-mundos` se ajustó a eso | Paso 22 |
+| **El progreso no sabe nada de salones**, así que al aceptar a un alumno el tutor pasará a ver *todo* su historial, incluido el anterior al ingreso. Hoy nadie lo ha decidido: se dará por accidente | Paso 17, y ver §3.1 |
+| **El XP casi no tiene superficie en la interfaz.** Existe en la base (`profiles.total_xp`, `levels.xp_reward`, la vista `leaderboard_weekly`) pero sólo se muestra en Ajustes | Paso 21, y ver §3.2 |
+| Cuatro carpetas de componentes **sin ningún consumidor**: `WelcomeBanner`, `WorldCard`, `SidebarPlayerCard` y `LeaderBoard`. Son restos del panel anterior al rediseño | Paso 21 o limpieza aparte |
+
+### 3.1 Historial previo al ingreso en un salón
+
+El progreso vive colgado del usuario, no del salón: `user_progress` está indexada
+por `(user_id, level_id)` y **ninguna tabla de progreso referencia a un salón**.
+Eso es correcto y deliberado — un niño puede descubrir CodePlay por su cuenta,
+jugar semanas y unirse después al salón de su profesor sin perder nada.
+
+La consecuencia no buscada aparece en el paso 17. Cuando los reportes de
+habilidades y la tabla de seguimiento dejen de usar datos de ejemplo y se
+calculen sobre `user_progress` real, el tutor verá **el historial completo** del
+niño, incluido lo que hizo antes de solicitar entrada. Hoy `acceptRequest()` lo
+mete «sin actividad previa», pero sólo porque los datos son ficticios.
+
+Hay que decidirlo explícitamente, y tiene arista de privacidad: un niño que jugó
+tres meses por su cuenta entrega ese historial entero a un profesor al unirse.
+En una plataforma para menores eso se cruza con el paso 14. Las opciones son
+mostrar todo, mostrar sólo desde la fecha de ingreso —lo que exige guardarla en
+`class_memberships`, decisión que toca tomar en el **paso 9**—, o preguntar.
+
+### 3.2 El XP no se ve casi en ninguna parte
+
+| Dónde aparece | ¿Se renderiza? |
+| --- | --- |
+| `StudentSettingsModule` | ✅ Sí |
+| `LeaderBoardRow` | ❌ `LeaderBoard` no lo monta nadie |
+| `SidebarPlayerCard` | ❌ sin consumidores |
+| `WelcomeBanner` con `XPBar` | ❌ sin consumidores |
+
+La única barra de XP del proyecto vive en `WelcomeBanner`, que no está montado en
+ninguna pantalla. **No confundirla con la barra de progreso del mundo**, que
+cuenta niveles completados sobre el total y no tiene relación con el XP.
+
+Esto deja el paso 21 incompleto tal como está planteado: escribiría un número que
+el niño apenas puede ver. Antes de implementarlo hay que decidir dónde se muestra
+el XP —cabecera del panel, tarjeta en el listado de mundos, o recuperar el
+banner— y si esos componentes huérfanos se rehacen con el tema de selva o se
+borran y se hacen de nuevo.
 
 ---
 
