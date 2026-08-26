@@ -87,7 +87,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | 19 | Invitaciones por correo reales y enlace canjeable | ⬜ | P5 |
 | 20 | Contrato de integración y pantalla de nivel con contenedor | ⬜ | P4 |
 | 21 | Escritura de progreso y XP desde el juego — **ver §3.2** | ⬜ | P4 |
-| 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye la tabla de catálogo | ⬜ | P4 |
+| 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye el catálogo y retirar las estrellas. **Ver §3.2** | ⬜ | P4 |
 | 23 | Unity en `apps/game/`, Git LFS y build de WebGL | ⬜ | P4 |
 | 24 | Retirar la sesión de invitado | ⬜ | — |
 | 25 | ★ Responsive, accesibilidad y `ErrorBoundary` | ⬜ | — |
@@ -197,6 +197,63 @@ el niño apenas puede ver. Antes de implementarlo hay que decidir dónde se mues
 el XP —cabecera del panel, tarjeta en el listado de mundos, o recuperar el
 banner— y si esos componentes huérfanos se rehacen con el tema de selva o se
 borran y se hacen de nuevo.
+
+**Los componentes huérfanos se rehacen, no se recuperan.** `WelcomeBanner`,
+`SidebarPlayerCard`, `LeaderBoard` y `WorldCard` usan los nombres de color
+anteriores al rediseño (`text-secondary`, `text-neutral-light`) y la maquetación
+del panel viejo. Adaptarlos sería arrastrar marcado que no encaja con el tema de
+selva. La excepción es `XPBar`, una primitiva pequeña que probablemente se salve.
+
+#### Modelo de progreso: decidido
+
+El XP **se queda**, con esta cadena y sin monedas paralelas:
+
+```
+completar niveles → se conceden logros → los logros dan XP → el XP ordena el ranking
+```
+
+Un solo indicador de avance y un solo camino para conseguirlo. La columna
+`achievements.awarded_xp` es la que implementa este modelo, y `upsert_my_progress`
+ya incrementa `profiles.total_xp` al completar un nivel.
+
+**Las estrellas por nivel se retiran.** `levels.stars_reward` y
+`user_progress.stars_earned` existen en el esquema y los atraviesan servicios y
+tipos, pero **ningún componente las pinta**: son esquema que nunca llegó a la
+pantalla, del mismo diseño de editor de código en el navegador que dejó
+`starter_code` y `validation_rules`. Además no distinguen nada — los nueve
+niveles sembrados tienen `stars_reward: 3` idéntico. Retirarlas en una migración
+durante el paso 22, junto con su parámetro en `upsert_my_progress`.
+
+**Falta definir los logros.** Cada logro necesita una condición concreta que lo
+concede —completar un mundo, encadenar días seguidos, resolver sin fallar— y el
+XP que otorga. Eso es el catálogo del paso 22, y es diseño de producto: no se
+deduce del esquema.
+
+**El ranking sigue sin decidir.** `leaderboard_weekly` clasifica a los niños
+entre sí, pero que la vista exista no obliga a mostrarla. Un ranking público de
+menores desmotiva a los que van últimos, que son los que más necesitan seguir.
+Para un proyecto de grado sobre enseñanza conviene decidirlo y justificarlo en la
+memoria. Alternativas más amables: ranking sólo dentro del salón, mostrar las
+posiciones cercanas a la propia, o convertirlo en meta colectiva del salón.
+
+### 3.3 El contenido sembrado es mínimo
+
+La siembra tiene **9 niveles en total, tres por mundo**:
+
+| Mundo | Niveles |
+| --- | --- |
+| Selva Algorítmica | Ruta del Colibrí, Puente Condicional, Ciclo del Río |
+| Cordillera Binaria | Eco de Funciones, Mochila de Datos, Sendero Recursivo |
+| Costa de Bugs | Ola de Errores, Faro Asíncrono, Tormenta Final |
+
+Por eso la tarjeta de un mundo muestra `0/3 NIVELES`: es el recuento real, no un
+error. Pero tres niveles por mundo es contenido de relleno, no un currículo de
+pensamiento computacional.
+
+Ampliarlo no bloquea ningún paso técnico y no está en la secuencia, pero sí
+condiciona lo que se puede enseñar en una demostración. Decidir cuándo se escribe
+el contenido real, y si hace falta una pantalla para administrarlo o basta con
+seguir sembrando por migración.
 
 ---
 
