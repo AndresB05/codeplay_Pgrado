@@ -74,7 +74,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | 6 | Crear el proyecto de Supabase y rellenar `.env` | ✅ | **usuario** |
 | 7 | Columna `profiles.role`, disparador y esquema aplicado | ✅ | `backend-supabase-real` |
 | 8 | Regenerar `database.types.ts` y arreglar sus consumidores | ✅ | *(unido al 7)* |
-| 9 | Migración de las 4 tablas de salones + RLS + grants | ⬜ | P1 |
+| 9 | Migración de las 4 tablas de salones + RLS + grants — **decidir `joined_at`, ver §3.1** | ⬜ | P1 |
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ⬜ | P3 |
 | 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» | ⬜ | — |
 | 12 | Login y registro reales con rol | ⬜ | P2 |
@@ -82,11 +82,11 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | 14 | ★ Consentimiento del acudiente y política de privacidad | ⬜ | — |
 | 15 | Google OAuth | ⬜ | P2 |
 | 16 | Persistir la asignación de misiones | ⬜ | P5 |
-| 17 | Reportes de habilidades sobre progreso real | ⬜ | P5 |
+| 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
 | 18 | ★ Notificaciones en tiempo real (Supabase Realtime) | ⬜ | — |
 | 19 | Invitaciones por correo reales y enlace canjeable | ⬜ | P5 |
 | 20 | Contrato de integración y pantalla de nivel con contenedor | ⬜ | P4 |
-| 21 | Escritura de progreso y XP desde el juego | ⬜ | P4 |
+| 21 | Escritura de progreso y XP desde el juego — **ver §3.2** | ⬜ | P4 |
 | 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye la tabla de catálogo | ⬜ | P4 |
 | 23 | Unity en `apps/game/`, Git LFS y build de WebGL | ⬜ | P4 |
 | 24 | Retirar la sesión de invitado | ⬜ | — |
