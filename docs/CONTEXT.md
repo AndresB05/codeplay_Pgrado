@@ -596,15 +596,14 @@ real:
 | Las dos vistas con la clave anónima | 401 en ambas |
 | Qué columnas trae el roster | Las siete previstas y ninguna más: sin correo, sin país, sin nombre de usuario |
 
-**Qué sigue sin verificar.** Dos cosas, y ninguna es de las vistas:
+**El cupo lleno, verificado desde la interfaz con los dos niños.** Salón de cupo
+1 con dos solicitudes pendientes: al aceptar la primera, los cupos libres pasan
+a 0, el botón «Aceptar» de la segunda queda deshabilitado con su `title`, y
+aparece el aviso de salón lleno. La solicitud sigue `pending`.
 
-- La carrera del `for update`: dos aceptaciones simultáneas sobre el mismo salón
-  no se reproducen a mano. El cupo está comprobado **funcionalmente**, no bajo
-  concurrencia.
-- El cupo lleno **desde la interfaz**: hace falta un segundo niño solicitando, y
-  `apps/web/.env` sólo trae credenciales de uno (`VITE_DEV_CHILD_*`). El caso
-  está cubierto por el test del store y por la comprobación de la tabla de
-  arriba (`23514`), pero no se ha recorrido con dos sesiones de niño.
+**Qué sigue sin verificar.** La carrera del `for update`: dos aceptaciones
+simultáneas sobre el mismo salón no se reproducen a mano. El cupo está
+comprobado **funcionalmente**, no bajo concurrencia.
 
 **Estado de la base de pruebas: limpia.** Los salones de prueba se borraron al
 terminar, y con ellos sus solicitudes y pertenencias —comprobado tras el paso
@@ -840,12 +839,30 @@ no puede contar alumnos—.
 
 Sigue en pie para lo que venga: ninguna vista habla con Supabase directamente.
 
-### 4.4 ESLint 8 sin soporte
+### 4.4 Un error de escritura no se le muestra a nadie
+
+`ClassroomsContext` expone `error` desde el paso 10 y **ninguna vista lo pinta**.
+Mientras los salones vivían en `localStorage` no había escritura que pudiera
+fallar; ahora sí, y el hueco se ve.
+
+Reproducido: salón lleno, la página del tutor cargada de antes —el caso de
+tenerla abierta en otro dispositivo, que es justo lo que este paso hizo
+posible—. Pulsar «Aceptar» llama a la RPC, recibe `23514 Classroom is full`, la
+solicitud sigue `pending` y **la pantalla no cambia en absoluto**. El botón
+parece roto.
+
+El camino normal sí está cubierto: con la página al día, el botón sale
+deshabilitado y con aviso, así que esto sólo asoma cuando la pantalla va por
+detrás de la base. Arreglarlo es pintar `error` en el detalle del salón y en el
+módulo del niño, y ampliar el requisito «Carga y error observables» de
+`store-salones` para que exija mostrarlo y no sólo exponerlo.
+
+### 4.5 ESLint 8 sin soporte
 
 `.eslintrc.cjs` usa la configuración heredada. Migrar a ESLint 9 con
 configuración plana es una tarea pendiente sin urgencia.
 
-### 4.5 Bundle de 583 kB
+### 4.6 Bundle de 583 kB
 
 `npm run build` avisa de que el chunk supera los 500 kB. Sin urgencia, pero
 cobrará importancia al embeber el juego. Se resuelve con `manualChunks` o
