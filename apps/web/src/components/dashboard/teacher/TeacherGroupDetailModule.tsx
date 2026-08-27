@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 import { StatCard } from '../shared/StatCard';
+import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { StudentRosterTable } from '../shared/StudentRosterTable';
 import { findClassGroup, getClassGroupStats } from './classroomsData';
 import { InviteByEmailPanel } from './InviteByEmailPanel';
@@ -27,7 +28,7 @@ interface TeacherGroupDetailModuleProps {
 
 export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModuleProps) => {
   const navigate = useNavigate();
-  const { groups, acceptRequest, deleteGroup, inviteByEmail, rejectRequest, removeStudent } =
+  const { groups, acceptRequest, deleteGroup, error, inviteByEmail, rejectRequest, removeStudent } =
     useClassrooms();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -75,6 +76,8 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
         <BackIcon />
         Mis salones
       </button>
+
+      <StoreErrorNotice error={error} />
 
       <section
         className="card relative overflow-hidden px-5 py-5"

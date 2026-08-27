@@ -6,6 +6,7 @@ import type { ClassGroup, CreateGroupInput } from '../../../types/classroom.type
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 import { StatCard } from '../shared/StatCard';
+import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { getClassGroupStats } from './classroomsData';
 import { CreateGroupForm } from './CreateGroupForm';
 import { PulseIcon, SeatIcon, StudentsIcon } from './TeacherIcons';
@@ -18,7 +19,7 @@ interface TeacherGroupsModuleProps {
 
 export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModuleProps) => {
   const navigate = useNavigate();
-  const { createGroup } = useClassrooms();
+  const { createGroup, error } = useClassrooms();
   const [creating, setCreating] = useState(false);
 
   const totalStudents = groups.reduce((total, group) => total + group.students.length, 0);
@@ -63,6 +64,10 @@ export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModule
           </button>
         ) : null}
       </section>
+
+      <div className="mt-5">
+        <StoreErrorNotice error={error} />
+      </div>
 
       {creating ? (
         <div className="mt-5">

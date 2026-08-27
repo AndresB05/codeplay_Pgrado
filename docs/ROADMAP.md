@@ -104,7 +104,7 @@ escrito en §2.1.
 | 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye el catálogo y retirar las estrellas. **Ver §3.2** | ⬜ | P4 |
 | 23 | Unity en `apps/game/`, Git LFS y build de WebGL | ⬜ | P4 |
 | 24 | Retirar la sesión de invitado | ⬜ | — |
-| 25 | ★ Responsive, accesibilidad y `ErrorBoundary` | ⬜ | — |
+| 25 | ★ Responsive, accesibilidad y `ErrorBoundary` — **medido**: con el viewport a 375 px la barra lateral se queda 262 px fijos y el panel del tutor entero cae a 73 px de ancho. Ver `CONTEXT.md` §4.4 | ⬜ | — |
 | 26 | Ilustraciones con Higgsfield | ⬜ | P6 |
 | 27 | ★ Despliegue y URL de demo | ⬜ | — |
 

@@ -2,6 +2,7 @@ import { useClassrooms } from '../../../hooks/useClassrooms';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 import { StatCard } from '../shared/StatCard';
+import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { StudentRosterTable } from '../shared/StudentRosterTable';
 import { getClassGroupStats } from '../teacher/classroomsData';
 import { MedalIcon, StudentsIcon } from '../teacher/TeacherIcons';
@@ -27,7 +28,7 @@ const HourglassIcon = () => (
  * en espera de respuesta del tutor, e inscrito (ve a sus compañeros).
  */
 export const StudentClassroomModule = () => {
-  const { groups, membership, currentGroup, loading, requestJoin, cancelJoinRequest } =
+  const { groups, membership, currentGroup, error, loading, requestJoin, cancelJoinRequest } =
     useClassrooms();
 
   /*
@@ -43,7 +44,17 @@ export const StudentClassroomModule = () => {
   }
 
   if (membership.status === 'none' || !currentGroup) {
-    return <StudentClassroomSearch groups={groups} onRequestJoin={requestJoin} />;
+    return (
+      <>
+        {error ? (
+          <div className="px-5 pt-5">
+            <StoreErrorNotice error={error} />
+          </div>
+        ) : null}
+
+        <StudentClassroomSearch groups={groups} onRequestJoin={requestJoin} />
+      </>
+    );
   }
 
   const theme = getGroupTheme(currentGroup.id);
@@ -51,6 +62,8 @@ export const StudentClassroomModule = () => {
   if (membership.status === 'pending') {
     return (
       <div className="px-5 py-5">
+        <StoreErrorNotice error={error} />
+
         <section className="card relative mx-auto mt-4 max-w-[680px] overflow-hidden px-8 py-10 text-center">
           <span className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full bg-sun-soft" />
           <span className="pointer-events-none absolute -bottom-12 -right-8 h-36 w-36 rounded-full bg-grape-soft" />
@@ -92,6 +105,8 @@ export const StudentClassroomModule = () => {
 
   return (
     <div className="px-5 py-5">
+      <StoreErrorNotice error={error} />
+
       <section
         className="card relative flex flex-wrap items-center gap-4 overflow-hidden px-5 py-5"
         style={{ background: theme.gradient }}

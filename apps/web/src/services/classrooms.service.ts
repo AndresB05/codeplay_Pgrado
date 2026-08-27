@@ -1,4 +1,4 @@
-import { createAppError } from '../errors/createAppError';
+import { AppError } from '../errors/AppError';
 import {
   buildInitials,
   generatePublicId,
@@ -60,6 +60,42 @@ const PUBLIC_ID_ATTEMPTS = 3;
 const UNIQUE_VIOLATION = '23505';
 
 const FALLBACK_STUDENT_NAME = 'Explorador';
+
+/*
+ * Los mensajes que levanta la base vienen en inglés —«Classroom is full»— y
+ * desde el paso 10 se le enseñan al tutor tal cual aparecerían. La interfaz es
+ * en español, así que el motivo se traduce aquí por código y el texto original
+ * viaja como causa para quien depure.
+ */
+const ERROR_MESSAGES: Record<string, string> = {
+  '23514': 'El salón está lleno. Quita a algún explorador o amplía los cupos.',
+  '23505': 'Ese explorador ya pertenece a un salón.',
+  '22023': 'Esa solicitud ya estaba resuelta.',
+  P0002: 'Esa solicitud ya no existe.',
+  '42501': 'No tienes permiso para hacer eso.',
+  '42P17': 'El servidor no pudo comprobar los permisos. Avisa a quien mantiene la plataforma.',
+};
+
+const readErrorCode = (error: unknown): string | undefined => {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const { code } = error as { code?: unknown };
+
+    return typeof code === 'string' ? code : undefined;
+  }
+
+  return undefined;
+};
+
+/** Error de salones con mensaje en español, listo para pintarse. */
+const classroomError = (error: unknown, fallbackMessage: string, fallbackCode: string): AppError => {
+  const code = readErrorCode(error);
+
+  return new AppError(
+    (code && ERROR_MESSAGES[code]) || fallbackMessage,
+    code ?? fallbackCode,
+    error
+  );
+};
 
 /*
  * Las columnas de una vista llegan como anulables aunque la consulta nunca
@@ -150,7 +186,7 @@ export const classroomsService: ClassroomsService = {
     if (directory.error) {
       return {
         data: null,
-        error: createAppError(
+        error: classroomError(
           directory.error,
           'No se pudieron cargar tus salones.',
           'classrooms_get_error'
@@ -181,7 +217,7 @@ export const classroomsService: ClassroomsService = {
     if (readError) {
       return {
         data: null,
-        error: createAppError(
+        error: classroomError(
           readError,
           'No se pudieron cargar los datos de tus salones.',
           'classrooms_get_error'
@@ -204,7 +240,7 @@ export const classroomsService: ClassroomsService = {
     if (profiles.error) {
       return {
         data: null,
-        error: createAppError(
+        error: classroomError(
           profiles.error,
           'No se pudieron cargar los nombres de los solicitantes.',
           'classrooms_get_error'
@@ -252,7 +288,7 @@ export const classroomsService: ClassroomsService = {
     if (readError) {
       return {
         data: null,
-        error: createAppError(
+        error: classroomError(
           readError,
           'No se pudieron cargar los salones.',
           'classrooms_get_error'
@@ -282,7 +318,7 @@ export const classroomsService: ClassroomsService = {
     if (roster.error) {
       return {
         data: null,
-        error: createAppError(
+        error: classroomError(
           roster.error,
           'No se pudieron cargar tus compañeros de salón.',
           'classrooms_get_error'
@@ -311,7 +347,7 @@ export const classroomsService: ClassroomsService = {
     if (taken.error) {
       return {
         data: null,
-        error: createAppError(taken.error, 'No se pudo crear el salón.', 'classroom_create_error'),
+        error: classroomError(taken.error, 'No se pudo crear el salón.', 'classroom_create_error'),
       };
     }
 
@@ -352,7 +388,7 @@ export const classroomsService: ClassroomsService = {
       if (created.error?.code !== UNIQUE_VIOLATION) {
         return {
           data: null,
-          error: createAppError(
+          error: classroomError(
             created.error,
             'No se pudo crear el salón.',
             'classroom_create_error'
@@ -363,7 +399,7 @@ export const classroomsService: ClassroomsService = {
 
     return {
       data: null,
-      error: createAppError(
+      error: classroomError(
         null,
         'No se pudo asignar un ID único al salón. Inténtalo de nuevo.',
         'classroom_public_id_error'
@@ -377,7 +413,7 @@ export const classroomsService: ClassroomsService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(error, 'No se pudo eliminar el salón.', 'classroom_delete_error'),
+        error: classroomError(error, 'No se pudo eliminar el salón.', 'classroom_delete_error'),
       };
     }
 
@@ -394,7 +430,7 @@ export const classroomsService: ClassroomsService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(error, 'No se pudo quitar al alumno.', 'membership_delete_error'),
+        error: classroomError(error, 'No se pudo quitar al alumno.', 'membership_delete_error'),
       };
     }
 
@@ -412,7 +448,7 @@ export const classroomsService: ClassroomsService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(
+        error: classroomError(
           error,
           'No se pudo aceptar la solicitud.',
           'join_request_accept_error'
@@ -432,7 +468,7 @@ export const classroomsService: ClassroomsService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(
+        error: classroomError(
           error,
           'No se pudo rechazar la solicitud.',
           'join_request_reject_error'
@@ -454,7 +490,7 @@ export const classroomsService: ClassroomsService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(error, 'No se pudo registrar la invitación.', 'invitation_error'),
+        error: classroomError(error, 'No se pudo registrar la invitación.', 'invitation_error'),
       };
     }
 
@@ -471,7 +507,7 @@ export const classroomsService: ClassroomsService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(
+        error: classroomError(
           error,
           'No se pudo enviar la solicitud.',
           'join_request_create_error'
@@ -496,7 +532,7 @@ export const classroomsService: ClassroomsService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(
+        error: classroomError(
           error,
           'No se pudo cancelar la solicitud.',
           'join_request_cancel_error'
@@ -513,7 +549,7 @@ export const classroomsService: ClassroomsService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(error, 'No se pudo salir del salón.', 'membership_delete_error'),
+        error: classroomError(error, 'No se pudo salir del salón.', 'membership_delete_error'),
       };
     }
 

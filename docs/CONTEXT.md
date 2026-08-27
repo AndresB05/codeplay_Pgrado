@@ -476,7 +476,8 @@ niño le llega al tutor desde otro dispositivo, no desde el mismo navegador.
 | Store de salones con API de acciones tipada, ahora asíncrona | ✅ | `context/ClassroomsContext.ts` + `ClassroomsProvider.tsx` |
 | Servicio de salones con la forma `{ data, error }` | ✅ | `services/classrooms.service.ts` |
 | Identidad del niño y del tutor tomada de la sesión | ✅ | `ClassroomsProvider.tsx` (se fue `CURRENT_STUDENT_ID`) |
-| Carga y error expuestos, para no confundir el vacío con la espera | ✅ | `loading` y `error` del contexto |
+| Carga declarada y error **mostrado** a quien hizo la acción | ✅ | `loading` y `error` del contexto + `shared/StoreErrorNotice.tsx` en las tres vistas que escriben |
+| Motivos de la base traducidos al español | ✅ | `ERROR_MESSAGES` en `services/classrooms.service.ts` |
 | Guarda de «un alumno, un salón» antes de escribir | ✅ | `requestJoin()` en `ClassroomsProvider.tsx` |
 | Acceso único desde componentes | ✅ | `hooks/useClassrooms.ts` |
 
@@ -505,6 +506,13 @@ niño le llega al tutor desde otro dispositivo, no desde el mismo navegador.
 - `ClassroomStudent` lleva `xp`, que llega del roster y **todavía no se pinta**:
   dónde se muestra el XP es del paso 21. Sin el campo, la columna de la vista
   moriría en el servicio y habría que volver a pasar el cable entero.
+- **El error se pinta donde se pulsó, y no sólo se expone.** El primer intento
+  dejaba el motivo en el contexto sin que ninguna vista lo mostrara: la pantalla
+  no cambiaba y el botón parecía roto. Lo montan las tres vistas que escriben.
+- **Los mensajes de la base vienen en inglés** («Classroom is full») y se le
+  enseñan al tutor tal cual, así que el servicio los traduce por código y
+  conserva el original como causa. Sin eso, la interfaz deja de estar en
+  español en el peor momento, que es cuando algo falla.
 - `ClassroomsProvider` acepta una prop `service` que **sólo usan los tests**.
   Es lo que deja la lista de dependencias del provider en un único archivo,
   `test/renderClassrooms.tsx`, en vez de repartirla por cada test.
@@ -839,23 +847,18 @@ no puede contar alumnos—.
 
 Sigue en pie para lo que venga: ninguna vista habla con Supabase directamente.
 
-### 4.4 Un error de escritura no se le muestra a nadie
+### 4.4 El panel del tutor no es responsive
 
-`ClassroomsContext` expone `error` desde el paso 10 y **ninguna vista lo pinta**.
-Mientras los salones vivían en `localStorage` no había escritura que pudiera
-fallar; ahora sí, y el hueco se ve.
+Descubierto al revisar el aviso de error en móvil. Con el viewport a 375 px, la
+barra lateral ocupa **262 px fijos** y `main` se queda en **113 px**: todas las
+secciones del panel —tarjetas de estadística, bandeja de solicitudes, tabla de
+seguimiento— miden 73 px de ancho. No es de una pantalla concreta; es la
+maquetación del panel entero, que nunca tuvo repliegue para pantallas
+estrechas.
 
-Reproducido: salón lleno, la página del tutor cargada de antes —el caso de
-tenerla abierta en otro dispositivo, que es justo lo que este paso hizo
-posible—. Pulsar «Aceptar» llama a la RPC, recibe `23514 Classroom is full`, la
-solicitud sigue `pending` y **la pantalla no cambia en absoluto**. El botón
-parece roto.
-
-El camino normal sí está cubierto: con la página al día, el botón sale
-deshabilitado y con aviso, así que esto sólo asoma cuando la pantalla va por
-detrás de la base. Arreglarlo es pintar `error` en el detalle del salón y en el
-módulo del niño, y ampliar el requisito «Carga y error observables» de
-`store-salones` para que exija mostrarlo y no sólo exponerlo.
+No lo introdujo el paso 10: se ve igual en todo lo que ya existía. Se anota
+aquí porque hasta ahora nadie lo había medido, y porque es trabajo del **paso
+25** (responsive, accesibilidad y `ErrorBoundary`).
 
 ### 4.5 ESLint 8 sin soporte
 
@@ -878,7 +881,7 @@ Comprobado el **26 de agosto de 2026** ejecutando los comandos:
 | --- | --- |
 | `npm run build` | ✅ Pasa. 157 módulos, 2,1 s. Sólo avisa del tamaño del chunk |
 | `npm run lint` | ✅ Pasa. Cero errores y cero warnings |
-| `npm run test:run` | ✅ Pasa. 51 tests en 2 archivos |
+| `npm run test:run` | ✅ Pasa. 53 tests en 2 archivos |
 | Panel del tutor y del niño con la sesión de invitado | ✅ Navegan sin errores en consola. Los mundos se pintan desde Supabase —«Selva Algorítmica», `0/3 NIVELES`—, no desde el respaldo local |
 | Flujo de salones de punta a punta contra la base real | ✅ Crear salón, buscar por ID público, solicitar, ver la solicitud con nombre, aceptar, ver compañeros, rechazar, reintentar y borrar en cascada |
 

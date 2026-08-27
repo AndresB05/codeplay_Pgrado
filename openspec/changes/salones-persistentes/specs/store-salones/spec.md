@@ -57,22 +57,40 @@ datos de ejemplo.
 - **WHEN** no hay usuario autenticado
 - **THEN** el contexto no expone ningún salón ni ninguna pertenencia
 
-### Requirement: Carga y error observables
+### Requirement: La espera se declara y el error se muestra
 
-El sistema SHALL exponer en el contexto si los salones se están cargando y el
-último error ocurrido, para que ninguna vista tome un estado a medio cargar por
-un estado vacío.
+El sistema SHALL exponer si los salones se están cargando, para que ninguna
+vista tome un estado a medio cargar por un estado vacío.
+
+Cuando una acción sobre salones falle, el sistema SHALL **mostrar el motivo en
+la pantalla desde la que se intentó**. No basta con dejarlo disponible en el
+estado: un error que ninguna vista pinta es, para quien pulsó el botón,
+indistinguible de un botón roto.
+
+El mensaje SHALL desaparecer en cuanto una acción posterior tenga éxito.
 
 #### Scenario: Todavía no han llegado los datos
 
 - **WHEN** la consulta de salones sigue en curso
-- **THEN** el contexto lo declara como carga en progreso
+- **THEN** se declara la carga en progreso
 - **AND** la vista no afirma que el salón no existe
 
-#### Scenario: La consulta falla
+#### Scenario: Una escritura falla
 
-- **WHEN** una lectura o una escritura de salones devuelve error
-- **THEN** el contexto lo expone en lugar de descartarlo en silencio
+- **WHEN** el tutor o el niño ejecuta una acción sobre salones y la base la rechaza
+- **THEN** la pantalla desde la que se intentó muestra el motivo del rechazo
+- **AND** el estado no cambia
+
+#### Scenario: La pantalla iba por detrás de la base
+
+- **WHEN** el tutor acepta una solicitud de un salón que entretanto se llenó
+- **THEN** se muestra que el salón está lleno
+- **AND** la solicitud sigue pendiente
+
+#### Scenario: La acción siguiente sale bien
+
+- **WHEN** una acción termina con éxito después de una fallida
+- **THEN** el mensaje de error deja de mostrarse
 
 ### Requirement: El store comprueba la pertenencia antes de pedir entrar
 

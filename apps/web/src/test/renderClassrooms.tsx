@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
-import { render, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { AuthContext } from '../context/AuthContext';
 import type { AuthContextValue } from '../context/AuthContext';
 import { ClassroomsProvider } from '../context/ClassroomsProvider';
@@ -57,9 +58,16 @@ interface RenderClassroomsOptions {
    * al tutor, que en la base es otra sesión y otra consulta.
    */
   server?: FakeClassrooms;
+  /**
+   * Vista real a montar dentro del store. Sin ella se monta sólo la sonda, que
+   * sirve para mirar el estado pero no puede decir si algo llegó a la pantalla.
+   */
+  ui?: ReactNode;
 }
 
 interface RenderClassroomsResult {
+  /** Lo que hay pintado, para los asertos que miran la pantalla y no el store. */
+  screen: typeof screen;
   /** Valor del contexto en el último render. Se llama en cada aserto. */
   store: () => ClassroomsContextValue;
   server: FakeClassrooms;
@@ -96,6 +104,7 @@ export const renderClassrooms = async (
       <AuthContext.Provider value={buildAuthValue(user)}>
         <ClassroomsProvider service={server.service}>
           <Probe />
+          {options.ui}
         </ClassroomsProvider>
       </AuthContext.Provider>
     </StrictMode>
@@ -115,5 +124,5 @@ export const renderClassrooms = async (
     }
   });
 
-  return { store, server };
+  return { store, server, screen };
 };

@@ -1,4 +1,5 @@
 import { act } from '@testing-library/react';
+import { StudentClassroomModule } from '../components/dashboard/student/StudentClassroomModule';
 import { describe, expect, it } from 'vitest';
 import { buildUser, renderClassrooms } from '../test/renderClassrooms';
 import type { FakeClassrooms } from '../test/fakeClassroomsService';
@@ -597,6 +598,55 @@ describe('Carga y error', () => {
 
     expect(store().error?.message).toBe('No se pudo enviar la solicitud.');
     expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
+  });
+
+  /**
+   * El aserto de arriba no basta como red, y se demostró: pasaba mientras la
+   * pantalla no pintaba nada y el botón parecía roto. Lo que hay que afirmar es
+   * que el motivo le llega a quien pulsó, no que esté disponible en el store.
+   */
+  it('muestra en la pantalla el motivo de una escritura fallida', async () => {
+    const { store, server, screen } = await renderClassrooms({
+      user: currentChild,
+      seed: seedTwoGroups,
+      ui: <StudentClassroomModule />,
+    });
+
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    server.failNextWrite('El salón está lleno.');
+
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('El salón está lleno.');
+  });
+
+  it('retira el mensaje en cuanto una acción posterior sale bien', async () => {
+    const { store, server, screen } = await renderClassrooms({
+      user: currentChild,
+      seed: seedTwoGroups,
+      ui: <StudentClassroomModule />,
+    });
+
+    server.failNextWrite('No se pudo enviar la solicitud.');
+
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
+
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
+
+    expect(store().membership).toEqual<StudentMembership>({
+      status: 'pending',
+      groupId: SALON_1A,
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
 
