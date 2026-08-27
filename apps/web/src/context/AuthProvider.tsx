@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { AuthContext } from './AuthContext';
-import type { AuthContextValue } from './AuthContext';
+import type { AuthContextValue, SignUpOutcome } from './AuthContext';
 import { authService } from '../services/auth.service';
-import { profileService } from '../services/profile.service';
+import { PROFILE_NOT_FOUND, profileService } from '../services/profile.service';
 import type { AppError } from '../errors/AppError';
 import type { User, UserRole } from '../types/user.types';
 import { supabase } from '../lib/supabase';
@@ -23,12 +23,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setError(null);
   }, []);
 
-  const syncSessionProfile = useCallback(async (nextSession: Session | null): Promise<void> => {
+  /** Devuelve si quedó un perfil cargado, que es lo único que habilita un panel. */
+  const syncSessionProfile = useCallback(async (nextSession: Session | null): Promise<boolean> => {
     setSession(nextSession);
 
     if (!nextSession?.user) {
       setUser(null);
-      return;
+      return false;
     }
 
     // El correo no está en `profiles`: vive en la sesión, que es su sitio.
@@ -40,10 +41,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (profileResult.error) {
       setUser(null);
       setError(profileResult.error);
-      return;
+
+      /*
+       * Sólo la ausencia de perfil cierra la sesión, porque esa sesión no puede
+       * hacer nada: sin perfil no hay rol, ninguna ruta con rol la admite y las
+       * políticas de RLS cuelgan del perfil. Dejarla viva creaba el estado
+       * «autenticado pero sin sitio a donde ir», que es como un tutor sin perfil
+       * acababa viendo el panel del niño.
+       *
+       * Cualquier otro fallo la respeta: un corte de red no dice nada sobre si
+       * la cuenta tiene perfil, y cerrarla echaría a un usuario legítimo. Se
+       * llama al servicio y no al `signOut` de aquí abajo, que empieza borrando
+       * el error que se acaba de guardar.
+       */
+      if (profileResult.error.code === PROFILE_NOT_FOUND) {
+        await authService.signOut();
+      }
+
+      return false;
     }
 
     setUser(profileResult.data);
+
+    return profileResult.data !== null;
   }, []);
 
   useEffect(() => {
@@ -91,15 +111,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         return false;
       }
 
-      await syncSessionProfile(result.data?.session ?? null);
+      const synced = await syncSessionProfile(result.data?.session ?? null);
       setLoading(false);
-      return true;
+      return synced;
     },
     [syncSessionProfile]
   );
 
   const signUp = useCallback(
-    async (email: string, password: string, fullName: string, role: UserRole): Promise<boolean> => {
+    async (
+      email: string,
+      password: string,
+      fullName: string,
+      role: UserRole
+    ): Promise<SignUpOutcome> => {
       setLoading(true);
       setError(null);
 
@@ -113,12 +138,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (result.error) {
         setError(result.error);
         setLoading(false);
-        return false;
+        return 'error';
       }
 
-      await syncSessionProfile(result.data?.session ?? null);
+      /*
+       * Sin sesión la cuenta se creó, pero hace falta confirmar el correo. Darlo
+       * por bueno y navegar al panel es lo que dejaba al usuario en `/login`: la
+       * guarda lo devolvía por no haber sesión y el registro parecía haber
+       * fallado cuando en realidad estaba hecho.
+       */
+      if (!result.data?.session) {
+        setLoading(false);
+        return 'confirmation-required';
+      }
+
+      const synced = await syncSessionProfile(result.data.session);
       setLoading(false);
-      return true;
+
+      return synced ? 'signed-in' : 'error';
     },
     [syncSessionProfile]
   );

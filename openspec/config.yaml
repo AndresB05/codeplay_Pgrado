@@ -7,16 +7,19 @@ context: |
   Es un proyecto de grado. Consta de tres piezas: un front-end en React, un
   backend en Supabase y un juego de Unity que se embeberá como build de WebGL.
 
-  ESTADO ACTUAL (verificado el 26-ago-2026)
+  ESTADO ACTUAL (verificado el 27-ago-2026)
   El esquema de Supabase está APLICADO en un proyecto real: tablas, RPC, RLS y
   el contenido inicial de mundos y niveles, incluidas las cuatro tablas de
   salones y las dos vistas de lectura de la 0015, todo verificado con sesiones
-  reales. Login real todavía no hay (paso 12), pero el botón «Sin login» ya
-  autentica de verdad contra Supabase con cuentas de prueba, y sólo cae en la
-  marca de invitado si no hay credenciales en apps/web/.env. LOS SALONES YA NO
-  VIVEN EN localStorage: desde el paso 10 el store lee y escribe contra la base,
-  con la identidad del usuario de la sesión. Lo siguiente es el login real.
-  `npm run build`, `npm run lint` y `npm run test:run` pasan (53 tests).
+  reales. LOS SALONES YA NO VIVEN EN localStorage: desde el paso 10 el store lee
+  y escribe contra la base, con la identidad del usuario de la sesión. EL LOGIN
+  Y EL REGISTRO YA SON REALES (paso 12): cada rol aterriza en su panel según el
+  perfil que devuelve el servidor, un registro que no abre sesión pide confirmar
+  el correo en vez de fallar mudo, y una sesión sin perfil no da acceso a ningún
+  panel. El botón «Sin login» sigue existiendo sólo en desarrollo y autentica de
+  verdad con las cuentas de prueba de apps/web/.env. Lo siguiente es recuperar y
+  cambiar contraseña (paso 13).
+  `npm run build`, `npm run lint` y `npm run test:run` pasan (61 tests).
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
@@ -73,6 +76,17 @@ context: |
     que se diagnostica mal.
   - Variables de entorno: config/env.ts valida con zod y LANZA al importarse.
     Sin VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY válidas la app no arranca.
+  - El destino tras autenticarse lo decide el rol del PERFIL, nunca el
+    formulario ni el botón pulsado, y lo resuelve un único hook,
+    hooks/useRoleHomeRedirect.ts, que usan Login, Signup y Navbar. No duplicar
+    esa lógica en una pantalla nueva.
+  - Sólo la ausencia de perfil (código PROFILE_NOT_FOUND de profile.service.ts)
+    cierra la sesión. Cualquier otro fallo al cargarlo la deja abierta: un corte
+    de red no dice nada sobre si la cuenta tiene perfil.
+  - PrivateRoute y PublicRoute se ajustan A LA VEZ. La primera manda a /login a
+    quien tenga sesión y no tenga rol; si la segunda apartara a todo el que tiene
+    sesión lo devolvería a getHomeRouteForRole(null), que es /dashboard/worlds, y
+    se cierra un bucle. Por eso PublicRoute exige sesión Y rol.
 
   COMANDOS (desde la raíz)
   npm run dev | build | lint | test | test:run | preview | format
@@ -83,9 +97,12 @@ context: |
   1. Base de datos real en Supabase: HECHO. El esquema entero está aplicado,
      salones incluidos.
   2. Mover el store de salones de localStorage a Supabase: HECHO (paso 10).
-  3. Auth y roles funcionales verificados en servidor: lo siguiente.
+  3. Auth y roles funcionales verificados en servidor: HECHO (paso 12). Fuera
+     quedan Google OAuth (paso 15, proveedor desactivado en el proyecto real) y
+     retirar la sesión de invitado (paso 24, después del juego).
   4. Apartado web de integración de los niveles del juego (el juego sigue en
-     desarrollo; aquí sólo entra el contenedor y el contrato de datos).
+     desarrollo; aquí sólo entra el contenedor y el contrato de datos): lo
+     siguiente, después de recuperar contraseña (paso 13).
   El apartado gráfico queda FUERA de este hito a propósito.
 
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO
@@ -107,6 +124,13 @@ context: |
     recursión que arregló la migración 0014.
   - No existe catálogo de logros: la tabla achievements registra los concedidos
     a cada niño, no los posibles. La sala de trofeos sólo lista lo conseguido.
+  - EL ROL DEL REGISTRO LO ELIGE EL NAVEGADOR y es una decisión tomada, no un
+    descuido: el disparador lo lee de los metadatos del alta, así que cualquiera
+    puede darse de alta como tutor con la clave anónima. Está acotado —un valor
+    que no sea child ni tutor se degrada a child sin abortar el alta— y cerrarlo
+    exige que el rol lo conceda el servidor por una vía que el navegador no
+    controle (código de institución canjeado por una RPC security definer). Se
+    queda así mientras no haya usuarios reales. Ver docs/CONTEXT.md §2.2.
   - Toda migración nueva debe traer sus políticas de RLS y sus grant: el
     proyecto se creó con RLS automática y sin exposición automática de tablas.
     Y revocar de public no basta: hay que revocar de anon aparte.

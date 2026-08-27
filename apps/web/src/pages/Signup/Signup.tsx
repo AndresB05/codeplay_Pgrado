@@ -12,6 +12,7 @@ import {
 } from '../../components/decor/JungleDecor';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
+import { useRoleHomeRedirect } from '../../hooks/useRoleHomeRedirect';
 import type { UserRole } from '../../types/user.types';
 
 type SignupStep = 'role' | 'form';
@@ -40,6 +41,7 @@ const GoogleMark = () => (
 export const Signup = () => {
   const navigate = useNavigate();
   const { clearError, error, loading, signInWithGoogle, signUp } = useAuth();
+  const { awaitingProfile, cancel, start } = useRoleHomeRedirect();
 
   const [step, setStep] = useState<SignupStep>('role');
   const [role, setRole] = useState<UserRole>('child');
@@ -49,12 +51,14 @@ export const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [pendingConfirmation, setPendingConfirmation] = useState(false);
 
   const displayedError = formError ?? error?.message ?? null;
 
   const handleRoleSelection = (selectedRole: UserRole): void => {
     clearError();
     setFormError(null);
+    setPendingConfirmation(false);
     setRole(selectedRole);
     setStep('form');
   };
@@ -63,6 +67,7 @@ export const Signup = () => {
     event.preventDefault();
     clearError();
     setFormError(null);
+    setPendingConfirmation(false);
 
     const parsedForm = signupSchema.safeParse({
       confirmPassword,
@@ -77,10 +82,18 @@ export const Signup = () => {
       return;
     }
 
-    const didSignUp = await signUp(email, password, fullName, role);
+    start();
 
-    if (didSignUp) {
-      navigate(ROUTES.DASHBOARD);
+    const outcome = await signUp(email, password, fullName, role);
+
+    if (outcome !== 'signed-in') {
+      cancel();
+    }
+
+    // La cuenta se creó pero el servidor no abrió sesión: no hay panel al que ir
+    // todavía, así que se queda aquí y se dice por qué.
+    if (outcome === 'confirmation-required') {
+      setPendingConfirmation(true);
     }
   };
 
@@ -183,6 +196,16 @@ export const Signup = () => {
                 </div>
               ) : null}
 
+              {pendingConfirmation ? (
+                <div
+                  role="status"
+                  className="mx-auto mt-6 max-w-[680px] rounded-[16px] border-2 border-mint-dark bg-mint-soft px-4 py-3 text-[15px] font-bold text-mint-dark"
+                >
+                  ¡Tu cuenta ya está creada! Revisa tu correo y confirma la dirección para poder
+                  entrar.
+                </div>
+              ) : null}
+
               <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px] lg:gap-10">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <SignupField
@@ -247,10 +270,10 @@ export const Signup = () => {
                   <div className="pt-4">
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || awaitingProfile}
                       className="btn btn-sun mx-auto block w-full max-w-[360px]"
                     >
-                      {loading ? 'Registrando...' : 'Registrarte'}
+                      {loading || awaitingProfile ? 'Registrando...' : 'Registrarte'}
                     </button>
                   </div>
                 </form>

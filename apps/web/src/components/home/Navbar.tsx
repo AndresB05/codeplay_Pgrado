@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { getHomeRouteForRole } from '../../context/auth.helpers';
 import { getDevCredentials, startGuestSession } from '../../context/guest.helpers';
 import { useAuth } from '../../hooks/useAuth';
+import { useRoleHomeRedirect } from '../../hooks/useRoleHomeRedirect';
 import type { UserRole } from '../../types/user.types';
 import { SectionContainer } from './shared';
 
@@ -29,23 +29,8 @@ const guestEntries: { role: UserRole; label: string; className: string }[] = [
 export const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { clearError, error, loading, signIn, user } = useAuth();
-  const [signingIn, setSigningIn] = useState(false);
-
-  /*
-   * El rol lo decide el perfil que devuelve el servidor, no el botón pulsado.
-   * Si la cuenta de prueba de tutor quedara con rol `child`, navegar por el
-   * botón llevaría a un panel que `PrivateRoute` rebotaría acto seguido; así
-   * el desajuste se ve en lugar de disimularse.
-   */
-  useEffect(() => {
-    if (!signingIn || !user) {
-      return;
-    }
-
-    setSigningIn(false);
-    navigate(getHomeRouteForRole(user.role));
-  }, [navigate, signingIn, user]);
+  const { clearError, error, loading, signIn } = useAuth();
+  const { awaitingProfile, cancel, start } = useRoleHomeRedirect();
 
   const handleGuestEntry = async (role: UserRole): Promise<void> => {
     const credentials = getDevCredentials(role);
@@ -59,7 +44,7 @@ export const Navbar = () => {
     }
 
     clearError();
-    setSigningIn(true);
+    start();
 
     /*
      * Un fallo NO cae en la sesión de invitado: entrar con una sesión simulada
@@ -69,7 +54,7 @@ export const Navbar = () => {
     const signedIn = await signIn(credentials.email, credentials.password);
 
     if (!signedIn) {
-      setSigningIn(false);
+      cancel();
     }
   };
 
@@ -140,7 +125,7 @@ export const Navbar = () => {
                   key={entry.role}
                   type="button"
                   onClick={() => void handleGuestEntry(entry.role)}
-                  disabled={signingIn || loading}
+                  disabled={awaitingProfile || loading}
                   className={`btn btn-sm ${entry.className} disabled:opacity-60`}
                 >
                   {entry.label}

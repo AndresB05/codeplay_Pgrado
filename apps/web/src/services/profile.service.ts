@@ -1,3 +1,4 @@
+import { AppError } from '../errors/AppError';
 import { createAppError } from '../errors/createAppError';
 import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
@@ -5,6 +6,13 @@ import type { Database } from '../types/database.types';
 import type { User, UserProfileUpdate } from '../types/user.types';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+
+/**
+ * Distingue «la fila no existe» de cualquier otro fallo al cargar el perfil.
+ * Quien reciba este código puede cerrar la sesión; con los demás no debe, que
+ * un corte de red no dice nada sobre si la cuenta tiene perfil.
+ */
+export const PROFILE_NOT_FOUND = 'profile_not_found';
 
 /**
  * El correo no está en `profiles`: vive en la capa de autenticación, así que
@@ -42,8 +50,21 @@ export const profileService = {
       };
     }
 
+    /*
+     * `maybeSingle()` sólo devuelve `null` sin error cuando la consulta terminó
+     * bien y la fila no existe, así que aquí no hay ambigüedad con un fallo de
+     * red. Devolver un vacío obligaba a cada consumidor a inventar qué
+     * significaba, y el de la sesión lo interpretaba como «sin rol», que es
+     * como un tutor sin perfil acababa viendo el panel del niño.
+     */
     if (!data) {
-      return { data: null, error: null };
+      return {
+        data: null,
+        error: new AppError(
+          'Esta cuenta no tiene perfil. Avisa a quien mantiene la plataforma.',
+          PROFILE_NOT_FOUND
+        ),
+      };
     }
 
     return { data: mapProfileRowToUser(data, email), error: null };

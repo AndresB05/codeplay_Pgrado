@@ -2,7 +2,7 @@
 
 > **Fuente de verdad del estado del proyecto.** Este archivo se mantiene
 > sincronizado entre sesiones de Claude Code y OpenSpec.
-> Última verificación contra el código: **26 de agosto de 2026**.
+> Última verificación contra el código: **27 de agosto de 2026**.
 
 ---
 
@@ -130,9 +130,12 @@ CodePlay es una plataforma web para enseñar pensamiento computacional a niños.
 Es un **proyecto de grado**. Consta de tres piezas: un front-end en React, un
 backend en Supabase y un juego de Unity que se embeberá como build de WebGL.
 
-**Punto de partida imprescindible:** hoy la aplicación funciona **sin backend
-conectado**. No hay login real. Todo el estado de salones vive en `localStorage`.
-Las pantallas son reales y navegables; los datos, no.
+**Punto de partida imprescindible:** el backend **está conectado**. El esquema
+vive en un proyecto real de Supabase, los salones dejaron de estar en
+`localStorage` en el paso 10, y desde el paso 12 el acceso y el registro son
+reales: cada rol entra al panel que le corresponde según el perfil que devuelve
+el servidor. Lo que queda por conectar es el progreso del niño, que llega con el
+juego. La sesión de invitado sobrevive **sólo en desarrollo** y sólo como atajo.
 
 ### 1.2 Stack
 
@@ -334,13 +337,46 @@ se muestra por salón.
 | Sesión de invitado, **sólo en desarrollo** (`import.meta.env.DEV`) | ✅ | `context/guest.helpers.ts` |
 | Acceso «Sin login» que **autentica de verdad** con cuentas de prueba | ✅ | `guest.helpers.ts` (`getDevCredentials`) + `components/home/Navbar.tsx` |
 | Salir cierra también la sesión de Supabase, por los cuatro caminos | ✅ | Las dos barras laterales y las dos pantallas de Ajustes |
-| Formularios de login y registro con validación zod | 🟡 | `pages/Login/`, `pages/Signup/`, `components/auth/*.schema.ts` |
-| Registro por pasos con selección de rol | 🟡 | `components/auth/steps/`, `SignupRoleCard.tsx` |
+| Formularios de login y registro con validación zod | ✅ | `pages/Login/`, `pages/Signup/`, `components/auth/*.schema.ts` |
+| Registro por pasos con selección de rol | ✅ | `components/auth/steps/`, `SignupRoleCard.tsx` |
 | Botón de acceso con Google | 🟡 | `components/auth/GoogleAuthButton.tsx` |
-| Sincronización sesión ↔ perfil de Supabase | 🟡 | `context/AuthProvider.tsx` |
+| Sincronización sesión ↔ perfil de Supabase | ✅ | `context/AuthProvider.tsx` |
+| **El destino tras entrar lo decide el rol del perfil**, en los tres sitios que autentican | ✅ | `hooks/useRoleHomeRedirect.ts` + `pages/Login/`, `pages/Signup/`, `components/home/Navbar.tsx` |
+| Un registro que no abre sesión pide confirmar el correo en vez de fallar mudo | ✅ | `context/AuthProvider.tsx` (`SignUpOutcome`) + `pages/Signup/Signup.tsx` |
+| Una sesión sin perfil no da acceso a ningún panel: se cierra y se dice por qué | ✅ | `services/profile.service.ts` (`PROFILE_NOT_FOUND`) + `AuthProvider.tsx` + `router/` |
 
 **Decisiones de diseño**
 
+- **EL ROL DEL REGISTRO LO ELIGE EL NAVEGADOR, y es una decisión tomada, no un
+  descuido.** `authService.signUp()` envía el rol en los metadatos del alta y el
+  disparador de la migración `202606030011` lo lee de ahí, así que cualquiera
+  puede llamar a `/auth/v1/signup` con la clave anónima —pública por diseño— y
+  darse de alta como `tutor`. Lo que sí está acotado: el disparador sólo acepta
+  `child` o `tutor` y degrada cualquier otra cosa a `child` sin abortar el alta
+  —comprobado enviando `role: "superadmin"`, el perfil sale `child`—, y el enum
+  `user_role` es la última defensa. Y un tutor falso no alcanza a un niño
+  cualquiera: el niño busca el salón por su identificador público y solicita
+  entrar, así que hace falta que un niño se ofrezca; lo que obtiene es su propio
+  salón y, de quien entre, nombre, avatar, XP y racha. **Cerrarlo cuesta**, de
+  menos a más: (1) revisión manual —todos se dan de alta `child` y el rol
+  `tutor` se concede desde el panel de Supabase, cero código—; (2) **código de
+  institución**, que es la opción proporcionada: tabla de códigos, RPC
+  `security definer` que asciende el perfil al canjearlo, un campo más en el
+  registro, y el disparador deja de leer el rol; (3) dominio de correo
+  institucional, que hoy no aplica porque no hay ninguno que poner en la lista.
+  **Decidido: se queda así mientras no haya usuarios reales, y la opción 2 es lo
+  que hay que implementar antes de que los haya.** Ver el `design.md` del cambio
+  `auth-real`.
+- **Sólo la ausencia de perfil cierra la sesión**, nunca otro fallo al cargarlo.
+  `profile.service.ts` distingue los dos con el código `PROFILE_NOT_FOUND`
+  porque `maybeSingle()` sólo devuelve `null` sin error cuando la fila de verdad
+  no existe. Colgar el cierre de la rama común de error echaría a un usuario
+  legítimo en un corte de red.
+- **Las dos guardas se ajustan a la vez o se produce un bucle.** `PrivateRoute`
+  manda a `/login` a quien tenga sesión y no tenga rol; si `PublicRoute`
+  apartara a todo el que tiene sesión, lo devolvería a
+  `getHomeRouteForRole(null)` —que es `/dashboard/worlds`, ruta de niño— y de ahí
+  otra vez a `/login`. Por eso `PublicRoute` exige sesión **y** rol.
 - `guest.helpers.ts` **centraliza** las claves de `localStorage` de la sesión de
   invitado; ningún componente las toca directamente.
 - La sesión de invitado se apaga sola fuera de desarrollo: `isGuestModeAvailable()`
@@ -701,24 +737,22 @@ El **apartado gráfico queda fuera de este hito a propósito** (P6): la
 herramienta ya está elegida, pero las ilustraciones no se abordan hasta que las
 funcionalidades estén completas.
 
-### P2 — `auth-real`: login, registro y roles verificados en servidor
+### P2 — `auth-real`: APLICADO
 
-**Descripción.** Conectar Supabase Auth de verdad: registro con rol, login,
-cierre de sesión y guardas de ruta apoyadas en el perfil real en vez de en la
-sesión de invitado.
+El login y el registro reales viven contra Supabase desde el 27-ago-2026, cambio
+`auth-real` (paso 12 del `ROADMAP.md`). Ver §2.2 para el estado y las decisiones,
+incluida la del rol elegido por el navegador.
 
-**Tareas**
+Comprobado contra la base real: un tutor registrado desde la interfaz sale con
+`role = 'tutor'` en `profiles` y aterriza en `/teacher/groups`; un alta por
+`curl` con `role: "superadmin"` en los metadatos crea el perfil con `child` y
+aterriza en `/dashboard/worlds`.
 
-1. Conectar los formularios de `pages/Login` y `pages/Signup` a `authService`.
-2. Pasar el rol elegido en el registro como metadato de usuario, para que el
-   trigger lo escriba en `profiles.role`.
-3. Dar de alta Google OAuth en el panel de Supabase y activar `signInWithGoogle()`.
-4. Degradar la sesión de invitado a atajo de desarrollo puro: `useActiveRole()`
-   y `PrivateRoute` deben funcionar sin ella.
-5. Verificar que `PrivateRoute` redirige correctamente con roles reales.
-
-**Dependencias.** Ninguna: la columna `role` ya existe y el disparador la
-rellena desde los metadatos del registro.
+De esta línea quedan dos cosas, y **ninguna es de este paso**: Google OAuth es el
+paso 15 —y el proveedor está desactivado en el proyecto real—, y retirar la
+sesión de invitado es el paso 24, que va después del juego por decisión del
+usuario. Lo que P2 pedía de ella —que `useActiveRole()` y `PrivateRoute`
+funcionen sin la sesión de invitado— ya se cumple.
 
 ### P3 — `salones-persistentes`: APLICADO
 
@@ -875,15 +909,17 @@ importaciones dinámicas por ruta.
 
 ## 5. Estado verificado
 
-Comprobado el **26 de agosto de 2026** ejecutando los comandos:
+Comprobado el **27 de agosto de 2026** ejecutando los comandos:
 
 | Comprobación | Resultado |
 | --- | --- |
-| `npm run build` | ✅ Pasa. 157 módulos, 2,1 s. Sólo avisa del tamaño del chunk |
+| `npm run build` | ✅ Pasa. 160 módulos, 3,7 s. Sólo avisa del tamaño del chunk |
 | `npm run lint` | ✅ Pasa. Cero errores y cero warnings |
-| `npm run test:run` | ✅ Pasa. 53 tests en 2 archivos |
+| `npm run test:run` | ✅ Pasa. 61 tests en 4 archivos |
 | Panel del tutor y del niño con la sesión de invitado | ✅ Navegan sin errores en consola. Los mundos se pintan desde Supabase —«Selva Algorítmica», `0/3 NIVELES`—, no desde el respaldo local |
 | Flujo de salones de punta a punta contra la base real | ✅ Crear salón, buscar por ID público, solicitar, ver la solicitud con nombre, aceptar, ver compañeros, rechazar, reintentar y borrar en cascada |
+| Registro real con rol, contra la base | ✅ Tutor registrado desde la interfaz: `profiles.role = 'tutor'` y aterriza en `/teacher/groups`. Alta por `curl` con `role: "superadmin"` en los metadatos: el alta no falla, el perfil sale `child` y aterriza en `/dashboard/worlds` |
+| Acceso real por rol, con las cuentas de `.env` | ✅ El tutor va a `/teacher/groups` y el niño a `/dashboard/worlds`, sin parpadeo de panel ajeno y sin errores en consola |
 
 **Cuidado al comprobar la pantalla de mundos:** `useWorlds()` arranca con la
 lista vacía, así que durante la carga se pinta el respaldo de `worldsData.ts`

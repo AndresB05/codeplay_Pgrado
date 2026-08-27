@@ -34,7 +34,17 @@ export const PrivateRoute = ({ children, role }: PrivateRouteProps) => {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
 
-  if (role && activeRole && activeRole !== role) {
+  /*
+   * Sin rol no se puede saber qué panel corresponde, así que dejar pasar
+   * equivale a elegir uno al azar: así era como un tutor sin perfil acababa
+   * viendo el panel del niño. `AuthProvider` ya cierra la sesión que no tiene
+   * perfil, de modo que esto es la red por debajo y no el camino habitual.
+   */
+  if (role && !activeRole) {
+    return <Navigate to={ROUTES.LOGIN} replace />;
+  }
+
+  if (role && activeRole !== role) {
     return <Navigate to={getHomeRouteForRole(activeRole)} replace />;
   }
 

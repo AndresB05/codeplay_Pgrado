@@ -47,7 +47,7 @@ Criterio de vía, según `CLAUDE.md`:
 
 ### 1.3 Antes de aprobar un `apply`
 
-Revisar la propuesta, no solo validarla. Cuatro comprobaciones que ya han
+Revisar la propuesta, no solo validarla. Cinco comprobaciones que ya han
 evitado problemas reales:
 
 1. Que el `.openspec.yaml` declare `skip_specs` **sólo** si de verdad no hay
@@ -91,7 +91,7 @@ escrito en §2.1.
 | 9 | Migración de las 4 tablas de salones + RLS + grants — **salió con una recursión de RLS, ver §2.1** | ✅ | `tablas-salones` + `arreglo-recursion-rls` |
 | 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» — **adelantado, ver §2.1** | ✅ | `usuarios-de-prueba` |
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ✅ | `salones-persistentes` |
-| 12 | Login y registro reales con rol | ⬜ | P2 |
+| 12 | Login y registro reales con rol | ✅ | `auth-real` |
 | 13 | Recuperar y cambiar contraseña | ⬜ | P2 |
 | 14 | ★ Consentimiento del acudiente y política de privacidad — **hereda dos decisiones ya tomadas**: el tutor ve el historial completo del niño (§3.1) y los compañeros de un salón se ven entre sí el nombre, el XP y la racha (§3.2) | ⬜ | — |
 | 15 | Google OAuth | ⬜ | P2 |

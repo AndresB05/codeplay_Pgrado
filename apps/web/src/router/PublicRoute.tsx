@@ -20,7 +20,13 @@ export const PublicRoute = ({ children }: PublicRouteProps) => {
     );
   }
 
-  if (isAuthenticated(session)) {
+  /*
+   * Aparta sólo a quien además tiene rol. Con sesión y sin rol, `PrivateRoute`
+   * manda a `/login`, y devolverlo aquí a `getHomeRouteForRole(null)` —que es
+   * `/dashboard/worlds`, una ruta de niño— cerraría un bucle entre las dos
+   * guardas. Se ajustan a la vez o ninguna.
+   */
+  if (isAuthenticated(session) && activeRole) {
     return <Navigate to={getHomeRouteForRole(activeRole)} replace />;
   }
 

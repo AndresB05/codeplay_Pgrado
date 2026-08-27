@@ -28,7 +28,7 @@ const buildAuthValue = (user: User | null): AuthContextValue => ({
   signIn: async () => false,
   signInWithGoogle: async () => false,
   signOut: async () => false,
-  signUp: async () => false,
+  signUp: async () => 'error' as const,
   user,
 });
 

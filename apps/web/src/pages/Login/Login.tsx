@@ -6,6 +6,7 @@ import { loginSchema } from '../../components/auth/LoginForm.schema';
 import { Canopy, MonsteraLeaf, Toucan } from '../../components/decor/JungleDecor';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
+import { useRoleHomeRedirect } from '../../hooks/useRoleHomeRedirect';
 
 const GoogleMark = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
@@ -31,6 +32,7 @@ const GoogleMark = () => (
 export const Login = () => {
   const navigate = useNavigate();
   const { clearError, error, loading, signIn, signInWithGoogle } = useAuth();
+  const { awaitingProfile, cancel, start } = useRoleHomeRedirect();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -49,10 +51,12 @@ export const Login = () => {
       return;
     }
 
+    start();
+
     const didSignIn = await signIn(email, password);
 
-    if (didSignIn) {
-      navigate(ROUTES.DASHBOARD);
+    if (!didSignIn) {
+      cancel();
     }
   };
 
@@ -170,8 +174,12 @@ export const Login = () => {
                   </div>
 
                   <div className="pt-3">
-                    <button type="submit" disabled={loading} className="btn btn-grape w-full">
-                      {loading ? 'Iniciando...' : 'Inicia sesión'}
+                    <button
+                      type="submit"
+                      disabled={loading || awaitingProfile}
+                      className="btn btn-grape w-full"
+                    >
+                      {loading || awaitingProfile ? 'Iniciando...' : 'Inicia sesión'}
                       <span aria-hidden="true">→</span>
                     </button>
                   </div>
