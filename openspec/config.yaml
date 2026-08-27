@@ -16,7 +16,7 @@ context: |
   marca de invitado si no hay credenciales en apps/web/.env. LOS SALONES YA NO
   VIVEN EN localStorage: desde el paso 10 el store lee y escribe contra la base,
   con la identidad del usuario de la sesión. Lo siguiente es el login real.
-  `npm run build`, `npm run lint` y `npm run test:run` pasan (51 tests).
+  `npm run build`, `npm run lint` y `npm run test:run` pasan (53 tests).
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
@@ -61,6 +61,10 @@ context: |
     del navegador, todo pasa por useClassrooms(). ClassroomsProvider fue el
     único archivo que cambió de raíz al conectar la base. No romper esa
     frontera.
+  - Cuando una accion sobre salones falle, el motivo se MUESTRA en la pantalla
+    desde la que se intento (shared/StoreErrorNotice.tsx), no basta con dejarlo
+    en el estado. Y los mensajes que levanta la base vienen en ingles: se
+    traducen por codigo en el servicio, que la interfaz es en español.
   - Nunca .single() sobre join_requests: el historial se acumula en filas y un
     niño que reintenta tiene varias. Ordenar por requested_at, limit(1) y
     maybeSingle().
