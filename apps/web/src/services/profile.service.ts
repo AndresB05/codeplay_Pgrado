@@ -54,7 +54,10 @@ export const profileService = {
    * que activa RLS revoca la escritura directa sobre `profiles` al rol
    * `authenticated`, de modo que `update_my_profile` es la única vía.
    */
-  async updateProfile(updates: UserProfileUpdate, email: string | null = null): ServiceResult<User> {
+  async updateProfile(
+    updates: UserProfileUpdate,
+    email: string | null = null
+  ): ServiceResult<User> {
     const { data, error } = await supabase
       .rpc('update_my_profile', {
         input_username: updates.username ?? undefined,

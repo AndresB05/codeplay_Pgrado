@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { AppError } from '../errors/AppError';
-import {
-  achievementsService,
-  type UnlockedAchievement,
-} from '../services/achievements.service';
+import { achievementsService, type UnlockedAchievement } from '../services/achievements.service';
 
 interface UseAchievementsReturn {
   achievements: UnlockedAchievement[];

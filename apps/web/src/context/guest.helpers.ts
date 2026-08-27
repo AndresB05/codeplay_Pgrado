@@ -71,9 +71,7 @@ export const getDevCredentials = (role: UserRole): DevCredentials | null => {
   }
 
   const email =
-    role === 'tutor'
-      ? import.meta.env.VITE_DEV_TUTOR_EMAIL
-      : import.meta.env.VITE_DEV_CHILD_EMAIL;
+    role === 'tutor' ? import.meta.env.VITE_DEV_TUTOR_EMAIL : import.meta.env.VITE_DEV_CHILD_EMAIL;
   const password =
     role === 'tutor'
       ? import.meta.env.VITE_DEV_TUTOR_PASSWORD

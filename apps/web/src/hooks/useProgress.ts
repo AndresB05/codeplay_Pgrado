@@ -57,7 +57,12 @@ export const useProgress = (userId: string | null): UseProgressReturn => {
     setLoading(true);
     setError(null);
 
-    const result = await progressService.upsertProgress(levelId, completionStatus, bestScore, stars);
+    const result = await progressService.upsertProgress(
+      levelId,
+      completionStatus,
+      bestScore,
+      stars
+    );
 
     if (result.error || !result.data) {
       setError(result.error);
