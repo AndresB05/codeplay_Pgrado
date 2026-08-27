@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  buildGroup,
   buildInitials,
-  buildSeedGroups,
-  buildStudentFromRequest,
   formatLastActivity,
   formatRelativeTime,
   generatePublicId,
@@ -12,7 +9,7 @@ import {
   matchesGroupSearch,
   pickAvatarTone,
 } from './classroomsData';
-import type { ClassGroup, ClassroomStudent, JoinRequest } from '../../../types/classroom.types';
+import type { ClassGroup, ClassroomStudent } from '../../../types/classroom.types';
 
 const buildTestStudent = (overrides: Partial<ClassroomStudent> = {}): ClassroomStudent => ({
   id: 's-test',
@@ -22,22 +19,29 @@ const buildTestStudent = (overrides: Partial<ClassroomStudent> = {}): ClassroomS
   currentWorld: 'Mundo 1',
   hoursSinceLastActivity: 3,
   streakDays: 4,
+  xp: 0,
   skills: { sequences: 50, loops: 50, conditionals: 50, debugging: 50, decomposition: 50 },
   ...overrides,
 });
 
-const buildTestGroup = (overrides: Partial<ClassGroup> = {}): ClassGroup => ({
-  id: 'g-test',
-  publicId: 'CP-TEST',
-  name: 'Salón de prueba',
-  gradeLabel: 'Primero',
-  teacherName: 'Sra. Tutora',
-  capacity: 10,
-  students: [],
-  pendingRequests: [],
-  invitations: [],
-  ...overrides,
-});
+const buildTestGroup = (overrides: Partial<ClassGroup> = {}): ClassGroup => {
+  const students = overrides.students ?? [];
+
+  return {
+    id: 'g-test',
+    publicId: 'CP-TEST',
+    name: 'Salón de prueba',
+    gradeLabel: 'Primero',
+    teacherName: 'Sra. Tutora',
+    capacity: 10,
+    /* Por defecto, el recuento del servidor coincide con los alumnos visibles. */
+    memberCount: students.length,
+    students,
+    pendingRequests: [],
+    invitations: [],
+    ...overrides,
+  };
+};
 
 describe('matchesGroupSearch', () => {
   const group = buildTestGroup({ name: 'Salón 1A', publicId: 'CP-1A24' });
@@ -86,9 +90,7 @@ describe('isExactIdSearch', () => {
 describe('generatePublicId', () => {
   it('genera un ID con formato CP-XXXX que no colisiona con los existentes', () => {
     const taken = ['CP-1A24', 'CP-2B24', 'CP-3C24'];
-    const existing = taken.map((publicId, index) =>
-      buildTestGroup({ id: `g${index}`, publicId })
-    );
+    const existing = taken.map((publicId, index) => buildTestGroup({ id: `g${index}`, publicId }));
 
     // Sin mockear Math.random: se comprueba la propiedad, no la implementación.
     for (let attempt = 0; attempt < 100; attempt += 1) {
@@ -122,92 +124,29 @@ describe('buildInitials', () => {
   });
 });
 
-describe('buildGroup', () => {
-  const input = {
-    name: '  Salón 3C  ',
-    gradeLabel: '  Tercero  ',
-    teacherName: '  Sra. Tutora  ',
-    capacity: 20,
-  };
-
-  it('recorta los textos y conserva el cupo', () => {
-    const created = buildGroup(input, []);
-
-    expect(created.name).toBe('Salón 3C');
-    expect(created.gradeLabel).toBe('Tercero');
-    expect(created.teacherName).toBe('Sra. Tutora');
-    expect(created.capacity).toBe(20);
-  });
-
-  it('arranca sin alumnos, sin solicitudes y sin invitaciones', () => {
-    const created = buildGroup(input, []);
-
-    expect(created.students).toEqual([]);
-    expect(created.pendingRequests).toEqual([]);
-    expect(created.invitations).toEqual([]);
-  });
-
-  it('genera un ID público que no colisiona con los salones existentes', () => {
-    const existing = buildSeedGroups();
-    const created = buildGroup(input, existing);
-
-    expect(created.publicId).toMatch(/^CP-[A-Z2-9]{4}$/);
-    expect(existing.map((group) => group.publicId)).not.toContain(created.publicId);
-  });
-});
-
-describe('buildStudentFromRequest', () => {
-  const request: JoinRequest = {
-    id: 'req-9',
-    studentId: 'p9',
-    studentName: 'Karla Nieto',
-    initials: 'KN',
-    avatarTone: 'bg-mint-soft text-mint-dark',
-    requestedAtIso: '2026-08-01T10:00:00.000Z',
-  };
-
-  it('traslada la identidad de la solicitud', () => {
-    const student = buildStudentFromRequest(request);
-
-    expect(student.id).toBe('p9');
-    expect(student.name).toBe('Karla Nieto');
-    expect(student.initials).toBe('KN');
-    expect(student.avatarTone).toBe('bg-mint-soft text-mint-dark');
-  });
-
-  it('arranca sin actividad y con las habilidades a cero', () => {
-    const student = buildStudentFromRequest(request);
-
-    expect(student.currentWorld).toBeNull();
-    expect(student.hoursSinceLastActivity).toBeNull();
-    expect(student.streakDays).toBeNull();
-    expect(student.skills).toEqual({
-      sequences: 0,
-      loops: 0,
-      conditionals: 0,
-      debugging: 0,
-      decomposition: 0,
-    });
-  });
-
-  it('no comparte el objeto de habilidades entre alumnos', () => {
-    const first = buildStudentFromRequest(request);
-    const second = buildStudentFromRequest(request);
-
-    first.skills.loops = 80;
-
-    expect(second.skills.loops).toBe(0);
-  });
-});
-
 describe('getClassGroupStats', () => {
   it('calcula el total, los cupos libres, los activos, el mundo frecuente y la mejor racha', () => {
     const group = buildTestGroup({
       capacity: 10,
       students: [
-        buildTestStudent({ id: 's1', currentWorld: 'Mundo 1', hoursSinceLastActivity: 3, streakDays: 5 }),
-        buildTestStudent({ id: 's2', currentWorld: 'Mundo 2', hoursSinceLastActivity: 30, streakDays: 12 }),
-        buildTestStudent({ id: 's3', currentWorld: 'Mundo 2', hoursSinceLastActivity: 24, streakDays: 2 }),
+        buildTestStudent({
+          id: 's1',
+          currentWorld: 'Mundo 1',
+          hoursSinceLastActivity: 3,
+          streakDays: 5,
+        }),
+        buildTestStudent({
+          id: 's2',
+          currentWorld: 'Mundo 2',
+          hoursSinceLastActivity: 30,
+          streakDays: 12,
+        }),
+        buildTestStudent({
+          id: 's3',
+          currentWorld: 'Mundo 2',
+          hoursSinceLastActivity: 24,
+          streakDays: 2,
+        }),
       ],
     });
 
@@ -314,9 +253,13 @@ describe('pickAvatarTone', () => {
   });
 
   it('devuelve un tono de la lista conocida', () => {
-    const tones = buildSeedGroups()
-      .flatMap((group) => group.students)
-      .map((student) => student.avatarTone);
+    const tones = [
+      'bg-[#EFE5FF] text-[#7C3AED]',
+      'bg-[#FFE8CC] text-[#C97A00]',
+      'bg-[#DCF5F2] text-[#0F948C]',
+      'bg-[#FFE1EC] text-[#C2185B]',
+      'bg-[#E4ECFF] text-[#3B5BDB]',
+    ];
 
     expect(tones).toContain(pickAvatarTone('s1'));
   });

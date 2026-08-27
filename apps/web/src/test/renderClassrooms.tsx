@@ -1,22 +1,23 @@
 import { StrictMode } from 'react';
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { AuthContext } from '../context/AuthContext';
 import type { AuthContextValue } from '../context/AuthContext';
 import { ClassroomsProvider } from '../context/ClassroomsProvider';
 import { useClassrooms } from '../hooks/useClassrooms';
+import { createFakeClassrooms } from './fakeClassroomsService';
+import type { FakeClassrooms } from './fakeClassroomsService';
 import type { ClassroomsContextValue } from '../context/ClassroomsContext';
 import type { User } from '../types/user.types';
 
 /**
- * Monta el store de salones con un contexto de auth falso.
+ * Monta el store de salones con un contexto de auth falso y un servidor de
+ * salones en memoria.
  *
- * Se usa el `AuthContext` real y no `vi.mock`: el contexto sólo importa tipos,
- * así que montarlo directamente deja la suite fuera de `lib/supabase.ts` y de
- * `config/env.ts`, que lanza al importarse sin variables de entorno. Montar el
- * `AuthProvider` de verdad arrastraría el cliente de Supabase a todos los tests.
- *
- * Este archivo es el único que conoce las dependencias del provider: si P3 las
- * cambia, se toca aquí y no en cada test.
+ * Se usa el `AuthContext` real y no `vi.mock`: el contexto sólo importa tipos.
+ * El servicio entra por la prop `service` del provider, que existe justamente
+ * para esto, de modo que ningún test necesita saber contra qué escribe el
+ * store. Este archivo sigue siendo el único que conoce esas dependencias: si
+ * cambian, se toca aquí y no en cada test.
  */
 const buildAuthValue = (user: User | null): AuthContextValue => ({
   clearError: () => undefined,
@@ -46,17 +47,42 @@ export const buildUser = (overrides: Partial<User> = {}): User => ({
   ...overrides,
 });
 
+interface RenderClassroomsOptions {
+  user?: User | null;
+  /** Se ejecuta antes del primer render, para sembrar el servidor falso. */
+  seed?: (server: FakeClassrooms) => void;
+  /**
+   * Servidor ya existente. Montar una segunda sesión sobre él es la forma de
+   * probar los flujos de dos partes: lo que el niño escribe tiene que llegarle
+   * al tutor, que en la base es otra sesión y otra consulta.
+   */
+  server?: FakeClassrooms;
+}
+
 interface RenderClassroomsResult {
   /** Valor del contexto en el último render. Se llama en cada aserto. */
   store: () => ClassroomsContextValue;
+  server: FakeClassrooms;
 }
 
 /**
  * Se renderiza bajo `StrictMode` a propósito: React invoca dos veces los
- * actualizadores de estado y ahí es donde aparecen los ids duplicados que el
- * provider evita calculando fuera de ellos.
+ * actualizadores de estado y los efectos, y ahí es donde aparecerían las
+ * escrituras duplicadas que el provider evita.
+ *
+ * Devuelve ya cargado: sin esperar a la primera consulta, todo aserto vería el
+ * estado vacío del primer render.
  */
-export const renderClassrooms = (user: User | null = null): RenderClassroomsResult => {
+export const renderClassrooms = async (
+  options: RenderClassroomsOptions = {}
+): Promise<RenderClassroomsResult> => {
+  const user = options.user === undefined ? buildUser() : options.user;
+  const server = options.server ?? createFakeClassrooms();
+
+  if (!options.server) {
+    options.seed?.(server);
+  }
+
   let latest: ClassroomsContextValue | null = null;
 
   const Probe = () => {
@@ -68,20 +94,26 @@ export const renderClassrooms = (user: User | null = null): RenderClassroomsResu
   render(
     <StrictMode>
       <AuthContext.Provider value={buildAuthValue(user)}>
-        <ClassroomsProvider>
+        <ClassroomsProvider service={server.service}>
           <Probe />
         </ClassroomsProvider>
       </AuthContext.Provider>
     </StrictMode>
   );
 
-  return {
-    store: () => {
-      if (!latest) {
-        throw new Error('El store todavía no se ha renderizado.');
-      }
+  const store = () => {
+    if (!latest) {
+      throw new Error('El store todavía no se ha renderizado.');
+    }
 
-      return latest;
-    },
+    return latest;
   };
+
+  await waitFor(() => {
+    if (store().loading) {
+      throw new Error('El store sigue cargando.');
+    }
+  });
+
+  return { store, server };
 };

@@ -15,9 +15,13 @@ export const TeacherDashboard = () => {
   const location = useLocation();
   const { groupId } = useParams();
   const { loading: authLoading, user } = useAuth();
-  const { groups } = useClassrooms();
+  const { groups, loading: classroomsLoading } = useClassrooms();
 
-  if (authLoading) {
+  /*
+   * Se espera también a los salones: con la lista todavía vacía, el detalle
+   * anunciaría que el salón no existe y el listado, que no hay ninguno.
+   */
+  if (authLoading || classroomsLoading) {
     return (
       <div className="jungle-surface flex min-h-screen items-center justify-center">
         <div className="h-14 w-14 animate-spin rounded-full border-[5px] border-line border-t-grape" />

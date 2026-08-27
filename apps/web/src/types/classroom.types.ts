@@ -17,6 +17,8 @@ export interface ClassroomStudent {
   hoursSinceLastActivity: number | null;
   /** Días consecutivos jugando. `null` si nunca ha entrado. */
   streakDays: number | null;
+  /** Experiencia acumulada. Vale 0 hasta que el juego escriba progreso. */
+  xp: number;
   /** Dominio de 0 a 100 por habilidad. */
   skills: Record<SkillKey, number>;
 }
@@ -53,6 +55,13 @@ export interface ClassGroup {
   teacherName: string;
   /** Cupos totales del salón. */
   capacity: number;
+  /**
+   * Alumnos inscritos, contados por el servidor. No siempre coincide con
+   * `students.length`: del salón ajeno, el niño conoce cuántos hay pero no
+   * quiénes son. Es el número que manda para saber si quedan cupos.
+   */
+  memberCount: number;
+  /** Alumnos que quien consulta puede ver. Vacío en un salón ajeno. */
   students: ClassroomStudent[];
   /** Niños que pidieron entrar y esperan respuesta. */
   pendingRequests: JoinRequest[];

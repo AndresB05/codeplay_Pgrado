@@ -35,8 +35,12 @@ export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModule
 
   const totalPending = groups.reduce((total, group) => total + group.pendingRequests.length, 0);
 
-  const handleCreate = (input: CreateGroupInput) => {
-    const created = createGroup(input);
+  const handleCreate = async (input: CreateGroupInput) => {
+    const created = await createGroup(input);
+
+    if (!created) {
+      return;
+    }
 
     setCreating(false);
     navigate(`${ROUTES.TEACHER_GROUPS}/${created.id}`);

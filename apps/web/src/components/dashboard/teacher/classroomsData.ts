@@ -2,123 +2,11 @@ import type {
   ClassGroup,
   ClassGroupStats,
   ClassroomStudent,
-  CreateGroupInput,
-  EmailInvitation,
-  JoinRequest,
   Mission,
   SkillKey,
   SkillReport,
   TeacherResource,
 } from '../../../types/classroom.types';
-
-/**
- * Datos de ejemplo del panel de tutor. Se reemplazarán por consultas a
- * Supabase cuando existan las tablas de salones y el login esté conectado.
- */
-type ClassGroupSeed = Omit<ClassGroup, 'pendingRequests' | 'invitations'>;
-
-const classGroupSeeds: ClassGroupSeed[] = [
-  {
-    id: 'salon-1a',
-    name: 'Salón 1A',
-    gradeLabel: 'Primero de primaria',
-    teacherName: 'Sr. Robot',
-    publicId: 'CP-1A24',
-    capacity: 30,
-    students: [
-      {
-        id: 's1',
-        name: 'Ana Torres',
-        initials: 'AT',
-        avatarTone: 'bg-[#EFE5FF] text-[#7C3AED]',
-        currentWorld: 'Mundo 1',
-        hoursSinceLastActivity: 12,
-        streakDays: 42,
-        skills: { sequences: 92, loops: 74, conditionals: 61, debugging: 55, decomposition: 68 },
-      },
-      {
-        id: 's2',
-        name: 'Bruno Díaz',
-        initials: 'BD',
-        avatarTone: 'bg-[#FFE8CC] text-[#C97A00]',
-        currentWorld: 'Mundo 3',
-        hoursSinceLastActivity: 48,
-        streakDays: 15,
-        skills: { sequences: 88, loops: 81, conditionals: 77, debugging: 49, decomposition: 72 },
-      },
-      {
-        id: 's3',
-        name: 'Camila Ruiz',
-        initials: 'CR',
-        avatarTone: 'bg-[#DCF5F2] text-[#0F948C]',
-        currentWorld: 'Mundo 2',
-        hoursSinceLastActivity: 3,
-        streakDays: 27,
-        skills: { sequences: 95, loops: 69, conditionals: 58, debugging: 63, decomposition: 60 },
-      },
-      {
-        id: 's4',
-        name: 'Daniel Peña',
-        initials: 'DP',
-        avatarTone: 'bg-[#FFE1EC] text-[#C2185B]',
-        currentWorld: 'Mundo 1',
-        hoursSinceLastActivity: 96,
-        streakDays: 4,
-        skills: { sequences: 64, loops: 41, conditionals: 33, debugging: 28, decomposition: 39 },
-      },
-      {
-        id: 's5',
-        name: 'Elena Mora',
-        initials: 'EM',
-        avatarTone: 'bg-[#F5F1FB] text-[#B8AFC8]',
-        currentWorld: null,
-        hoursSinceLastActivity: null,
-        streakDays: null,
-        skills: { sequences: 0, loops: 0, conditionals: 0, debugging: 0, decomposition: 0 },
-      },
-    ],
-  },
-  {
-    id: 'salon-2b',
-    name: 'Salón 2B',
-    gradeLabel: 'Segundo de primaria',
-    teacherName: 'Sr. Robot',
-    publicId: 'CP-2B24',
-    capacity: 25,
-    students: [
-      {
-        id: 's6',
-        name: 'Felipe Arias',
-        initials: 'FA',
-        avatarTone: 'bg-[#E4ECFF] text-[#3B5BDB]',
-        currentWorld: 'Mundo 4',
-        hoursSinceLastActivity: 6,
-        streakDays: 63,
-        skills: { sequences: 98, loops: 93, conditionals: 87, debugging: 79, decomposition: 84 },
-      },
-      {
-        id: 's7',
-        name: 'Gabriela Ossa',
-        initials: 'GO',
-        avatarTone: 'bg-[#EFE5FF] text-[#7C3AED]',
-        currentWorld: 'Mundo 2',
-        hoursSinceLastActivity: 30,
-        streakDays: 9,
-        skills: { sequences: 81, loops: 58, conditionals: 44, debugging: 37, decomposition: 51 },
-      },
-      {
-        id: 's8',
-        name: 'Hugo Salas',
-        initials: 'HS',
-        avatarTone: 'bg-[#F5F1FB] text-[#B8AFC8]',
-        currentWorld: null,
-        hoursSinceLastActivity: null,
-        streakDays: null,
-        skills: { sequences: 0, loops: 0, conditionals: 0, debugging: 0, decomposition: 0 },
-      },
-    ],
-  },
-];
 
 export const findClassGroup = (
   groups: ClassGroup[],
@@ -186,9 +74,14 @@ export const getClassGroupStats = (group: ClassGroup): ClassGroupStats => {
     0
   );
 
+  /*
+   * El recuento manda sobre la lista: del salón ajeno el niño sabe cuántos hay
+   * dentro, pero no quiénes son, así que `students` viene vacío y contarlo
+   * daría siempre cero cupos ocupados.
+   */
   return {
-    totalStudents: group.students.length,
-    freeSeats: Math.max(group.capacity - group.students.length, 0),
+    totalStudents: group.memberCount,
+    freeSeats: Math.max(group.capacity - group.memberCount, 0),
     activeToday,
     averageWorldLabel: getMostFrequentWorld(group.students),
     bestStreak,
@@ -341,60 +234,6 @@ export const teacherResources: TeacherResource[] = [
   },
 ];
 
-const hoursAgoIso = (hours: number): string =>
-  new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
-
-/** Solicitudes de ingreso de ejemplo, para que el tutor vea la bandeja con algo. */
-const seedPendingRequests: Record<string, JoinRequest[]> = {
-  'salon-1a': [
-    {
-      id: 'req-1',
-      studentId: 'p1',
-      studentName: 'Isabela Cano',
-      initials: 'IC',
-      avatarTone: 'bg-[#E4ECFF] text-[#3B5BDB]',
-      requestedAtIso: hoursAgoIso(5),
-    },
-    {
-      id: 'req-2',
-      studentId: 'p2',
-      studentName: 'Joaquín Vega',
-      initials: 'JV',
-      avatarTone: 'bg-[#FFE8CC] text-[#C97A00]',
-      requestedAtIso: hoursAgoIso(29),
-    },
-  ],
-  'salon-2b': [
-    {
-      id: 'req-3',
-      studentId: 'p3',
-      studentName: 'Karla Nieto',
-      initials: 'KN',
-      avatarTone: 'bg-[#DCF5F2] text-[#0F948C]',
-      requestedAtIso: hoursAgoIso(2),
-    },
-  ],
-};
-
-const seedInvitations: Record<string, EmailInvitation[]> = {
-  'salon-1a': [
-    {
-      id: 'inv-1',
-      email: 'familia.torres@correo.com',
-      sentAtIso: hoursAgoIso(50),
-      status: 'pending',
-    },
-  ],
-};
-
-/** Estado inicial del store la primera vez que se abre la aplicación. */
-export const buildSeedGroups = (): ClassGroup[] =>
-  classGroupSeeds.map((seed) => ({
-    ...seed,
-    pendingRequests: seedPendingRequests[seed.id] ?? [],
-    invitations: seedInvitations[seed.id] ?? [],
-  }));
-
 /** "hace 3 horas", "hace 2 días", a partir de una fecha ISO. */
 export const formatRelativeTime = (iso: string): string => {
   const elapsedMs = Date.now() - new Date(iso).getTime();
@@ -458,26 +297,6 @@ export const buildInitials = (name: string): string => {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 };
 
-const EMPTY_SKILLS: Record<SkillKey, number> = {
-  sequences: 0,
-  loops: 0,
-  conditionals: 0,
-  debugging: 0,
-  decomposition: 0,
-};
-
-/** Niño recién aceptado: sin actividad todavía. */
-export const buildStudentFromRequest = (request: JoinRequest): ClassroomStudent => ({
-  id: request.studentId,
-  name: request.studentName,
-  initials: request.initials,
-  avatarTone: request.avatarTone,
-  currentWorld: null,
-  hoursSinceLastActivity: null,
-  streakDays: null,
-  skills: { ...EMPTY_SKILLS },
-});
-
 const randomSuffix = (length: number): string => {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -487,7 +306,7 @@ const randomSuffix = (length: number): string => {
 };
 
 /** ID público legible y único dentro de los salones existentes. */
-export const generatePublicId = (existingGroups: ClassGroup[]): string => {
+export const generatePublicId = (existingGroups: Pick<ClassGroup, 'publicId'>[]): string => {
   const taken = new Set(existingGroups.map((group) => group.publicId));
 
   let candidate = `CP-${randomSuffix(4)}`;
@@ -498,15 +317,3 @@ export const generatePublicId = (existingGroups: ClassGroup[]): string => {
 
   return candidate;
 };
-
-export const buildGroup = (input: CreateGroupInput, existingGroups: ClassGroup[]): ClassGroup => ({
-  id: `group-${Date.now().toString(36)}-${randomSuffix(3).toLowerCase()}`,
-  publicId: generatePublicId(existingGroups),
-  name: input.name.trim(),
-  gradeLabel: input.gradeLabel.trim(),
-  teacherName: input.teacherName.trim(),
-  capacity: input.capacity,
-  students: [],
-  pendingRequests: [],
-  invitations: [],
-});

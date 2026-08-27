@@ -90,10 +90,10 @@ escrito en §2.1.
 | 8 | Regenerar `database.types.ts` y arreglar sus consumidores | ✅ | *(unido al 7)* |
 | 9 | Migración de las 4 tablas de salones + RLS + grants — **salió con una recursión de RLS, ver §2.1** | ✅ | `tablas-salones` + `arreglo-recursion-rls` |
 | 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» — **adelantado, ver §2.1** | ✅ | `usuarios-de-prueba` |
-| 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ⬜ | P3 |
+| 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ✅ | `salones-persistentes` |
 | 12 | Login y registro reales con rol | ⬜ | P2 |
 | 13 | Recuperar y cambiar contraseña | ⬜ | P2 |
-| 14 | ★ Consentimiento del acudiente y política de privacidad | ⬜ | — |
+| 14 | ★ Consentimiento del acudiente y política de privacidad — **hereda dos decisiones ya tomadas**: el tutor ve el historial completo del niño (§3.1) y los compañeros de un salón se ven entre sí el nombre, el XP y la racha (§3.2) | ⬜ | — |
 | 15 | Google OAuth | ⬜ | P2 |
 | 16 | Persistir la asignación de misiones | ⬜ | P5 |
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
@@ -189,13 +189,13 @@ perderse:
 
 | Hallazgo | Dónde se resuelve |
 | --- | --- |
-| El invariante «un alumno, un salón» **ya vive en el modelo** desde el paso 9 —restricción, índice parcial y política—. Lo que falta es que el store deje de contradecirlo: `requestJoin()` sigue sin comprobar la pertenencia actual y ahora fallaría contra la base en vez de sobrescribir en silencio | Paso 10 — tarea 5 de P3 en `CONTEXT.md` |
+| El invariante «un alumno, un salón» **ya vive en el modelo** desde el paso 9 —restricción, índice parcial y política—, y desde el paso 10 el store tampoco lo contradice: `requestJoin()` comprueba la pertenencia y la solicitud pendiente antes de escribir | Cerrado en el paso 10 |
 | `levels` guarda `starter_code`, `validation_rules` y `programming_language`: el esquema se diseñó para un editor de código en el navegador, no para Unity | Paso 20 |
 | No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones. La sala de trofeos sólo puede listar lo conseguido, y el requisito de `contenido-mundos` se ajustó a eso | Paso 22 |
 | **El progreso no sabe nada de salones**, así que al aceptar a un alumno el tutor pasará a ver *todo* su historial, incluido el anterior al ingreso. Hoy nadie lo ha decidido: se dará por accidente | Paso 17, y ver §3.1 |
 | **El XP casi no tiene superficie en la interfaz.** Existe en la base (`profiles.total_xp`, `levels.xp_reward`, la vista `leaderboard_weekly`) pero sólo se muestra en Ajustes | Paso 21, y ver §3.2 |
 | **PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió. No se ha profundizado en qué envía el juego, en qué formato ni con qué garantía. Decisión previa al paso 20, no un paso nuevo: resolver con `/opsx:explore` | Antes del paso 20, ver §3.2 |
-| **El historial de solicitudes se acumula en filas**: un mismo par `(student_id, group_id)` puede tener una resuelta y una pendiente nueva, porque volver a pedir entrar inserta otra fila. Hay que ordenar por `requested_at` y quedarse con la última — un `.single()` de supabase-js revienta con `PGRST116` en cuanto un niño reintenta | Paso 10 |
+| **El historial de solicitudes se acumula en filas**: un mismo par `(student_id, group_id)` puede tener una resuelta y una pendiente nueva. Resuelto ordenando por `requested_at` y quedándose con la última, con `maybeSingle()` y nunca `single()`. **Comprobado con el caso real**: niño rechazado que vuelve a pedir entrar, dos filas, la pantalla lee «En espera» | Cerrado en el paso 10 |
 | **Las políticas de salones están probadas con sesión real**, las once comprobaciones que lista `CONTEXT.md` §2.7, casos negativos incluidos. Lo único que queda fuera es la **carrera** del `for update`: el cupo se probó funcionalmente, no bajo concurrencia | Cerrado en el paso 11 |
 | **A la migración 0009 le falta `revoke ... from anon`**, que la 0013 sí trae: sólo revoca de `public`, y eso no retira lo concedido directamente a un rol. **No hay fuga, está medido:** consultadas con la clave anónima, `profiles`, `user_progress`, `level_attempts` y `achievements` devuelven 401 con código `42501` —permiso denegado a nivel de `grant`, no un vacío por RLS—, y `worlds` y `levels` devuelven 200, que es justo lo que sus políticas `to anon` quieren. Este proyecto no tiene privilegios por defecto para `anon` en el esquema `public`, así que el `revoke` que falta es defensa en profundidad, no un agujero. **Decidido: se anota, no se migra.** Si alguna vez se toca, que sea sabiendo esto y no creyendo que hay algo abierto | Ninguno: queda anotado a propósito |
 | Cuatro carpetas de componentes **sin ningún consumidor**: `WelcomeBanner`, `WorldCard`, `SidebarPlayerCard` y `LeaderBoard`. Son restos del panel anterior al rediseño | Paso 21 o limpieza aparte |
@@ -330,12 +330,29 @@ concede —completar un mundo, encadenar días seguidos, resolver sin fallar— 
 XP que otorga. Eso es el catálogo del paso 22, y es diseño de producto: no se
 deduce del esquema.
 
-**El ranking sigue sin decidir.** `leaderboard_weekly` clasifica a los niños
-entre sí, pero que la vista exista no obliga a mostrarla. Un ranking público de
-menores desmotiva a los que van últimos, que son los que más necesitan seguir.
-Para un proyecto de grado sobre enseñanza conviene decidirlo y justificarlo en la
-memoria. Alternativas más amables: ranking sólo dentro del salón, mostrar las
-posiciones cercanas a la propia, o convertirlo en meta colectiva del salón.
+**El ranking: media decisión tomada en el paso 10.** Es del usuario, y es que
+**los niños se comparen dentro de su salón**, como motivación. Eso es
+exactamente la alternativa que este apartado listaba como amable frente al
+ranking público de menores, y ya no es hipotética: la vista `classroom_roster`
+de la migración 0015 expone a cada compañero con su **nombre, avatar, XP y
+racha**, y sólo a quien pertenece a ese salón o lo tutela. Comparar dentro del
+salón es, a partir de ahí, cuestión de pintarlo.
+
+Lo que **sigue sin decidir** son las dos preguntas que quedan:
+
+1. Si además se muestra `leaderboard_weekly`, que clasifica a los niños de toda
+   la plataforma entre sí. Que la vista exista no obliga a mostrarla, y el
+   argumento original sigue en pie: un ranking público de menores desmotiva a
+   los que van últimos, que son los que más necesitan seguir. Para un proyecto
+   de grado sobre enseñanza conviene decidirlo y justificarlo en la memoria.
+2. Dónde se pinta el XP dentro del salón —columna en la tabla de compañeros,
+   cabecera, o el banner que hay que rehacer—. Hoy la tabla del salón no muestra
+   XP: el dato llega al store y no se pinta. Es del paso 21.
+
+Y arrastra una arista de privacidad para el **paso 14**: comparar dentro del
+salón significa que un menor ve el nombre completo, el XP y la racha de otro.
+Comparar y publicar la identidad de un menor son decisiones distintas, y aquí
+sólo está tomada la primera.
 
 ### 3.3 El contenido sembrado es mínimo, y dos pantallas se contradicen
 

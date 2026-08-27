@@ -27,7 +27,20 @@ const HourglassIcon = () => (
  * en espera de respuesta del tutor, e inscrito (ve a sus compañeros).
  */
 export const StudentClassroomModule = () => {
-  const { groups, membership, currentGroup, requestJoin, cancelJoinRequest } = useClassrooms();
+  const { groups, membership, currentGroup, loading, requestJoin, cancelJoinRequest } =
+    useClassrooms();
+
+  /*
+   * Mientras se consulta, la pertenencia todavía es `none`: pintar el buscador
+   * sería decirle que no tiene salón a un niño que sí lo tiene.
+   */
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-14 w-14 animate-spin rounded-full border-[5px] border-line border-t-grape" />
+      </div>
+    );
+  }
 
   if (membership.status === 'none' || !currentGroup) {
     return <StudentClassroomSearch groups={groups} onRequestJoin={requestJoin} />;

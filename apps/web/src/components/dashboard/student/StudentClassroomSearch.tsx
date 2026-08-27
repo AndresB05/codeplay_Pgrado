@@ -111,7 +111,7 @@ export const StudentClassroomSearch = ({ groups, onRequestJoin }: StudentClassro
         ) : (
           <div className="mt-4 grid grid-cols-1 gap-6 xl:grid-cols-2">
             {results.map((group) => {
-              const freeSeats = Math.max(group.capacity - group.students.length, 0);
+              const freeSeats = Math.max(group.capacity - group.memberCount, 0);
               const isFull = freeSeats === 0;
               const theme = getGroupTheme(group.id);
 
@@ -145,7 +145,7 @@ export const StudentClassroomSearch = ({ groups, onRequestJoin }: StudentClassro
                     <div className="mt-3">
                       <div className="flex items-center justify-between text-[14px] font-bold text-ink-soft">
                         <span>
-                          {group.students.length} de {group.capacity} cupos
+                          {group.memberCount} de {group.capacity} cupos
                         </span>
                         <span>{freeSeats} libres</span>
                       </div>
@@ -154,7 +154,7 @@ export const StudentClassroomSearch = ({ groups, onRequestJoin }: StudentClassro
                         <div
                           className="h-full rounded-full"
                           style={{
-                            width: `${Math.min((group.students.length / group.capacity) * 100, 100)}%`,
+                            width: `${Math.min((group.memberCount / group.capacity) * 100, 100)}%`,
                             background: theme.color,
                           }}
                         />

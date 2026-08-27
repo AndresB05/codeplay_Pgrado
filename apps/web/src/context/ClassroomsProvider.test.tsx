@@ -1,13 +1,35 @@
 import { act } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { buildSeedGroups } from '../components/dashboard/teacher/classroomsData';
 import { buildUser, renderClassrooms } from '../test/renderClassrooms';
+import type { FakeClassrooms } from '../test/fakeClassroomsService';
 import type { ClassroomsContextValue } from './ClassroomsContext';
 import type { ClassGroup, StudentMembership } from '../types/classroom.types';
 
 const SALON_1A = 'salon-1a';
 const SALON_2B = 'salon-2b';
-const CURRENT_STUDENT_ID = 'guest-child';
+const CURRENT_STUDENT_ID = 'nino-de-la-sesion';
+const OTHER_STUDENT_ID = 'otro-nino';
+const TUTOR_ID = 'tutor-de-prueba';
+
+const currentChild = buildUser({ id: CURRENT_STUDENT_ID, fullName: 'Nina Prueba' });
+const currentTutor = buildUser({ id: TUTOR_ID, fullName: 'Sra. Tutora', role: 'tutor' });
+
+/** Dos salones y un solicitante ajeno: el escenario mínimo de los flujos. */
+const seedTwoGroups = (server: FakeClassrooms): void => {
+  server.seedGroup({ id: SALON_1A, name: 'Salón 1A' });
+  server.seedGroup({ id: SALON_2B, name: 'Salón 2B' });
+  server.seedProfile(CURRENT_STUDENT_ID, 'Nina Prueba');
+  server.seedProfile(OTHER_STUDENT_ID, 'Joaquín Vega');
+  server.seedRequest(SALON_1A, OTHER_STUDENT_ID);
+};
+
+/**
+ * Niño y tutor son dos sesiones distintas contra el mismo servidor. Montar la
+ * otra es lo que comprueba que el estado viaja de una a otra, que es el motivo
+ * entero de sacar los salones de `localStorage`.
+ */
+const mountChild = (server: FakeClassrooms) => renderClassrooms({ user: currentChild, server });
+const mountTutor = (server: FakeClassrooms) => renderClassrooms({ user: currentTutor, server });
 
 const findGroup = (store: ClassroomsContextValue, groupId: string): ClassGroup => {
   const group = store.groups.find((item) => item.id === groupId);
@@ -19,62 +41,61 @@ const findGroup = (store: ClassroomsContextValue, groupId: string): ClassGroup =
   return group;
 };
 
-/** Id de la solicitud que el niño de la sesión tiene abierta en ese salón. */
-const ownRequestId = (store: ClassroomsContextValue, groupId: string): string => {
+/** Id de la solicitud que un alumno tiene abierta en ese salón. */
+const requestIdOf = (store: ClassroomsContextValue, groupId: string, studentId: string): string => {
   const request = findGroup(store, groupId).pendingRequests.find(
-    (item) => item.studentId === CURRENT_STUDENT_ID
+    (item) => item.studentId === studentId
   );
 
   if (!request) {
-    throw new Error(`El alumno no tiene solicitud en ${groupId}.`);
+    throw new Error(`El alumno ${studentId} no tiene solicitud en ${groupId}.`);
   }
 
   return request.id;
 };
 
-/** Deja al niño de la sesión inscrito en el salón, pasando por el tutor. */
-const joinAndAccept = (store: () => ClassroomsContextValue, groupId: string): void => {
-  act(() => store().requestJoin(groupId));
-  act(() => store().acceptRequest(groupId, ownRequestId(store(), groupId)));
-};
-
 describe('Estado inicial', () => {
-  it('arranca sin salón y con la semilla de ejemplo', () => {
-    const { store } = renderClassrooms();
+  it('arranca sin salón y con los salones que devuelve el servidor', async () => {
+    const { store } = await renderClassrooms({ user: currentChild, seed: seedTwoGroups });
 
     expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
     expect(store().currentGroup).toBeNull();
-    expect(store().groups.map((group) => group.id)).toEqual(
-      buildSeedGroups().map((group) => group.id)
-    );
+    expect(store().groups.map((group) => group.id)).toEqual([SALON_1A, SALON_2B]);
   });
 });
 
 describe('requestJoin', () => {
-  it('pasa el estado a pending y deja la solicitud en la bandeja del tutor', () => {
-    const { store } = renderClassrooms();
+  it('pasa el estado a pending y deja la solicitud en la bandeja del tutor', async () => {
+    const { store, server } = await renderClassrooms({ user: currentChild, seed: seedTwoGroups });
 
-    act(() => store().requestJoin(SALON_1A));
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
 
     expect(store().membership).toEqual<StudentMembership>({
       status: 'pending',
       groupId: SALON_1A,
     });
-
-    const request = findGroup(store(), SALON_1A).pendingRequests.find(
-      (item) => item.studentId === CURRENT_STUDENT_ID
-    );
-
-    expect(request).toBeDefined();
     expect(store().currentGroup?.id).toBe(SALON_1A);
+
+    const { store: tutorStore } = await mountTutor(server);
+
+    expect(
+      findGroup(tutorStore(), SALON_1A).pendingRequests.some(
+        (item) => item.studentId === CURRENT_STUDENT_ID
+      )
+    ).toBe(true);
   });
 
-  it('usa el nombre del usuario de la sesión cuando lo hay', () => {
-    const { store } = renderClassrooms(buildUser({ fullName: 'Nina Prueba' }));
+  it('la solicitud llega a la bandeja con el nombre del perfil del niño', async () => {
+    const { store, server } = await renderClassrooms({ user: currentChild, seed: seedTwoGroups });
 
-    act(() => store().requestJoin(SALON_1A));
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
 
-    const request = findGroup(store(), SALON_1A).pendingRequests.find(
+    const { store: tutorStore } = await mountTutor(server);
+    const request = findGroup(tutorStore(), SALON_1A).pendingRequests.find(
       (item) => item.studentId === CURRENT_STUDENT_ID
     );
 
@@ -82,89 +103,163 @@ describe('requestJoin', () => {
     expect(request?.initials).toBe('NP');
   });
 
-  it('cae al nombre por defecto cuando no hay usuario', () => {
-    const { store } = renderClassrooms(null);
+  it('cae al nombre por defecto cuando el perfil no trae nombre', async () => {
+    const { store, server } = await renderClassrooms({
+      user: currentChild,
+      seed: (fake) => {
+        fake.seedGroup({ id: SALON_1A, name: 'Salón 1A' });
+      },
+    });
 
-    act(() => store().requestJoin(SALON_1A));
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
 
-    const request = findGroup(store(), SALON_1A).pendingRequests.find(
-      (item) => item.studentId === CURRENT_STUDENT_ID
-    );
+    const { store: tutorStore } = await mountTutor(server);
 
-    expect(request?.studentName).toBe('Explorer Leo');
+    expect(findGroup(tutorStore(), SALON_1A).pendingRequests[0]?.studentName).toBe('Explorador');
   });
 });
 
 describe('cancelJoinRequest', () => {
-  it('devuelve el estado a none y retira la solicitud', () => {
-    const { store } = renderClassrooms();
+  it('devuelve el estado a none y retira la solicitud', async () => {
+    const { store, server } = await renderClassrooms({ user: currentChild, seed: seedTwoGroups });
 
-    act(() => store().requestJoin(SALON_1A));
-    act(() => store().cancelJoinRequest());
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
+    await act(async () => {
+      await store().cancelJoinRequest();
+    });
 
     expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
+
+    const { store: tutorStore } = await mountTutor(server);
+
     expect(
-      findGroup(store(), SALON_1A).pendingRequests.some(
+      findGroup(tutorStore(), SALON_1A).pendingRequests.some(
         (item) => item.studentId === CURRENT_STUDENT_ID
       )
     ).toBe(false);
   });
 
-  it('no toca las solicitudes de otros alumnos', () => {
-    const { store } = renderClassrooms();
-    const otras = findGroup(store(), SALON_1A).pendingRequests.length;
+  it('no toca las solicitudes de otros alumnos', async () => {
+    const { store, server } = await renderClassrooms({ user: currentChild, seed: seedTwoGroups });
 
-    act(() => store().requestJoin(SALON_1A));
-    act(() => store().cancelJoinRequest());
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
+    await act(async () => {
+      await store().cancelJoinRequest();
+    });
 
-    expect(findGroup(store(), SALON_1A).pendingRequests).toHaveLength(otras);
+    const { store: tutorStore } = await mountTutor(server);
+    const pendientes = findGroup(tutorStore(), SALON_1A).pendingRequests;
+
+    expect(pendientes).toHaveLength(1);
+    expect(pendientes[0].studentId).toBe(OTHER_STUDENT_ID);
   });
 });
 
 describe('Decisiones del tutor sobre la solicitud', () => {
-  it('acepta: el alumno pasa a member y entra en la lista del salón', () => {
-    const { store } = renderClassrooms();
+  it('acepta: el alumno pasa a member y entra en la lista del salón', async () => {
+    const { store: childStore, server } = await renderClassrooms({
+      user: currentChild,
+      seed: seedTwoGroups,
+    });
 
-    joinAndAccept(store, SALON_1A);
+    await act(async () => {
+      await childStore().requestJoin(SALON_1A);
+    });
 
-    expect(store().membership).toEqual<StudentMembership>({
+    const { store: tutorStore } = await mountTutor(server);
+
+    await act(async () => {
+      await tutorStore().acceptRequest(
+        SALON_1A,
+        requestIdOf(tutorStore(), SALON_1A, CURRENT_STUDENT_ID)
+      );
+    });
+
+    expect(
+      findGroup(tutorStore(), SALON_1A).students.some(
+        (student) => student.id === CURRENT_STUDENT_ID
+      )
+    ).toBe(true);
+    expect(
+      findGroup(tutorStore(), SALON_1A).pendingRequests.some(
+        (item) => item.studentId === CURRENT_STUDENT_ID
+      )
+    ).toBe(false);
+
+    const { store: childAfter } = await mountChild(server);
+
+    expect(childAfter().membership).toEqual<StudentMembership>({
       status: 'member',
       groupId: SALON_1A,
     });
+  });
+
+  it('rechaza: el alumno vuelve a none y no entra en la lista', async () => {
+    const { store: childStore, server } = await renderClassrooms({
+      user: currentChild,
+      seed: seedTwoGroups,
+    });
+
+    await act(async () => {
+      await childStore().requestJoin(SALON_2B);
+    });
+
+    const { store: tutorStore } = await mountTutor(server);
+
+    await act(async () => {
+      await tutorStore().rejectRequest(
+        SALON_2B,
+        requestIdOf(tutorStore(), SALON_2B, CURRENT_STUDENT_ID)
+      );
+    });
+
     expect(
-      findGroup(store(), SALON_1A).students.some((student) => student.id === CURRENT_STUDENT_ID)
-    ).toBe(true);
+      findGroup(tutorStore(), SALON_2B).students.some(
+        (student) => student.id === CURRENT_STUDENT_ID
+      )
+    ).toBe(false);
     expect(
-      findGroup(store(), SALON_1A).pendingRequests.some(
+      findGroup(tutorStore(), SALON_2B).pendingRequests.some(
         (item) => item.studentId === CURRENT_STUDENT_ID
       )
     ).toBe(false);
+
+    const { store: childAfter } = await mountChild(server);
+
+    expect(childAfter().membership).toEqual<StudentMembership>({
+      status: 'none',
+      groupId: null,
+    });
   });
 
-  it('rechaza: el alumno vuelve a none y no entra en la lista', () => {
-    const { store } = renderClassrooms();
+  it('la decisión sobre otro alumno no cambia el estado del niño de la sesión', async () => {
+    const { store: childStore, server } = await renderClassrooms({
+      user: currentChild,
+      seed: seedTwoGroups,
+    });
 
-    act(() => store().requestJoin(SALON_2B));
-    act(() => store().rejectRequest(SALON_2B, ownRequestId(store(), SALON_2B)));
+    await act(async () => {
+      await childStore().requestJoin(SALON_1A);
+    });
 
-    expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
-    expect(
-      findGroup(store(), SALON_2B).students.some((student) => student.id === CURRENT_STUDENT_ID)
-    ).toBe(false);
-    expect(
-      findGroup(store(), SALON_2B).pendingRequests.some(
-        (item) => item.studentId === CURRENT_STUDENT_ID
-      )
-    ).toBe(false);
-  });
+    const { store: tutorStore } = await mountTutor(server);
 
-  it('la decisión sobre otro alumno no cambia el estado del niño de la sesión', () => {
-    const { store } = renderClassrooms();
+    await act(async () => {
+      await tutorStore().acceptRequest(
+        SALON_1A,
+        requestIdOf(tutorStore(), SALON_1A, OTHER_STUDENT_ID)
+      );
+    });
 
-    act(() => store().requestJoin(SALON_1A));
-    act(() => store().acceptRequest(SALON_1A, 'req-1'));
+    const { store: childAfter } = await mountChild(server);
 
-    expect(store().membership).toEqual<StudentMembership>({
+    expect(childAfter().membership).toEqual<StudentMembership>({
       status: 'pending',
       groupId: SALON_1A,
     });
@@ -172,58 +267,120 @@ describe('Decisiones del tutor sobre la solicitud', () => {
 });
 
 describe('Salidas del salón', () => {
-  it('removeStudent devuelve al alumno a none', () => {
-    const { store } = renderClassrooms();
+  const seedWithMember = (fake: FakeClassrooms) => {
+    seedTwoGroups(fake);
+    fake.seedMember(SALON_1A, CURRENT_STUDENT_ID);
+  };
 
-    joinAndAccept(store, SALON_1A);
-    act(() => store().removeStudent(SALON_1A, CURRENT_STUDENT_ID));
+  it('removeStudent devuelve al alumno a none', async () => {
+    const { store, server } = await renderClassrooms({
+      user: currentTutor,
+      seed: seedWithMember,
+    });
 
-    expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
+    await act(async () => {
+      await store().removeStudent(SALON_1A, CURRENT_STUDENT_ID);
+    });
+
     expect(
       findGroup(store(), SALON_1A).students.some((student) => student.id === CURRENT_STUDENT_ID)
     ).toBe(false);
+
+    const { store: childAfter } = await mountChild(server);
+
+    expect(childAfter().membership).toEqual<StudentMembership>({
+      status: 'none',
+      groupId: null,
+    });
   });
 
-  it('leaveGroup devuelve al alumno a none', () => {
-    const { store } = renderClassrooms();
-
-    joinAndAccept(store, SALON_1A);
-    act(() => store().leaveGroup());
-
-    expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
-    expect(
-      findGroup(store(), SALON_1A).students.some((student) => student.id === CURRENT_STUDENT_ID)
-    ).toBe(false);
-  });
-
-  it('deleteGroup borra el salón y devuelve al alumno inscrito a none', () => {
-    const { store } = renderClassrooms();
-
-    joinAndAccept(store, SALON_1A);
-    act(() => store().deleteGroup(SALON_1A));
-
-    expect(store().groups.some((group) => group.id === SALON_1A)).toBe(false);
-    expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
-    expect(store().currentGroup).toBeNull();
-  });
-
-  it('deleteGroup también devuelve a none al alumno que sólo estaba en espera', () => {
-    const { store } = renderClassrooms();
-
-    act(() => store().requestJoin(SALON_2B));
-    act(() => store().deleteGroup(SALON_2B));
-
-    expect(store().groups.some((group) => group.id === SALON_2B)).toBe(false);
-    expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
-  });
-
-  it('borrar otro salón no toca la pertenencia del alumno', () => {
-    const { store } = renderClassrooms();
-
-    joinAndAccept(store, SALON_1A);
-    act(() => store().deleteGroup(SALON_2B));
+  it('leaveGroup devuelve al alumno a none', async () => {
+    const { store, server } = await renderClassrooms({
+      user: currentChild,
+      seed: seedWithMember,
+    });
 
     expect(store().membership).toEqual<StudentMembership>({
+      status: 'member',
+      groupId: SALON_1A,
+    });
+
+    await act(async () => {
+      await store().leaveGroup();
+    });
+
+    expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
+
+    const { store: tutorStore } = await mountTutor(server);
+
+    expect(
+      findGroup(tutorStore(), SALON_1A).students.some(
+        (student) => student.id === CURRENT_STUDENT_ID
+      )
+    ).toBe(false);
+  });
+
+  it('deleteGroup borra el salón y devuelve al alumno inscrito a none', async () => {
+    const { store, server } = await renderClassrooms({
+      user: currentTutor,
+      seed: seedWithMember,
+    });
+
+    await act(async () => {
+      await store().deleteGroup(SALON_1A);
+    });
+
+    expect(store().groups.some((group) => group.id === SALON_1A)).toBe(false);
+
+    const { store: childAfter } = await mountChild(server);
+
+    expect(childAfter().membership).toEqual<StudentMembership>({
+      status: 'none',
+      groupId: null,
+    });
+    expect(childAfter().currentGroup).toBeNull();
+    expect(childAfter().groups.some((group) => group.id === SALON_1A)).toBe(false);
+  });
+
+  it('deleteGroup también devuelve a none al alumno que sólo estaba en espera', async () => {
+    const { store: childStore, server } = await renderClassrooms({
+      user: currentChild,
+      seed: seedTwoGroups,
+    });
+
+    await act(async () => {
+      await childStore().requestJoin(SALON_2B);
+    });
+
+    const { store: tutorStore } = await mountTutor(server);
+
+    await act(async () => {
+      await tutorStore().deleteGroup(SALON_2B);
+    });
+
+    expect(tutorStore().groups.some((group) => group.id === SALON_2B)).toBe(false);
+
+    const { store: childAfter } = await mountChild(server);
+
+    expect(childAfter().membership).toEqual<StudentMembership>({
+      status: 'none',
+      groupId: null,
+    });
+  });
+
+  it('borrar otro salón no toca la pertenencia del alumno', async () => {
+    const { store, server } = await renderClassrooms({
+      user: currentTutor,
+      seed: seedWithMember,
+    });
+
+    await act(async () => {
+      await store().deleteGroup(SALON_2B);
+    });
+
+    const { store: childAfter } = await mountChild(server);
+
+    expect(childAfter().membership).toEqual<StudentMembership>({
       status: 'member',
       groupId: SALON_1A,
     });
@@ -231,15 +388,15 @@ describe('Salidas del salón', () => {
 });
 
 describe('Acciones del tutor sobre el salón', () => {
-  it('createGroup añade el salón y devuelve el creado', () => {
-    const { store } = renderClassrooms();
+  it('createGroup añade el salón y devuelve el creado', async () => {
+    const { store } = await renderClassrooms({ user: currentTutor, seed: seedTwoGroups });
     const antes = store().groups.length;
 
-    const created: ClassGroup[] = [];
+    const created: (ClassGroup | null)[] = [];
 
-    act(() => {
+    await act(async () => {
       created.push(
-        store().createGroup({
+        await store().createGroup({
           name: 'Salón 4D',
           gradeLabel: 'Cuarto',
           teacherName: 'Sra. Tutora',
@@ -250,14 +407,17 @@ describe('Acciones del tutor sobre el salón', () => {
 
     expect(store().groups).toHaveLength(antes + 1);
     expect(created).toHaveLength(1);
-    expect(store().groups.some((group) => group.id === created[0].id)).toBe(true);
-    expect(created[0].name).toBe('Salón 4D');
+    expect(created[0]).not.toBeNull();
+    expect(store().groups.some((group) => group.id === created[0]?.id)).toBe(true);
+    expect(created[0]?.name).toBe('Salón 4D');
   });
 
-  it('inviteByEmail añade la invitación con el correo normalizado', () => {
-    const { store } = renderClassrooms();
+  it('inviteByEmail añade la invitación con el correo normalizado', async () => {
+    const { store } = await renderClassrooms({ user: currentTutor, seed: seedTwoGroups });
 
-    act(() => store().inviteByEmail(SALON_2B, '  Familia.Nieto@Correo.COM  '));
+    await act(async () => {
+      await store().inviteByEmail(SALON_2B, '  Familia.Nieto@Correo.COM  ');
+    });
 
     const invitaciones = findGroup(store(), SALON_2B).invitations;
     const invitation = invitaciones[invitaciones.length - 1];
@@ -268,12 +428,13 @@ describe('Acciones del tutor sobre el salón', () => {
 });
 
 describe('Mutaciones estables bajo StrictMode', () => {
-  it('crear un salón produce exactamente un salón nuevo', () => {
-    const { store } = renderClassrooms();
+  it('crear un salón produce exactamente un salón nuevo', async () => {
+    const { store, server } = await renderClassrooms({ user: currentTutor, seed: seedTwoGroups });
     const antes = store().groups.length;
+    const escriturasAntes = server.writeCount();
 
-    act(() => {
-      store().createGroup({
+    await act(async () => {
+      await store().createGroup({
         name: 'Salón 5E',
         gradeLabel: 'Quinto',
         teacherName: 'Sra. Tutora',
@@ -282,162 +443,192 @@ describe('Mutaciones estables bajo StrictMode', () => {
     });
 
     expect(store().groups).toHaveLength(antes + 1);
+    expect(server.writeCount()).toBe(escriturasAntes + 1);
 
     const ids = store().groups.map((group) => group.id);
 
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('solicitar ingreso produce exactamente una solicitud', () => {
-    const { store } = renderClassrooms();
-    const antes = findGroup(store(), SALON_1A).pendingRequests.length;
+  it('solicitar ingreso produce exactamente una solicitud', async () => {
+    const { store, server } = await renderClassrooms({ user: currentChild, seed: seedTwoGroups });
+    const escriturasAntes = server.writeCount();
 
-    act(() => store().requestJoin(SALON_1A));
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
 
-    const propias = findGroup(store(), SALON_1A).pendingRequests.filter(
+    expect(server.writeCount()).toBe(escriturasAntes + 1);
+
+    const { store: tutorStore } = await mountTutor(server);
+    const propias = findGroup(tutorStore(), SALON_1A).pendingRequests.filter(
       (item) => item.studentId === CURRENT_STUDENT_ID
     );
 
-    expect(findGroup(store(), SALON_1A).pendingRequests).toHaveLength(antes + 1);
     expect(propias).toHaveLength(1);
   });
 });
 
-describe('requestJoin sin comprobar la pertenencia actual', () => {
-  /**
-   * Documenta el comportamiento de HOY, no el deseado. El requisito «un alumno
-   * pertenece como máximo a un salón» lo sostiene el enrutado de
-   * StudentClassroomModule, que sólo monta el buscador con el estado en `none`;
-   * el store no lo comprueba. Trasladar la guarda al modelo es la tarea 5 de P3
-   * en docs/CONTEXT.md §3. Cuando se implemente, este test debe cambiar.
-   */
-  it('sobrescribe la pertenencia si se llama estando ya inscrito', () => {
-    const { store } = renderClassrooms();
+/**
+ * Este bloque documentaba lo contrario: que el store sobrescribía la pertenencia
+ * sin comprobarla, y que el invariante lo sostenía el enrutado de la vista. La
+ * guarda ya está en el store, así que el aserto se invierte.
+ */
+describe('Un alumno pertenece como máximo a un salón', () => {
+  it('no crea la solicitud si el alumno ya está inscrito', async () => {
+    const { store, server } = await renderClassrooms({
+      user: currentChild,
+      seed: (fake) => {
+        seedTwoGroups(fake);
+        fake.seedMember(SALON_1A, CURRENT_STUDENT_ID);
+      },
+    });
 
-    joinAndAccept(store, SALON_1A);
-    act(() => store().requestJoin(SALON_2B));
+    const escriturasAntes = server.writeCount();
+
+    await act(async () => {
+      await store().requestJoin(SALON_2B);
+    });
+
+    expect(store().membership).toEqual<StudentMembership>({
+      status: 'member',
+      groupId: SALON_1A,
+    });
+    expect(server.writeCount()).toBe(escriturasAntes);
+  });
+
+  it('no crea una segunda solicitud si ya tiene una pendiente', async () => {
+    const { store, server } = await renderClassrooms({ user: currentChild, seed: seedTwoGroups });
+
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
+
+    const escriturasAntes = server.writeCount();
+
+    await act(async () => {
+      await store().requestJoin(SALON_2B);
+    });
 
     expect(store().membership).toEqual<StudentMembership>({
       status: 'pending',
-      groupId: SALON_2B,
+      groupId: SALON_1A,
     });
-
-    // Y queda en los dos salones a la vez: inscrito en 1A, en espera en 2B.
-    expect(
-      findGroup(store(), SALON_1A).students.some((student) => student.id === CURRENT_STUDENT_ID)
-    ).toBe(true);
+    expect(server.writeCount()).toBe(escriturasAntes);
   });
 });
 
 /**
- * ATENCIÓN: este bloque muere con P3 (salones-persistentes).
- *
- * Son los únicos tests que tocan `localStorage` y que conocen la clave y el
- * número de versión, porque los requisitos de persistencia de
- * openspec/specs/store-salones/spec.md son *sobre* el almacenamiento y no se
- * pueden comprobar de otra forma. Cuando el store pase a Supabase, se
- * sustituyen por sus equivalentes contra la base de datos o se borran. El resto
- * de la suite no menciona `localStorage` en ninguna línea.
+ * Sustituyen al bloque de persistencia en `localStorage`, que murió con la
+ * capacidad que probaba: los salones ya no se guardan en el navegador.
  */
-describe('Persistencia en localStorage', () => {
-  const STORAGE_KEY = 'codeplay:classrooms';
+describe('Identidad de la sesión', () => {
+  it('sin usuario no hay salones ni pertenencia', async () => {
+    const { store } = await renderClassrooms({ user: null, seed: seedTwoGroups });
 
-  const readStored = (): { version: number; groups: ClassGroup[]; membership: StudentMembership } => {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    expect(store().groups).toEqual([]);
+    expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
+    expect(store().currentGroup).toBeNull();
+  });
 
-    if (!raw) {
-      throw new Error('No hay estado guardado.');
-    }
+  it('el tutor sólo ve los salones que él creó', async () => {
+    const { store } = await renderClassrooms({
+      user: currentTutor,
+      seed: (fake) => {
+        seedTwoGroups(fake);
+        fake.seedGroup({ id: 'salon-ajeno', name: 'Salón ajeno', tutorId: 'otro-tutor' });
+      },
+    });
 
-    return JSON.parse(raw);
-  };
+    expect(store().groups.map((group) => group.id)).toEqual([SALON_1A, SALON_2B]);
+  });
 
-  it('guarda versión, salones y pertenencia tras una mutación', () => {
-    const { store } = renderClassrooms();
+  it('el niño ve el catálogo entero, con el recuento de cada salón', async () => {
+    const { store } = await renderClassrooms({
+      user: currentChild,
+      seed: (fake) => {
+        seedTwoGroups(fake);
+        fake.seedGroup({ id: 'salon-ajeno', name: 'Salón ajeno', tutorId: 'otro-tutor' });
+        fake.seedMember('salon-ajeno', OTHER_STUDENT_ID);
+      },
+    });
 
-    act(() => store().requestJoin(SALON_1A));
+    const ajeno = findGroup(store(), 'salon-ajeno');
 
-    const stored = readStored();
+    expect(store().groups).toHaveLength(3);
+    expect(ajeno.memberCount).toBe(1);
+    /* Cuántos hay, nunca quiénes: del salón ajeno no llega la lista. */
+    expect(ajeno.students).toEqual([]);
+  });
+});
 
-    expect(stored.version).toBe(1);
-    expect(stored.groups.map((group) => group.id)).toContain(SALON_1A);
-    expect(stored.membership).toEqual<StudentMembership>({
+describe('Carga y error', () => {
+  it('termina de cargar y lo declara', async () => {
+    const { store } = await renderClassrooms({ user: currentChild, seed: seedTwoGroups });
+
+    expect(store().loading).toBe(false);
+    expect(store().error).toBeNull();
+  });
+
+  it('expone el error de una lectura en vez de descartarlo', async () => {
+    const { store } = await renderClassrooms({
+      user: currentChild,
+      seed: (fake) => {
+        seedTwoGroups(fake);
+        fake.failReads('No se pudieron cargar los salones.');
+      },
+    });
+
+    expect(store().error?.message).toBe('No se pudieron cargar los salones.');
+    expect(store().groups).toEqual([]);
+  });
+
+  it('expone el error de una escritura y no cambia el estado', async () => {
+    const { store, server } = await renderClassrooms({
+      user: currentChild,
+      seed: seedTwoGroups,
+    });
+
+    server.failNextWrite('No se pudo enviar la solicitud.');
+
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
+
+    expect(store().error?.message).toBe('No se pudo enviar la solicitud.');
+    expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
+  });
+});
+
+describe('Historial de solicitudes acumulado', () => {
+  it('manda la solicitud más reciente, no la primera que aparezca', async () => {
+    const { store, server } = await renderClassrooms({ user: currentChild, seed: seedTwoGroups });
+
+    await act(async () => {
+      await store().requestJoin(SALON_1A);
+    });
+
+    const { store: tutorStore } = await mountTutor(server);
+
+    await act(async () => {
+      await tutorStore().rejectRequest(
+        SALON_1A,
+        requestIdOf(tutorStore(), SALON_1A, CURRENT_STUDENT_ID)
+      );
+    });
+
+    /* Vuelve a pedir entrar: queda una rechazada y una pendiente posterior. */
+    const { store: childAgain } = await mountChild(server);
+
+    await act(async () => {
+      await childAgain().requestJoin(SALON_1A);
+    });
+
+    const { store: childAfter } = await mountChild(server);
+
+    expect(childAfter().membership).toEqual<StudentMembership>({
       status: 'pending',
       groupId: SALON_1A,
     });
-  });
-
-  it('restaura el estado guardado al montar', () => {
-    // El estado inicial sólo se lee en el primer render: hay que sembrar antes.
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        version: 1,
-        groups: [
-          {
-            id: 'salon-guardado',
-            publicId: 'CP-SAVE',
-            name: 'Salón guardado',
-            gradeLabel: 'Sexto',
-            teacherName: 'Sra. Tutora',
-            capacity: 4,
-            students: [],
-            pendingRequests: [],
-            invitations: [],
-          },
-        ],
-        membership: { status: 'member', groupId: 'salon-guardado' },
-      })
-    );
-
-    const { store } = renderClassrooms();
-
-    expect(store().groups.map((group) => group.id)).toEqual(['salon-guardado']);
-    expect(store().membership).toEqual<StudentMembership>({
-      status: 'member',
-      groupId: 'salon-guardado',
-    });
-    expect(store().currentGroup?.name).toBe('Salón guardado');
-  });
-
-  it('resiembra cuando la versión guardada no coincide', () => {
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        version: 99,
-        groups: [],
-        membership: { status: 'member', groupId: 'salon-fantasma' },
-      })
-    );
-
-    const { store } = renderClassrooms();
-
-    expect(store().groups.map((group) => group.id)).toEqual(
-      buildSeedGroups().map((group) => group.id)
-    );
-    expect(store().membership).toEqual<StudentMembership>({ status: 'none', groupId: null });
-  });
-
-  it('resiembra cuando el contenido no se puede interpretar', () => {
-    window.localStorage.setItem(STORAGE_KEY, 'esto no es JSON {{{');
-
-    const { store } = renderClassrooms();
-
-    expect(store().groups.map((group) => group.id)).toEqual(
-      buildSeedGroups().map((group) => group.id)
-    );
-  });
-
-  it('resiembra cuando el JSON es válido pero no trae lista de salones', () => {
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ version: 1, groups: 'no soy una lista', membership: null })
-    );
-
-    const { store } = renderClassrooms();
-
-    expect(store().groups.map((group) => group.id)).toEqual(
-      buildSeedGroups().map((group) => group.id)
-    );
   });
 });

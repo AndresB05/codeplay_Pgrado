@@ -2,10 +2,10 @@
 
 ## Purpose
 
-Sostener el módulo de salones sin backend, de forma que lo que hace el niño siga
-ahí al entrar como tutor y al recargar la página. Es una capa deliberadamente
-aislada: se diseñó para poder sustituirla por consultas a Supabase sin tocar
-ninguna vista.
+Ser el único punto por el que la aplicación lee y escribe salones, hoy contra
+Supabase. Nació sosteniendo el prototipo sin backend y esa capa se sustituyó por
+consultas reales sin tocar más que la espera en cuatro pantallas: mantener esa
+frontera aislada es su razón de ser.
 
 ## Requirements
 

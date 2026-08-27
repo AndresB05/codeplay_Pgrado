@@ -170,7 +170,7 @@ codeplayPGrado/
 │   └── game/                 Proyecto de Unity — NO EXISTE TODAVÍA
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
-│   ├── migrations/           9 migraciones SQL
+│   ├── migrations/           15 migraciones SQL
 │   └── seed.sql              Mundos y niveles iniciales
 ├── docs/                     CONTEXT.md (este) + ESTADO-DEL-PROYECTO.md
 ├── .github/workflows/ci.yml  CI: lint, tests y build en push y pull request
@@ -193,7 +193,7 @@ codeplayPGrado/
 | `components/auth/`, `components/ui/` | Formularios de acceso y primitivas antiguas |
 | `context/` | `AuthProvider` (Supabase), `ClassroomsProvider` (store local), helpers de rol y de invitado |
 | `hooks/` | `useAuth`, `useClassrooms`, `useActiveRole` + hooks de datos (`useWorlds`, `useProgress`, `useAchievements`, `useLeaderboard`, `useProfile`) |
-| `services/` | 7 servicios de Supabase, todos con la forma `{ data, error }` |
+| `services/` | 8 servicios de Supabase, todos con la forma `{ data, error }` |
 | `types/` | `classroom.types.ts` es el modelo vivo; `database.types.ts` se **genera** con la CLI (§4.1) |
 | `router/` | `AppRouter` + guardas `PrivateRoute` / `PublicRoute` |
 | `pages/` | Un componente por pantalla de nivel superior |
@@ -239,9 +239,10 @@ Esto no cambia nada de lo anterior: los adornos SVG de `components/decor/` se
 siguen escribiendo a mano (son geometría, no ilustración) y los huecos siguen
 vacíos hasta que haya imágenes reales.
 
-**Store de salones.** Ningún componente lee `localStorage` directamente. Todo
-pasa por `useClassrooms()`. Esa frontera es intencional: es lo único que hay que
-reescribir para conectar Supabase (§4.3).
+**Store de salones.** Ninguna vista habla con Supabase ni con el almacenamiento
+del navegador: todo pasa por `useClassrooms()`. Esa frontera aguantó el cambio
+de origen —de `localStorage` a la base— sin tocar más que la espera en cuatro
+pantallas, y por eso se mantiene (§4.3).
 
 **Comandos** (desde la raíz):
 
@@ -464,37 +465,59 @@ que quedar sin salón primero. **Un alumno pertenece como máximo a un salón.**
 Los diagramas y el detalle paso a paso de cada flujo están en
 `ESTADO-DEL-PROYECTO.md` §1.4 y §1.5.
 
-### 2.5 `store-salones` — Persistencia local del prototipo
+### 2.5 `store-salones` — Los salones, contra Supabase
 
-**Propósito.** Sostener el prototipo completo sin backend, de forma que la
-solicitud que envía el niño siga ahí al entrar como tutor y al recargar.
+**Propósito.** Ser el único punto por el que la aplicación lee y escribe
+salones. Desde el paso 10 lo hace contra la base real: la solicitud que envía el
+niño le llega al tutor desde otro dispositivo, no desde el mismo navegador.
 
 | Requisito | Estado | Dónde vive |
 | --- | --- | --- |
-| Store de salones con API de acciones tipada | ✅ | `context/ClassroomsContext.ts` + `ClassroomsProvider.tsx` |
-| Persistencia versionada en `localStorage` | ✅ | Clave `codeplay:classrooms`, `version: 1` |
-| Resiembra automática si la versión no cuadra o el estado está corrupto | ✅ | `readPersistedState()` |
+| Store de salones con API de acciones tipada, ahora asíncrona | ✅ | `context/ClassroomsContext.ts` + `ClassroomsProvider.tsx` |
+| Servicio de salones con la forma `{ data, error }` | ✅ | `services/classrooms.service.ts` |
+| Identidad del niño y del tutor tomada de la sesión | ✅ | `ClassroomsProvider.tsx` (se fue `CURRENT_STUDENT_ID`) |
+| Carga y error expuestos, para no confundir el vacío con la espera | ✅ | `loading` y `error` del contexto |
+| Guarda de «un alumno, un salón» antes de escribir | ✅ | `requestJoin()` en `ClassroomsProvider.tsx` |
 | Acceso único desde componentes | ✅ | `hooks/useClassrooms.ts` |
 
 **Decisiones de diseño**
 
-- Las mutaciones se calculan **fuera** de los actualizadores de `setState`:
-  React los invoca dos veces en StrictMode y aquí se generan ids y marcas de
-  tiempo que no deben salir distintas en cada invocación.
-- La identidad del niño de la sesión está fijada en
-  `CURRENT_STUDENT_ID = 'guest-child'` mientras no haya login real.
-- `ClassroomsProvider` es **el único archivo que cambia de raíz** al conectar el
-  backend. Ninguna vista habrá que tocarla. Frontera deliberada.
+- **Después de cada escritura se recarga el estado entero del rol.** Un salón
+  tiene decenas de filas y la consulta es barata; recargar evita una familia de
+  errores de sincronía, como una aceptación que falla por cupo y deja al alumno
+  pintado dentro. La actualización optimista se añadiría encima; al revés no.
+- Las lecturas compuestas se cruzan **en JavaScript**: `class_memberships.student_id`
+  y `join_requests.student_id` apuntan a `auth.users`, no a `profiles`, así que
+  sin clave ajena PostgREST no puede incrustar el perfil.
+- La situación del niño sale de su **última** solicitud por fecha, con
+  `maybeSingle()`. `single()` está prohibido aquí: en cuanto un niño rechazado
+  vuelve a pedir entrar hay dos filas y revienta con `PGRST116`.
+- La guarda de «un alumno, un salón» en el store es **de cortesía**: la garantía
+  siguen siendo la restricción, el índice parcial y el `with check`. Sin ella el
+  niño vería un `42501` crudo donde antes la vista no le ofrecía el botón.
+- `ClassGroup` tiene **`memberCount` además de `students`**, y no sobra: del
+  salón ajeno el niño conoce cuántos hay dentro pero no quiénes son, así que
+  contar la lista daría siempre cero cupos ocupados.
+- El progreso por alumno —mundo actual, última actividad, habilidades— **viaja
+  vacío**, porque ninguna tabla de progreso conoce los salones. La tabla del
+  tutor muestra «Sin actividad» y los reportes 0 %. Es el dato verdadero
+  sustituyendo a uno inventado; conectarlo es el paso 17.
+- `ClassroomStudent` lleva `xp`, que llega del roster y **todavía no se pinta**:
+  dónde se muestra el XP es del paso 21. Sin el campo, la columna de la vista
+  moriría en el servicio y habría que volver a pasar el cable entero.
+- `ClassroomsProvider` acepta una prop `service` que **sólo usan los tests**.
+  Es lo que deja la lista de dependencias del provider en un único archivo,
+  `test/renderClassrooms.tsx`, en vez de repartirla por cada test.
 
 #### Claves de `localStorage`
 
+Los salones **ya no se guardan en el navegador**. `codeplay:classrooms` dejó de
+escribirse; la que quede de una sesión anterior es inerte y puede borrarse.
+
 | Clave | Contenido |
 | --- | --- |
-| `codeplay:classrooms` | Salones y pertenencia. Versionado; si la versión no cuadra, se resiembra |
 | `dev:skipAuth` | Marca de sesión de invitado. Sólo en desarrollo |
 | `dev:guestRole` | Rol de la sesión de invitado: `child` o `tutor` |
-
-Para reiniciar los datos de ejemplo: borrar `codeplay:classrooms`.
 
 ### 2.6 `contenido-mundos` — Mundos, niveles y trofeos (rol niño)
 
@@ -524,7 +547,7 @@ progreso conseguido.
 seguras del backend.
 
 **Estado global: aplicado.** El proyecto de Supabase existe, está enlazado con la
-CLI y las trece migraciones se ejecutaron contra la base real
+CLI y las quince migraciones se ejecutaron contra la base real
 (`backend-supabase-real` 25-ago-2026, `tablas-salones` 26-ago-2026). Verificado
 por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels` responden con
 los 3 mundos y los 9 niveles de la siembra, y las cuatro tablas de salones
@@ -562,13 +585,38 @@ real:
 | Salón de cupo 1 lleno, aceptar a un segundo niño | `23514 Classroom is full`, y la solicitud sigue `pending`: la RPC aborta antes de escribir |
 | Borrar un salón | Se lleva por delante sus solicitudes y sus pertenencias |
 
-**Qué sigue sin verificar.** La carrera del `for update`: dos aceptaciones
-simultáneas sobre el mismo salón no se reproducen a mano. El cupo está
-comprobado **funcionalmente**, no bajo concurrencia.
+**Las dos vistas de la 0015, verificadas a 26-ago-2026.** Con las mismas cuentas:
+
+| Comprobado | Resultado |
+| --- | --- |
+| El niño miembro consulta `classroom_roster` | Ve sólo el roster de su salón |
+| El niño pide el roster de un salón ajeno | Cero filas |
+| El tutor consulta `classroom_roster` | Ve los de sus salones, no los de otro |
+| `class_group_directory` | Devuelve `member_count` correcto |
+| Las dos vistas con la clave anónima | 401 en ambas |
+| Qué columnas trae el roster | Las siete previstas y ninguna más: sin correo, sin país, sin nombre de usuario |
+
+**Qué sigue sin verificar.** Dos cosas, y ninguna es de las vistas:
+
+- La carrera del `for update`: dos aceptaciones simultáneas sobre el mismo salón
+  no se reproducen a mano. El cupo está comprobado **funcionalmente**, no bajo
+  concurrencia.
+- El cupo lleno **desde la interfaz**: hace falta un segundo niño solicitando, y
+  `apps/web/.env` sólo trae credenciales de uno (`VITE_DEV_CHILD_*`). El caso
+  está cubierto por el test del store y por la comprobación de la tabla de
+  arriba (`23514`), pero no se ha recorrido con dos sesiones de niño.
 
 **Estado de la base de pruebas: limpia.** Los salones de prueba se borraron al
-terminar, y con ellos sus solicitudes y pertenencias. Las tres cuentas siguen
-existiendo, sin salón ninguna. El paso 10 parte de cero.
+terminar, y con ellos sus solicitudes y pertenencias —comprobado tras el paso
+10: `class_groups`, `class_memberships`, `join_requests` e `invitations`
+devuelven cero filas—. Las tres cuentas siguen existiendo, sin salón ninguna.
+
+**Arista de privacidad que hereda el paso 14.** Desde el paso 10, un niño ve de
+cada compañero de su salón el nombre completo, el avatar, el XP y la racha. Es
+decisión del usuario y su motivo es que se comparen dentro del salón, lo que
+cierra media pregunta del ranking (`ROADMAP.md` §3.2). Comparar dentro del salón
+y publicar la identidad de un menor son decisiones distintas: sólo está tomada
+la primera.
 
 | Requisito | Estado | Dónde vive |
 | --- | --- | --- |
@@ -586,7 +634,8 @@ existiendo, sin salón ninguna. El paso 10 parte de cero.
 | Siembra de mundos y niveles | ✅ aplicado | `…0012_seed_learning_content.sql` |
 | Tablas de salones, sus políticas, sus `grant` y `accept_join_request` | ✅ aplicado | `…0013_create_classroom_tables.sql` |
 | Arreglo de la recursión entre `profiles` y `join_requests` | ✅ aplicado | `…0014_fix_profiles_policy_recursion.sql` |
-| Cliente y 7 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
+| Vistas `class_group_directory` y `classroom_roster` | ✅ aplicado | `…0015_create_classroom_read_views.sql` |
+| Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
 **Decisiones de diseño**
@@ -664,30 +713,12 @@ sesión de invitado.
 **Dependencias.** Ninguna: la columna `role` ya existe y el disparador la
 rellena desde los metadatos del registro.
 
-### P3 — `salones-persistentes`: mover el store de salones a Supabase
+### P3 — `salones-persistentes`: APLICADO
 
-**Descripción.** Sustituir el estado en `localStorage` por consultas reales, de
-modo que la solicitud de un niño llegue al tutor desde otro dispositivo.
-
-**Tareas**
-
-1. Crear `services/classrooms.service.ts` con la misma forma `{ data, error }`.
-2. Reescribir `ClassroomsProvider` para que las acciones de
-   `ClassroomsContextValue` llamen al servicio. **La interfaz del contexto no
-   cambia**, así que ninguna vista se toca.
-3. Sustituir `CURRENT_STUDENT_ID = 'guest-child'` por el id del usuario real.
-4. Retirar la semilla de `classroomsData.ts` conservando las funciones puras.
-5. Llevar el invariante «un alumno, un salón» al modelo. Añadir la guarda en el
-   store al solicitar ingreso y, mejor aún, imponerla en la base de datos:
-   `UNIQUE (student_id)` en `class_memberships` y un índice único parcial sobre
-   `join_requests` restringido a las solicitudes pendientes. Hoy `requestJoin()`
-   sobrescribe `membership` sin comprobar la pertenencia actual: quien sostiene
-   el invariante es el enrutado de `StudentClassroomModule`, que sólo monta el
-   buscador cuando `membership.status === 'none'`. Al pasar a Supabase la vista
-   deja de ser el único camino hasta la escritura, así que esa protección se
-   pierde si no se traslada.
-
-**Dependencias.** P1 (tablas de salones) y P2 (identidad del usuario).
+Los salones viven en Supabase desde el 26-ago-2026, cambio `salones-persistentes`
+(paso 10 del `ROADMAP.md`). Ver §2.5 para el estado y §2.7 para las dos vistas
+que trajo la migración 0015. Lo que queda de esta línea es progreso real por
+alumno, que es el paso 17 y no este.
 
 ### P4 — `integracion-juego`: apartado de implementación de los niveles
 
@@ -798,12 +829,16 @@ La tabla `achievements` es el registro de logros **concedidos** a cada niño
 posibles con sus condiciones de desbloqueo, así que la sala de trofeos sólo puede
 listar lo conseguido. Diseñarla es el **paso 22** del roadmap.
 
-### 4.3 Frontera del store: mantenerla
+### 4.3 Frontera del store: aguantó, y se mantiene
 
-`ClassroomsProvider` es el único archivo que cambia de raíz al conectar el
-backend. Todos los componentes consumen los datos vía `useClassrooms()`, así que
-sustituir el estado local por consultas **no obliga a tocar ninguna vista**. Se
-diseñó así a propósito; no romper esa frontera al implementar P3.
+`ClassroomsProvider` fue el único archivo que cambió de raíz al conectar el
+backend, como estaba previsto. La frontera se pagó sola: de las vistas sólo hubo
+que tocar **cuatro cosas, y ninguna por el origen de los datos** —tres esperas,
+para que ninguna pantalla anuncie un vacío mientras consulta, y el recuento de
+cupos del buscador, que pasa a leer `memberCount` porque del salón ajeno el niño
+no puede contar alumnos—.
+
+Sigue en pie para lo que venga: ninguna vista habla con Supabase directamente.
 
 ### 4.4 ESLint 8 sin soporte
 
@@ -826,8 +861,9 @@ Comprobado el **26 de agosto de 2026** ejecutando los comandos:
 | --- | --- |
 | `npm run build` | ✅ Pasa. 157 módulos, 2,1 s. Sólo avisa del tamaño del chunk |
 | `npm run lint` | ✅ Pasa. Cero errores y cero warnings |
-| `npm run test:run` | ✅ Pasa. 54 tests en 2 archivos |
+| `npm run test:run` | ✅ Pasa. 51 tests en 2 archivos |
 | Panel del tutor y del niño con la sesión de invitado | ✅ Navegan sin errores en consola. Los mundos se pintan desde Supabase —«Selva Algorítmica», `0/3 NIVELES`—, no desde el respaldo local |
+| Flujo de salones de punta a punta contra la base real | ✅ Crear salón, buscar por ID público, solicitar, ver la solicitud con nombre, aceptar, ver compañeros, rechazar, reintentar y borrar en cascada |
 
 **Cuidado al comprobar la pantalla de mundos:** `useWorlds()` arranca con la
 lista vacía, así que durante la carga se pinta el respaldo de `worldsData.ts`

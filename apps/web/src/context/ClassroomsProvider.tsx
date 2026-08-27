@@ -1,249 +1,195 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import {
-  buildGroup,
-  buildInitials,
-  buildSeedGroups,
-  buildStudentFromRequest,
-  pickAvatarTone,
-} from '../components/dashboard/teacher/classroomsData';
 import { useAuth } from '../hooks/useAuth';
+import { classroomsService } from '../services/classrooms.service';
+import type { ClassroomsService } from '../services/classrooms.service';
+import type { AppError } from '../errors/AppError';
 import type { ClassGroup, CreateGroupInput, StudentMembership } from '../types/classroom.types';
 import { ClassroomsContext } from './ClassroomsContext';
 import type { ClassroomsContextValue } from './ClassroomsContext';
 
 /**
- * Store de salones del prototipo. Mantiene en `localStorage` lo que más
- * adelante vivirá en Supabase, para que la solicitud que envía el niño siga
- * ahí cuando se entra como tutor y al recargar la página.
+ * Store de salones contra Supabase. Cada acción escribe y vuelve a leer el
+ * estado del rol: un salón tiene decenas de filas, la consulta es barata, y
+ * recargar evita toda una familia de errores de sincronía —una aceptación que
+ * falla por cupo y deja al alumno pintado dentro, por ejemplo—.
  *
- * Las mutaciones se calculan fuera de los actualizadores de estado: React
- * invoca esos actualizadores dos veces en StrictMode, y aquí se generan ids y
- * marcas de tiempo que no deben salir distintas en cada invocación.
+ * Es el único archivo que cambia de raíz al conectar el backend: las vistas
+ * consumen `useClassrooms()` y no saben de dónde salen los datos.
  */
-const STORAGE_KEY = 'codeplay:classrooms';
-const STORAGE_VERSION = 1;
-
-/** Identidad del niño de la sesión mientras no hay login real. */
-const CURRENT_STUDENT_ID = 'guest-child';
-const FALLBACK_STUDENT_NAME = 'Explorer Leo';
-
-interface PersistedState {
-  version: number;
-  groups: ClassGroup[];
-  membership: StudentMembership;
-}
-
 const EMPTY_MEMBERSHIP: StudentMembership = { status: 'none', groupId: null };
-
-const readPersistedState = (): PersistedState | null => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-
-    if (!raw) {
-      return null;
-    }
-
-    const parsed = JSON.parse(raw) as PersistedState;
-
-    if (parsed.version !== STORAGE_VERSION || !Array.isArray(parsed.groups)) {
-      return null;
-    }
-
-    return parsed;
-  } catch {
-    // Estado corrupto o de una versión anterior: se descarta y se resiembra.
-    return null;
-  }
-};
 
 interface ClassroomsProviderProps {
   children: ReactNode;
+  /**
+   * Sólo lo pasan los tests, para montar el store sin cliente de Supabase.
+   * Mantiene la lista de dependencias del provider en un único sitio.
+   */
+  service?: ClassroomsService;
 }
 
-export const ClassroomsProvider = ({ children }: ClassroomsProviderProps) => {
+export const ClassroomsProvider = ({
+  children,
+  service = classroomsService,
+}: ClassroomsProviderProps) => {
   const { user } = useAuth();
 
-  const [groups, setGroups] = useState<ClassGroup[]>(
-    () => readPersistedState()?.groups ?? buildSeedGroups()
-  );
-  const [membership, setMembership] = useState<StudentMembership>(
-    () => readPersistedState()?.membership ?? EMPTY_MEMBERSHIP
-  );
+  const [groups, setGroups] = useState<ClassGroup[]>([]);
+  const [membership, setMembership] = useState<StudentMembership>(EMPTY_MEMBERSHIP);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<AppError | null>(null);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
+  /*
+   * Cada carga se numera para descartar las respuestas que llegan tarde: al
+   * cambiar de sesión, la del usuario anterior puede resolverse después de la
+   * nueva y pintar salones ajenos.
+   */
+  const loadId = useRef(0);
+
+  const refresh = useCallback(async (): Promise<void> => {
+    const currentLoad = loadId.current + 1;
+    loadId.current = currentLoad;
+
+    if (!user) {
+      setGroups([]);
+      setMembership(EMPTY_MEMBERSHIP);
+      setLoading(false);
+
       return;
     }
 
-    const payload: PersistedState = { version: STORAGE_VERSION, groups, membership };
+    setLoading(true);
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  }, [groups, membership]);
+    const { data, error: readError } =
+      user.role === 'tutor'
+        ? await service.getTutorSnapshot(user.id)
+        : await service.getStudentSnapshot(user.id);
 
-  const studentName = user?.fullName || FALLBACK_STUDENT_NAME;
-
-  const createGroup = useCallback(
-    (input: CreateGroupInput): ClassGroup => {
-      const created = buildGroup(input, groups);
-
-      setGroups((current) => [...current, created]);
-
-      return created;
-    },
-    [groups]
-  );
-
-  /**
-   * Borra el salón entero. Sus alumnos dejan de pertenecer a ningún salón: si
-   * el niño de esta sesión era uno de ellos (o tenía una solicitud pendiente),
-   * vuelve al buscador de salones.
-   */
-  const deleteGroup = useCallback(
-    (groupId: string): void => {
-      setGroups((current) => current.filter((group) => group.id !== groupId));
-
-      if (membership.groupId === groupId) {
-        setMembership(EMPTY_MEMBERSHIP);
-      }
-    },
-    [membership.groupId]
-  );
-
-  const removeStudent = useCallback((groupId: string, studentId: string): void => {
-    setGroups((current) =>
-      current.map((group) =>
-        group.id === groupId
-          ? { ...group, students: group.students.filter((student) => student.id !== studentId) }
-          : group
-      )
-    );
-
-    if (studentId === CURRENT_STUDENT_ID) {
-      setMembership(EMPTY_MEMBERSHIP);
+    if (loadId.current !== currentLoad) {
+      return;
     }
-  }, []);
 
-  const acceptRequest = useCallback(
-    (groupId: string, requestId: string): void => {
-      const group = groups.find((item) => item.id === groupId);
-      const request = group?.pendingRequests.find((item) => item.id === requestId);
+    if (readError || !data) {
+      setError(readError);
+      setLoading(false);
 
-      if (!group || !request) {
+      return;
+    }
+
+    setGroups(data.groups);
+    setMembership(data.membership);
+    setError(null);
+    setLoading(false);
+  }, [service, user]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  /** Ejecuta una escritura y recarga si salió bien. */
+  const runWrite = useCallback(
+    async (write: () => Promise<{ error: AppError | null }>): Promise<void> => {
+      const { error: writeError } = await write();
+
+      if (writeError) {
+        setError(writeError);
+
         return;
       }
 
-      const student = buildStudentFromRequest(request);
-
-      setGroups((current) =>
-        current.map((item) =>
-          item.id === groupId
-            ? {
-                ...item,
-                students: [...item.students, student],
-                pendingRequests: item.pendingRequests.filter((entry) => entry.id !== requestId),
-              }
-            : item
-        )
-      );
-
-      if (request.studentId === CURRENT_STUDENT_ID) {
-        setMembership({ status: 'member', groupId });
-      }
+      setError(null);
+      await refresh();
     },
-    [groups]
+    [refresh]
+  );
+
+  const createGroup = useCallback(
+    async (input: CreateGroupInput): Promise<ClassGroup | null> => {
+      if (!user) {
+        return null;
+      }
+
+      const { data, error: writeError } = await service.createGroup(input, user.id);
+
+      if (writeError || !data) {
+        setError(writeError);
+
+        return null;
+      }
+
+      setError(null);
+      await refresh();
+
+      return data;
+    },
+    [refresh, service, user]
+  );
+
+  const deleteGroup = useCallback(
+    async (groupId: string): Promise<void> => runWrite(() => service.deleteGroup(groupId)),
+    [runWrite, service]
+  );
+
+  const removeStudent = useCallback(
+    async (groupId: string, studentId: string): Promise<void> =>
+      runWrite(() => service.removeStudent(groupId, studentId)),
+    [runWrite, service]
+  );
+
+  const acceptRequest = useCallback(
+    async (_groupId: string, requestId: string): Promise<void> =>
+      runWrite(() => service.acceptRequest(requestId)),
+    [runWrite, service]
   );
 
   const rejectRequest = useCallback(
-    (groupId: string, requestId: string): void => {
-      const request = groups
-        .find((item) => item.id === groupId)
-        ?.pendingRequests.find((item) => item.id === requestId);
+    async (_groupId: string, requestId: string): Promise<void> =>
+      runWrite(() => service.rejectRequest(requestId)),
+    [runWrite, service]
+  );
 
-      setGroups((current) =>
-        current.map((item) =>
-          item.id === groupId
-            ? {
-                ...item,
-                pendingRequests: item.pendingRequests.filter((entry) => entry.id !== requestId),
-              }
-            : item
-        )
-      );
-
-      if (request?.studentId === CURRENT_STUDENT_ID) {
-        setMembership(EMPTY_MEMBERSHIP);
+  const inviteByEmail = useCallback(
+    async (groupId: string, email: string): Promise<void> => {
+      if (!user) {
+        return;
       }
+
+      await runWrite(() => service.inviteByEmail(groupId, email, user.id));
     },
-    [groups]
+    [runWrite, service, user]
   );
 
-  const inviteByEmail = useCallback((groupId: string, email: string): void => {
-    const invitation = {
-      id: `inv-${Date.now().toString(36)}`,
-      email: email.trim().toLowerCase(),
-      sentAtIso: new Date().toISOString(),
-      status: 'pending' as const,
-    };
-
-    setGroups((current) =>
-      current.map((group) =>
-        group.id === groupId ? { ...group, invitations: [...group.invitations, invitation] } : group
-      )
-    );
-  }, []);
-
+  /*
+   * La guarda de «un alumno, un salón». Antes la sostenía el enrutado de la
+   * vista, que sólo monta el buscador sin salón; contra la base, saltársela
+   * devuelve un 42501 crudo en vez de no ofrecer el botón.
+   */
   const requestJoin = useCallback(
-    (groupId: string): void => {
-      const request = {
-        id: `req-${Date.now().toString(36)}`,
-        studentId: CURRENT_STUDENT_ID,
-        studentName,
-        initials: buildInitials(studentName),
-        avatarTone: pickAvatarTone(CURRENT_STUDENT_ID),
-        requestedAtIso: new Date().toISOString(),
-      };
+    async (groupId: string): Promise<void> => {
+      if (!user || membership.status !== 'none') {
+        return;
+      }
 
-      setGroups((current) =>
-        current.map((group) =>
-          group.id === groupId
-            ? { ...group, pendingRequests: [...group.pendingRequests, request] }
-            : group
-        )
-      );
-
-      setMembership({ status: 'pending', groupId });
+      await runWrite(() => service.requestJoin(groupId, user.id));
     },
-    [studentName]
+    [membership.status, runWrite, service, user]
   );
 
-  const cancelJoinRequest = useCallback((): void => {
-    setGroups((current) =>
-      current.map((group) => ({
-        ...group,
-        pendingRequests: group.pendingRequests.filter(
-          (request) => request.studentId !== CURRENT_STUDENT_ID
-        ),
-      }))
-    );
+  const cancelJoinRequest = useCallback(async (): Promise<void> => {
+    if (!user) {
+      return;
+    }
 
-    setMembership(EMPTY_MEMBERSHIP);
-  }, []);
+    await runWrite(() => service.cancelJoinRequest(user.id));
+  }, [runWrite, service, user]);
 
-  const leaveGroup = useCallback((): void => {
-    setGroups((current) =>
-      current.map((group) => ({
-        ...group,
-        students: group.students.filter((student) => student.id !== CURRENT_STUDENT_ID),
-      }))
-    );
+  const leaveGroup = useCallback(async (): Promise<void> => {
+    if (!user) {
+      return;
+    }
 
-    setMembership(EMPTY_MEMBERSHIP);
-  }, []);
+    await runWrite(() => service.leaveGroup(user.id));
+  }, [runWrite, service, user]);
 
   const currentGroup = useMemo(
     () => groups.find((group) => group.id === membership.groupId) ?? null,
@@ -257,9 +203,11 @@ export const ClassroomsProvider = ({ children }: ClassroomsProviderProps) => {
       createGroup,
       currentGroup,
       deleteGroup,
+      error,
       groups,
       inviteByEmail,
       leaveGroup,
+      loading,
       membership,
       rejectRequest,
       removeStudent,
@@ -271,9 +219,11 @@ export const ClassroomsProvider = ({ children }: ClassroomsProviderProps) => {
       createGroup,
       currentGroup,
       deleteGroup,
+      error,
       groups,
       inviteByEmail,
       leaveGroup,
+      loading,
       membership,
       rejectRequest,
       removeStudent,

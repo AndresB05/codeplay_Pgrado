@@ -9,14 +9,14 @@ context: |
 
   ESTADO ACTUAL (verificado el 26-ago-2026)
   El esquema de Supabase está APLICADO en un proyecto real: tablas, RPC, RLS y
-  el contenido inicial de mundos y niveles, incluidas ya las cuatro tablas de
-  salones, y sus políticas están verificadas con sesiones reales. Login real
-  todavía no hay (paso 12), pero el botón «Sin login» ya autentica de verdad
-  contra Supabase con cuentas de prueba, y sólo cae en la marca de invitado si
-  no hay credenciales en apps/web/.env. El estado de salones sigue en
-  localStorage: conectarlo es el paso siguiente. Los servicios están tipados
-  contra el esquema real y escriben por RPC.
-  `npm run build`, `npm run lint` y `npm run test:run` pasan.
+  el contenido inicial de mundos y niveles, incluidas las cuatro tablas de
+  salones y las dos vistas de lectura de la 0015, todo verificado con sesiones
+  reales. Login real todavía no hay (paso 12), pero el botón «Sin login» ya
+  autentica de verdad contra Supabase con cuentas de prueba, y sólo cae en la
+  marca de invitado si no hay credenciales en apps/web/.env. LOS SALONES YA NO
+  VIVEN EN localStorage: desde el paso 10 el store lee y escribe contra la base,
+  con la identidad del usuario de la sesión. Lo siguiente es el login real.
+  `npm run build`, `npm run lint` y `npm run test:run` pasan (51 tests).
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
@@ -34,7 +34,7 @@ context: |
   apps/web/        front-end, workspace @codeplay/web
   apps/game/       proyecto de Unity — NO EXISTE TODAVÍA
   packages/        código compartido — vacío
-  supabase/        migrations/ (13 migraciones SQL; el seed vive en la 0012)
+  supabase/        migrations/ (15 migraciones SQL; el seed vive en la 0012)
   docs/            CONTEXT.md (estado y prioridades) y ESTADO-DEL-PROYECTO.md
   openspec/        specs y changes
   .github/         workflows de GitHub Actions (sólo ci.yml)
@@ -57,9 +57,16 @@ context: |
   - Adornos SVG en components/decor/, con aria-hidden y sin capturar el puntero.
   - Los huecos de la mascota (.mascot-slot, ImagePlaceholder) se dejan VACÍOS a
     propósito hasta que existan las ilustraciones definitivas.
-  - Store de salones: ningún componente lee localStorage directamente, todo pasa
-    por useClassrooms(). ClassroomsProvider es el único archivo que cambia de
-    raíz al conectar Supabase. No romper esa frontera.
+  - Store de salones: ninguna vista habla con Supabase ni con el almacenamiento
+    del navegador, todo pasa por useClassrooms(). ClassroomsProvider fue el
+    único archivo que cambió de raíz al conectar la base. No romper esa
+    frontera.
+  - Nunca .single() sobre join_requests: el historial se acumula en filas y un
+    niño que reintenta tiene varias. Ordenar por requested_at, limit(1) y
+    maybeSingle().
+  - class_memberships.student_id y join_requests.student_id NO tienen default
+    auth.uid(): hay que enviarlos explícitamente o la política responde 42501,
+    que se diagnostica mal.
   - Variables de entorno: config/env.ts valida con zod y LANZA al importarse.
     Sin VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY válidas la app no arranca.
 
@@ -71,8 +78,8 @@ context: |
   Funcionalidades completas de punta a punta, en este orden:
   1. Base de datos real en Supabase: HECHO. El esquema entero está aplicado,
      salones incluidos.
-  2. Auth y roles funcionales verificados en servidor.
-  3. Mover el store de salones de localStorage a Supabase.
+  2. Mover el store de salones de localStorage a Supabase: HECHO (paso 10).
+  3. Auth y roles funcionales verificados en servidor: lo siguiente.
   4. Apartado web de integración de los niveles del juego (el juego sigue en
      desarrollo; aquí sólo entra el contenedor y el contrato de datos).
   El apartado gráfico queda FUERA de este hito a propósito.
@@ -80,8 +87,13 @@ context: |
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO
   - types/database.types.ts se GENERA con la CLI y nunca se edita a mano:
     `npx supabase gen types typescript --linked`. Describe el esquema real.
-  - Los salones ya tienen esquema, pero la aplicación sigue leyendo localStorage:
-    conectarlos es el trabajo pendiente, no crear las tablas.
+  - El progreso NO conoce los salones: ninguna tabla de progreso referencia a
+    uno. Por eso la tabla de seguimiento del tutor muestra «Sin actividad» y los
+    reportes de habilidades 0 %. Conectarlo es el paso 17, y tiene arista de
+    privacidad.
+  - Las lecturas que cruzan pertenencias se conceden por VISTA con el filtro
+    dentro, nunca ampliando políticas: una política que consulta la tabla que
+    protege recursa, y eso aparece antes al escribir que al leer.
   - Las credenciales de prueba (VITE_DEV_*) NO van en config/env.ts: ese módulo
     valida al importarse y se ejecuta también en producción. Se leen tras
     import.meta.env.DEV y como accesos de miembro, nunca copiando
