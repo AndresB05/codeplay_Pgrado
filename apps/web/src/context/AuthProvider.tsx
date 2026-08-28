@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { AuthContext } from './AuthContext';
 import type { AuthContextValue, SignUpOutcome } from './AuthContext';
 import { authService } from '../services/auth.service';
 import { PROFILE_NOT_FOUND, profileService } from '../services/profile.service';
-import type { AppError } from '../errors/AppError';
+import { AppError } from '../errors/AppError';
 import type { User, UserRole } from '../types/user.types';
 import { supabase } from '../lib/supabase';
 
@@ -19,12 +19,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AppError | null>(null);
 
+  /*
+   * Quién está dentro ahora mismo, para decidir si un evento de sesión merece
+   * blanquear la pantalla. Va en una referencia y no en estado porque sólo se
+   * consulta dentro del subscriptor: no tiene que provocar ningún render.
+   */
+  const currentUserIdRef = useRef<string | null>(null);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
   /** Devuelve si quedó un perfil cargado, que es lo único que habilita un panel. */
   const syncSessionProfile = useCallback(async (nextSession: Session | null): Promise<boolean> => {
+    currentUserIdRef.current = nextSession?.user.id ?? null;
     setSession(nextSession);
 
     if (!nextSession?.user) {
@@ -84,9 +92,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     void initializeAuth();
 
+    /*
+     * Sólo un cambio de IDENTIDAD blanquea la pantalla. Las dos guardas de ruta
+     * responden a `loading` cambiando todo su subárbol por un spinner, y este
+     * subscriptor dispara también en cada refresco de token: sin esta condición
+     * la aplicación entera parpadeaba cada vez que Supabase renovaba el token, y
+     * desmontaba de paso cualquier formulario a medias. No se veía porque hasta
+     * ahora ningún evento caía en mitad de una interacción.
+     *
+     * Se compara el id del usuario y NO el tipo de evento: por identidad, este
+     * provider sigue sin leer `_event` y sin acoplarse al vocabulario de eventos
+     * de Supabase.
+     */
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      const identityChanged = nextUserId !== currentUserIdRef.current;
+
+      if (!identityChanged) {
+        void syncSessionProfile(nextSession);
+        return;
+      }
+
       setLoading(true);
       void syncSessionProfile(nextSession).finally(() => {
         setLoading(false);
@@ -160,6 +188,75 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     [syncSessionProfile]
   );
 
+  /*
+   * Las tres acciones de contraseña NO tocan `loading`, a diferencia de las de
+   * sesión. Ese indicador significa «la sesión se está resolviendo», y las dos
+   * guardas de ruta responden a él cambiando la pantalla entera por un spinner.
+   * Una contraseña se cambia DENTRO de una sesión ya resuelta, desde una
+   * pantalla que vive tras esas guardas: encenderlo desmonta el formulario a
+   * mitad de operación y se lleva por delante el mensaje que había que enseñar.
+   * Quien llama lleva su propio indicador de envío.
+   */
+
+  /*
+   * El correo sale de la sesión, no de un campo: quien cambia su contraseña es
+   * quien está dentro, y pedirle que escriba su propio correo sólo añadiría una
+   * forma de equivocarse.
+   */
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string): Promise<boolean> => {
+      const email = session?.user.email;
+
+      if (!email) {
+        setError(
+          new AppError(
+            'No se pudo identificar tu cuenta. Vuelve a iniciar sesión.',
+            'auth_missing_session_email'
+          )
+        );
+        return false;
+      }
+
+      setError(null);
+
+      const result = await authService.changePassword({ currentPassword, email, newPassword });
+
+      if (result.error) {
+        setError(result.error);
+        return false;
+      }
+
+      return true;
+    },
+    [session]
+  );
+
+  const requestPasswordReset = useCallback(async (email: string): Promise<boolean> => {
+    setError(null);
+
+    const result = await authService.requestPasswordReset(email);
+
+    if (result.error) {
+      setError(result.error);
+      return false;
+    }
+
+    return true;
+  }, []);
+
+  const updatePassword = useCallback(async (newPassword: string): Promise<boolean> => {
+    setError(null);
+
+    const result = await authService.updatePassword(newPassword);
+
+    if (result.error) {
+      setError(result.error);
+      return false;
+    }
+
+    return true;
+  }, []);
+
   const signInWithGoogle = useCallback(async (): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -200,17 +297,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const value = useMemo<AuthContextValue>(
     () => ({
+      changePassword,
       clearError,
       error,
       loading,
+      requestPasswordReset,
       session,
       signIn,
       signInWithGoogle,
       signOut,
       signUp,
+      updatePassword,
       user,
     }),
-    [clearError, error, loading, session, signIn, signInWithGoogle, signOut, signUp, user]
+    [
+      changePassword,
+      clearError,
+      error,
+      loading,
+      requestPasswordReset,
+      session,
+      signIn,
+      signInWithGoogle,
+      signOut,
+      signUp,
+      updatePassword,
+      user,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

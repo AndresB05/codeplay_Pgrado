@@ -1,7 +1,7 @@
 # CodePlay — Hoja de ruta
 
 > **En qué orden se construye el proyecto y quién hace cada parte.**
-> Última actualización: **26 de agosto de 2026**.
+> Última actualización: **27 de agosto de 2026**.
 
 Este documento responde a *cuándo* y *quién*.
 Para *qué* y *por qué*, ver [`docs/CONTEXT.md`](CONTEXT.md) §3, que describe cada
@@ -92,7 +92,7 @@ escrito en §2.1.
 | 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» — **adelantado, ver §2.1** | ✅ | `usuarios-de-prueba` |
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ✅ | `salones-persistentes` |
 | 12 | Login y registro reales con rol | ✅ | `auth-real` |
-| 13 | Recuperar y cambiar contraseña | ⬜ | P2 |
+| 13 | Recuperar y cambiar contraseña — **las dos mitades verificadas contra la base real**: el cambio desde Ajustes pide la contraseña actual y la verifica, y el correo de recuperación llegó y su enlace fijó la nueva | ✅ | `password-recovery` |
 | 14 | ★ Consentimiento del acudiente y política de privacidad — **hereda dos decisiones ya tomadas**: el tutor ve el historial completo del niño (§3.1) y los compañeros de un salón se ven entre sí el nombre, el XP y la racha (§3.2) | ⬜ | — |
 | 15 | Google OAuth | ⬜ | P2 |
 | 16 | Persistir la asignación de misiones | ⬜ | P5 |
@@ -200,6 +200,8 @@ perderse:
 | **A la migración 0009 le falta `revoke ... from anon`**, que la 0013 sí trae: sólo revoca de `public`, y eso no retira lo concedido directamente a un rol. **No hay fuga, está medido:** consultadas con la clave anónima, `profiles`, `user_progress`, `level_attempts` y `achievements` devuelven 401 con código `42501` —permiso denegado a nivel de `grant`, no un vacío por RLS—, y `worlds` y `levels` devuelven 200, que es justo lo que sus políticas `to anon` quieren. Este proyecto no tiene privilegios por defecto para `anon` en el esquema `public`, así que el `revoke` que falta es defensa en profundidad, no un agujero. **Decidido: se anota, no se migra.** Si alguna vez se toca, que sea sabiendo esto y no creyendo que hay algo abierto | Ninguno: queda anotado a propósito |
 | Cuatro carpetas de componentes **sin ningún consumidor**: `WelcomeBanner`, `WorldCard`, `SidebarPlayerCard` y `LeaderBoard`. Son restos del panel anterior al rediseño | Paso 21 o limpieza aparte |
 | **La pantalla de Ajustes del niño inventa tres datos**, no uno: `StudentSettingsModule.tsx:28-30` usa `user?.fullName \|\| 'Explorer Leo'`, `user?.email \|\| 'explorador@codeplay.co'` y `user?.streakDays \|\| 42`. Con la racha real a `0` el `\|\|` cae **siempre** en el 42, y con `full_name` vacío —como la cuenta de prueba `user.kid2`— la pantalla afirma que el niño se llama «Explorer Leo». Es anterior al paso 10, pero desde él se contradice con la tabla del salón, que ya muestra el `0` verdadero | Paso 21 o limpieza aparte |
+| **«Secure password change» sigue apagado** en el panel de Supabase: el paso 13 no lo tocó y la reautenticación se hace en el cliente, que protege a quien usa la aplicación pero no a quien tenga el token de una sesión robada y llame a la API directamente. Queda el experimento de encenderlo y repetir la prueba del cambio desde Ajustes, para ver si se satisface con la sesión que crea `signInWithPassword` o si el servidor exige además un **nonce por correo** — si lo exige, se apaga y no se implementa: el correo de fábrica no da para un envío en cada cambio de contraseña | Experimento suelto (tarea 10.1 de `password-recovery`); el interruptor lo toca el usuario |
+| **El defecto del indicador de carga era anterior al paso 13** y estaba en tres sitios: `AuthProvider` levantaba `loading` en cada evento de `onAuthStateChange` —refrescos de token incluidos— y `ClassroomsProvider` dependía del objeto `user`, así que la aplicación se blanqueaba sola cada cierto tiempo y recargaba el store entero. Se arregló comparando el **id** del usuario y dependiendo de `userId`/`userRole`. `PrivateRoute`, `PublicRoute` y `TeacherDashboard` no se tocaron | Cerrado en el paso 13; ver `CONTEXT.md` §2.2 y §2.5 |
 
 ### 3.1 Historial previo al ingreso en un salón
 

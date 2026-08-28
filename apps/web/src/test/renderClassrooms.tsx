@@ -2,8 +2,8 @@ import { StrictMode } from 'react';
 import type { ReactNode } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { AuthContext } from '../context/AuthContext';
-import type { AuthContextValue } from '../context/AuthContext';
 import { ClassroomsProvider } from '../context/ClassroomsProvider';
+import { buildAuthValue } from './buildAuthValue';
 import { useClassrooms } from '../hooks/useClassrooms';
 import { createFakeClassrooms } from './fakeClassroomsService';
 import type { FakeClassrooms } from './fakeClassroomsService';
@@ -20,17 +20,6 @@ import type { User } from '../types/user.types';
  * store. Este archivo sigue siendo el único que conoce esas dependencias: si
  * cambian, se toca aquí y no en cada test.
  */
-const buildAuthValue = (user: User | null): AuthContextValue => ({
-  clearError: () => undefined,
-  error: null,
-  loading: false,
-  session: null,
-  signIn: async () => false,
-  signInWithGoogle: async () => false,
-  signOut: async () => false,
-  signUp: async () => 'error' as const,
-  user,
-});
 
 export const buildUser = (overrides: Partial<User> = {}): User => ({
   avatarKey: 'colibri',

@@ -3,6 +3,8 @@ export const ROUTES = {
   LANDING: '/',
   LOGIN: '/login',
   SIGNUP: '/signup',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
   SIGNUP_CHILD: '/signup/child',
   SIGNUP_TUTOR: '/signup/tutor',
   DASHBOARD: '/dashboard',

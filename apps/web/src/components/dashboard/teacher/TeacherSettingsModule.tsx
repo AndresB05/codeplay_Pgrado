@@ -4,6 +4,7 @@ import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
 import type { ClassGroup } from '../../../types/classroom.types';
 import type { User } from '../../../types/user.types';
+import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 
@@ -93,9 +94,7 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
                 </div>
               </div>
 
-              <button type="button" className="btn btn-ghost mt-6">
-                Cambiar contraseña
-              </button>
+              <ChangePasswordPanel />
             </div>
           </div>
         </section>

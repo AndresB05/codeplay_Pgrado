@@ -17,9 +17,13 @@ context: |
   perfil que devuelve el servidor, un registro que no abre sesión pide confirmar
   el correo en vez de fallar mudo, y una sesión sin perfil no da acceso a ningún
   panel. El botón «Sin login» sigue existiendo sólo en desarrollo y autentica de
-  verdad con las cuentas de prueba de apps/web/.env. Lo siguiente es recuperar y
-  cambiar contraseña (paso 13).
-  `npm run build`, `npm run lint` y `npm run test:run` pasan (61 tests).
+  verdad con las cuentas de prueba de apps/web/.env. LAS CONTRASEÑAS TAMBIÉN SON
+  REALES (paso 13): se cambian desde Ajustes —pidiendo la actual y verificándola
+  contra el servidor— y se recuperan por correo desde /forgot-password, con la
+  pantalla /reset-password detrás de PrivateRoute sin rol. Las dos mitades se
+  verificaron contra la base real. Lo siguiente en la secuencia es el
+  consentimiento del acudiente y la política de privacidad (paso 14).
+  `npm run build`, `npm run lint` y `npm run test:run` pasan (67 tests).
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
@@ -87,6 +91,24 @@ context: |
     quien tenga sesión y no tenga rol; si la segunda apartara a todo el que tiene
     sesión lo devolvería a getHomeRouteForRole(null), que es /dashboard/worlds, y
     se cierra un bucle. Por eso PublicRoute exige sesión Y rol.
+  - /reset-password va tras PrivateRoute SIN prop role, y ese es el motivo de que
+    la prop sea opcional: el enlace del correo abre una sesión real, así que
+    PublicRoute apartaría a esa persona a su panel y la pantalla no se vería
+    nunca, y declarar un rol rebotaría a la mitad de la gente al panel del otro.
+    No es código muerto que limpiar.
+  - El loading global de AuthProvider significa «la sesión se está resolviendo»,
+    y las guardas responden a él cambiando su subárbol entero por un spinner. Se
+    levanta SÓLO cuando cambia el id del usuario (null→id, id→null, id→otro), no
+    en cada evento de onAuthStateChange: un refresco de token desmontaría
+    formularios a medias. Por lo mismo, ClassroomsProvider depende de userId y
+    userRole, nunca del objeto user, que se reconstruye en cada evento. Una
+    acción que ocurre dentro de una sesión ya resuelta —cambiar la contraseña,
+    por ejemplo— lleva su propio indicador de envío en su pantalla.
+  - Cambiar la contraseña desde Ajustes pide la ACTUAL y la verifica contra el
+    servidor con signInWithPassword antes de updateUser, que no la exige: son
+    computadores de aula compartidos y el correo de recuperación es justo lo que
+    un niño puede no controlar. Esa llamada vive en el servicio y no pasa por el
+    signIn del contexto, que mueve loading y error globales.
 
   COMANDOS (desde la raíz)
   npm run dev | build | lint | test | test:run | preview | format
@@ -97,12 +119,14 @@ context: |
   1. Base de datos real en Supabase: HECHO. El esquema entero está aplicado,
      salones incluidos.
   2. Mover el store de salones de localStorage a Supabase: HECHO (paso 10).
-  3. Auth y roles funcionales verificados en servidor: HECHO (paso 12). Fuera
-     quedan Google OAuth (paso 15, proveedor desactivado en el proyecto real) y
-     retirar la sesión de invitado (paso 24, después del juego).
+  3. Auth y roles funcionales verificados en servidor: HECHO (paso 12), con las
+     contraseñas cerradas en el paso 13 —cambio desde Ajustes y recuperación por
+     correo, las dos mitades verificadas contra la base real—. Fuera quedan
+     Google OAuth (paso 15, proveedor desactivado en el proyecto real) y retirar
+     la sesión de invitado (paso 24, después del juego).
   4. Apartado web de integración de los niveles del juego (el juego sigue en
-     desarrollo; aquí sólo entra el contenedor y el contrato de datos): lo
-     siguiente, después de recuperar contraseña (paso 13).
+     desarrollo; aquí sólo entra el contenedor y el contrato de datos), después
+     del consentimiento del acudiente (paso 14).
   El apartado gráfico queda FUERA de este hito a propósito.
 
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO

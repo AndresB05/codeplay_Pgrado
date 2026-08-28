@@ -3,22 +3,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { AuthContext } from '../context/AuthContext';
-import type { AuthContextValue } from '../context/AuthContext';
+import { buildAuthValue } from '../test/buildAuthValue';
 import { buildUser } from '../test/renderClassrooms';
 import type { User } from '../types/user.types';
 import { useRoleHomeRedirect } from './useRoleHomeRedirect';
-
-const buildAuthValue = (user: User | null): AuthContextValue => ({
-  clearError: () => undefined,
-  error: null,
-  loading: false,
-  session: null,
-  signIn: async () => false,
-  signInWithGoogle: async () => false,
-  signOut: async () => false,
-  signUp: async () => 'error' as const,
-  user,
-});
 
 /** Arranca la espera al montarse, que es lo que hacen las tres pantallas. */
 const Probe = () => {

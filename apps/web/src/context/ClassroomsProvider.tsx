@@ -34,6 +34,18 @@ export const ClassroomsProvider = ({
 }: ClassroomsProviderProps) => {
   const { user } = useAuth();
 
+  /*
+   * Del usuario sólo se usan estos dos datos, y de ellos cuelgan todas las
+   * dependencias de abajo. El objeto `user` se reconstruye en cada evento de
+   * sesión —también en los refrescos de token, que no cambian quién está
+   * dentro—, así que depender de él regeneraba todos los callbacks, recargaba el
+   * store entero y hacía parpadear el panel del tutor, que cambia su pantalla
+   * por un spinner mientras carga. Se depende del dato, no de la identidad del
+   * objeto que lo transporta.
+   */
+  const userId = user?.id ?? null;
+  const userRole = user?.role ?? null;
+
   const [groups, setGroups] = useState<ClassGroup[]>([]);
   const [membership, setMembership] = useState<StudentMembership>(EMPTY_MEMBERSHIP);
   const [loading, setLoading] = useState(true);
@@ -50,7 +62,7 @@ export const ClassroomsProvider = ({
     const currentLoad = loadId.current + 1;
     loadId.current = currentLoad;
 
-    if (!user) {
+    if (!userId) {
       setGroups([]);
       setMembership(EMPTY_MEMBERSHIP);
       setLoading(false);
@@ -61,9 +73,9 @@ export const ClassroomsProvider = ({
     setLoading(true);
 
     const { data, error: readError } =
-      user.role === 'tutor'
-        ? await service.getTutorSnapshot(user.id)
-        : await service.getStudentSnapshot(user.id);
+      userRole === 'tutor'
+        ? await service.getTutorSnapshot(userId)
+        : await service.getStudentSnapshot(userId);
 
     if (loadId.current !== currentLoad) {
       return;
@@ -80,7 +92,7 @@ export const ClassroomsProvider = ({
     setMembership(data.membership);
     setError(null);
     setLoading(false);
-  }, [service, user]);
+  }, [service, userId, userRole]);
 
   useEffect(() => {
     void refresh();
@@ -105,11 +117,11 @@ export const ClassroomsProvider = ({
 
   const createGroup = useCallback(
     async (input: CreateGroupInput): Promise<ClassGroup | null> => {
-      if (!user) {
+      if (!userId) {
         return null;
       }
 
-      const { data, error: writeError } = await service.createGroup(input, user.id);
+      const { data, error: writeError } = await service.createGroup(input, userId);
 
       if (writeError || !data) {
         setError(writeError);
@@ -122,7 +134,7 @@ export const ClassroomsProvider = ({
 
       return data;
     },
-    [refresh, service, user]
+    [refresh, service, userId]
   );
 
   const deleteGroup = useCallback(
@@ -150,13 +162,13 @@ export const ClassroomsProvider = ({
 
   const inviteByEmail = useCallback(
     async (groupId: string, email: string): Promise<void> => {
-      if (!user) {
+      if (!userId) {
         return;
       }
 
-      await runWrite(() => service.inviteByEmail(groupId, email, user.id));
+      await runWrite(() => service.inviteByEmail(groupId, email, userId));
     },
-    [runWrite, service, user]
+    [runWrite, service, userId]
   );
 
   /*
@@ -166,30 +178,30 @@ export const ClassroomsProvider = ({
    */
   const requestJoin = useCallback(
     async (groupId: string): Promise<void> => {
-      if (!user || membership.status !== 'none') {
+      if (!userId || membership.status !== 'none') {
         return;
       }
 
-      await runWrite(() => service.requestJoin(groupId, user.id));
+      await runWrite(() => service.requestJoin(groupId, userId));
     },
-    [membership.status, runWrite, service, user]
+    [membership.status, runWrite, service, userId]
   );
 
   const cancelJoinRequest = useCallback(async (): Promise<void> => {
-    if (!user) {
+    if (!userId) {
       return;
     }
 
-    await runWrite(() => service.cancelJoinRequest(user.id));
-  }, [runWrite, service, user]);
+    await runWrite(() => service.cancelJoinRequest(userId));
+  }, [runWrite, service, userId]);
 
   const leaveGroup = useCallback(async (): Promise<void> => {
-    if (!user) {
+    if (!userId) {
       return;
     }
 
-    await runWrite(() => service.leaveGroup(user.id));
-  }, [runWrite, service, user]);
+    await runWrite(() => service.leaveGroup(userId));
+  }, [runWrite, service, userId]);
 
   const currentGroup = useMemo(
     () => groups.find((group) => group.id === membership.groupId) ?? null,

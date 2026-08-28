@@ -10,9 +10,12 @@ import type { User, UserRole } from '../types/user.types';
 export type SignUpOutcome = 'signed-in' | 'confirmation-required' | 'error';
 
 export interface AuthContextValue {
+  /** Cambia la contraseña verificando antes la actual. Ajustes, con sesión. */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   clearError: () => void;
   error: AppError | null;
   loading: boolean;
+  requestPasswordReset: (email: string) => Promise<boolean>;
   session: Session | null;
   signIn: (email: string, password: string) => Promise<boolean>;
   signInWithGoogle: () => Promise<boolean>;
@@ -23,6 +26,8 @@ export interface AuthContextValue {
     fullName: string,
     role: UserRole
   ) => Promise<SignUpOutcome>;
+  /** Fija la contraseña sin pedir la anterior. Pantalla del enlace del correo. */
+  updatePassword: (newPassword: string) => Promise<boolean>;
   user: User | null;
 }
 

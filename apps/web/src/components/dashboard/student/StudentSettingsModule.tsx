@@ -4,6 +4,7 @@ import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
 import type { User } from '../../../types/user.types';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
+import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
 
 type StudentSettingsModuleProps = {
   user: User | null;
@@ -103,9 +104,7 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
                 </div>
               </div>
 
-              <button type="button" className="btn btn-ghost mt-6">
-                Cambiar contraseña
-              </button>
+              <ChangePasswordPanel />
             </div>
           </div>
         </section>

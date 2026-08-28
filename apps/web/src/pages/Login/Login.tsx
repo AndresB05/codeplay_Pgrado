@@ -138,6 +138,7 @@ export const Login = () => {
                       <span className="field-label">Contraseña</span>
                       <button
                         type="button"
+                        onClick={() => navigate(ROUTES.FORGOT_PASSWORD)}
                         className="text-[13px] font-bold text-grape-dark hover:underline"
                       >
                         ¿Olvidaste tu contraseña?

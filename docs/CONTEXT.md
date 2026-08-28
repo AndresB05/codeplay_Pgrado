@@ -247,6 +247,16 @@ del navegador: todo pasa por `useClassrooms()`. Esa frontera aguantó el cambio
 de origen —de `localStorage` a la base— sin tocar más que la espera en cuatro
 pantallas, y por eso se mantiene (§4.3).
 
+**El `loading` global de la sesión es para la resolución inicial, y nada más.**
+Las dos guardas de ruta sustituyen su subárbol entero por un spinner cuando esa
+bandera sube, así que levantarla por un evento que **no cambia quién está
+dentro** desmonta lo que haya en curso: formularios a medias y mensajes recién
+mostrados. `AuthProvider` compara el **id** del usuario antes de levantarla y
+`ClassroomsProvider` depende de `userId`/`userRole`, no del objeto `user`.
+Cualquier acción nueva que ocurra **dentro** de una sesión ya resuelta —como las
+tres de contraseña— lleva su propio indicador de envío en su pantalla. Ver §2.2
+y §2.5.
+
 **Comandos** (desde la raíz):
 
 ```bash
@@ -269,8 +279,10 @@ Para instalar sólo en el front: `npm install <paquete> -w @codeplay/web`.
 **Variables de entorno.** `apps/web/.env` (plantilla en `.env.example`):
 `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`. `config/env.ts` las valida con
 zod **y lanza en tiempo de importación si faltan o son inválidas**, así que la
-app no arranca sin ellas. Hoy el `.env` local contiene valores de relleno: la
-app carga, pero ninguna consulta a Supabase resuelve.
+app no arranca sin ellas. El `.env` local **ya apunta al proyecto real** desde el
+paso 6, y desde el 11 lleva además las cuatro `VITE_DEV_*` de las cuentas de
+prueba del botón «Sin login»; lo que trae valores de relleno es `.env.example`,
+que es lo que consume el workflow de CI.
 
 ---
 
@@ -344,6 +356,10 @@ se muestra por salón.
 | **El destino tras entrar lo decide el rol del perfil**, en los tres sitios que autentican | ✅ | `hooks/useRoleHomeRedirect.ts` + `pages/Login/`, `pages/Signup/`, `components/home/Navbar.tsx` |
 | Un registro que no abre sesión pide confirmar el correo en vez de fallar mudo | ✅ | `context/AuthProvider.tsx` (`SignUpOutcome`) + `pages/Signup/Signup.tsx` |
 | Una sesión sin perfil no da acceso a ningún panel: se cierra y se dice por qué | ✅ | `services/profile.service.ts` (`PROFILE_NOT_FOUND`) + `AuthProvider.tsx` + `router/` |
+| **Cambiar la contraseña desde Ajustes**, pidiendo la actual y verificándola contra el servidor | ✅ | `shared/ChangePasswordPanel.tsx` (lo montan las dos pantallas de Ajustes) + `components/auth/ChangePasswordForm.schema.ts` + `authService.changePassword()` |
+| **Recuperar la contraseña olvidada**: se pide por correo y se fija desde el enlace | ✅ | `pages/ForgotPassword/`, `pages/ResetPassword/` + `authService.requestPasswordReset()` y `updatePassword()` |
+| La pantalla de contraseña nueva exige **sesión y ningún rol** | ✅ | `router/AppRouter.tsx` — `PrivateRoute` sin prop `role` |
+| El indicador de carga se reserva a la **resolución inicial** de la sesión | ✅ | `context/AuthProvider.tsx` (comparación de id en `onAuthStateChange`) |
 
 **Decisiones de diseño**
 
@@ -411,12 +427,98 @@ se muestra por salón.
   escribiendo la dirección, porque `isAuthenticated(session)` seguía siendo
   cierto.
 
+- **El cambio desde Ajustes pide la contraseña actual y la verifica contra el
+  servidor.** `supabase.auth.updateUser({ password })` no la exige: la sesión
+  abierta le basta. Aquí no basta. Esto son computadores de aula compartidos, y
+  quien se siente ante la sesión de un compañero podría cambiarle la contraseña
+  y dejarlo fuera de su propia cuenta; la salida que este mismo paso construye
+  —el correo de recuperación— es justo la que **un niño puede no tener o no
+  controlar**. Así que `authService.changePassword()` llama primero a
+  `signInWithPassword` con el correo de la sesión y la contraseña escrita, y
+  sólo si esa llamada sale bien llama a `updateUser`. Dos propiedades de esa
+  secuencia: la verificación emite una sesión nueva **del mismo usuario**, que
+  es inocua, y un `signInWithPassword` fallido **no toca** la sesión ya
+  almacenada, así que con la actual equivocada la persona sigue dentro viendo el
+  motivo. Por eso la llamada vive en el servicio y no pasa por el `signIn` del
+  contexto, que mueve `loading` y `error` globales y trataría un tecleo
+  equivocado como un fallo de sesión.
+- **Lo que esa comprobación NO cubre.** Protege a quien usa la aplicación, no a
+  quien tenga el token de una sesión robada y llame a la API directamente: ése
+  se salta la pantalla entera. Eso sólo lo cierra «Secure password change» en el
+  panel de Supabase, que hace que el propio servidor exija reautenticación
+  reciente. Hoy está **apagado** y el paso 13 no lo tocó: son capas distintas y
+  encenderlo es lo que conviene cuando haya usuarios reales. Con la
+  reautenticación hecha en el cliente, la aplicación funciona igual esté como
+  esté ese interruptor.
+- **La única decisión abierta que queda en acceso es la del rol elegido por el
+  navegador**, arriba. La de la contraseña actual dejó de estarlo: el paso 13 la
+  cierra pidiéndola y verificándola.
+- **Un solo panel de cambio de contraseña para las dos pantallas de Ajustes**,
+  en `shared/`, donde ya viven `StoreErrorNotice` y `ConfirmDialog`. Los dos
+  módulos tienen marcos distintos pero el formulario es la misma función; dos
+  copias divergirían al primer arreglo, como pasó con el `signOut` de las dos
+  barras laterales. El panel trae su propio botón desplegable, que es el que
+  antes estaba muerto. `/reset-password` **no** lo monta: vive fuera del
+  dashboard y comparte lo que de verdad se comparte —el esquema de zod y
+  `updatePassword()`—, no el marcado.
+- **Dos esquemas de zod, una regla compartida.** `changePasswordSchema` pide
+  actual + nueva + repetición; `resetPasswordSchema`, sólo las dos nuevas. Quien
+  llega por el enlace del correo es exactamente quien no sabe su contraseña:
+  pedírsela sería exigirle el dato que vino a recuperar. El mínimo de 6 y la
+  igualdad entre las dos nuevas se declaran **una vez** y los usan los dos, para
+  no acabar con dos mínimos distintos sin que nadie lo decida.
+- **Las dos pantallas nuevas caen en guardas distintas, y ninguna guarda se
+  tocó.** `/forgot-password` va tras `PublicRoute`: es para quien no ha entrado,
+  y a quien ya tiene sesión y rol lo lleva a su panel, que es correcto —esa
+  persona puede cambiarla desde Ajustes—. `/reset-password` va tras
+  `PrivateRoute` **sin prop `role`**: el enlace del correo abre una sesión real,
+  así que `PublicRoute` apartaría a esa persona a su panel y la pantalla no se
+  vería nunca; y declarar un rol rebotaría a la mitad de la gente al panel del
+  otro. Sin sesión de ninguna clase, `PrivateRoute` manda a `/login`, que es la
+  respuesta correcta: sin el enlace no hay nada que fijar. **Que este caso
+  exista es la prueba de que la prop `role` opcional estaba bien puesta**; no es
+  código muerto que limpiar.
+- **El aviso de la pantalla de recuperación no dice si la dirección tiene
+  cuenta.** El texto es el mismo exista o no, como responde Supabase: la
+  interfaz no puede ser quien convierta esa pantalla en un comprobador de
+  cuentas dadas de alta.
+- **La URL de vuelta del correo se construye como la de Google**, con
+  `new URL(ROUTES.RESET_PASSWORD, window.location.origin)` y no con una cadena
+  escrita a mano, que se desincronizaría de `routes.ts` en cuanto alguien
+  renombrara la ruta — y el fallo aparecería **sólo dentro del correo**, que es
+  el sitio más caro de depurar del proyecto. Tiene test (`auth.service.test.ts`).
+- **`AuthProvider` sigue sin leer `_event`.** El cliente establece la sesión solo
+  al detectar los tokens del enlace y `syncSessionProfile()` la recoge como
+  cualquier otra, así que distinguir `PASSWORD_RECOVERY` no aportaba nada: el
+  `redirectTo` ya deposita a esa persona donde tiene que estar. Lo que sí hereda
+  la recuperación es el invariante del paso 12: si la cuenta que abre el enlace
+  no tuviera fila en `profiles`, esa sesión se cierra con el mensaje de cuenta
+  sin perfil. Es correcto, y es la respuesta a «¿por qué no puedo recuperar esta
+  cuenta?» si alguien borra un perfil a mano en el panel.
+- **El indicador de carga se blanquea sólo cuando cambia QUIÉN está dentro, y
+  eso era un defecto anterior.** Las dos guardas sustituyen su subárbol entero
+  por un spinner en cuanto sube `loading`, y el subscriptor de
+  `onAuthStateChange` lo subía en **cada** evento, refrescos de token incluidos:
+  la aplicación ya se blanqueaba sola cada cierto tiempo, y nadie lo había visto
+  porque ningún evento caía en mitad de una interacción. El cambio de contraseña
+  es la primera que dura lo suficiente —el panel se desmontaba antes de enseñar
+  el resultado—. Hoy el subscriptor compara el **id** del usuario
+  (`null→id`, `id→null`, `id→otro`) y sólo entonces levanta la bandera; por
+  identidad, `_event` sigue sin leerse. Por lo mismo, **las tres acciones de
+  contraseña no tocan el `loading` global**: esa bandera significa «la sesión se
+  está resolviendo» y una contraseña se cambia dentro de una sesión ya resuelta.
+  Cada pantalla lleva su propio indicador de envío. `PrivateRoute`, `PublicRoute`
+  y `TeacherDashboard` no se tocaron: el arreglo está en quien levanta la
+  bandera, no en quien reacciona a ella.
+
 #### Rutas
 
 | Ruta | Rol | Pantalla |
 | --- | --- | --- |
 | `/` | Público | Landing |
 | `/login`, `/signup` | Público | Acceso y registro |
+| `/forgot-password` | Público | Pedir el correo de recuperación |
+| `/reset-password` | **Sesión, sin rol** | Fijar la contraseña nueva; es donde aterriza el enlace del correo |
 | `/dashboard`, `/dashboard/worlds` | Alumno | Mundos |
 | `/dashboard/worlds/:worldId` | Alumno | Niveles de un mundo |
 | `/dashboard/trophies` | Alumno | Sala de trofeos |
@@ -452,7 +554,7 @@ con las del tutor.
 | Asignación de misiones | 🟡 | Estado local del componente (`assignedMissionIds`); se pierde al recargar |
 | Invitar alumnos por correo | 🟡 | `teacher/InviteByEmailPanel.tsx` — registra la invitación, **no envía correo** |
 | Recursos educativos | 🟡 | Tarjetas informativas sin destino |
-| Ajustes de cuenta | 🟡 | `teacher/TeacherSettingsModule.tsx` — «Cambiar contraseña» no hace nada |
+| Ajustes de cuenta: salir y cambiar contraseña | ✅ | `teacher/TeacherSettingsModule.tsx` + `shared/ChangePasswordPanel.tsx` — desde el paso 13, ver §2.2 |
 
 **Decisiones de diseño**
 
@@ -512,6 +614,7 @@ niño le llega al tutor desde otro dispositivo, no desde el mismo navegador.
 | Store de salones con API de acciones tipada, ahora asíncrona | ✅ | `context/ClassroomsContext.ts` + `ClassroomsProvider.tsx` |
 | Servicio de salones con la forma `{ data, error }` | ✅ | `services/classrooms.service.ts` |
 | Identidad del niño y del tutor tomada de la sesión | ✅ | `ClassroomsProvider.tsx` (se fue `CURRENT_STUDENT_ID`) |
+| Se recarga por **quién** está dentro, no por cada evento de sesión | ✅ | `ClassroomsProvider.tsx` — los callbacks dependen de `userId` y `userRole` |
 | Carga declarada y error **mostrado** a quien hizo la acción | ✅ | `loading` y `error` del contexto + `shared/StoreErrorNotice.tsx` en las tres vistas que escriben |
 | Motivos de la base traducidos al español | ✅ | `ERROR_MESSAGES` en `services/classrooms.service.ts` |
 | Guarda de «un alumno, un salón» antes de escribir | ✅ | `requestJoin()` en `ClassroomsProvider.tsx` |
@@ -523,6 +626,15 @@ niño le llega al tutor desde otro dispositivo, no desde el mismo navegador.
   tiene decenas de filas y la consulta es barata; recargar evita una familia de
   errores de sincronía, como una aceptación que falla por cupo y deja al alumno
   pintado dentro. La actualización optimista se añadiría encima; al revés no.
+- **Lo que decide recargar es la identidad, no el número de eventos de sesión.**
+  Los seis callbacks dependen de `user.id` y `user.role` —extraídos arriba como
+  `userId` y `userRole` para no chocar con `exhaustive-deps`—, no del objeto
+  `user`, que se reconstruye en cada evento. Dependiendo del objeto, un refresco
+  de token regeneraba los seis callbacks y recargaba el store entero, y la
+  pantalla del tutor, que se sustituye por un indicador mientras carga,
+  parpadeaba y se llevaba por delante lo que hubiera a medias. Es la misma
+  enfermedad que el `loading` global de §2.2 y se arregló en el paso 13; los 29
+  tests del provider pasaron sin tocarlos.
 - Las lecturas compuestas se cruzan **en JavaScript**: `class_memberships.student_id`
   y `join_requests.student_id` apuntan a `auth.users`, no a `profiles`, así que
   sin clave ajena PostgREST no puede incrustar el perfil.
@@ -748,6 +860,23 @@ Comprobado contra la base real: un tutor registrado desde la interfaz sale con
 `curl` con `role: "superadmin"` en los metadatos crea el perfil con `child` y
 aterriza en `/dashboard/worlds`.
 
+**Las contraseñas también, desde el 27-ago-2026**, cambio `password-recovery`
+(paso 13). Las **dos mitades quedaron verificadas contra la base real**, así que
+el paso está cerrado entero:
+
+- **Cambiar la contraseña estando dentro.** Los dos botones de Ajustes funcionan.
+  Comprobado que con la contraseña actual equivocada **no cambia nada**, la
+  sesión sigue abierta y la antigua sigue entrando —ese aserto es el que prueba
+  que la verificación no es decorativa—; y que con la correcta el servidor da
+  las **dos** respuestas, la antigua rechazada y la nueva aceptada. En alumno y
+  en tutor.
+- **Recuperar la olvidada.** El correo llegó a la dirección del dueño del
+  proyecto —la única a la que el correo de fábrica llega con fiabilidad—, el
+  enlace aterrizó en la pantalla de contraseña nueva sin rebotar a ningún panel,
+  y el cambio se aplicó: comprobado por `curl` que la anterior dejó de entrar.
+  `/reset-password` sin sesión va a `/login`, y `/forgot-password` con sesión y
+  rol lleva al panel del rol.
+
 De esta línea quedan dos cosas, y **ninguna es de este paso**: Google OAuth es el
 paso 15 —y el proveedor está desactivado en el proyecto real—, y retirar la
 sesión de invitado es el paso 24, que va después del juego por decisión del
@@ -899,7 +1028,7 @@ aquí porque hasta ahora nadie lo había medido, y porque es trabajo del **paso
 `.eslintrc.cjs` usa la configuración heredada. Migrar a ESLint 9 con
 configuración plana es una tarea pendiente sin urgencia.
 
-### 4.6 Bundle de 583 kB
+### 4.6 Bundle de 596 kB
 
 `npm run build` avisa de que el chunk supera los 500 kB. Sin urgencia, pero
 cobrará importancia al embeber el juego. Se resuelve con `manualChunks` o
@@ -913,13 +1042,15 @@ Comprobado el **27 de agosto de 2026** ejecutando los comandos:
 
 | Comprobación | Resultado |
 | --- | --- |
-| `npm run build` | ✅ Pasa. 160 módulos, 3,7 s. Sólo avisa del tamaño del chunk |
+| `npm run build` | ✅ Pasa. 164 módulos, 2,1 s. Sólo avisa del tamaño del chunk |
 | `npm run lint` | ✅ Pasa. Cero errores y cero warnings |
-| `npm run test:run` | ✅ Pasa. 61 tests en 4 archivos |
+| `npm run test:run` | ✅ Pasa. 67 tests en 6 archivos |
 | Panel del tutor y del niño con la sesión de invitado | ✅ Navegan sin errores en consola. Los mundos se pintan desde Supabase —«Selva Algorítmica», `0/3 NIVELES`—, no desde el respaldo local |
 | Flujo de salones de punta a punta contra la base real | ✅ Crear salón, buscar por ID público, solicitar, ver la solicitud con nombre, aceptar, ver compañeros, rechazar, reintentar y borrar en cascada |
 | Registro real con rol, contra la base | ✅ Tutor registrado desde la interfaz: `profiles.role = 'tutor'` y aterriza en `/teacher/groups`. Alta por `curl` con `role: "superadmin"` en los metadatos: el alta no falla, el perfil sale `child` y aterriza en `/dashboard/worlds` |
 | Acceso real por rol, con las cuentas de `.env` | ✅ El tutor va a `/teacher/groups` y el niño a `/dashboard/worlds`, sin parpadeo de panel ajeno y sin errores en consola |
+| **Cambio de contraseña desde Ajustes** (mitad A del paso 13), contra la base real | ✅ Con la actual **equivocada** no cambia nada, la sesión sigue abierta, el motivo se ve en pantalla y la antigua sigue entrando por `curl`. Con la correcta, las dos respuestas de `/auth/v1/token`: la antigua rechazada y la nueva aceptada. Probado en alumno **y** en tutor, y los dos rechazos del formulario —las dos nuevas distintas y la nueva demasiado corta— sin llegar al servidor |
+| **Recuperación de la contraseña olvidada** (mitad B del paso 13), de punta a punta | ✅ Petición hecha **una sola vez** contra la dirección del dueño del proyecto —la única a la que el correo de fábrica llega con fiabilidad—; el correo llegó, el enlace aterrizó en `/reset-password` sin rebotar a ningún panel y la contraseña nueva quedó fijada: comprobado por `curl` que la anterior dejó de entrar. `/reset-password` sin sesión redirige a `/login`, y `/forgot-password` con sesión y rol lleva al panel de ese rol |
 
 **Cuidado al comprobar la pantalla de mundos:** `useWorlds()` arranca con la
 lista vacía, así que durante la carga se pinta el respaldo de `worldsData.ts`
@@ -951,5 +1082,8 @@ referencia completa de diseño.
 2. `cp apps/web/.env.example apps/web/.env` — hacen falta valores que pasen la
    validación de zod, o la app no arranca.
 3. `npm run dev`.
-4. Entrar con los botones **Sin login** de la barra superior y elegir *Niño* o
-   *Profesor*. Es el único acceso mientras el login real no exista.
+4. Entrar por `/login` con una cuenta real, o registrar una desde `/signup`: el
+   acceso real funciona desde el paso 12 y quien olvide su contraseña la
+   recupera desde «¿Olvidaste tu contraseña?» (paso 13). Los botones **Sin
+   login** de la barra superior siguen existiendo **sólo en desarrollo** y
+   autentican de verdad con las cuentas de `VITE_DEV_*`.

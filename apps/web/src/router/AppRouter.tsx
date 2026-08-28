@@ -3,8 +3,10 @@ import { AuthProvider } from '../context/AuthProvider';
 import { ClassroomsProvider } from '../context/ClassroomsProvider';
 import { ROUTES } from '../constants/routes';
 import { Dashboard } from '../pages/Dashboard/Dashboard';
+import { ForgotPassword } from '../pages/ForgotPassword/ForgotPassword';
 import { Landing } from '../pages/Landing/Landing';
 import { Login } from '../pages/Login/Login';
+import { ResetPassword } from '../pages/ResetPassword/ResetPassword';
 import { Signup } from '../pages/Signup/Signup';
 import { TeacherDashboard } from '../pages/TeacherDashboard/TeacherDashboard';
 import { PrivateRoute } from './PrivateRoute';
@@ -38,6 +40,32 @@ export const AppRouter = () => {
                 <PublicRoute>
                   <Signup />
                 </PublicRoute>
+              }
+            />
+            <Route
+              path={ROUTES.FORGOT_PASSWORD}
+              element={
+                <PublicRoute>
+                  <ForgotPassword />
+                </PublicRoute>
+              }
+            />
+            {/*
+             * `PrivateRoute` SIN rol, y es el primer sitio que aprovecha que la
+             * prop sea opcional. El enlace del correo abre una sesión de verdad:
+             * con `PublicRoute` esa persona sería apartada a su panel y la
+             * pantalla no se vería nunca, y declarar un rol rebotaría a la mitad
+             * de la gente al panel del otro. Aquí hace falta sesión —que es lo
+             * que el enlace aporta— y da igual el rol. Quien llegue sin enlace
+             * acaba en `/login`, que es la respuesta correcta: sin sesión no hay
+             * nada que fijar.
+             */}
+            <Route
+              path={ROUTES.RESET_PASSWORD}
+              element={
+                <PrivateRoute>
+                  <ResetPassword />
+                </PrivateRoute>
               }
             />
 
