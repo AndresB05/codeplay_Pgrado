@@ -93,8 +93,8 @@ escrito en §2.1.
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ✅ | `salones-persistentes` |
 | 12 | Login y registro reales con rol | ✅ | `auth-real` |
 | 13 | Recuperar y cambiar contraseña — **las dos mitades verificadas contra la base real**: el cambio desde Ajustes pide la contraseña actual y la verifica, y el correo de recuperación llegó y su enlace fijó la nueva | ✅ | `password-recovery` |
-| 14 | ★ Consentimiento del acudiente y política de privacidad — **hereda dos decisiones ya tomadas**: el tutor ve el historial completo del niño (§3.1) y los compañeros de un salón se ven entre sí el nombre, el XP y la racha (§3.2) | ⬜ | — |
 | 15 | Google OAuth | ⬜ | P2 |
+| 14 | ★ Consentimiento del acudiente y política de privacidad — **adelantado en parte y aplazado el resto, ver §2.1 y §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó el único sitio donde se guardaban datos de terceros. Lo que falta **se retoma después de la prueba preliminar, y en todo caso antes del primer usuario real**. Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los compañeros se ven entre sí nombre, XP y racha (§3.2) | 🔄 | `invitaciones-sin-correo` + §3.4 |
 | 16 | Persistir la asignación de misiones | ⬜ | P5 |
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
 | 18 | ★ Notificaciones en tiempo real (Supabase Realtime) | ⬜ | — |
@@ -159,6 +159,21 @@ sala de trofeos sólo puede mostrar lo conseguido: el requisito de
 
 **El apartado gráfico (26) queda casi al final a propósito.** No bloquea ninguna
 funcionalidad y el foco actual son las funcionalidades.
+
+**El paso 15 pasa por delante del 14, y el 14 se queda en curso.** El 14 se
+partió en dos: lo que era exigible hoy ya está hecho —`invitaciones-sin-correo`
+eliminó `invitations.email`, que era el único sitio del esquema donde se
+guardaban datos de un tercero sin cuenta—, y lo que queda es la política de
+privacidad y el consentimiento del acudiente, que **hoy no obligan a nada**: la
+aplicación no está desplegada —eso es el paso 27—, las únicas cuentas son de
+prueba, y ya no se recogen datos de nadie que no se haya dado de alta él mismo.
+**La obligación nace con el primer usuario real, no antes**, así que lo que
+falta se retoma después de la prueba preliminar y en todo caso antes de que
+entre alguien de fuera. Ver §3.4, que dice exactamente qué falta.
+
+Redactar ahora una política sobre un esquema que todavía va a cambiar —el paso
+17 conecta el progreso real, el 20 y el 21 traen el juego— significaría
+reescribirla dos veces. Google OAuth (15), en cambio, no depende de nada de eso.
 
 ### 2.2 Pasos que requieren a una persona
 
@@ -387,6 +402,36 @@ Ampliarlo no bloquea ningún paso técnico y no está en la secuencia, pero sí
 condiciona lo que se puede enseñar en una demostración. Decidir cuándo se escribe
 el contenido real, y si hace falta una pantalla para administrarlo o basta con
 seguir sembrando por migración.
+
+### 3.4 Lo que falta del paso 14, y lo que ya está decidido
+
+**Falta esto, y la lista es el encargo entero:**
+
+1. **La política de privacidad** con los seis puntos del art. 13 del Decreto 1377
+   de 2013, su página, y los cuatro enlaces muertos de `home/Footer.tsx:4`.
+2. **Tabla de consentimientos append-only** —nunca `update`— con titular, quién
+   autorizó, **la versión del texto** y la fecha: el art. 8 obliga a conservar
+   prueba, y sin versión no se prueba a qué se consintió.
+3. **El acudiente como relación, no como rol.** El art. 12 exige la autorización
+   del representante legal, y `tutor` mezcla hoy padres con profesores.
+4. **Apodo elegido y proyección doble del roster** —nombre real al tutor, apodo a
+   los compañeros—, que hoy enseña `full_name` a otros menores. `username` **no
+   sirve** de apodo: el disparador lo saca de `split_part(email, '@', 1)`.
+
+**Decidido, no se vuelve a discutir:** el **responsable del tratamiento es el
+usuario como persona natural** —lo que además le exime del Registro Nacional de
+Bases de Datos, que desde el Decreto 090 de 2018 sólo alcanza a sociedades y
+entidades con activos sobre 100.000 UVT y a entidades públicas—; el **plazo de
+conservación** está en `CONTEXT.md` §2.7; el historial que ve el tutor se cuenta
+desde `joined_at` (§3.1); y la comparación entre compañeros se queda (§3.2).
+
+**Por decidir antes de redactar:** el **correo de contacto y el domicilio** que
+figurarán en la política. **No pueden ser los personales**: este repositorio es
+público y la política se publica con la aplicación.
+
+El texto legal citado se verificó en fuente primaria —Ley 1581 de 2012 art. 7,
+Decreto 1377 de 2013 arts. 7, 8, 10, 11, 12, 13 y 15—, pero **la lectura
+aplicada la tiene que firmar un humano competente** antes de ir a la memoria.
 
 ---
 

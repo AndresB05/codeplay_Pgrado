@@ -842,7 +842,7 @@ la primera.
   a los 14 días** por su `expires_at`; hoy no hay nada que purgar porque nadie
   escribe filas, así que esa purga es **una obligación que hereda el paso 19**,
   no algo implementado. Es lo que exige decir un plazo en la política de
-  privacidad, que se redacta aparte.
+  privacidad, que **se redacta más adelante**: ver §3 y `ROADMAP.md` §3.4.
 - **Ninguna tabla guarda el correo de alguien sin cuenta.** Lo hacía
   `invitations.email` hasta la migración `202606030016`, que lo eliminó. Ver
   §2.3: es una decisión de privacidad, no una funcionalidad pendiente.
@@ -940,6 +940,26 @@ Los salones viven en Supabase desde el 26-ago-2026, cambio `salones-persistentes
 (paso 10 del `ROADMAP.md`). Ver §2.5 para el estado y §2.7 para las dos vistas
 que trajo la migración 0015. Lo que queda de esta línea es progreso real por
 alumno, que es el paso 17 y no este.
+
+### Privacidad y consentimiento (paso 14): EN CURSO, el resto APLAZADO
+
+Lo exigible hoy ya está aplicado: el cambio `invitaciones-sin-correo` eliminó
+`invitations.email` —el único sitio del esquema donde se guardaba el dato de un
+tercero sin cuenta— en la migración `202606030016`. Ver §2.3 y §2.7.
+
+**Lo que queda —política de privacidad y consentimiento del acudiente— se
+aplaza a propósito, y el motivo es que hoy no obliga a nada:** la aplicación no
+está desplegada (paso 27), las únicas cuentas son de prueba, y ya no se recogen
+datos de nadie que no se haya dado de alta él mismo. **La obligación nace con el
+primer usuario real.** Se retoma después de la prueba preliminar y en todo caso
+antes de que entre alguien de fuera.
+
+**Qué falta exactamente, y qué está ya decidido, está en `ROADMAP.md` §3.4**, en
+una lista que sirve de encargo sin releer nada más. De lo decidido, lo que toca
+a este documento: el **responsable del tratamiento es el usuario como persona
+natural**, y el plazo de conservación es el de §2.7. Quedan por decidir el
+correo de contacto y el domicilio de la política, que **no pueden ser los
+personales** porque el repositorio es público.
 
 ### P4 — `integracion-juego`: apartado de implementación de los niveles
 
