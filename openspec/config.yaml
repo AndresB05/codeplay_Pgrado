@@ -21,9 +21,13 @@ context: |
   REALES (paso 13): se cambian desde Ajustes —pidiendo la actual y verificándola
   contra el servidor— y se recuperan por correo desde /forgot-password, con la
   pantalla /reset-password detrás de PrivateRoute sin rol. Las dos mitades se
-  verificaron contra la base real. Lo siguiente en la secuencia es el
-  consentimiento del acudiente y la política de privacidad (paso 14).
-  `npm run build`, `npm run lint` y `npm run test:run` pasan (67 tests).
+  verificaron contra la base real. El paso 14 —consentimiento del acudiente y
+  política de privacidad— está EXPLORADO y partido en dos cambios que dependen
+  de una decisión pendiente del usuario (quién figura como responsable del
+  tratamiento); de él ya salió `invitaciones-sin-correo`, que eliminó
+  invitations.email en la migración 0016 porque guardaba el correo de un tercero
+  sin cuenta, sin plazo y para un envío que no ocurre.
+  `npm run build`, `npm run lint` y `npm run test:run` pasan (66 tests).
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
@@ -164,6 +168,15 @@ context: |
     exige que el rol lo conceda el servidor por una vía que el navegador no
     controle (código de institución canjeado por una RPC security definer). Se
     queda así mientras no haya usuarios reales. Ver docs/CONTEXT.md §2.2.
+  - NINGUNA tabla guarda el correo de alguien que no tiene cuenta. invitations
+    lo hacía y la migración 0016 lo eliminó: era el dato de un tercero que nadie
+    había autorizado, que nada borraba y cuya finalidad —el envío, que es el
+    paso 19— no se ejecuta. Si un cambio necesita el correo de un tercero, esa
+    es una decisión que se toma explícitamente, no una columna que se rellena.
+  - Conservación: los datos personales viven mientras exista la cuenta y se van
+    con ella por las cascadas contra auth.users de las migraciones 0002, 0004,
+    0005 y 0013. Las invitaciones se purgan además a los 14 días por expires_at,
+    obligación que hereda el paso 19 porque hoy no se escribe ninguna fila.
   - Toda migración nueva debe traer sus políticas de RLS y sus grant: el
     proyecto se creó con RLS automática y sin exposición automática de tablas.
     Y revocar de public no basta: hay que revocar de anon aparte.

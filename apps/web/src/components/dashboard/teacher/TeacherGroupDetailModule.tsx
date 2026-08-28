@@ -9,7 +9,7 @@ import { StatCard } from '../shared/StatCard';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { StudentRosterTable } from '../shared/StudentRosterTable';
 import { findClassGroup, getClassGroupStats } from './classroomsData';
-import { InviteByEmailPanel } from './InviteByEmailPanel';
+import { AddStudentsPanel } from './AddStudentsPanel';
 import { PendingRequestsSection } from './PendingRequestsSection';
 import {
   BackIcon,
@@ -28,9 +28,9 @@ interface TeacherGroupDetailModuleProps {
 
 export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModuleProps) => {
   const navigate = useNavigate();
-  const { groups, acceptRequest, deleteGroup, error, inviteByEmail, rejectRequest, removeStudent } =
+  const { groups, acceptRequest, deleteGroup, error, rejectRequest, removeStudent } =
     useClassrooms();
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [addStudentsOpen, setAddStudentsOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const group = findClassGroup(groups, groupId);
@@ -106,12 +106,12 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={() => setInviteOpen((open) => !open)}
-              aria-expanded={inviteOpen}
+              onClick={() => setAddStudentsOpen((open) => !open)}
+              aria-expanded={addStudentsOpen}
               className="btn btn-sun"
             >
               <InviteIcon />
-              Invitar
+              Sumar alumnos
             </button>
 
             <button
@@ -135,13 +135,9 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
         </div>
       </section>
 
-      {inviteOpen ? (
+      {addStudentsOpen ? (
         <div className="mt-5">
-          <InviteByEmailPanel
-            group={group}
-            freeSeats={stats.freeSeats}
-            onInvite={(email) => inviteByEmail(group.id, email)}
-          />
+          <AddStudentsPanel group={group} freeSeats={stats.freeSeats} />
         </div>
       ) : null}
 

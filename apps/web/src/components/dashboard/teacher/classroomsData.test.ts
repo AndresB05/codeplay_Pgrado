@@ -38,7 +38,6 @@ const buildTestGroup = (overrides: Partial<ClassGroup> = {}): ClassGroup => {
     memberCount: students.length,
     students,
     pendingRequests: [],
-    invitations: [],
     ...overrides,
   };
 };

@@ -36,14 +36,6 @@ interface RequestRow {
   requestedAt: string;
 }
 
-interface InvitationRow {
-  id: string;
-  groupId: string;
-  email: string;
-  sentAt: string;
-  status: 'pending' | 'accepted';
-}
-
 const EMPTY_SKILLS: Record<SkillKey, number> = {
   sequences: 0,
   loops: 0,
@@ -82,7 +74,6 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
   const groups: GroupRow[] = [];
   const memberships: MembershipRow[] = [];
   const requests: RequestRow[] = [];
-  const invitations: InvitationRow[] = [];
   const profiles = new Map<string, string>();
 
   let sequence = 0;
@@ -139,14 +130,6 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
         initials: buildInitials(nameOf(entry.studentId)),
         avatarTone: pickAvatarTone(entry.studentId),
         requestedAtIso: entry.requestedAt,
-      })),
-    invitations: invitations
-      .filter((entry) => entry.groupId === row.id)
-      .map((entry) => ({
-        id: entry.id,
-        email: entry.email,
-        sentAtIso: entry.sentAt,
-        status: entry.status,
       })),
   });
 
@@ -252,7 +235,7 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
         }
 
         /* En cascada, igual que las claves ajenas de la migración 0013. */
-        [memberships, requests, invitations].forEach((table) => {
+        [memberships, requests].forEach((table) => {
           for (let position = table.length - 1; position >= 0; position -= 1) {
             if (table[position].groupId === groupId) {
               table.splice(position, 1);
@@ -314,20 +297,6 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
         if (request?.status === 'pending') {
           request.status = 'rejected';
         }
-
-        return ok;
-      });
-    },
-
-    async inviteByEmail(groupId, email) {
-      return write(() => {
-        invitations.push({
-          id: nextId('inv'),
-          groupId,
-          email: email.trim().toLowerCase(),
-          sentAt: nextTimestamp(),
-          status: 'pending',
-        });
 
         return ok;
       });

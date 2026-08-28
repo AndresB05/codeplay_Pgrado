@@ -160,17 +160,6 @@ export const ClassroomsProvider = ({
     [runWrite, service]
   );
 
-  const inviteByEmail = useCallback(
-    async (groupId: string, email: string): Promise<void> => {
-      if (!userId) {
-        return;
-      }
-
-      await runWrite(() => service.inviteByEmail(groupId, email, userId));
-    },
-    [runWrite, service, userId]
-  );
-
   /*
    * La guarda de «un alumno, un salón». Antes la sostenía el enrutado de la
    * vista, que sólo monta el buscador sin salón; contra la base, saltársela
@@ -217,7 +206,6 @@ export const ClassroomsProvider = ({
       deleteGroup,
       error,
       groups,
-      inviteByEmail,
       leaveGroup,
       loading,
       membership,
@@ -233,7 +221,6 @@ export const ClassroomsProvider = ({
       deleteGroup,
       error,
       groups,
-      inviteByEmail,
       leaveGroup,
       loading,
       membership,

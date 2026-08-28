@@ -412,20 +412,6 @@ describe('Acciones del tutor sobre el salón', () => {
     expect(store().groups.some((group) => group.id === created[0]?.id)).toBe(true);
     expect(created[0]?.name).toBe('Salón 4D');
   });
-
-  it('inviteByEmail añade la invitación con el correo normalizado', async () => {
-    const { store } = await renderClassrooms({ user: currentTutor, seed: seedTwoGroups });
-
-    await act(async () => {
-      await store().inviteByEmail(SALON_2B, '  Familia.Nieto@Correo.COM  ');
-    });
-
-    const invitaciones = findGroup(store(), SALON_2B).invitations;
-    const invitation = invitaciones[invitaciones.length - 1];
-
-    expect(invitation?.email).toBe('familia.nieto@correo.com');
-    expect(invitation?.status).toBe('pending');
-  });
 });
 
 describe('Mutaciones estables bajo StrictMode', () => {

@@ -34,14 +34,6 @@ export interface JoinRequest {
   requestedAtIso: string;
 }
 
-/** Invitación enviada por correo desde el panel del tutor. */
-export interface EmailInvitation {
-  id: string;
-  email: string;
-  sentAtIso: string;
-  status: 'pending' | 'accepted';
-}
-
 export interface ClassGroup {
   /** Identificador interno, estable y no visible. */
   id: string;
@@ -65,8 +57,6 @@ export interface ClassGroup {
   students: ClassroomStudent[];
   /** Niños que pidieron entrar y esperan respuesta. */
   pendingRequests: JoinRequest[];
-  /** Invitaciones por correo enviadas desde este salón. */
-  invitations: EmailInvitation[];
 }
 
 export interface ClassGroupStats {

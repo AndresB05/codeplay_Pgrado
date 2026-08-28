@@ -576,12 +576,26 @@ con las del tutor.
 | Reportes de 5 competencias con semáforo de dominio | ✅ | `getSkillReports()` en `classroomsData.ts` |
 | Selector de alcance: todos los salones o uno | ✅ | `teacher/TeacherPanelModule.tsx` |
 | Asignación de misiones | 🟡 | Estado local del componente (`assignedMissionIds`); se pierde al recargar |
-| Invitar alumnos por correo | 🟡 | `teacher/InviteByEmailPanel.tsx` — registra la invitación, **no envía correo** |
+| Sumar alumnos compartiendo el ID público del salón | ✅ | `teacher/AddStudentsPanel.tsx` |
 | Recursos educativos | 🟡 | Tarjetas informativas sin destino |
 | Ajustes de cuenta: salir y cambiar contraseña | ✅ | `teacher/TeacherSettingsModule.tsx` + `shared/ChangePasswordPanel.tsx` — desde el paso 13, ver §2.2 |
 
 **Decisiones de diseño**
 
+- **La invitación por correo se retiró, y no es una funcionalidad aplazada: era
+  un dato personal que no debía estar.** `invitations.email` guardaba la
+  dirección de **un tercero sin cuenta** —la escribía el tutor, no su dueño, y
+  en una plataforma para niños ese tercero puede ser un menor—: nadie la había
+  autorizado, a nadie se le había informado, **nada la borraba nunca** —la
+  aplicación sólo insertaba, y `expires_at` y `status` no los evaluaba ninguna
+  consulta— y encima **la finalidad no se ejecutaba**, porque el envío real es
+  el paso 19. La columna se eliminó en la migración `202606030016` y el panel
+  pasó a explicar la vía que sí funciona: compartir el ID público. **Si alguien
+  quiere «recuperar» el formulario, esto es lo que tiene que resolver antes.**
+- **La tabla `invitations` se quedó en pie a propósito**, sin la columna: el
+  token, la caducidad, las tres políticas y la cascada de la 0013 sirven tal
+  cual para el paso 19. Queda sin escrituras hasta ese paso, y eso es deuda
+  visible, no un olvido.
 - `classroomsData.ts` reúne los datos de ejemplo **y las funciones puras de
   cálculo** (`getSkillReports`, `buildGroup`, `generatePublicId`…). Al conectar
   el backend, los datos se van y las funciones puras se quedan.
@@ -819,6 +833,19 @@ la primera.
 
 **Decisiones de diseño**
 
+- **Plazo de conservación, decidido por el usuario el 28-ago-2026:** los datos
+  personales viven **mientras exista la cuenta**, y se van con ella. No hace
+  falta maquinaria nueva para eso: las claves ajenas de las migraciones 0002,
+  0004, 0005 y 0013 ya son `on delete cascade` contra `auth.users`, así que borrar la
+  cuenta en el panel se lleva perfil, progreso, intentos, logros, pertenencia,
+  solicitudes e invitaciones. La excepción son **las invitaciones, que se purgan
+  a los 14 días** por su `expires_at`; hoy no hay nada que purgar porque nadie
+  escribe filas, así que esa purga es **una obligación que hereda el paso 19**,
+  no algo implementado. Es lo que exige decir un plazo en la política de
+  privacidad, que se redacta aparte.
+- **Ninguna tabla guarda el correo de alguien sin cuenta.** Lo hacía
+  `invitations.email` hasta la migración `202606030016`, que lo eliminó. Ver
+  §2.3: es una decisión de privacidad, no una funcionalidad pendiente.
 - Las escrituras principales quedan encapsuladas en **RPCs** en vez de permitir
   escritura directa desde el cliente, para reducir la manipulación.
 - `achievements` es de sólo lectura para el cliente autenticado; otorgarlos

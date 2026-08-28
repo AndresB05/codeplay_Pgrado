@@ -124,21 +124,30 @@ salones o restringirla a uno concreto.
 - **WHEN** selecciona un salón en el selector de alcance
 - **THEN** las métricas y los reportes pasan a referirse sólo a ese salón
 
-### Requirement: Registro de invitaciones por correo
+### Requirement: El tutor suma alumnos compartiendo el ID público
 
-El sistema SHALL permitir al tutor registrar invitaciones por correo,
-normalizando la dirección a minúsculas y rechazando duplicados dentro del mismo
-salón.
+El sistema SHALL ofrecer al tutor, en su pantalla de salón, la vía real por la
+que hoy entra un niño: **compartirle el ID público del salón** para que lo
+busque y solicite ingreso, que el tutor acepta desde su bandeja de solicitudes.
 
-Hoy la invitación queda únicamente registrada: NO SHALL enviarse ningún correo
-ni existe forma de canjearla, a la espera de un servicio de correo.
+El sistema NO SHALL pedir ni almacenar la dirección de correo de un tercero
+mientras no exista el envío real, porque esa dirección pertenece a alguien que no
+tiene cuenta, no ha autorizado nada y puede ser un menor.
 
-#### Scenario: Dirección válida y nueva
+El sistema NO SHALL ofrecer un formulario que prometa un envío que no se produce.
 
-- **WHEN** el tutor introduce una dirección con formato correcto que no está ya invitada
-- **THEN** la invitación se registra en estado pendiente y aparece en la lista de invitaciones enviadas
+#### Scenario: El tutor quiere sumar un alumno
 
-#### Scenario: Dirección ya invitada
+- **WHEN** el tutor abre la sección para sumar alumnos a su salón
+- **THEN** se le indica el ID público del salón y que el niño puede buscarlo y solicitar ingreso
+- **AND** no se le pide ninguna dirección de correo
 
-- **WHEN** la dirección ya figura entre las invitaciones del salón
-- **THEN** se rechaza como duplicada y no se registra por segunda vez
+#### Scenario: No queda rastro de terceros
+
+- **WHEN** el tutor usa esa sección
+- **THEN** no se almacena ninguna dirección de correo de nadie
+
+#### Scenario: La solicitud llega por el camino que existe
+
+- **WHEN** el niño busca el salón por su ID público y solicita entrar
+- **THEN** la solicitud aparece en la bandeja del tutor, que puede aceptarla o rechazarla

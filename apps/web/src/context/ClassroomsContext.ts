@@ -21,7 +21,6 @@ export interface ClassroomsContextValue {
   removeStudent: (groupId: string, studentId: string) => Promise<void>;
   acceptRequest: (groupId: string, requestId: string) => Promise<void>;
   rejectRequest: (groupId: string, requestId: string) => Promise<void>;
-  inviteByEmail: (groupId: string, email: string) => Promise<void>;
 
   // Acciones del niño
   requestJoin: (groupId: string) => Promise<void>;

@@ -11,7 +11,6 @@ import type {
   ClassGroup,
   ClassroomStudent,
   CreateGroupInput,
-  EmailInvitation,
   JoinRequest,
   SkillKey,
   StudentMembership,
@@ -20,7 +19,6 @@ import type {
 type DirectoryRow = Database['public']['Views']['class_group_directory']['Row'];
 type RosterRow = Database['public']['Views']['classroom_roster']['Row'];
 type JoinRequestRow = Database['public']['Tables']['join_requests']['Row'];
-type InvitationRow = Database['public']['Tables']['invitations']['Row'];
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
 /** Estado completo de salones para quien consulta, sea tutor o niño. */
@@ -37,7 +35,6 @@ export interface ClassroomsService {
   removeStudent: (groupId: string, studentId: string) => ServiceResult<null>;
   acceptRequest: (requestId: string) => ServiceResult<null>;
   rejectRequest: (requestId: string) => ServiceResult<null>;
-  inviteByEmail: (groupId: string, email: string, tutorId: string) => ServiceResult<null>;
   requestJoin: (groupId: string, studentId: string) => ServiceResult<null>;
   cancelJoinRequest: (studentId: string) => ServiceResult<null>;
   leaveGroup: (studentId: string) => ServiceResult<null>;
@@ -113,7 +110,6 @@ const mapDirectoryRow = (row: DirectoryRow): ClassGroup => ({
   memberCount: row.member_count ?? 0,
   students: [],
   pendingRequests: [],
-  invitations: [],
 });
 
 /*
@@ -150,13 +146,6 @@ const mapJoinRequestRow = (row: JoinRequestRow, profile: ProfileRow | undefined)
     requestedAtIso: row.requested_at,
   };
 };
-
-const mapInvitationRow = (row: InvitationRow): EmailInvitation => ({
-  id: row.id,
-  email: row.email,
-  sentAtIso: row.sent_at,
-  status: row.status === 'accepted' ? 'accepted' : 'pending',
-});
 
 const groupById = <T>(rows: T[], key: (row: T) => string): Map<string, T[]> => {
   const grouped = new Map<string, T[]>();
@@ -201,7 +190,7 @@ export const classroomsService: ClassroomsService = {
       return { data: { groups, membership: EMPTY_MEMBERSHIP }, error: null };
     }
 
-    const [roster, requests, invitations] = await Promise.all([
+    const [roster, requests] = await Promise.all([
       supabase.from('classroom_roster').select('*').in('group_id', groupIds),
       supabase
         .from('join_requests')
@@ -209,10 +198,9 @@ export const classroomsService: ClassroomsService = {
         .in('group_id', groupIds)
         .eq('status', 'pending')
         .order('requested_at'),
-      supabase.from('invitations').select('*').in('group_id', groupIds).order('sent_at'),
     ]);
 
-    const readError = roster.error ?? requests.error ?? invitations.error;
+    const readError = roster.error ?? requests.error;
 
     if (readError) {
       return {
@@ -251,7 +239,6 @@ export const classroomsService: ClassroomsService = {
     const profilesById = new Map((profiles.data ?? []).map((row) => [row.id, row]));
     const rosterByGroup = groupById(roster.data ?? [], (row) => row.group_id ?? '');
     const requestsByGroup = groupById(requestRows, (row) => row.group_id);
-    const invitationsByGroup = groupById(invitations.data ?? [], (row) => row.group_id);
 
     const composed = groups.map((group) => ({
       ...group,
@@ -259,7 +246,6 @@ export const classroomsService: ClassroomsService = {
       pendingRequests: (requestsByGroup.get(group.id) ?? []).map((row) =>
         mapJoinRequestRow(row, profilesById.get(row.student_id))
       ),
-      invitations: (invitationsByGroup.get(group.id) ?? []).map(mapInvitationRow),
     }));
 
     return { data: { groups: composed, membership: EMPTY_MEMBERSHIP }, error: null };
@@ -379,7 +365,6 @@ export const classroomsService: ClassroomsService = {
             memberCount: 0,
             students: [],
             pendingRequests: [],
-            invitations: [],
           },
           error: null,
         };
@@ -473,24 +458,6 @@ export const classroomsService: ClassroomsService = {
           'No se pudo rechazar la solicitud.',
           'join_request_reject_error'
         ),
-      };
-    }
-
-    return { data: null, error: null };
-  },
-
-  async inviteByEmail(groupId: string, email: string, tutorId: string): ServiceResult<null> {
-    const { error } = await supabase.from('invitations').insert({
-      group_id: groupId,
-      // Sin default en la base: si no viaja, la política lo rechaza con 42501.
-      invited_by: tutorId,
-      email: email.trim().toLowerCase(),
-    });
-
-    if (error) {
-      return {
-        data: null,
-        error: classroomError(error, 'No se pudo registrar la invitación.', 'invitation_error'),
       };
     }
 
