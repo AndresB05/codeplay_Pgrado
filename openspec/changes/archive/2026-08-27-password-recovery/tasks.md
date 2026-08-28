@@ -73,4 +73,12 @@
 
 ## 10. Experimento posterior, con la mitad A ya funcionando debajo
 
-- [ ] 10.1 Con A verificada, **proponer al usuario** encender «Secure password change» y repetir la prueba de A, para ver si la reautenticación se satisface con la sesión recién creada por `signInWithPassword` o si el servidor exige además un **nonce por correo**. Si exige nonce: se apaga, se anota y no se implementa —el correo de fábrica no da para meter un envío en cada cambio de contraseña—. Si se satisface con la sesión, es defensa en profundidad gratis y se anota como tal. **Es un experimento, no una condición previa**, y el interruptor lo toca el usuario, no la sesión
+- [x] 10.1 Con A verificada, **proponer al usuario** encender «Secure password change» y repetir la prueba de A, para ver si la reautenticación se satisface con la sesión recién creada por `signInWithPassword` o si el servidor exige además un **nonce por correo**. Si exige nonce: se apaga, se anota y no se implementa —el correo de fábrica no da para meter un envío en cada cambio de contraseña—. Si se satisface con la sesión, es defensa en profundidad gratis y se anota como tal. **Es un experimento, no una condición previa**, y el interruptor lo toca el usuario, no la sesión
+
+**Resultado del experimento (27-ago-2026).** El usuario encendió el interruptor.
+Con una cuenta nueva —`prueba.paso13.nonce@codeplay.test`—, el cambio desde Ajustes
+funciona igual: `updateUser` responde 200, la pantalla confirma, la contraseña
+anterior deja de entrar y la nueva entra. **El servidor NO pidió ningún nonce por
+correo**: la sesión de segundos que emite `signInWithPassword` le basta. Se queda
+encendido, no hay nada que implementar, y la cautela que queda —lo que satisface al
+servidor es esa frescura, no el formulario— queda anotada en `CONTEXT.md` §2.2.

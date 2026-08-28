@@ -109,6 +109,13 @@ context: |
     computadores de aula compartidos y el correo de recuperación es justo lo que
     un niño puede no controlar. Esa llamada vive en el servicio y no pasa por el
     signIn del contexto, que mueve loading y error globales.
+  - «Secure password change» está ENCENDIDO en el panel de Supabase y la
+    aplicación no necesita nada para convivir con él: la sesión de segundos que
+    emite signInWithPassword le basta al servidor, que no pide nonce por correo.
+    Lo que lo satisface es esa frescura, así que un cambio de contraseña hecho
+    desde una sesión vieja podría toparse con la exigencia del nonce, y su
+    mensaje llega en inglés: se traduciría en el servicio, o se apaga el
+    interruptor. El correo de fábrica no da para un envío en cada cambio.
 
   COMANDOS (desde la raíz)
   npm run dev | build | lint | test | test:run | preview | format

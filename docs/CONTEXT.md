@@ -446,10 +446,25 @@ se muestra por salón.
   quien tenga el token de una sesión robada y llame a la API directamente: ése
   se salta la pantalla entera. Eso sólo lo cierra «Secure password change» en el
   panel de Supabase, que hace que el propio servidor exija reautenticación
-  reciente. Hoy está **apagado** y el paso 13 no lo tocó: son capas distintas y
-  encenderlo es lo que conviene cuando haya usuarios reales. Con la
-  reautenticación hecha en el cliente, la aplicación funciona igual esté como
-  esté ese interruptor.
+  reciente. Son capas distintas, y las dos están puestas.
+- **«Secure password change» está ENCENDIDO desde el 27-ago-2026, y no hizo
+  falta ni una línea de código.** Se comprobó con una cuenta nueva, por la API y
+  otra vez desde la pantalla de Ajustes: `updateUser` respondió 200, la pantalla
+  confirmó el cambio, la contraseña anterior dejó de entrar y la nueva entra.
+  **El servidor no pidió ningún nonce por correo**, que era la duda: la
+  reautenticación que hace `changePassword` con `signInWithPassword` emite una
+  sesión de segundos, y esa frescura es lo que el servidor acepta. Defensa en
+  profundidad gratis, así que el interruptor se queda encendido.
+- **Lo que satisface al servidor es la frescura de esa sesión, no el formulario**,
+  y de ahí sale la única cautela: si alguna vez se cambiara la contraseña sin ese
+  inicio de sesión inmediatamente anterior —desde una sesión ya vieja—, el
+  servidor podría exigir el nonce por correo y su mensaje llegaría **en inglés**;
+  habría que traducirlo en el servicio en vez de dejarlo pasar. Los dos caminos
+  de hoy están a salvo por construcción: Ajustes reautentica justo antes, y
+  `/reset-password` trabaja sobre la sesión que el enlace del correo acaba de
+  abrir. El correo de fábrica no daría para un envío en cada cambio de
+  contraseña, así que si esa exigencia apareciera, la respuesta es apagar el
+  interruptor, no implementar el nonce.
 - **La única decisión abierta que queda en acceso es la del rol elegido por el
   navegador**, arriba. La de la contraseña actual dejó de estarlo: el paso 13 la
   cierra pidiéndola y verificándola.
@@ -1050,6 +1065,7 @@ Comprobado el **27 de agosto de 2026** ejecutando los comandos:
 | Registro real con rol, contra la base | ✅ Tutor registrado desde la interfaz: `profiles.role = 'tutor'` y aterriza en `/teacher/groups`. Alta por `curl` con `role: "superadmin"` en los metadatos: el alta no falla, el perfil sale `child` y aterriza en `/dashboard/worlds` |
 | Acceso real por rol, con las cuentas de `.env` | ✅ El tutor va a `/teacher/groups` y el niño a `/dashboard/worlds`, sin parpadeo de panel ajeno y sin errores en consola |
 | **Cambio de contraseña desde Ajustes** (mitad A del paso 13), contra la base real | ✅ Con la actual **equivocada** no cambia nada, la sesión sigue abierta, el motivo se ve en pantalla y la antigua sigue entrando por `curl`. Con la correcta, las dos respuestas de `/auth/v1/token`: la antigua rechazada y la nueva aceptada. Probado en alumno **y** en tutor, y los dos rechazos del formulario —las dos nuevas distintas y la nueva demasiado corta— sin llegar al servidor |
+| **El cambio desde Ajustes con «Secure password change» ENCENDIDO** (tarea 10.1) | ✅ Cuenta nueva, probado por API y desde la pantalla: `updateUser` responde 200 sin pedir nonce, la pantalla confirma, la anterior deja de entrar y la nueva entra. La sesión de segundos que emite `signInWithPassword` le basta al servidor, así que el interruptor se queda encendido y no hay código que cambiar |
 | **Recuperación de la contraseña olvidada** (mitad B del paso 13), de punta a punta | ✅ Petición hecha **una sola vez** contra la dirección del dueño del proyecto —la única a la que el correo de fábrica llega con fiabilidad—; el correo llegó, el enlace aterrizó en `/reset-password` sin rebotar a ningún panel y la contraseña nueva quedó fijada: comprobado por `curl` que la anterior dejó de entrar. `/reset-password` sin sesión redirige a `/login`, y `/forgot-password` con sesión y rol lleva al panel de ese rol |
 
 **Cuidado al comprobar la pantalla de mundos:** `useWorlds()` arranca con la
