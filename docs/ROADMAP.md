@@ -47,8 +47,9 @@ Criterio de vía, según `CLAUDE.md`:
 
 ### 1.3 Antes de aprobar un `apply`
 
-Revisar la propuesta, no solo validarla. Cinco comprobaciones que ya han
-evitado problemas reales:
+Revisar la propuesta, no solo validarla. Nueve comprobaciones que ya han
+evitado problemas reales — las cuatro últimas las añadió la práctica, y se
+aplican al revisar y al archivar, no sólo antes del `apply`:
 
 1. Que el `.openspec.yaml` declare `skip_specs` **sólo** si de verdad no hay
    deltas, y que no exista una carpeta `specs/` con requisitos inventados.
@@ -64,6 +65,22 @@ evitado problemas reales:
    lectura de `profiles`, que termina, y nunca desde la escritura de
    `join_requests`, que es donde se cerraba. **Pasó dos revisiones** porque las
    dos lo miraron en la misma dirección.
+6. **El `## Purpose` del spec principal no lo transporta ningún delta.** Al
+   archivar hay que abrirlo y leerlo a mano: si la capacidad ganó o perdió algo,
+   el Purpose sigue describiendo lo de antes. «Revisado, sin cambios» es un
+   resultado válido y se dice.
+7. **Los tests se comparan por los nombres de los `it(`, no por el número.** Un
+   `git show HEAD:<ruta>` contra el archivo actual enseña cuál se fue y cuál
+   entró; un total que cuadra puede esconder uno retirado y otro añadido.
+   Retirar el test de una función eliminada es legítimo; «arreglar» uno que
+   falla, casi nunca.
+8. **Ante un REMOVED, leer las líneas borradas del spec principal.** El sync
+   borra texto, y ahí es donde algo colateral se va sin que nadie lo note. Se
+   confirma que lo suprimido es exactamente el requisito y sus escenarios.
+9. **El SQL de una migración se lee ANTES de que el usuario lance el
+   `db push`**, no después. Y al lanzarlo se lee la salida: tiene que aplicar
+   las migraciones nuevas y ninguna más — si arrastra otras, hay migraciones sin
+   aplicar en la base y eso se mira antes de seguir.
 
 ---
 
@@ -93,7 +110,7 @@ escrito en §2.1.
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ✅ | `salones-persistentes` |
 | 12 | Login y registro reales con rol | ✅ | `auth-real` |
 | 13 | Recuperar y cambiar contraseña — **las dos mitades verificadas contra la base real**: el cambio desde Ajustes pide la contraseña actual y la verifica, y el correo de recuperación llegó y su enlace fijó la nueva | ✅ | `password-recovery` |
-| 15 | Google OAuth | ⬜ | P2 |
+| 15 | Google OAuth — **mina localizada, y es la decisión central del paso**: el disparador `handle_new_user_profile` saca el rol de `raw_user_meta_data` y escribe `child` cuando no viene. Un alta con Google **no trae metadatos de rol**, así que un profesor que entre con Google nace como niño. Hay que decidir cómo se le asigna el rol: preguntárselo después del alta, o por la vía que cierra también la decisión del rol elegido por el navegador (`CONTEXT.md` §2.2). El proveedor está en `false` en el panel y **lo activa el usuario** | ⬜ | P2 |
 | 14 | ★ Consentimiento del acudiente y política de privacidad — **adelantado en parte y aplazado el resto, ver §2.1 y §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó el único sitio donde se guardaban datos de terceros. Lo que falta **se retoma después de la prueba preliminar, y en todo caso antes del primer usuario real**. Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los compañeros se ven entre sí nombre, XP y racha (§3.2) | 🔄 | `invitaciones-sin-correo` + §3.4 |
 | 16 | Persistir la asignación de misiones | ⬜ | P5 |
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |

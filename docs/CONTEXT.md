@@ -535,6 +535,20 @@ se muestra por salón.
   y `TeacherDashboard` no se tocaron: el arreglo está en quien levanta la
   bandera, no en quien reacciona a ella.
 
+#### Estado del panel de Supabase que condiciona el código
+
+Nada de esto se ve leyendo el repositorio, y todo cambia lo que la aplicación
+puede hacer. Los tres primeros se leen con la clave anónima en
+`GET /auth/v1/settings`; los dos últimos los comprobó el usuario en el panel.
+
+| Ajuste | Estado | Qué implica |
+| --- | --- | --- |
+| **Confirm email** | **APAGADO** (`mailer_autoconfirm: true`) | Un alta devuelve sesión inmediata. Por eso `/auth/v1/signup` con un correo nuevo **crea la cuenta y no es una sonda de existencia**: preguntar si una cuenta existe se le pide al usuario, que ve el panel |
+| **Google** | **`false`** | Es la puerta del paso 15 y **la abre el usuario**: el proveedor está desactivado en el proyecto real |
+| Altas abiertas | `disable_signup: false` | Cualquiera puede registrarse con la clave anónima; ver arriba la decisión del rol elegido por el navegador |
+| **Site URL** | `http://localhost:5173` | Sin él, el enlace del correo no vuelve a la aplicación |
+| **Redirect URL** | `http://localhost:5173/reset-password` | Sin ella, Supabase rechaza el `redirectTo` de la recuperación. **Al desplegar (paso 27) hay que añadir las dos del dominio real** |
+
 #### Rutas
 
 | Ruta | Rol | Pantalla |
@@ -1130,6 +1144,54 @@ lista vacía, así que durante la carga se pinta el respaldo de `worldsData.ts`
 —«Bosque de Bucles», `4/10 NIVELES`— y sólo después llegan los datos reales. Ver
 esos nombres no significa que el backend no responda; significa que se miró
 demasiado pronto.
+
+### Cómo comprobar algo contra la base real
+
+**Es lo que más ha valido en todo el proyecto** —destapó la recursión de RLS del
+paso 9 y probó que la verificación de contraseña del paso 13 no era decorativa—
+y no estaba escrito en ninguna parte.
+
+Las credenciales de las **dos cuentas de prueba** —tutor y niño— están en
+`apps/web/.env`, que está en `.gitignore`: `VITE_DEV_TUTOR_EMAIL`,
+`VITE_DEV_TUTOR_PASSWORD`, `VITE_DEV_CHILD_EMAIL`, `VITE_DEV_CHILD_PASSWORD`,
+junto a `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
+
+El patrón son dos pasos: se pide un token y se consulta con él.
+
+```bash
+curl -s -X POST "$URL/auth/v1/token?grant_type=password" -H "apikey: $ANON" -H "Content-Type: application/json" -d '{"email":"...","password":"..."}'
+```
+
+Del JSON sale `access_token`, y con él se consulta REST, que es donde actúa la
+RLS de esa sesión:
+
+```bash
+curl -s "$URL/rest/v1/invitations?select=id,status" -H "apikey: $ANON" -H "Authorization: Bearer $TOKEN"
+```
+
+Tres reglas que la práctica impuso:
+
+- **Nunca imprimir una contraseña en la salida**, ni un `access_token`. Se leen
+  del `.env` dentro del guion y se usan como variables.
+- **Comprobar las dos respuestas, no una.** Que la nueva contraseña entre no
+  prueba nada si no se comprueba además que la antigua dejó de entrar.
+- **Un `select` sobre una columna que no existe responde `42703`**, y eso es
+  justo lo que confirma que una migración se aplicó de verdad. Un `[]` sólo dice
+  que no hay filas visibles para esa sesión.
+
+### Herramientas que hay en la máquina, y las que no
+
+Se comprueba antes de escribir una tarea que verifique con alguna: **ya pasó que
+una tarea verificaba con `gh`, que no está**.
+
+| Herramienta | Estado |
+| --- | --- |
+| `curl` 8.19 | ✅ |
+| Docker 28.3 | ✅ |
+| CLI de Supabase 2.115, con el proyecto **enlazado** (`supabase/.temp/`) | ✅ — `db push` y `gen types` piden credenciales por consola, así que **los lanza el usuario** |
+| Python 3.12 | ✅ — útil para llamadas HTTP con JSON sin pelearse con las comillas de PowerShell |
+| `psql` | ❌ no está: contra la base se va por REST o por la CLI |
+| `gh` | ❌ no está: nada de tareas que verifiquen con la CLI de GitHub |
 
 ### Correcciones sobre `ESTADO-DEL-PROYECTO.md`
 
