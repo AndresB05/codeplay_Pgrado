@@ -82,3 +82,11 @@ anterior deja de entrar y la nueva entra. **El servidor NO pidió ningún nonce 
 correo**: la sesión de segundos que emite `signInWithPassword` le basta. Se queda
 encendido, no hay nada que implementar, y la cautela que queda —lo que satisface al
 servidor es esa frescura, no el formulario— queda anotada en `CONTEXT.md` §2.2.
+
+Despues se midio tambien `/reset-password`, que es el camino que **no** reautentica
+—usa `updatePassword()` sobre la sesion que abre el enlace— y que faltaba por
+comprobar: se pidio la recuperacion una sola vez contra la cuenta del correo del
+dueno del proyecto, el enlace aterrizo en la pantalla de contrasena nueva sin
+rebotar, el cambio se guardo **sin exigencia de nonce** y despues se entro por
+`/login` con la contrasena nueva. La sesion del enlace tambien cuenta como
+reciente. Con eso el interruptor se queda ENCENDIDO por los dos caminos.

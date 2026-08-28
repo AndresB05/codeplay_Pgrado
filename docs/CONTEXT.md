@@ -455,16 +455,25 @@ se muestra por salón.
   reautenticación que hace `changePassword` con `signInWithPassword` emite una
   sesión de segundos, y esa frescura es lo que el servidor acepta. Defensa en
   profundidad gratis, así que el interruptor se queda encendido.
-- **Lo que satisface al servidor es la frescura de esa sesión, no el formulario**,
-  y de ahí sale la única cautela: si alguna vez se cambiara la contraseña sin ese
-  inicio de sesión inmediatamente anterior —desde una sesión ya vieja—, el
-  servidor podría exigir el nonce por correo y su mensaje llegaría **en inglés**;
-  habría que traducirlo en el servicio en vez de dejarlo pasar. Los dos caminos
-  de hoy están a salvo por construcción: Ajustes reautentica justo antes, y
-  `/reset-password` trabaja sobre la sesión que el enlace del correo acaba de
-  abrir. El correo de fábrica no daría para un envío en cada cambio de
-  contraseña, así que si esa exigencia apareciera, la respuesta es apagar el
-  interruptor, no implementar el nonce.
+- **El otro camino, `/reset-password`, también está comprobado con el
+  interruptor encendido, y no era deducible.** Ése **no** reautentica: llama a
+  `updatePassword()` sobre la sesión que abre el enlace del correo, así que
+  dependía de que el servidor considerase reciente **esa** sesión, y es
+  precisamente el camino de quien se quedó fuera de su cuenta —un error en
+  inglés ahí llegaría en el peor momento posible—. Medido de punta a punta con
+  la cuenta del correo del dueño del proyecto: el enlace aterrizó en la pantalla
+  de contraseña nueva sin rebotar a ningún panel, el cambio se guardó **sin que
+  el servidor pidiera nonce**, y después se entró por `/login` con la contraseña
+  nueva. Lo verificado es que **la sesión que abre el enlace cuenta como
+  reciente**, igual que la que emite `signInWithPassword`.
+- **Lo que satisface al servidor es la frescura de la sesión, no el formulario**,
+  y de ahí sale la cautela que queda, que sigue sin poder fabricarse para
+  medirla: si alguna vez se cambiara la contraseña desde una sesión **ya vieja**
+  —sin inicio de sesión ni enlace inmediatamente anteriores—, el servidor podría
+  exigir el nonce por correo, y su mensaje llegaría **en inglés**. El correo de
+  fábrica no daría para un envío en cada cambio de contraseña, así que si esa
+  exigencia apareciera, la respuesta es traducir el mensaje en el servicio o
+  apagar el interruptor, nunca implementar el nonce.
 - **La única decisión abierta que queda en acceso es la del rol elegido por el
   navegador**, arriba. La de la contraseña actual dejó de estarlo: el paso 13 la
   cierra pidiéndola y verificándola.
@@ -1066,6 +1075,7 @@ Comprobado el **27 de agosto de 2026** ejecutando los comandos:
 | Acceso real por rol, con las cuentas de `.env` | ✅ El tutor va a `/teacher/groups` y el niño a `/dashboard/worlds`, sin parpadeo de panel ajeno y sin errores en consola |
 | **Cambio de contraseña desde Ajustes** (mitad A del paso 13), contra la base real | ✅ Con la actual **equivocada** no cambia nada, la sesión sigue abierta, el motivo se ve en pantalla y la antigua sigue entrando por `curl`. Con la correcta, las dos respuestas de `/auth/v1/token`: la antigua rechazada y la nueva aceptada. Probado en alumno **y** en tutor, y los dos rechazos del formulario —las dos nuevas distintas y la nueva demasiado corta— sin llegar al servidor |
 | **El cambio desde Ajustes con «Secure password change» ENCENDIDO** (tarea 10.1) | ✅ Cuenta nueva, probado por API y desde la pantalla: `updateUser` responde 200 sin pedir nonce, la pantalla confirma, la anterior deja de entrar y la nueva entra. La sesión de segundos que emite `signInWithPassword` le basta al servidor, así que el interruptor se queda encendido y no hay código que cambiar |
+| **`/reset-password` con el interruptor ENCENDIDO** — el camino que **no** reautentica | ✅ Medido con la cuenta del correo del dueño del proyecto, no deducido: el enlace aterrizó en la pantalla de contraseña nueva sin rebotar, el cambio se guardó sin exigencia de nonce y después se entró por `/login` con la contraseña nueva. La sesión que abre el enlace cuenta como reciente |
 | **Recuperación de la contraseña olvidada** (mitad B del paso 13), de punta a punta | ✅ Petición hecha **una sola vez** contra la dirección del dueño del proyecto —la única a la que el correo de fábrica llega con fiabilidad—; el correo llegó, el enlace aterrizó en `/reset-password` sin rebotar a ningún panel y la contraseña nueva quedó fijada: comprobado por `curl` que la anterior dejó de entrar. `/reset-password` sin sesión redirige a `/login`, y `/forgot-password` con sesión y rol lleva al panel de ese rol |
 
 **Cuidado al comprobar la pantalla de mundos:** `useWorlds()` arranca con la
