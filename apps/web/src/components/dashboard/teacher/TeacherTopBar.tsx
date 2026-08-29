@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
+import { FALLBACK_TEACHER_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
 import { UserIcon } from './TeacherIcons';
 
@@ -16,7 +17,7 @@ export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const displayName = user?.fullName || 'Sr. Robot';
+  const displayName = user?.fullName || FALLBACK_TEACHER_NAME;
 
   return (
     <header className="flex h-[84px] items-center justify-between border-b-[3px] border-ink bg-white px-5">

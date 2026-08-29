@@ -362,6 +362,7 @@ se muestra por salón.
 | **Recuperar la contraseña olvidada**: se pide por correo y se fija desde el enlace | ✅ | `pages/ForgotPassword/`, `pages/ResetPassword/` + `authService.requestPasswordReset()` y `updatePassword()` |
 | La pantalla de contraseña nueva exige **sesión y ningún rol** | ✅ | `router/AppRouter.tsx` — `PrivateRoute` sin prop `role` |
 | El indicador de carga se reserva a la **resolución inicial** de la sesión | ✅ | `context/AuthProvider.tsx` (comparación de id en `onAuthStateChange`) |
+| **Cambiar el propio nombre desde Ajustes**, con las siete superficies al día sin recargar | ✅ | `shared/ChangeNamePanel.tsx` (lo montan las dos pantallas de Ajustes) + `components/auth/fullName.schema.ts` + `AuthProvider.updateFullName()` |
 
 **Decisiones de diseño**
 
@@ -1097,6 +1098,34 @@ Tres fallos vivos cerrados y una superficie nueva, cambio `arreglos-y-barra-xp`
   La racha va con `?? 0` porque el cero es legítimo, el nombre con
   `FALLBACK_STUDENT_NAME` —exportado desde `classrooms.service.ts`, un solo
   literal para toda la aplicación— y el correo sin ningún repliegue.
+- **El panel del tutor se cerró después, con `nombre-editable`.** El paso 28 lo
+  dejó fuera porque su encargo decía «el panel del niño», y quedaban cuatro
+  «Sr. Robot» copiados —tres ignorando la constante que el cuarto ya tenía— y un
+  `tutor@codeplay.co` inventado. Hoy hay un tratamiento genérico **por rol** y
+  ninguno por pantalla: `FALLBACK_TEACHER_NAME` vive junto al del niño en
+  `classrooms.service.ts`, y vive ahí por el mismo motivo —llega a la base, que
+  `CreateGroupForm` lo escribe en `classrooms.teacher_name` si el campo se deja
+  vacío—.
+- **El nombre se cambia desde Ajustes, y la acción vive en `AuthProvider`.**
+  `updateFullName` llama a `update_my_profile` y hace `setUser` con lo que
+  devuelve, que es lo que refresca de golpe los siete sitios que leen
+  `user.fullName` sin tocar ninguno. **No pasa por `useProfile()`**, que también
+  sabe escribir el perfil pero mantiene su propia copia: por ahí el nombre
+  cambiaría en la base y la pantalla se quedaría con el viejo hasta recargar. El
+  correo se le pasa aparte al servicio porque no está en `profiles`; sin eso,
+  guardar el nombre lo borraría de la pantalla de cuenta.
+- **La longitud del nombre —2 a 60— se declara una vez** en
+  `components/auth/fullName.schema.ts`, y la heredan el registro y Ajustes. Se
+  puso en archivo propio y no en `SignupForm.schema.ts` para no repetir lo de
+  `ChangePasswordForm.schema.ts`, que dice heredar el mínimo de `signupSchema` y
+  en realidad lo copia. El máximo **no existía en ninguna parte**, ni en el
+  registro.
+- **El «Profesor …» de un salón no sigue al perfil, y es deliberado.** Un tutor
+  que cambie su nombre no cambia el de los salones que ya creó: la migración 0013
+  lo dejó escrito encima de la columna —«El profesor a cargo es texto libre que
+  el tutor escribe al crear el salón… `tutor_id` es la identidad; esto es una
+  etiqueta»—. `CreateGroupForm` sólo lo usa como valor por defecto, que el tutor
+  puede sobrescribir. Sincronizarlo pisaría lo que hubiera escrito a mano.
 - **El XP tiene cuatro superficies**: `XPBar` retintada al tema de selva y
   montada en la barra lateral, la barra superior y la tabla de seguimiento en sus
   dos vistas. El máximo es `PROVISIONAL_MAX_XP` en `constants/progress.ts`,
@@ -1303,6 +1332,25 @@ configuración plana es una tarea pendiente sin urgencia.
 `npm run build` avisa de que el chunk supera los 500 kB. Sin urgencia, pero
 cobrará importancia al embeber el juego. Se resuelve con `manualChunks` o
 importaciones dinámicas por ruta.
+
+### 4.9 El nombre sólo lo valida el cliente
+
+`update_my_profile` **no valida `full_name` en absoluto**: el cuerpo es
+`full_name = coalesce(input_full_name, full_name)`, sin `trim`, sin longitud y
+sin rechazar la cadena vacía. La columna es `text not null default ''` y no tiene
+`check`. Contrasta con el `username`, que la misma RPC sí normaliza y acota a
+3–30 antes de escribir.
+
+Desde `nombre-editable` la única defensa es `components/auth/fullName.schema.ts`,
+en el navegador. Basta para lo que motivaba la regla —que un nombre de 500
+caracteres no rompa la tabla del salón, que ya va justa de ancho—, pero quien
+llame a la RPC por fuera de la aplicación se la salta con una sesión
+`authenticated` cualquiera.
+
+**No se cerró con un `check` a propósito**, y no es pereza: exigiría migración, y
+sobre todo podría **rechazar filas ya guardadas**. `full_name` nunca ha tenido
+validación, así que nada garantiza que lo almacenado hoy cumpla lo que se decida
+mañana. Cerrarlo de verdad es censar antes lo que hay.
 
 ---
 

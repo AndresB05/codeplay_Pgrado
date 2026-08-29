@@ -5,6 +5,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { FALLBACK_STUDENT_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
+import { ChangeNamePanel } from '../shared/ChangeNamePanel';
 import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
 
 type StudentSettingsModuleProps = {
@@ -107,6 +108,7 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
                 </div>
               </div>
 
+              <ChangeNamePanel />
               <ChangePasswordPanel />
             </div>
           </div>

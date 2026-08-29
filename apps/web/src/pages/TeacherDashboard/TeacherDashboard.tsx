@@ -8,8 +8,7 @@ import { TeacherTopBar } from '../../components/dashboard/teacher/TeacherTopBar'
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useClassrooms } from '../../hooks/useClassrooms';
-
-const FALLBACK_TEACHER_NAME = 'Sr. Robot';
+import { FALLBACK_TEACHER_NAME } from '../../services/classrooms.service';
 
 export const TeacherDashboard = () => {
   const location = useLocation();

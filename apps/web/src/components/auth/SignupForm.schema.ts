@@ -1,10 +1,11 @@
 import { z } from 'zod';
+import { fullNameSchema } from './fullName.schema';
 
 export const signupSchema = z
   .object({
     confirmPassword: z.string(),
     email: z.string().email('Correo electrónico inválido'),
-    fullName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+    fullName: fullNameSchema,
     password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
     role: z.enum(['child', 'tutor']),
   })

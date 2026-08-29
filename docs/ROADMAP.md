@@ -113,6 +113,7 @@ escrito en §2.1.
 | 15 | Google OAuth — **la mina era el rol, y se cerró con una regla: el rol se fija en el primer registro y no cambia nunca.** El disparador crea todo perfil de Google como `child` porque el alta no puede llevar metadatos; la migración 0018 añade `is_role_declared` y hace que `set_my_role` rechace tanto si el rol ya se declaró como si el perfil tiene lazos de salón. **Verificado contra la base real**, incluido el daño que lo motivó —un niño con membresía que acababa tutor y fuera de su salón— reproducido paso por paso y ya no ocurriendo. **No cierra** registrarse como tutor de entrada: eso sigue abierto y lo cierra el código de institución | ✅ | `google-oauth` |
 | 14 | ★ Consentimiento del acudiente y política de privacidad — **adelantado en parte y aplazado el resto, ver §2.1 y §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó el único sitio donde se guardaban datos de terceros. Lo que falta **se retoma después de la prueba preliminar, y en todo caso antes del primer usuario real**. Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los compañeros se ven entre sí nombre, XP y racha (§3.2) | 🔄 | `invitaciones-sin-correo` + §3.4 |
 | 28 | ★ Tres arreglos vivos y la barra de XP — **adelantado, ver §2.1**. El `username` del disparador ya no aborta el alta (migración 0019, verificada con tres altas por `curl`), los fallos de autenticación salen en español por código, el panel dejó de inventar nombre, correo y racha en **cinco** archivos, y el XP se ve en cuatro sitios con `XPBar` retintada | ✅ | `arreglos-y-barra-xp` |
+| 29 | ★ Nombre editable desde Ajustes — **adelantado, ver §2.1**. Un panel compartido que montan las dos pantallas de Ajustes, con la acción en `AuthProvider` para que las **siete** superficies que leen `user.fullName` se refresquen sin recargar. La longitud (2–60) se declara una vez y la heredan el registro y Ajustes; el máximo no existía en ninguna parte. De paso cerró el panel del tutor, que el paso 28 dejó fuera: cuatro «Sr. Robot» y un correo inventado | ✅ | `nombre-editable` |
 | 16 | Persistir la asignación de misiones — **es una decisión antes que una tarea, ver §3** | ⬜ | P5 |
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
 | 18 | ★ Notificaciones en tiempo real (Supabase Realtime) | ⬜ | — |
@@ -206,6 +207,25 @@ nada esperando.
 La cuarta parte —la barra de XP— entró con ellas por oportunidad: el mismo panel
 estaba abierto, el dato ya se leía de la base, y §3.2 tenía anotado que sin
 superficie el paso 21 escribiría un número que el niño apenas puede ver.
+
+**El paso 29 va detrás del 28 y delante del 16, y lo pidió el usuario:** que la
+gente pueda cambiar su nombre «para que se distingan mejor en los salones, o que
+el tutor no tenga que andar preguntando quién es quién». No dependía de nada
+—**la fontanería estaba entera y sin un solo consumidor** desde la migración
+0006: la RPC `update_my_profile` con su `grant`, `profileService.updateProfile`
+llamándola y `useProfile()` exponiéndola—, así que era interfaz y nada más. El
+paso 16 sigue siendo una decisión antes que una tarea (§3) y no perdía nada
+esperando otra vez.
+
+Va justo detrás del 28 porque **termina lo que aquél dejó a medias**: el paso 28
+arregló los datos inventados del panel del niño y no los del tutor, porque su
+encargo decía «el panel del niño». La pantalla de Ajustes del tutor es donde va
+el campo del nombre, así que los cuatro «Sr. Robot» y el `tutor@codeplay.co` se
+cerraron aquí, con el archivo ya abierto.
+
+**Lo que este paso NO cierra**, y conviene no confundirlo: el punto 4 del paso 14
+(§3.4). Da un nombre editable, no un apodo; el tutor y los compañeros siguen
+viendo el mismo.
 
 ### 2.2 Pasos que requieren a una persona
 
@@ -467,6 +487,15 @@ seguir sembrando por migración.
 4. **Apodo elegido y proyección doble del roster** —nombre real al tutor, apodo a
    los compañeros—, que hoy enseña `full_name` a otros menores. `username` **no
    sirve** de apodo: el disparador lo saca de `split_part(email, '@', 1)`.
+
+   **El paso 29 no mengua este punto: lo cambia de forma.** `nombre-editable` da
+   control sobre **un solo** nombre, el que el tutor y los compañeros ven por
+   igual, así que sigue faltando entero el apodo y la proyección doble. Lo que
+   cambia es la premisa: **el tutor ya no tiene garantizado el nombre del
+   registro**, porque el niño puede reescribirlo. Cuando se diseñe la proyección
+   doble, «nombre real» habrá que definirlo —el del registro no se conserva en
+   ninguna parte—, y decidir si el tutor ve el nombre vigente, un historial, o un
+   campo que el niño no controle.
 
 **Decidido, no se vuelve a discutir:** el **responsable del tratamiento es el
 usuario como persona natural** —lo que además le exime del Registro Nacional de

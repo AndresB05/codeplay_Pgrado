@@ -320,6 +320,40 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 
   /*
+   * Misma forma que `updateRole`, y por los mismos motivos: no toca `loading`, y
+   * el `setUser` es lo que hace visible el cambio en los siete sitios que leen
+   * `user.fullName` de este provider sin tocar ninguno.
+   *
+   * El correo se le pasa aparte al servicio porque no está en `profiles`: sin él,
+   * el perfil reconstruido vendría sin correo y la pantalla de cuenta lo perdería
+   * al guardar el nombre.
+   */
+  const updateFullName = useCallback(
+    async (fullName: string): Promise<boolean> => {
+      setError(null);
+
+      const result = await profileService.updateProfile(
+        { fullName },
+        session?.user.email ?? null
+      );
+
+      if (result.error) {
+        setError(result.error);
+        return false;
+      }
+
+      if (!result.data) {
+        return false;
+      }
+
+      setUser(result.data);
+
+      return true;
+    },
+    [session]
+  );
+
+  /*
    * El rol se guarda ANTES de partir porque `signInWithOAuth` no admite
    * metadatos: no hay forma de que viaje con el alta, así que viaja por el
    * navegador y se aplica a la vuelta.
@@ -385,6 +419,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       signInWithGoogle,
       signOut,
       signUp,
+      updateFullName,
       updatePassword,
       updateRole,
       user,
@@ -400,6 +435,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       signInWithGoogle,
       signOut,
       signUp,
+      updateFullName,
       updatePassword,
       updateRole,
       user,

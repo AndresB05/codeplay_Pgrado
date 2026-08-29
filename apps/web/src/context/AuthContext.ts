@@ -48,6 +48,19 @@ export interface AuthContextValue {
     fullName: string,
     role: UserRole
   ) => Promise<SignUpOutcome>;
+  /**
+   * Cambia el nombre del perfil. Ajustes, con sesión.
+   *
+   * Vive aquí y no en `useProfile()` —que ya sabe escribir el perfil— porque el
+   * nombre se lee de ESTE provider en siete sitios, y `useProfile` mantiene su
+   * propia copia: escribir por ahí lo cambiaría en la base y dejaría el viejo en
+   * pantalla hasta recargar. El provider hace `setUser` con lo que devuelve la
+   * RPC, como en `updateRole`, y así los siete se refrescan solos.
+   *
+   * Basta un booleano, a diferencia de `updateRole`: aquí nadie navega con el
+   * perfil devuelto.
+   */
+  updateFullName: (fullName: string) => Promise<boolean>;
   /** Fija la contraseña sin pedir la anterior. Pantalla del enlace del correo. */
   updatePassword: (newPassword: string) => Promise<boolean>;
   /**

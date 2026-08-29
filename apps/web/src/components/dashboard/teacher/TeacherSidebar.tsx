@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
+import { FALLBACK_TEACHER_NAME } from '../../../services/classrooms.service';
 import type { ClassGroup } from '../../../types/classroom.types';
 import type { User } from '../../../types/user.types';
 import { GroupBadge } from '../shared/GroupBadge';
@@ -27,7 +28,7 @@ export const TeacherSidebar = ({
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
-  const displayName = user?.fullName || 'Sr. Robot';
+  const displayName = user?.fullName || FALLBACK_TEACHER_NAME;
   const totalStudents = groups.reduce((total, group) => total + group.students.length, 0);
   const totalPending = groups.reduce((total, group) => total + group.pendingRequests.length, 0);
 

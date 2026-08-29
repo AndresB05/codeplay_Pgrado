@@ -84,7 +84,9 @@ export const Signup = () => {
 
     start();
 
-    const outcome = await signUp(email, password, fullName, role);
+    // El nombre sale del esquema y no del estado: la regla compartida lo recorta,
+    // y mandar el crudo guardaría los espacios que la validación ya descartó.
+    const outcome = await signUp(email, password, parsedForm.data.fullName, role);
 
     if (outcome !== 'signed-in') {
       cancel();

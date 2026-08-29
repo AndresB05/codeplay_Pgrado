@@ -64,6 +64,13 @@ const UNIQUE_VIOLATION = '23505';
 export const FALLBACK_STUDENT_NAME = 'Explorador';
 
 /*
+ * El del tutor, y vive aquí por el mismo motivo que el del niño: llega a la base.
+ * `CreateGroupForm` lo recibe como valor por defecto y lo escribe en
+ * `classrooms.teacher_name` si el tutor deja el campo vacío.
+ */
+export const FALLBACK_TEACHER_NAME = 'Sr. Robot';
+
+/*
  * Los mensajes que levanta la base vienen en inglés —«Classroom is full»— y
  * desde el paso 10 se le enseñan al tutor tal cual aparecerían. La interfaz es
  * en español, así que el motivo se traduce aquí por código y el texto original

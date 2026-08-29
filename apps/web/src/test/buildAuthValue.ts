@@ -20,6 +20,7 @@ export const buildAuthValue = (user: User | null): AuthContextValue => ({
   signInWithGoogle: async () => false,
   signOut: async () => false,
   signUp: async () => 'error' as const,
+  updateFullName: async () => false,
   updatePassword: async () => false,
   updateRole: async () => ({ status: 'error' as const }),
   user,

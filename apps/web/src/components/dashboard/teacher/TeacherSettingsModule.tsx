@@ -2,8 +2,10 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
+import { FALLBACK_TEACHER_NAME } from '../../../services/classrooms.service';
 import type { ClassGroup } from '../../../types/classroom.types';
 import type { User } from '../../../types/user.types';
+import { ChangeNamePanel } from '../shared/ChangeNamePanel';
 import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
@@ -17,8 +19,8 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
-  const displayName = user?.fullName || 'Sr. Robot';
-  const email = user?.email || 'tutor@codeplay.co';
+  const displayName = user?.fullName || FALLBACK_TEACHER_NAME;
+  const email = user?.email;
   const totalStudents = groups.reduce((total, group) => total + group.students.length, 0);
 
   const handleSignOut = async (): Promise<void> => {
@@ -83,7 +85,9 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
                   <p className="text-[13px] font-bold uppercase tracking-[0.05em] text-ink-faint">
                     Email
                   </p>
-                  <p className="mt-1 text-[17px] font-bold text-ink">{email}</p>
+                  <p className="mt-1 break-words text-[17px] font-bold text-ink">
+                    {email ?? <span className="text-ink-faint">Sin correo asociado</span>}
+                  </p>
                 </div>
 
                 <div className="rounded-[18px] border-2 border-line bg-cream px-4 py-3">
@@ -94,6 +98,7 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
                 </div>
               </div>
 
+              <ChangeNamePanel />
               <ChangePasswordPanel />
             </div>
           </div>
