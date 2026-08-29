@@ -95,12 +95,28 @@ export const Signup = () => {
     if (outcome === 'confirmation-required') {
       setPendingConfirmation(true);
     }
+
+    /*
+     * El correo ya tiene cuenta. El aviso se queda en GENÉRICO —no dice con qué
+     * rol está registrada— porque aquí no se abrió sesión: quien está delante no
+     * está identificado, y nombrar el rol le diría a un desconocido si detrás de
+     * ese correo hay un niño o un tutor. Es el mismo criterio que la pantalla de
+     * recuperación, en `CONTEXT.md` §2.2.
+     */
+    if (outcome === 'already-exists') {
+      navigate(ROUTES.LOGIN);
+    }
   };
 
+  /*
+   * El rol ya está elegido cuando este botón existe: vive en `step === 'form'`,
+   * detrás de las tarjetas de `step === 'role'`. Se le pasa para que sobreviva
+   * el viaje a Google, que no admite metadatos en el alta.
+   */
   const handleGoogleSignup = async (): Promise<void> => {
     clearError();
     setFormError(null);
-    await signInWithGoogle();
+    await signInWithGoogle(role);
   };
 
   return (

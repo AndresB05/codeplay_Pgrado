@@ -21,5 +21,6 @@ export const buildAuthValue = (user: User | null): AuthContextValue => ({
   signOut: async () => false,
   signUp: async () => 'error' as const,
   updatePassword: async () => false,
+  updateRole: async () => ({ status: 'error' as const }),
   user,
 });

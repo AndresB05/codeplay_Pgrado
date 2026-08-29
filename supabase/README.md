@@ -74,6 +74,63 @@ migración 0012 y se aplica como todo lo demás.
       escriba progreso. El recuento del catálogo es un agregado: dice si un
       salón está lleno, nunca quién está dentro.
 
+16. `202606030016_drop_invitation_email.sql`
+    - Elimina `invitations.email`, **el único sitio del esquema donde se
+      almacenaba el correo de alguien sin cuenta**: lo escribía el tutor, no su
+      dueño, y en una plataforma para niños ese tercero puede ser un menor. Nada
+      lo borraba nunca y la finalidad que lo justificaba —el envío, que es el
+      paso 19— no ocurre.
+    - **Se elimina la columna en vez de dejar de escribirla:** dejar de escribir
+      no borra lo que ya está dentro, y una columna viva se vuelve a llenar en
+      cuanto alguien la encuentre disponible, sin volver a hacerse la pregunta.
+      **La tabla se queda**: el token, la caducidad, las políticas y la cascada
+      siguen sirviendo para el paso 19. Ninguna política ni ningún `grant` se
+      tocan.
+    - *(Entrada añadida durante el paso 15: la 0016 se aplicó sin documentarse
+      aquí, y el listado tenía un hueco.)*
+
+17. `202606030017_create_set_my_role_rpc.sql`
+    - `set_my_role(input_role text)`, `security definer`, para fijar el rol del
+      perfil **después** del alta. Hace falta porque `signInWithOAuth` no admite
+      metadatos: una cuenta creada con Google nace `child` por el disparador de
+      la 0011 aunque quien se registró eligiera «Tutor», y la 0009 revoca la
+      escritura directa sobre `profiles`.
+    - `auth.uid()` se lee **dentro del cuerpo y nunca es parámetro**, que es lo
+      que hace imposible fijar el rol de otra persona. Sin sesión, `42501`.
+      Parámetro `text` y no el enum: con el enum, un valor inválido muere en la
+      conversión de PostgREST con un error que no dice nada útil; así el rechazo
+      es explícito con `22023`, y el enum sigue siendo la última defensa.
+
+18. `202606030018_lock_profile_role.sql`
+    - Añade `profiles.is_role_declared`, hace **backfill a `true`** de todas las
+      filas existentes, y reemplaza el disparador y `set_my_role`. **La 0017 no
+      se edita**, por lo mismo que la 0014 no editó la 0013.
+    - **Por qué.** Supabase **enlaza identidades por correo verificado**, así que
+      entrar con Google con el correo de una cuenta que ya existe no crea usuario
+      —le añade el proveedor— y el disparador no corre. Sin esta migración,
+      `set_my_role` alcanzaba a esa cuenta: un niño con membresía que entrara
+      desde el registro eligiendo «Tutor» quedaba `tutor`, **fuera de su propio
+      salón y sin vuelta atrás por la interfaz**. El rol es la reja de
+      `class_groups_insert_own` y `join_requests_insert_own`, así que cambiarlo
+      no es editar un campo: es dejar una cuenta sin sitio.
+    - **El cierre cuelga de dos condiciones, no de una.** La marca corta a quien
+      **ya eligió** (`ZC001`); los **lazos de salón** —membresía, solicitud
+      `pending` o salón propio— cortan a quien **ya construyó algo** con el rol
+      que tiene (`ZC002`). La marca sola dejaba una ventana permanente: una
+      cuenta nacida del botón de la pantalla de acceso queda sin declarar para
+      siempre. El rol y la marca se escriben en **la misma sentencia**, para que
+      no quede un instante con el rol fijado y todavía cambiable.
+    - La clase `ZC` de los dos `SQLSTATE` cae en el tramo `I`-`Z` que el estándar
+      deja a la implementación, y no es ninguna de las dos que PostgreSQL ocupa
+      (`P0` y `XX`).
+    - **Pega conocida, anotada y no corregida:** la 0017 comprobaba `if not
+      found` **después** del `update`; ésta sólo lo hace tras el `select`. Si el
+      perfil desapareciera entre las dos sentencias, la función devolvería `null`
+      en vez de `P0002` y el cliente vería un error de PostgREST. Ventana de
+      microsegundos y **no produce dato corrupto**. No se corrige en el sitio
+      porque ya está aplicada; **que la recoja la próxima migración que toque
+      esta función.**
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI:
@@ -82,7 +139,7 @@ Si ya tienes el proyecto Supabase enlazado con la CLI:
 supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las quince migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las dieciocho migraciones —siembra
 incluida—:
 
 ```sh

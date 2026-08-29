@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthProvider';
+import { AuthCallback } from '../pages/AuthCallback/AuthCallback';
 import { ClassroomsProvider } from '../context/ClassroomsProvider';
 import { ROUTES } from '../constants/routes';
 import { Dashboard } from '../pages/Dashboard/Dashboard';
@@ -68,6 +69,20 @@ export const AppRouter = () => {
                 </PrivateRoute>
               }
             />
+
+            {/*
+             * SIN guarda, y es la única ruta del proyecto que lo está a
+             * propósito. Una guarda sólo sabe que no hay sesión, y con eso no
+             * puede distinguir «el proveedor falló» de «alguien escribió esta
+             * dirección»: cuando Google devuelve un error no hay sesión, así que
+             * `PrivateRoute` rebotaba a `/login` y borraba el motivo antes de
+             * que la pantalla llegara a montarse. Los tres estados los resuelve
+             * `AuthCallback`, y el de «sin sesión» sigue acabando en `/login`.
+             *
+             * `PrivateRoute` y `PublicRoute` no se tocan: ninguna de las dos
+             * sabe nada de esta ruta.
+             */}
+            <Route path={ROUTES.AUTH_CALLBACK} element={<AuthCallback />} />
 
             {/* Panel del niño */}
             <Route

@@ -5,6 +5,7 @@ export const ROUTES = {
   SIGNUP: '/signup',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
+  AUTH_CALLBACK: '/auth/callback',
   SIGNUP_CHILD: '/signup/child',
   SIGNUP_TUTOR: '/signup/tutor',
   DASHBOARD: '/dashboard',

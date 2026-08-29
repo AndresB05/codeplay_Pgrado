@@ -351,7 +351,9 @@ se muestra por salón.
 | Salir cierra también la sesión de Supabase, por los cuatro caminos | ✅ | Las dos barras laterales y las dos pantallas de Ajustes |
 | Formularios de login y registro con validación zod | ✅ | `pages/Login/`, `pages/Signup/`, `components/auth/*.schema.ts` |
 | Registro por pasos con selección de rol | ✅ | `components/auth/steps/`, `SignupRoleCard.tsx` |
-| Botón de acceso con Google | 🟡 | `components/auth/GoogleAuthButton.tsx` |
+| **Acceso con Google, real y de punta a punta** | ✅ | `pages/AuthCallback/`, `context/oauthRole.helpers.ts`, `services/auth.service.ts`, `services/profile.service.ts` |
+| **El rol se fija en el primer registro y no cambia nunca** | ✅ | migración `202606030018` (`is_role_declared` + `set_my_role`) |
+| **Registrarse con un correo que ya tiene cuenta avisa en genérico** | ✅ | `auth.service.ts` (`ACCOUNT_ALREADY_EXISTS`) + `pages/Signup/` |
 | Sincronización sesión ↔ perfil de Supabase | ✅ | `context/AuthProvider.tsx` |
 | **El destino tras entrar lo decide el rol del perfil**, en los tres sitios que autentican | ✅ | `hooks/useRoleHomeRedirect.ts` + `pages/Login/`, `pages/Signup/`, `components/home/Navbar.tsx` |
 | Un registro que no abre sesión pide confirmar el correo en vez de fallar mudo | ✅ | `context/AuthProvider.tsx` (`SignUpOutcome`) + `pages/Signup/Signup.tsx` |
@@ -383,6 +385,87 @@ se muestra por salón.
   **Decidido: se queda así mientras no haya usuarios reales, y la opción 2 es lo
   que hay que implementar antes de que los haya.** Ver el `design.md` del cambio
   `auth-real`.
+- **EL ROL SE FIJA EN EL PRIMER REGISTRO Y NO CAMBIA NUNCA (paso 15), y eso NO
+  cierra el agujero de arriba: son dos cosas distintas.** La migración 0018 añade
+  `profiles.is_role_declared` y hace que `set_my_role` rechace por **dos**
+  motivos: si el rol ya se declaró (`ZC001`) o si el perfil tiene **lazos de
+  salón** —membresía, solicitud `pending` o salón propio— (`ZC002`). **Lo que
+  impide es CAMBIAR de rol. Lo que sigue abierto es registrarse como `tutor` de
+  entrada**, que es el agujero de la decisión anterior y que cierra el código de
+  institución.
+- **Por qué hicieron falta las dos condiciones y no bastaba la marca.** Una
+  cuenta creada con el botón de Google de `/login` nace `child` y **sin
+  declarar**, y así se queda: si esa persona se une a un salón y meses después va
+  a `/signup` y elige «Tutor», la marca sigue en `false` y el ascenso se
+  aplicaría. Los lazos cortan a quien **ya construyó algo** con el rol que tiene;
+  la marca corta a quien **ya eligió**. Una cuenta recién creada no tiene
+  ninguno de los tres lazos, así que su primera declaración legítima sigue
+  funcionando: la reja sólo muerde cuando el cambio rompería algo.
+- **El daño que motivó la regla está medido, no supuesto.** Un niño con membresía
+  en un salón entró con Google desde `/signup` eligiendo «Tutor» y quedó `tutor`:
+  **fuera de su propio salón y sin vuelta atrás por la interfaz**, mientras su
+  tutor lo seguía viendo listado como alumno. El rol es la reja de
+  `class_groups_insert_own` y `join_requests_insert_own`, así que cambiarlo no es
+  editar un campo: es dejar una cuenta sin sitio. Con la 0018 aplicada, el mismo
+  camino paso por paso **ya no escribe nada** y la cuenta conserva su salón.
+- **SUPABASE ENLAZA IDENTIDADES POR CORREO VERIFICADO, y eso no se lee en ninguna
+  parte del repositorio.** Entrar con Google con un correo que ya tiene cuenta de
+  contraseña **no crea un usuario**: le añade el proveedor al que existe, y la
+  fila pasa a mostrar `Email + Google`. Como no hay alta, **el disparador no
+  corre**, y por tanto nada vuelve a decidir el rol de esa cuenta. Es el hecho del
+  que cuelga toda la regla de arriba.
+- **La ruta de vuelta de OAuth no lleva guarda, y es la única ruta del proyecto
+  así.** `/auth/callback` resuelve **cuatro** estados: error del proveedor —lo
+  muestra—, sin sesión —a `/login`—, rol bloqueado —aviso neutro— y rol por fijar
+  —lo aplica y navega—. Una guarda sólo sabe que no hay sesión, y con ese único
+  dato **no distingue «el proveedor falló» de «alguien escribió esta
+  dirección»**: redirigir en el primer caso descarta el fragmento donde viaja el
+  motivo, y el fallo aparece como un regreso mudo a la pantalla de acceso. Eso
+  ocurrió de verdad durante el paso, y fue esta pantalla la que dio el
+  diagnóstico. `PrivateRoute` y `PublicRoute` **no se tocaron**.
+- **La llamada a la RPC se hace SIEMPRE que hay intención de rol, coincida o no
+  con el rol actual**, y esto es una corrección de algo que parecía obviamente
+  correcto. La primera versión sólo llamaba «si el rol difiere», y como el
+  disparador crea todo perfil de Google como `child`, **quien se registraba
+  eligiendo «Niño» coincidía y la marca no se ponía nunca**: esa cuenta quedaba
+  indistinguible de la de quien sólo pulsó Google en `/login`, y seguía siendo
+  promocionable. La regla se incumplía en el camino más común de todos.
+  «Hace falta escribir» no es «el rol difiere», es «hay intención y el rol aún no
+  está declarado», **y ese segundo dato sólo lo tiene el servidor**. El cliente
+  reenvía la intención; el servidor decide.
+- **La intención de rol viaja en `localStorage` y se lee borrando.**
+  `context/oauthRole.helpers.ts` centraliza su clave como hace `guest.helpers.ts`.
+  La función de lectura **borra en la misma llamada**: con `get` y `clear`
+  separados, cualquier camino que devuelva antes de la segunda deja una intención
+  viva que se aplicaría al viaje siguiente, y en un computador de aula ese viaje
+  puede ser el de otra persona. El botón de `/login` además la borra al partir.
+- **La asimetría de las dos direcciones la impone la tecnología, no el gusto.**
+  Formulario y después Google con el mismo correo: se enlaza, **se abre sesión**,
+  y el aviso neutro **sí nombra el rol** —es su propia cuenta y su propia
+  sesión—. Google y después el formulario: el registro falla, **no se abre
+  sesión**, y el aviso es **genérico y no nombra el rol**, porque quien está
+  delante no está identificado. Nombrarlo le diría a un desconocido si detrás de
+  ese correo hay un niño o un tutor, que es lo que §2.2 ya decidió evitar en
+  `/forgot-password`.
+- **`signUp()` con un correo ya registrado responde 422 `user_already_exists`, y
+  NO la señal que documenta Supabase.** El `user` con `identities` vacío es la
+  respuesta de cuando la confirmación por correo está **encendida**, para no
+  revelar que la cuenta existe; aquí está apagada, así que el servidor responde en
+  claro. **La detección va por ese código.** Y está medido que **no toca la cuenta
+  existente**, ni siquiera una que sólo tenga Google y ninguna contraseña: el
+  aviso es sólo un aviso, sin efecto.
+- **El diagnóstico del Client Secret, que no es deducible y costó horas.** Si la
+  autorización **funciona** —Google enseña su pantalla y devuelve un código— pero
+  el **canje** falla con «Unable to exchange external code», el `client_id` está
+  probado bueno y **lo único que entra en juego en ese segundo tramo es el
+  secreto**: está mal pegado en el panel. Y un correo que falte en la lista de
+  usuarios de prueba de Google Cloud recibe «Acceso bloqueado», que también parece
+  un fallo del código y tampoco lo es.
+- **El invariante del paso 12 se vio ocurrir de verdad, y hasta ahora sólo estaba
+  descrito en condicional.** Borrar una cuenta en el panel mientras esa persona
+  tiene el portal abierto la saca del portal y la lleva a `/login`: perfil
+  ausente, sesión cerrada, guarda. Es correcto y es la respuesta a «¿por qué me
+  ha echado?».
 - **Sólo la ausencia de perfil cierra la sesión**, nunca otro fallo al cargarlo.
   `profile.service.ts` distingue los dos con el código `PROFILE_NOT_FOUND`
   porque `maybeSingle()` sólo devuelve `null` sin error cuando la fila de verdad
@@ -544,10 +627,10 @@ puede hacer. Los tres primeros se leen con la clave anónima en
 | Ajuste | Estado | Qué implica |
 | --- | --- | --- |
 | **Confirm email** | **APAGADO** (`mailer_autoconfirm: true`) | Un alta devuelve sesión inmediata. Por eso `/auth/v1/signup` con un correo nuevo **crea la cuenta y no es una sonda de existencia**: preguntar si una cuenta existe se le pide al usuario, que ve el panel |
-| **Google** | **`false`** | Es la puerta del paso 15 y **la abre el usuario**: el proveedor está desactivado en el proyecto real |
+| **Google** | **`true` desde el 28-ago-2026** | Era la puerta del paso 15 y **ya está abierta**. El usuario dio de alta el cliente en Google Cloud —pantalla de consentimiento externa en modo prueba— y pegó las credenciales. Comprobado, no relatado: `/auth/v1/authorize?provider=google` redirige a Google con `redirect_uri` igual al callback de Supabase y `scope=email profile`, y Google devuelve su pantalla de acceso, no `invalid_client` ni `redirect_uri_mismatch`. Lo que queda es de la aplicación: **la ruta de vuelta todavía no está en Redirect URLs**, porque la decide el paso 15 |
 | Altas abiertas | `disable_signup: false` | Cualquiera puede registrarse con la clave anónima; ver arriba la decisión del rol elegido por el navegador |
 | **Site URL** | `http://localhost:5173` | Sin él, el enlace del correo no vuelve a la aplicación |
-| **Redirect URL** | `http://localhost:5173/reset-password` | Sin ella, Supabase rechaza el `redirectTo` de la recuperación. **Al desplegar (paso 27) hay que añadir las dos del dominio real** |
+| **Redirect URLs** | `/reset-password`, `/auth/callback` y el comodín `http://localhost:5173/**` | Sin la entrada, Supabase **no da error**: devuelve en silencio al Site URL y el fallo parece del código. **Al desplegar (paso 27) hay que hacer DOS cosas, no una: añadir las del dominio real Y RETIRAR EL COMODÍN.** El comodín enmascara errores de ruta —una vuelta equivocada casa igual— y, con el flujo `implicit` que usa este cliente, sobre el dominio real dejaría que **cualquier** ruta reciba un refresh token en el fragmento de la URL |
 
 #### Rutas
 
@@ -557,6 +640,7 @@ puede hacer. Los tres primeros se leen con la clave anónima en
 | `/login`, `/signup` | Público | Acceso y registro |
 | `/forgot-password` | Público | Pedir el correo de recuperación |
 | `/reset-password` | **Sesión, sin rol** | Fijar la contraseña nueva; es donde aterriza el enlace del correo |
+| `/auth/callback` | **Sin guarda** | Vuelta del proveedor de OAuth. Resuelve error, ausencia de sesión, rol bloqueado y rol por fijar |
 | `/dashboard`, `/dashboard/worlds` | Alumno | Mundos |
 | `/dashboard/worlds/:worldId` | Alumno | Niveles de un mundo |
 | `/dashboard/trophies` | Alumno | Sala de trofeos |
@@ -942,11 +1026,49 @@ el paso está cerrado entero:
   `/reset-password` sin sesión va a `/login`, y `/forgot-password` con sesión y
   rol lleva al panel del rol.
 
-De esta línea quedan dos cosas, y **ninguna es de este paso**: Google OAuth es el
-paso 15 —y el proveedor está desactivado en el proyecto real—, y retirar la
-sesión de invitado es el paso 24, que va después del juego por decisión del
-usuario. Lo que P2 pedía de ella —que `useActiveRole()` y `PrivateRoute`
-funcionen sin la sesión de invitado— ya se cumple.
+**Y Google OAuth desde el 29-ago-2026**, cambio `google-oauth` (paso 15). Con él,
+la línea P2 queda cerrada salvo la sesión de invitado, que es el paso 24 y va
+después del juego por decisión del usuario.
+
+Lo que aporta, con sus rutas reales: la vuelta del proveedor en
+`pages/AuthCallback/`, la intención de rol en `context/oauthRole.helpers.ts`, el
+`redirectTo` y la detección de cuenta existente en `services/auth.service.ts`,
+`setMyRole()` en `services/profile.service.ts`, y las migraciones
+`202606030017` y `202606030018`. Se borró `components/auth/GoogleAuthButton.tsx`,
+que no montaba nadie.
+
+**La regla que fija: el rol se decide en el primer registro y no cambia nunca.**
+Ver §2.2 para el porqué y para lo que **no** cierra —registrarse como tutor de
+entrada sigue abierto, y lo cierra el código de institución—.
+
+Verificado contra la base real, con tres cuentas de Google del usuario y sin
+tocar ninguna de las cuatro originales:
+
+- **Alta con Google eligiendo tutor** → `role = 'tutor'`, marca declarada, y
+  aterriza en `/teacher/groups` sin pasar por el panel del niño. **Eligiendo
+  niño** → `child`, marca declarada, y a `/dashboard/worlds`.
+- **Entrar por `/login` con Google** no toca el rol: sin intención pendiente la
+  RPC ni se llama.
+- **Una cuenta creada desde el botón de `/login`** nace `child` y **sin
+  declarar**, porque nadie eligió; su primera declaración posterior sí se aplica,
+  **siempre que no tenga lazos de salón**.
+- **Las dos rejas, medidas por separado.** Con solicitud `pending` → `ZC002`; con
+  membresía → `ZC002`; ya declarado → `ZC001`. En los tres, `updated_at` se quedó
+  en el valor del alta: **no hubo escritura de ninguna clase**, que es prueba más
+  fuerte que comparar el rol, porque el disparador de `updated_at` se movería
+  incluso ante un `update` que reescribiera el mismo valor.
+- **El daño que motivó la regla, reproducido paso por paso y no ocurriendo**: el
+  niño con membresía que intenta ascender conserva su rol **y su salón**.
+- **Registrarse con el formulario sobre un correo que sólo tiene Google** avisa
+  en genérico, no abre sesión, y **no le añade contraseña a la cuenta** —medido
+  intentando entrar después con ella—.
+- Al terminar, «salon sigma» conserva sus dos alumnos y los tres perfiles
+  originales siguen con el `updated_at` del backfill de la 0018, sin moverse.
+
+De esta línea queda una sola cosa, y **no es de este paso**: retirar la sesión
+de invitado es el paso 24, que va después del juego por decisión del usuario.
+Lo que P2 pedía de ella —que `useActiveRole()` y `PrivateRoute` funcionen sin
+la sesión de invitado— ya se cumple.
 
 ### P3 — `salones-persistentes`: APLICADO
 
@@ -1129,7 +1251,7 @@ Comprobado el **27 de agosto de 2026** ejecutando los comandos:
 | --- | --- |
 | `npm run build` | ✅ Pasa. 164 módulos, 2,1 s. Sólo avisa del tamaño del chunk |
 | `npm run lint` | ✅ Pasa. Cero errores y cero warnings |
-| `npm run test:run` | ✅ Pasa. 67 tests en 6 archivos |
+| `npm run test:run` | ✅ Pasa. **75 tests** en 8 archivos tras el paso 15, que añadió nueve y no retiró ninguno —comparados por el nombre de cada `it(`, no por el total—. Eran 66 Eran 67 hasta `invitaciones-sin-correo`, que retiró `inviteByEmail añade la invitación con el correo normalizado` al desaparecer la función que probaba: baja legítima, comprobada por nombre y no por recuento |
 | Panel del tutor y del niño con la sesión de invitado | ✅ Navegan sin errores en consola. Los mundos se pintan desde Supabase —«Selva Algorítmica», `0/3 NIVELES`—, no desde el respaldo local |
 | Flujo de salones de punta a punta contra la base real | ✅ Crear salón, buscar por ID público, solicitar, ver la solicitud con nombre, aceptar, ver compañeros, rechazar, reintentar y borrar en cascada |
 | Registro real con rol, contra la base | ✅ Tutor registrado desde la interfaz: `profiles.role = 'tutor'` y aterriza en `/teacher/groups`. Alta por `curl` con `role: "superadmin"` en los metadatos: el alta no falla, el perfil sale `child` y aterriza en `/dashboard/worlds` |

@@ -6,6 +6,14 @@ import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
 import type { UserRole } from '../types/user.types';
 
+/**
+ * El correo del registro ya tiene cuenta. El aviso que se enseñe con esto SHALL
+ * quedarse en genérico: aquí no hay sesión, así que quien está delante no está
+ * identificado, y nombrar el rol le diría a un desconocido si detrás de ese
+ * correo hay un niño o un tutor.
+ */
+export const ACCOUNT_ALREADY_EXISTS = 'auth_account_already_exists';
+
 interface SignInCredentials {
   email: string;
   password: string;
@@ -29,8 +37,13 @@ interface AuthSessionData {
   user: SupabaseUser | null;
 }
 
+/*
+ * Vuelve a `/auth/callback` y no a un panel: al construir esta URL todavía no se
+ * sabe cuál será el rol —el perfil aún no existe—, así que cualquier ruta con
+ * rol rebotaría a la mitad de la gente enseñando de paso el panel del otro.
+ */
 const getOAuthRedirectUrl = (): string => {
-  return new URL(ROUTES.DASHBOARD, window.location.origin).toString();
+  return new URL(ROUTES.AUTH_CALLBACK, window.location.origin).toString();
 };
 
 /*
@@ -224,6 +237,25 @@ export const authService = {
     });
 
     if (error) {
+      /*
+       * Medido, no supuesto: con la confirmación por correo APAGADA
+       * (`mailer_autoconfirm: true`), un correo ya registrado responde 422 con
+       * este código. La señal que documenta Supabase —un `user` con `identities`
+       * vacío— es la de cuando la confirmación está encendida, y aquí no llega.
+       * Comprobado además que la cuenta existente queda intacta: la contraseña
+       * de ese intento no entra y la verdadera sigue entrando.
+       */
+      if (error.code === 'user_already_exists') {
+        return {
+          data: null,
+          error: new AppError(
+            'Ya existe una cuenta con ese correo. Inicia sesión.',
+            ACCOUNT_ALREADY_EXISTS,
+            error
+          ),
+        };
+      }
+
       return {
         data: null,
         error: createAppError(error, 'No se pudo crear la cuenta.', 'auth_sign_up_error'),

@@ -7,7 +7,7 @@ context: |
   Es un proyecto de grado. Consta de tres piezas: un front-end en React, un
   backend en Supabase y un juego de Unity que se embeberá como build de WebGL.
 
-  ESTADO ACTUAL (verificado el 27-ago-2026)
+  ESTADO ACTUAL (verificado el 29-ago-2026)
   El esquema de Supabase está APLICADO en un proyecto real: tablas, RPC, RLS y
   el contenido inicial de mundos y niveles, incluidas las cuatro tablas de
   salones y las dos vistas de lectura de la 0015, todo verificado con sesiones
@@ -27,7 +27,13 @@ context: |
   tratamiento); de él ya salió `invitaciones-sin-correo`, que eliminó
   invitations.email en la migración 0016 porque guardaba el correo de un tercero
   sin cuenta, sin plazo y para un envío que no ocurre.
-  `npm run build`, `npm run lint` y `npm run test:run` pasan (66 tests).
+  GOOGLE OAUTH ES REAL (paso 15): el acceso con Google funciona por los dos
+  caminos y EL ROL SE FIJA EN EL PRIMER REGISTRO Y NO CAMBIA NUNCA. La
+  migracion 0018 anade profiles.is_role_declared y set_my_role rechaza si el
+  rol ya se declaro (ZC001) o si el perfil tiene lazos de salon (ZC002).
+  Verificado contra la base real, incluido el dano que lo motivo: un nino con
+  membresia que acababa tutor y fuera de su salon.
+  `npm run build`, `npm run lint` y `npm run test:run` pasan (75 tests).
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
@@ -45,7 +51,7 @@ context: |
   apps/web/        front-end, workspace @codeplay/web
   apps/game/       proyecto de Unity — NO EXISTE TODAVÍA
   packages/        código compartido — vacío
-  supabase/        migrations/ (15 migraciones SQL; el seed vive en la 0012)
+  supabase/        migrations/ (18 migraciones SQL; el seed vive en la 0012)
   docs/            CONTEXT.md (estado y prioridades) y ESTADO-DEL-PROYECTO.md
   openspec/        specs y changes
   .github/         workflows de GitHub Actions (sólo ci.yml)
@@ -95,6 +101,33 @@ context: |
     quien tenga sesión y no tenga rol; si la segunda apartara a todo el que tiene
     sesión lo devolvería a getHomeRouteForRole(null), que es /dashboard/worlds, y
     se cierra un bucle. Por eso PublicRoute exige sesión Y rol.
+  - La ruta de vuelta de OAuth, /auth/callback, NO lleva guarda, y es la unica
+    del proyecto asi. Resuelve cuatro estados: error del proveedor (lo muestra),
+    sin sesion (a /login), rol bloqueado (aviso neutro) y rol por fijar. Una
+    guarda solo sabe que no hay sesion, y con ese dato no distingue "el proveedor
+    fallo" de "alguien escribio la direccion": redirigir en el primero descarta el
+    fragmento donde viaja el motivo. PrivateRoute y PublicRoute no se tocaron.
+  - La intencion de rol para OAuth vive en context/oauthRole.helpers.ts, con el
+    patron de guest.helpers.ts, y SU FUNCION DE LECTURA BORRA en la misma llamada:
+    con get + clear separados, un camino que devuelva antes de la segunda deja una
+    intencion viva que se aplicaria al viaje siguiente, que en un aula puede ser el
+    de otra persona.
+  - La RPC del rol se llama SIEMPRE que hay intencion, coincida o no con el rol
+    actual. "Hace falta escribir" no es "el rol difiere" sino "hay intencion y el
+    rol aun no esta declarado", y ese segundo dato solo lo tiene el servidor. El
+    disparador crea todo perfil de Google como child, asi que condicionar por la
+    diferencia dejaba sin marcar a quien se registraba eligiendo Nino.
+  - Supabase ENLAZA IDENTIDADES por correo verificado: entrar con Google con un
+    correo que ya tiene cuenta no crea usuario, le anade el proveedor, y el
+    disparador no corre. De ahi cuelga toda la regla del rol.
+  - signUp() con un correo ya registrado responde 422 user_already_exists, NO la
+    senal documentada del user con identities vacio: esa es la de cuando la
+    confirmacion por correo esta encendida, y aqui esta apagada. No toca la cuenta
+    existente, ni siquiera una que solo tenga Google y ninguna contrasena.
+  - El aviso de "esa cuenta ya existe" del formulario es GENERICO y no nombra el
+    rol: ahi no hay sesion, y nombrarlo diria a un desconocido si detras del correo
+    hay un nino o un tutor. En la vuelta de OAuth si se nombra, porque es su propia
+    sesion. La asimetria la impone la tecnologia, no el gusto.
   - /reset-password va tras PrivateRoute SIN prop role, y ese es el motivo de que
     la prop sea opcional: el enlace del correo abre una sesión real, así que
     PublicRoute apartaría a esa persona a su panel y la pantalla no se vería
@@ -133,10 +166,9 @@ context: |
      salones incluidos.
   2. Mover el store de salones de localStorage a Supabase: HECHO (paso 10).
   3. Auth y roles funcionales verificados en servidor: HECHO (paso 12), con las
-     contraseñas cerradas en el paso 13 —cambio desde Ajustes y recuperación por
-     correo, las dos mitades verificadas contra la base real—. Fuera quedan
-     Google OAuth (paso 15, proveedor desactivado en el proyecto real) y retirar
-     la sesión de invitado (paso 24, después del juego).
+     contraseñas cerradas en el paso 13 y GOOGLE OAUTH en el paso 15, los tres
+     verificados contra la base real. Fuera queda solo retirar la sesion de
+     invitado (paso 24, despues del juego).
   4. Apartado web de integración de los niveles del juego (el juego sigue en
      desarrollo; aquí sólo entra el contenedor y el contrato de datos), después
      del consentimiento del acudiente (paso 14).
@@ -168,6 +200,8 @@ context: |
     exige que el rol lo conceda el servidor por una vía que el navegador no
     controle (código de institución canjeado por una RPC security definer). Se
     queda así mientras no haya usuarios reales. Ver docs/CONTEXT.md §2.2.
+    OJO: el paso 15 cerro CAMBIAR de rol, no REGISTRARSE como tutor de entrada.
+    Son dos agujeros distintos y solo el primero esta cerrado.
   - NINGUNA tabla guarda el correo de alguien que no tiene cuenta. invitations
     lo hacía y la migración 0016 lo eliminó: era el dato de un tercero que nadie
     había autorizado, que nada borraba y cuya finalidad —el envío, que es el

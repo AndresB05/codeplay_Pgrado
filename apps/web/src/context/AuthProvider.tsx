@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { AuthContext } from './AuthContext';
-import type { AuthContextValue, SignUpOutcome } from './AuthContext';
-import { authService } from '../services/auth.service';
-import { PROFILE_NOT_FOUND, profileService } from '../services/profile.service';
+import type { AuthContextValue, SignUpOutcome, UpdateRoleResult } from './AuthContext';
+import { ACCOUNT_ALREADY_EXISTS, authService } from '../services/auth.service';
+import { PROFILE_NOT_FOUND, PROFILE_ROLE_LOCKED, profileService } from '../services/profile.service';
 import { AppError } from '../errors/AppError';
 import type { User, UserRole } from '../types/user.types';
 import { supabase } from '../lib/supabase';
+import { clearPendingSignupRole, savePendingSignupRole } from './oauthRole.helpers';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -164,8 +165,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
 
       if (result.error) {
-        setError(result.error);
         setLoading(false);
+
+        /*
+         * El correo que ya tiene cuenta pasa por `setError` como cualquier otro
+         * fallo, y eso es lo que hace que el aviso sobreviva al salto a
+         * `/login`: esa pantalla pinta `error.message`, y sin esto la persona
+         * aterrizaría allí sin que nada le dijera por qué. El texto es uno solo,
+         * el del servicio, para que no haya dos redacciones de lo mismo y una
+         * acabe nombrando el rol.
+         */
+        setError(result.error);
+
+        if (result.error.code === ACCOUNT_ALREADY_EXISTS) {
+          return 'already-exists';
+        }
+
         return 'error';
       }
 
@@ -257,9 +272,72 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return true;
   }, []);
 
-  const signInWithGoogle = useCallback(async (): Promise<boolean> => {
+  /*
+   * No toca `loading` por lo mismo que las tres acciones de contraseña: esa
+   * bandera significa «la sesión se está resolviendo» y las guardas cambian su
+   * subárbol entero por un spinner. Aquí la sesión ya está resuelta y lo que
+   * falta es un campo del perfil; la pantalla que llama lleva su propio aviso.
+   *
+   * Devuelve el perfil escrito por el servidor en vez de un booleano: quien
+   * llama navega con ese rol, no con el que pidió. Es la misma regla que
+   * `useRoleHomeRedirect` aplica al entrar por los otros caminos.
+   */
+  const updateRole = useCallback(
+    async (role: UserRole): Promise<UpdateRoleResult> => {
+      setError(null);
+
+      const result = await profileService.setMyRole(role, session?.user.email ?? null);
+
+      if (result.error) {
+        /*
+         * El rol bloqueado NO va a `error`: esa bandera es para lo que hay que
+         * enseñar como fallo, y esto no lo es. Viaja en el resultado porque
+         * quien llama lo lee al resolverse el `await`, antes de que un cambio de
+         * estado hubiera llegado a propagarse.
+         */
+        if (result.error.code === PROFILE_ROLE_LOCKED) {
+          return { status: 'locked' };
+        }
+
+        setError(result.error);
+        return { status: 'error' };
+      }
+
+      /*
+       * La RPC devuelve la fila que acaba de escribir, así que sin error hay
+       * perfil. Se comprueba igual porque `ServiceResult` no lo puede prometer
+       * en el tipo, y tragarse un vacío aquí dejaría navegando con el rol viejo.
+       */
+      if (!result.data) {
+        return { status: 'error' };
+      }
+
+      setUser(result.data);
+
+      return { status: 'updated', user: result.data };
+    },
+    [session]
+  );
+
+  /*
+   * El rol se guarda ANTES de partir porque `signInWithOAuth` no admite
+   * metadatos: no hay forma de que viaje con el alta, así que viaja por el
+   * navegador y se aplica a la vuelta.
+   *
+   * Sin rol se BORRA, y ése es el otro momento de descarte: quien entra por la
+   * pantalla de acceso ya tiene cuenta, y una intención que quedó de un registro
+   * anterior no puede alcanzarle. En un computador de aula esa intención puede
+   * ser de otra persona.
+   */
+  const signInWithGoogle = useCallback(async (role?: UserRole): Promise<boolean> => {
     setLoading(true);
     setError(null);
+
+    if (role) {
+      savePendingSignupRole(role);
+    } else {
+      clearPendingSignupRole();
+    }
 
     const result = await authService.signInWithGoogle();
 
@@ -308,6 +386,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       signOut,
       signUp,
       updatePassword,
+      updateRole,
       user,
     }),
     [
@@ -322,6 +401,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       signOut,
       signUp,
       updatePassword,
+      updateRole,
       user,
     ]
   );

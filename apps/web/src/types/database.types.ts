@@ -326,6 +326,7 @@ export type Database = {
           current_streak: number;
           full_name: string;
           id: string;
+          is_role_declared: boolean;
           max_streak: number;
           role: Database['public']['Enums']['user_role'];
           total_xp: number;
@@ -339,6 +340,7 @@ export type Database = {
           current_streak?: number;
           full_name?: string;
           id: string;
+          is_role_declared?: boolean;
           max_streak?: number;
           role?: Database['public']['Enums']['user_role'];
           total_xp?: number;
@@ -352,6 +354,7 @@ export type Database = {
           current_streak?: number;
           full_name?: string;
           id?: string;
+          is_role_declared?: boolean;
           max_streak?: number;
           role?: Database['public']['Enums']['user_role'];
           total_xp?: number;
@@ -576,6 +579,29 @@ export type Database = {
         };
       };
       is_visible_student_of: { Args: { profile_id: string }; Returns: boolean };
+      set_my_role: {
+        Args: { input_role: string };
+        Returns: {
+          avatar_key: string;
+          country_code: string;
+          created_at: string;
+          current_streak: number;
+          full_name: string;
+          id: string;
+          is_role_declared: boolean;
+          max_streak: number;
+          role: Database['public']['Enums']['user_role'];
+          total_xp: number;
+          updated_at: string;
+          username: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'profiles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       update_my_profile: {
         Args: {
           input_avatar_key?: string;
@@ -590,6 +616,7 @@ export type Database = {
           current_streak: number;
           full_name: string;
           id: string;
+          is_role_declared: boolean;
           max_streak: number;
           role: Database['public']['Enums']['user_role'];
           total_xp: number;

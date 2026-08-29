@@ -3,7 +3,7 @@ import { createAppError } from '../errors/createAppError';
 import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
 import type { Database } from '../types/database.types';
-import type { User, UserProfileUpdate } from '../types/user.types';
+import type { User, UserProfileUpdate, UserRole } from '../types/user.types';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
@@ -13,6 +13,23 @@ type ProfileRow = Database['public']['Tables']['profiles']['Row'];
  * un corte de red no dice nada sobre si la cuenta tiene perfil.
  */
 export const PROFILE_NOT_FOUND = 'profile_not_found';
+
+/**
+ * El rol del perfil no se puede cambiar: o ya se declaró al darse de alta, o la
+ * cuenta tiene lazos de salón. Quien reciba este código NO debe presentarlo como
+ * un fallo: la sesión es válida y el rol simplemente se queda como estaba.
+ */
+export const PROFILE_ROLE_LOCKED = 'profile_role_locked';
+
+/**
+ * Los dos rechazos que levanta `set_my_role`. La clase `ZC` cae en el tramo I-Z
+ * que el estándar deja a la implementación y no choca con las de PostgreSQL
+ * (`P0` y `XX`).
+ */
+const ROLE_LOCKED_SQLSTATES = {
+  alreadyDeclared: 'ZC001',
+  classroomTies: 'ZC002',
+} as const;
 
 /**
  * El correo no está en `profiles`: vive en la capa de autenticación, así que
@@ -64,6 +81,45 @@ export const profileService = {
           'Esta cuenta no tiene perfil. Avisa a quien mantiene la plataforma.',
           PROFILE_NOT_FOUND
         ),
+      };
+    }
+
+    return { data: mapProfileRowToUser(data, email), error: null };
+  },
+
+  /**
+   * Fija el rol del perfil después del alta, que es lo único que sirve cuando el
+   * alta no pudo declararlo: un acceso con Google no lleva metadatos, así que la
+   * cuenta nace `child` aunque quien se registró hubiera elegido «Tutor».
+   *
+   * `update_my_profile` no vale porque deja el rol fuera a propósito, y un
+   * `update` directo tampoco: la 0009 revoca la escritura sobre `profiles`.
+   */
+  async setMyRole(role: UserRole, email: string | null = null): ServiceResult<User> {
+    const { data, error } = await supabase.rpc('set_my_role', { input_role: role }).single();
+
+    if (error) {
+      /*
+       * El servidor manda dos rechazos distintos —el rol ya declarado y los
+       * lazos de salón— y aquí se traducen al MISMO código, a propósito: para
+       * quien está delante los dos significan «tu rol se queda como está» y
+       * merecen el mismo aviso. La distinción se conserva abajo, en el SQLSTATE,
+       * porque diagnosticar sí los separa.
+       */
+      if (error.code === ROLE_LOCKED_SQLSTATES.alreadyDeclared || error.code === ROLE_LOCKED_SQLSTATES.classroomTies) {
+        return {
+          data: null,
+          error: new AppError(
+            'Esta cuenta ya existía, así que su tipo no cambia.',
+            PROFILE_ROLE_LOCKED,
+            error
+          ),
+        };
+      }
+
+      return {
+        data: null,
+        error: createAppError(error, 'No se pudo asignar tu tipo de cuenta.', 'profile_set_role_error'),
       };
     }
 

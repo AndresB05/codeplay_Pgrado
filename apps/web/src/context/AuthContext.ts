@@ -4,10 +4,27 @@ import type { AppError } from '../errors/AppError';
 import type { User, UserRole } from '../types/user.types';
 
 /**
- * Los tres finales de un registro. Un booleano no distingue el de en medio, y
- * darlo por bueno es lo que dejaba al usuario en `/login` sin explicación.
+ * Los cuatro finales de un registro. Un booleano no distingue los de en medio, y
+ * darlos por buenos es lo que dejaba al usuario en `/login` sin explicación.
+ *
+ * `already-exists` es el correo que ya tiene cuenta: no se creó nada, no se abrió
+ * sesión, y el aviso que lo acompañe no nombra el rol de esa cuenta.
  */
-export type SignUpOutcome = 'signed-in' | 'confirmation-required' | 'error';
+export type SignUpOutcome =
+  | 'signed-in'
+  | 'confirmation-required'
+  | 'already-exists'
+  | 'error';
+
+/**
+ * Los tres finales de fijar el rol. `locked` es el que no se puede confundir con
+ * los otros dos: la sesión es válida y la persona está dentro; lo único que no
+ * ocurrió es un cambio que no debía ocurrir.
+ */
+export type UpdateRoleResult =
+  | { status: 'updated'; user: User }
+  | { status: 'locked' }
+  | { status: 'error' };
 
 export interface AuthContextValue {
   /** Cambia la contraseña verificando antes la actual. Ajustes, con sesión. */
@@ -18,7 +35,12 @@ export interface AuthContextValue {
   requestPasswordReset: (email: string) => Promise<boolean>;
   session: Session | null;
   signIn: (email: string, password: string) => Promise<boolean>;
-  signInWithGoogle: () => Promise<boolean>;
+  /**
+   * Con rol guarda la intención para aplicarla a la vuelta —es el registro—; sin
+   * rol la borra, porque quien entra por la pantalla de acceso ya tiene cuenta y
+   * una intención vieja no debe alcanzarle.
+   */
+  signInWithGoogle: (role?: UserRole) => Promise<boolean>;
   signOut: () => Promise<boolean>;
   signUp: (
     email: string,
@@ -28,6 +50,20 @@ export interface AuthContextValue {
   ) => Promise<SignUpOutcome>;
   /** Fija la contraseña sin pedir la anterior. Pantalla del enlace del correo. */
   updatePassword: (newPassword: string) => Promise<boolean>;
+  /**
+   * Fija el rol del perfil contra el servidor. Pantalla de vuelta del proveedor.
+   *
+   * Devuelve el perfil que escribió el servidor, y no un booleano, porque quien
+   * llama tiene que navegar con ESE rol y no con el que pidió: el invariante de
+   * `useRoleHomeRedirect` es que el rol con el que se navega lo decide el
+   * servidor. Con un booleano, el único dato a mano era el que se envió.
+   *
+   * Y distingue `locked` del resto porque **no es un fallo**: la cuenta ya
+   * existía y su rol se queda como estaba. El motivo viaja en el resultado y no
+   * en el `error` del contexto porque quien llama lo lee justo al resolverse el
+   * `await`, cuando ese estado todavía no se ha propagado.
+   */
+  updateRole: (role: UserRole) => Promise<UpdateRoleResult>;
   user: User | null;
 }
 

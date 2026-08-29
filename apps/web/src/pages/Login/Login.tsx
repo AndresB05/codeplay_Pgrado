@@ -60,6 +60,11 @@ export const Login = () => {
     }
   };
 
+  /*
+   * Sin rol a propósito: quien entra por aquí ya tiene cuenta y su rol es el de
+   * su perfil. La llamada sin rol además descarta cualquier intención que
+   * hubiera quedado de un registro anterior.
+   */
   const handleGoogleSignIn = async (): Promise<void> => {
     clearError();
     setFormError(null);
