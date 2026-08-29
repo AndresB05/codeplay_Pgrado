@@ -112,6 +112,7 @@ escrito en §2.1.
 | 13 | Recuperar y cambiar contraseña — **las dos mitades verificadas contra la base real**: el cambio desde Ajustes pide la contraseña actual y la verifica, y el correo de recuperación llegó y su enlace fijó la nueva | ✅ | `password-recovery` |
 | 15 | Google OAuth — **la mina era el rol, y se cerró con una regla: el rol se fija en el primer registro y no cambia nunca.** El disparador crea todo perfil de Google como `child` porque el alta no puede llevar metadatos; la migración 0018 añade `is_role_declared` y hace que `set_my_role` rechace tanto si el rol ya se declaró como si el perfil tiene lazos de salón. **Verificado contra la base real**, incluido el daño que lo motivó —un niño con membresía que acababa tutor y fuera de su salón— reproducido paso por paso y ya no ocurriendo. **No cierra** registrarse como tutor de entrada: eso sigue abierto y lo cierra el código de institución | ✅ | `google-oauth` |
 | 14 | ★ Consentimiento del acudiente y política de privacidad — **adelantado en parte y aplazado el resto, ver §2.1 y §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó el único sitio donde se guardaban datos de terceros. Lo que falta **se retoma después de la prueba preliminar, y en todo caso antes del primer usuario real**. Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los compañeros se ven entre sí nombre, XP y racha (§3.2) | 🔄 | `invitaciones-sin-correo` + §3.4 |
+| 28 | ★ Tres arreglos vivos y la barra de XP — **adelantado, ver §2.1**. El `username` del disparador ya no aborta el alta (migración 0019, verificada con tres altas por `curl`), los fallos de autenticación salen en español por código, el panel dejó de inventar nombre, correo y racha en **cinco** archivos, y el XP se ve en cuatro sitios con `XPBar` retintada | ✅ | `arreglos-y-barra-xp` |
 | 16 | Persistir la asignación de misiones — **es una decisión antes que una tarea, ver §3** | ⬜ | P5 |
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
 | 18 | ★ Notificaciones en tiempo real (Supabase Realtime) | ⬜ | — |
@@ -192,6 +193,20 @@ Redactar ahora una política sobre un esquema que todavía va a cambiar —el pa
 17 conecta el progreso real, el 20 y el 21 traen el juego— significaría
 reescribirla dos veces. Google OAuth (15), en cambio, no depende de nada de eso.
 
+**El paso 28 se adelanta al 16 porque sus tres primeras partes eran fallos que
+se veían hoy con una cuenta real, y ninguna dependía de nada.** No es una mejora
+que pudiera esperar su turno: un correo con menos de 3 o más de 30 caracteres
+antes de la arroba **impedía darse de alta** —con un mensaje que no nombraba el
+nombre de usuario—, los fallos de acceso salían en inglés en una aplicación en
+español para niños, y el panel afirmaba «42 días» de racha a cuentas recién
+creadas mientras la tabla de su salón enseñaba el cero verdadero. El paso 16, en
+cambio, es una decisión de diseño antes que una tarea (§3), así que no perdía
+nada esperando.
+
+La cuarta parte —la barra de XP— entró con ellas por oportunidad: el mismo panel
+estaba abierto, el dato ya se leía de la base, y §3.2 tenía anotado que sin
+superficie el paso 21 escribiría un número que el niño apenas puede ver.
+
 ### 2.2 Pasos que requieren a una persona
 
 Estos no los puede hacer una sesión de Claude, porque implican crear cuentas o
@@ -225,19 +240,19 @@ perderse:
 | `levels` guarda `starter_code`, `validation_rules` y `programming_language`: el esquema se diseñó para un editor de código en el navegador, no para Unity | Paso 20 |
 | No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones. La sala de trofeos sólo puede listar lo conseguido, y el requisito de `contenido-mundos` se ajustó a eso | Paso 22 |
 | **El progreso no sabe nada de salones**, así que al aceptar a un alumno el tutor pasará a ver *todo* su historial, incluido el anterior al ingreso. Hoy nadie lo ha decidido: se dará por accidente | Paso 17, y ver §3.1 |
-| **El XP casi no tiene superficie en la interfaz.** Existe en la base (`profiles.total_xp`, `levels.xp_reward`, la vista `leaderboard_weekly`) pero sólo se muestra en Ajustes | Paso 21, y ver §3.2 |
+| **El XP casi no tenía superficie en la interfaz.** El paso 28 le dio cuatro —barra lateral, barra superior y la tabla de seguimiento en sus dos vistas—, con `XPBar` retintada al tema de selva y un máximo provisional. Lo que sigue abierto no es dónde se ve, sino que **nada lo escribe**: todas las barras muestran el cero verdadero | Superficie cerrada en el paso 28; la escritura, paso 21 |
 | **PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió. No se ha profundizado en qué envía el juego, en qué formato ni con qué garantía. Decisión previa al paso 20, no un paso nuevo: resolver con `/opsx:explore` | Antes del paso 20, ver §3.2 |
 | **El historial de solicitudes se acumula en filas**: un mismo par `(student_id, group_id)` puede tener una resuelta y una pendiente nueva. Resuelto ordenando por `requested_at` y quedándose con la última, con `maybeSingle()` y nunca `single()`. **Comprobado con el caso real**: niño rechazado que vuelve a pedir entrar, dos filas, la pantalla lee «En espera» | Cerrado en el paso 10 |
 | **Las políticas de salones están probadas con sesión real**, las once comprobaciones que lista `CONTEXT.md` §2.7, casos negativos incluidos. Lo único que queda fuera es la **carrera** del `for update`: el cupo se probó funcionalmente, no bajo concurrencia | Cerrado en el paso 11 |
 | **A la migración 0009 le falta `revoke ... from anon`**, que la 0013 sí trae: sólo revoca de `public`, y eso no retira lo concedido directamente a un rol. **No hay fuga, está medido:** consultadas con la clave anónima, `profiles`, `user_progress`, `level_attempts` y `achievements` devuelven 401 con código `42501` —permiso denegado a nivel de `grant`, no un vacío por RLS—, y `worlds` y `levels` devuelven 200, que es justo lo que sus políticas `to anon` quieren. Este proyecto no tiene privilegios por defecto para `anon` en el esquema `public`, así que el `revoke` que falta es defensa en profundidad, no un agujero. **Decidido: se anota, no se migra.** Si alguna vez se toca, que sea sabiendo esto y no creyendo que hay algo abierto | Ninguno: queda anotado a propósito |
 | Cuatro carpetas de componentes **sin ningún consumidor**: `WelcomeBanner`, `WorldCard`, `SidebarPlayerCard` y `LeaderBoard`. Son restos del panel anterior al rediseño. **Eran cinco**: `GoogleAuthButton` no estaba contado aquí y lo borró el paso 15. Detalle que importa para el paso 21: `SidebarPlayerCard` y `WelcomeBanner` usan `|| 0` para la racha, que es **lo correcto** — la versión buena es la que nadie monta | Paso 21 o limpieza aparte |
-| **El panel del niño inventa datos en TRES archivos, no en uno**, y la racha falsa se ve dos veces a la vez en la misma pantalla. `user?.streakDays \|\| 42` está en `Sidebar.tsx:104`, `StudentSettingsModule.tsx:31` y `StudentTopBar.tsx:39`; `user?.fullName \|\| 'Explorer Leo'` está en `Sidebar.tsx:103` y `StudentSettingsModule.tsx:29`, y `user?.email \|\| 'explorador@codeplay.co'` en `StudentSettingsModule.tsx:30`. Con la racha real a `0` el `\|\|` cae **siempre** en el 42: **comprobado con una cuenta recién creada**, que muestra «42 días» en la barra lateral y «42» en la barra superior al mismo tiempo. Con `full_name` vacío —como `user.kid2`— la pantalla afirma que el niño se llama «Explorer Leo». Es anterior al paso 10, pero desde él se contradice con la tabla del salón, que ya muestra el `0` verdadero. **El alcance real es el panel entero, no la pantalla de Ajustes** | Paso 21 o limpieza aparte |
+| **El panel del niño inventaba datos, y no en tres archivos sino en CINCO, con siete líneas.** El recuento que había aquí se quedó corto porque se buscó el literal `'Explorer Leo'`, y `StudentWorldsModule.tsx:91-95` usa `'Leo'` a secas —pintado en la línea 298 como «¡HOLA, Leo!»—. Las siete: `Sidebar.tsx` (nombre y racha), `StudentTopBar.tsx` (racha), `StudentSettingsModule.tsx` (nombre, correo y racha) y `StudentWorldsModule.tsx` (las dos ramas de `getHeroName`). Cerrado con el arreglo que pedía cada dato: racha `?? 0` porque el cero es legítimo, nombre con `FALLBACK_STUDENT_NAME` exportado desde `classrooms.service.ts`, y correo sin ningún repliegue. `SidebarPlayerCard` y `WelcomeBanner` **no se tocaron**: su `\|\| 0` es correcto y no los monta nadie | Cerrado en el paso 28 |
 | **El estado de una invitación tiene TRES valores, no dos**, y el panel viejo pintaba dos: `status === 'pending' ? 'Pendiente' : 'Aceptada'`, así que una **caducada** se habría enseñado como «Aceptada». Estaba dormido porque nada marcaba `expired` y sólo existían filas `pending`. Ese código se fue con el cambio `invitaciones-sin-correo`, pero el `check` de la 0013 sigue teniendo los tres: **al reconstruir la lista en el paso 19, no repetir el ternario** | Cerrado en `invitaciones-sin-correo`; aviso vivo para el paso 19 |
 | **«Secure password change» quedó ENCENDIDO**, y no costó código. Los **dos** caminos están medidos, no razonados: el de Ajustes —que reautentica— por API y desde la pantalla, y `/reset-password` —que **no** reautentica, y es el de quien se quedó fuera— de punta a punta con el correo del dueño del proyecto. En ninguno pidió el servidor nonce por correo: tanto la sesión que emite `signInWithPassword` como la que abre el enlace cuentan como recientes. La cautela que queda, y que sigue sin poder fabricarse: un cambio hecho desde una sesión **vieja** podría toparse con la exigencia del nonce, cuyo mensaje llega en inglés; ahí la respuesta es traducirlo o apagar el interruptor, nunca implementar el envío | Cerrado en el paso 13, tarea 10.1; ver `CONTEXT.md` §2.2 |
 | **El defecto del indicador de carga era anterior al paso 13** y estaba en tres sitios: `AuthProvider` levantaba `loading` en cada evento de `onAuthStateChange` —refrescos de token incluidos— y `ClassroomsProvider` dependía del objeto `user`, así que la aplicación se blanqueaba sola cada cierto tiempo y recargaba el store entero. Se arregló comparando el **id** del usuario y dependiendo de `userId`/`userRole`. `PrivateRoute`, `PublicRoute` y `TeacherDashboard` no se tocaron | Cerrado en el paso 13; ver `CONTEXT.md` §2.2 y §2.5 |
 | **Quien se registra con Google no puede añadirse contraseña después**: el cambio desde Ajustes pide la actual, y esa cuenta no tiene ninguna. No es un fallo del paso 15 y nadie lo ha pedido; queda anotado por si aparece | Sin paso asignado |
-| **Los fallos de autenticación llegan en INGLÉS**, en una aplicación en español para niños: el login enseña «Invalid login credentials». `createAppError.ts` usa `error.message` —el texto crudo del servidor— en las ramas de `AuthError` (línea 27) y de cualquier error con mensaje (línea 31), y el `fallbackMessage` en español sólo se alcanza en la línea 39, cuando el error **no trae mensaje**, lo que con Supabase no ocurre nunca. Los textos en español de los servicios son letra muerta. Se ve en el contraste: `changePassword` construye su `AppError` a mano y **ése sí sale en español**, o sea que alguien lo notó y lo arregló en un solo sitio. Es la forma general del riesgo que `CONTEXT.md` §2.2 anotó para el nonce, y ya está ocurriendo. Lo cierra un mapeo de códigos de Supabase a mensajes en español | Paso 21 o limpieza aparte; detectado durante el paso 15 |
-| **El disparador construye el `username` desde el correo SIN comprobar la longitud, y eso ABORTA el alta entera.** `202606030002` exige `username ~ '^[a-z0-9_]{3,30}$'`; `handle_new_user_profile` toma `split_part(email,'@',1)`, le quita los caracteres no válidos y **sólo convierte la cadena vacía en `null`** — nada acota el mínimo de 3 ni el máximo de 30. Un correo como `ab@gmail.com`, o con más de 30 caracteres antes de la arroba, revienta el `insert` y Supabase responde literalmente «Database error saving new user». **Afecta también al registro con contraseña**, no sólo a Google, y el mensaje no dice nada del nombre de usuario. Lo cierra una migración que **acote la longitud en el disparador** —dejando `null` cuando no encaje, como ya hace con el duplicado—, **nunca relajando el `check`**: el formato es del dominio y quien tiene que ceder es quien lo deriva | Paso 21 o limpieza aparte; detectado durante el paso 15 |
+| **Los fallos de autenticación llegaban en INGLÉS.** Cerrado con `AUTH_ERROR_MESSAGES` y el helper `authError()` en `auth.service.ts`, por código y no por texto, con el mensaje del servidor conservado como causa. `createAppError.ts` **no se tocó**, porque lo usan otros seis servicios contra PostgREST — y por eso `profile.service.ts` sigue en inglés, anotado en `CONTEXT.md` §4.5. Comprobado en pantalla: `/login` con la contraseña equivocada responde «El correo o la contraseña no son correctos.» Ocho de las quince ramas del mapa **no puede dispararlas la interfaz de hoy**: cuáles y por qué, en `CONTEXT.md` §4.6 | Cerrado en el paso 28 |
+| **El disparador construía el `username` sin comprobar la longitud, y eso ABORTABA el alta entera.** Cerrado por la migración `202606030019`, que acota a 3–30 tras normalizar y deja `null` cuando no encaja, como ya hacía con el duplicado. El `check` de la `202606030002` **no se relajó**: el formato es del dominio y cedió quien lo deriva. Verificado contra la base real con tres altas por `curl` —local-part de 2, de 33 y de 18—, y la tercera es la que prueba que la asignación normal sigue funcionando | Cerrado en el paso 28 |
 | **Una «misión» no es nada todavía, y el paso 16 es una decisión antes que una tarea.** `missionCatalog` (`teacher/classroomsData.ts:159`) son **cinco entradas inventadas** —`m1`…`m5`, con `skill` y `difficultyLabel`— **sin ninguna relación con las 9 filas de `levels`**, y no hay tabla ni columna de misiones en las 18 migraciones; `SkillKey` tampoco existe en el esquema. **Nadie las lee salvo el tutor**: fuera de `TeacherPanelModule.tsx`, `classroomsData.ts` y `classroom.types.ts`, la palabra sólo aparece en dos textos de marketing —`home/TutorSection.tsx:50` y `Signup.tsx:172`—, el panel del niño no tiene ni ruta ni módulo, y la pantalla de niveles es maqueta (§3.3). Y **el selector de alcance del panel se ignora al asignar**: `assignedMissionIds` es estado del componente, independiente de `selectedGroupId`, así que cambiar de salón deja las asignadas marcadas, y con cero salones los botones siguen activos. Antes de persistir hay que decidir **a qué cuelga la fila** —salón o tutor—, **qué es `mission_key`** mientras no haya nada a lo que apuntar, y **si el niño llega a verlas**; persistir para el tutor y nada más es defendible, pero se dice, no se da por supuesto | Paso 16; detectado al preparar su encargo |
 
 ### 3.1 Historial previo al ingreso en un salón
@@ -266,33 +281,42 @@ la decisión de privacidad; era lo que impedía tomarla más tarde sin inventarl
 
 ### 3.2 El XP no se ve casi en ninguna parte
 
+**Actualizado por el paso 28.** La tabla de abajo describía el estado anterior:
+el XP sólo se veía en Ajustes y la única barra vivía en un huérfano.
+
 | Dónde aparece | ¿Se renderiza? |
 | --- | --- |
 | `StudentSettingsModule` | ✅ Sí |
+| `Sidebar` con `XPBar` | ✅ Sí — **desde el paso 28**, debajo del chip de racha |
+| `StudentTopBar` con `XPBar` | ✅ Sí — **desde el paso 28**, a la izquierda del chip de racha |
+| `StudentRosterTable` con `XPBar` | ✅ Sí — **desde el paso 28**, en las dos vistas, y la columna cambia de sitio según quién mire |
 | `LeaderBoardRow` | ❌ `LeaderBoard` no lo monta nadie |
 | `SidebarPlayerCard` | ❌ sin consumidores |
 | `WelcomeBanner` con `XPBar` | ❌ sin consumidores |
 
-La única barra de XP del proyecto vive en `WelcomeBanner`, que no está montado en
-ninguna pantalla. **No confundirla con la barra de progreso del mundo**, que
-cuenta niveles completados sobre el total y no tiene relación con el XP.
+**No confundir la barra de XP con la barra de progreso del mundo**, que cuenta
+niveles completados sobre el total y no tiene relación con el XP.
 
-Esto deja el paso 21 incompleto tal como está planteado: escribiría un número que
-el niño apenas puede ver. Antes de implementarlo hay que decidir dónde se muestra
-el XP —cabecera del panel, tarjeta en el listado de mundos, o recuperar el
-banner— y si esos componentes huérfanos se rehacen con el tema de selva o se
-borran y se hacen de nuevo.
+Esto dejaba el paso 21 incompleto tal como estaba planteado: escribiría un número
+que el niño apenas puede ver. **Decidido y hecho en el paso 28**: el XP se ve en
+la barra lateral, en la barra superior y en la tabla de seguimiento, sin recuperar
+el banner. Lo que el paso 21 hereda ya no es dónde mostrarlo, sino el **máximo**:
+hoy es `PROVISIONAL_MAX_XP` en `constants/progress.ts`, un número inventado porque
+el esquema no tiene umbrales, y fijarlo de verdad es el paso 22.
 
 **Los componentes huérfanos se rehacen, no se recuperan.** `WelcomeBanner`,
 `SidebarPlayerCard`, `LeaderBoard` y `WorldCard` usan los nombres de color
 anteriores al rediseño (`text-secondary`, `text-neutral-light`) y la maquetación
 del panel viejo. Adaptarlos sería arrastrar marcado que no encaja con el tema de
-selva. La excepción es `XPBar`, una primitiva pequeña que se salva de estructura
-—**no de paleta**: `components/ui/XPBar.tsx` usa `text-neutral-light`,
-`bg-neutral-dark` y `from-secondary to-secondary-light`, exactamente los nombres
-viejos de los que aquí se la excepciona. Compila, porque `tailwind.config.js` los
-conserva «para no romper pantallas antiguas», pero se ve gris y apagado en el
-tema de selva. Reutilizarla exige retintarla.
+selva. La excepción es `XPBar`, una primitiva pequeña que se salvó de estructura y
+**ya está retintada**: lo hizo el paso 28 antes de montarla, que era la condición
+que este párrafo ponía. Hoy usa `text-ink-soft`, `bg-jungle-soft` con borde de
+`ink` y un relleno `from-jungle-light to-jungle`; ya no queda ningún nombre de la
+paleta anterior en el archivo. **No está pendiente: no la retintes otra vez.**
+
+Se eligió la familia `jungle` y no `sun` porque el XP ya era verde en Ajustes
+—el chip usa `chip-leaf`—, y porque el amarillo es de la racha: en tres de las
+cuatro ubicaciones van pegadas, y con el mismo color serían indistinguibles.
 
 #### Modelo de progreso: decidido
 

@@ -1,3 +1,4 @@
+import { AuthError } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 import { ROUTES } from '../constants/routes';
 import { ACCOUNT_ALREADY_EXISTS, authService } from './auth.service';
@@ -5,6 +6,7 @@ import { ACCOUNT_ALREADY_EXISTS, authService } from './auth.service';
 const mocks = vi.hoisted(() => ({
   resetPasswordForEmail: vi.fn(),
   signInWithOAuth: vi.fn(),
+  signInWithPassword: vi.fn(),
   signUp: vi.fn(),
 }));
 
@@ -13,6 +15,7 @@ vi.mock('../lib/supabase', () => ({
     auth: {
       resetPasswordForEmail: mocks.resetPasswordForEmail,
       signInWithOAuth: mocks.signInWithOAuth,
+      signInWithPassword: mocks.signInWithPassword,
       signUp: mocks.signUp,
     },
   },
@@ -116,5 +119,31 @@ describe('authService.signUp', () => {
     });
 
     expect(result.error?.message).not.toMatch(/tutor|ni.o/i);
+  });
+});
+
+/*
+ * Esto NO comprueba qué dice cada entrada del mapa —un test así lo repetiría y
+ * los dos dirían la misma mentira—, sino la fontanería: que el texto crudo del
+ * servidor deja de ser lo que se pinta. Sin ella, el `error.message` en inglés
+ * viajaba entero hasta la pantalla de acceso de una aplicación para niños.
+ */
+describe('authService, mensajes del servidor', () => {
+  const SERVER_MESSAGE = 'Invalid login credentials';
+
+  it('traduce el fallo y deja el mensaje del servidor sólo como causa', async () => {
+    mocks.signInWithPassword.mockResolvedValue({
+      data: { session: null, user: null },
+      error: new AuthError(SERVER_MESSAGE, 400, 'invalid_credentials'),
+    });
+
+    const result = await authService.signIn({
+      email: 'alguien@codeplay.test',
+      password: 'equivocada',
+    });
+
+    expect(result.error?.message).toBeTruthy();
+    expect(result.error?.message).not.toContain(SERVER_MESSAGE);
+    expect(result.error?.cause).toMatchObject({ message: SERVER_MESSAGE });
   });
 });

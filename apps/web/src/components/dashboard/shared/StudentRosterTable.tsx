@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { PROVISIONAL_MAX_XP } from '../../../constants/progress';
 import type { ClassroomStudent } from '../../../types/classroom.types';
+import { XPBar } from '../../ui/XPBar';
 import { formatLastActivity } from '../teacher/classroomsData';
 
 const WorldBadgeIcon = () => (
@@ -55,9 +57,14 @@ export const StudentRosterTable = ({
 }: StudentRosterTableProps) => {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
+  /*
+   * La columna de XP cambia de sitio según quién mira: el niño la ve junto a la
+   * última actividad y el tutor junto a las acciones. Es lo pedido, no un
+   * descuido de la reutilización, así que las dos ramas se amplían por separado.
+   */
   const gridColumns = onRemoveStudent
-    ? 'grid-cols-[1.35fr_1fr_1fr_0.7fr_1.2fr]'
-    : 'grid-cols-[1.35fr_1fr_1fr_0.7fr]';
+    ? 'grid-cols-[1.35fr_1fr_1fr_0.7fr_0.8fr_1.2fr]'
+    : 'grid-cols-[1.35fr_1fr_1fr_0.8fr_0.7fr]';
 
   const handleRemove = (studentId: string) => {
     onRemoveStudent?.(studentId);
@@ -72,7 +79,9 @@ export const StudentRosterTable = ({
         <div>Explorador</div>
         <div>Mundo actual</div>
         <div>Última actividad</div>
+        {onRemoveStudent ? null : <div>XP</div>}
         <div>Racha</div>
+        {onRemoveStudent ? <div>XP</div> : null}
         {onRemoveStudent ? <div className="text-right">Acciones</div> : null}
       </div>
 
@@ -114,6 +123,12 @@ export const StudentRosterTable = ({
                 {formatLastActivity(student.hoursSinceLastActivity)}
               </div>
 
+              {onRemoveStudent ? null : (
+                <div>
+                  <XPBar currentXP={student.xp} maxXP={PROVISIONAL_MAX_XP} showLabel={false} />
+                </div>
+              )}
+
               <div>
                 {student.streakDays !== null ? (
                   <span className="inline-flex items-center gap-1.5 font-display text-[18px] text-sun-dark">
@@ -124,6 +139,12 @@ export const StudentRosterTable = ({
                   <span className="text-ink-faint">—</span>
                 )}
               </div>
+
+              {onRemoveStudent ? (
+                <div>
+                  <XPBar currentXP={student.xp} maxXP={PROVISIONAL_MAX_XP} showLabel={false} />
+                </div>
+              ) : null}
 
               {onRemoveStudent ? (
                 <div className="flex justify-end">

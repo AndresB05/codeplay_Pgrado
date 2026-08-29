@@ -1077,6 +1077,31 @@ Los salones viven en Supabase desde el 26-ago-2026, cambio `salones-persistentes
 que trajo la migración 0015. Lo que queda de esta línea es progreso real por
 alumno, que es el paso 17 y no este.
 
+### `arreglos-y-barra-xp`: APLICADO
+
+Tres fallos vivos cerrados y una superficie nueva, cambio `arreglos-y-barra-xp`
+(paso 28 del `ROADMAP.md`), el 29-ago-2026:
+
+- **El `username` derivado del correo ya no aborta el alta.** Migración
+  `202606030019_bound_generated_username.sql`: el nombre normalizado se descarta
+  a `null` cuando no casa con `'^[a-z0-9_]{3,30}$'`, igual que ya hacía con el
+  duplicado. El `check` de la `202606030002` **no se tocó**. Verificado contra la
+  base real con tres altas por `curl`: local-part de 2 y de 33 caracteres crean
+  la cuenta con `username` nulo, y una de 18 la crea **con** el nombre asignado.
+- **Los fallos de autenticación llegan en español.** `AUTH_ERROR_MESSAGES` y el
+  helper `authError()` en `services/auth.service.ts`, con el mismo patrón por
+  código que `classrooms.service.ts` estrenó en el paso 10. `createAppError.ts`
+  **no se tocó**: lo usan otros seis servicios contra PostgREST.
+- **El panel dejó de inventar nombre, correo y racha**, en `Sidebar.tsx`,
+  `StudentTopBar.tsx`, `StudentSettingsModule.tsx` y `StudentWorldsModule.tsx`.
+  La racha va con `?? 0` porque el cero es legítimo, el nombre con
+  `FALLBACK_STUDENT_NAME` —exportado desde `classrooms.service.ts`, un solo
+  literal para toda la aplicación— y el correo sin ningún repliegue.
+- **El XP tiene cuatro superficies**: `XPBar` retintada al tema de selva y
+  montada en la barra lateral, la barra superior y la tabla de seguimiento en sus
+  dos vistas. El máximo es `PROVISIONAL_MAX_XP` en `constants/progress.ts`,
+  provisional hasta el paso 22.
+
 ### Privacidad y consentimiento (paso 14): EN CURSO, el resto APLAZADO
 
 Lo exigible hoy ya está aplicado: el cambio `invitaciones-sin-correo` eliminó
@@ -1138,7 +1163,7 @@ El build de WebGL va a `apps/web/public/game/`, carpeta ignorada por git.
 | Persistir la asignación de misiones | Hoy vive en el estado del componente y se pierde al recargar | P1 |
 | Editar o archivar un salón | No existe | P1 |
 | Exportar reportes | No existe | P1 |
-| Progreso, XP y rachas reales | Hoy son datos de ejemplo | P4 |
+| Progreso, XP y rachas reales | El XP ya se lee de la base y se muestra en cuatro sitios desde `arreglos-y-barra-xp`; lo que falta es que **algo lo escriba**, y con él la racha | P4 |
 | Pertenecer a varios salones | El modelo actual admite uno solo; cambiarlo afecta a `StudentMembership` | P3 |
 | Recursos educativos con destino | Hoy son tarjetas informativas sin enlace | Contenido |
 | CI en GitHub Actions | Verificar lint y build en cada push | Ninguna |
@@ -1230,12 +1255,50 @@ No lo introdujo el paso 10: se ve igual en todo lo que ya existía. Se anota
 aquí porque hasta ahora nadie lo había medido, y porque es trabajo del **paso
 25** (responsive, accesibilidad y `ErrorBoundary`).
 
-### 4.5 ESLint 8 sin soporte
+**El paso 28 lo empeora a sabiendas.** La tabla de seguimiento ganó la columna de
+XP, así que a 375 px reparte los mismos 73 px entre una pista más. No se arregló
+ahí porque el repliegue es del panel entero y no de una tabla: hacerlo en una
+sola dejaría el resto igual de roto y con una excepción que explicar.
+
+### 4.5 `profile.service.ts` sigue devolviendo inglés
+
+El paso 28 tradujo `auth.service.ts` y **sólo ése**. `profile.service.ts` sigue
+pasando por `createAppError`, que usa `error.message` crudo, así que un fallo al
+cargar o actualizar el perfil llega en inglés igual que antes.
+
+Se dejó fuera a propósito: no es lo que ve el niño al no poder entrar, y meterlo
+en el mismo cambio habría mezclado dos superficies. **El patrón ya está escrito**
+—mapa por código más helper local—, así que cerrarlo es copiarlo, no diseñarlo.
+Los otros cinco servicios que usan `createAppError` están en la misma situación.
+
+### 4.6 Ramas del mapa de errores que la interfaz no puede disparar
+
+De las quince entradas de `AUTH_ERROR_MESSAGES`, **ocho no puede alcanzarlas la
+interfaz de hoy**, y conviene saber por qué antes de creerlas verificadas:
+
+| Rama | Por qué no llega |
+| --- | --- |
+| `weak_password` | `min(6)` de zod en los cuatro esquemas de contraseña |
+| `email_address_invalid` | `z.string().email()` valida antes de enviar |
+| `validation_failed` | Los esquemas cubren los campos que se mandan |
+| `email_not_confirmed` | `mailer_autoconfirm` está encendido |
+| `signup_disabled` | El interruptor está activo |
+| `user_not_found` | `resetPasswordForEmail` responde igual exista o no la cuenta, a propósito |
+| `reauthentication_needed` | No se pudo fabricar; ver §2.2 |
+| `over_request_rate_limit` | Alcanzable repitiendo fallos en `/login`, no se provoca a propósito: deja el proyecto limitado un rato |
+
+**`weak_password` se queda aunque hoy no llegue**, y ése es el caso que enseña la
+regla: el mínimo del servidor se configura en el panel de Supabase, así que si
+alguna vez sube por encima de 6, zod deja de atraparlo y la rama se enciende
+sola. Lo único comprobado en pantalla es `invalid_credentials`, que es lo que
+devuelve `/login` con la contraseña equivocada.
+
+### 4.7 ESLint 8 sin soporte
 
 `.eslintrc.cjs` usa la configuración heredada. Migrar a ESLint 9 con
 configuración plana es una tarea pendiente sin urgencia.
 
-### 4.6 Bundle de 596 kB
+### 4.8 Bundle de 596 kB
 
 `npm run build` avisa de que el chunk supera los 500 kB. Sin urgencia, pero
 cobrará importancia al embeber el juego. Se resuelve con `manualChunks` o

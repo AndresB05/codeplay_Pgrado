@@ -33,7 +33,17 @@ context: |
   rol ya se declaro (ZC001) o si el perfil tiene lazos de salon (ZC002).
   Verificado contra la base real, incluido el dano que lo motivo: un nino con
   membresia que acababa tutor y fuera de su salon.
-  `npm run build`, `npm run lint` y `npm run test:run` pasan (75 tests).
+  EL PASO 28 (`arreglos-y-barra-xp`) cerro tres fallos vivos y dio superficie al
+  XP: la migracion 0019 acota el username derivado del correo a 3-30 tras
+  normalizar y lo deja null si no encaja, de modo que un correo corto o largo ya
+  no aborta el alta; auth.service.ts traduce los fallos de autenticacion por
+  codigo con AUTH_ERROR_MESSAGES (createAppError.ts NO se toco, lo usan otros
+  seis servicios); el panel dejo de inventar nombre, correo y racha en cinco
+  archivos, con FALLBACK_STUDENT_NAME exportado desde classrooms.service.ts; y
+  XPBar, retintada al tema de selva, se monta en la barra lateral, la barra
+  superior y la tabla de seguimiento en sus dos vistas, con el maximo
+  provisional PROVISIONAL_MAX_XP en constants/progress.ts.
+  `npm run build`, `npm run lint` y `npm run test:run` pasan (77 tests).
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.

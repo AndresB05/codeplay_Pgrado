@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom';
+import { PROVISIONAL_MAX_XP } from '../../../constants/progress';
 import { ROUTES } from '../../../constants/routes';
 import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
+import { FALLBACK_STUDENT_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
 import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
+import { XPBar } from '../../ui/XPBar';
 
 type SidebarProps = {
   user: User | null;
@@ -100,8 +103,14 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
-  const displayName = user?.fullName || 'Explorer Leo';
-  const streakDays = user?.streakDays || 42;
+  const displayName = user?.fullName || FALLBACK_STUDENT_NAME;
+  /*
+   * `??` y no `||`: la racha en cero es legítima, y con `||` caía SIEMPRE en el
+   * valor de relleno. Una cuenta recién creada enseñaba «42 días» aquí y «42» en
+   * la barra superior a la vez, contradiciendo el cero verdadero de la tabla del
+   * salón.
+   */
+  const streakDays = user?.streakDays ?? 0;
 
   const navItems = [
     { route: ROUTES.WORLDS, label: 'Mundos', icon: CompassIcon },
@@ -163,6 +172,10 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
         <div className="mt-2 flex items-center gap-2 rounded-full border-2 border-ink bg-sun-soft px-4 py-1 font-display text-[16px] text-sun-dark">
           <FireIcon />
           <span>{streakDays} días</span>
+        </div>
+
+        <div className="mt-3 w-full px-1">
+          <XPBar currentXP={user?.xp ?? 0} maxXP={PROVISIONAL_MAX_XP} />
         </div>
       </div>
 

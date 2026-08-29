@@ -56,7 +56,12 @@ const PUBLIC_ID_ATTEMPTS = 3;
 /** Violación de restricción única en PostgreSQL. */
 const UNIQUE_VIOLATION = '23505';
 
-const FALLBACK_STUDENT_NAME = 'Explorador';
+/**
+ * Tratamiento genérico para quien no tiene nombre en su perfil. Vive aquí porque
+ * lo estrenó la lista del salón, y se exporta para que el panel del niño enseñe
+ * el mismo: dos literales acabarían llamando de dos maneras a la misma persona.
+ */
+export const FALLBACK_STUDENT_NAME = 'Explorador';
 
 /*
  * Los mensajes que levanta la base vienen en inglés —«Classroom is full»— y
@@ -84,7 +89,11 @@ const readErrorCode = (error: unknown): string | undefined => {
 };
 
 /** Error de salones con mensaje en español, listo para pintarse. */
-const classroomError = (error: unknown, fallbackMessage: string, fallbackCode: string): AppError => {
+const classroomError = (
+  error: unknown,
+  fallbackMessage: string,
+  fallbackCode: string
+): AppError => {
   const code = readErrorCode(error);
 
   return new AppError(

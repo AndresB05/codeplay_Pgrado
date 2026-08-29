@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
+import { PROVISIONAL_MAX_XP } from '../../../constants/progress';
 import { ROUTES } from '../../../constants/routes';
 import type { User } from '../../../types/user.types';
+import { XPBar } from '../../ui/XPBar';
 
 const FireIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -36,7 +38,7 @@ type StudentTopBarProps = {
 
 export const StudentTopBar = ({ user }: StudentTopBarProps) => {
   const navigate = useNavigate();
-  const streakDays = user?.streakDays || 42;
+  const streakDays = user?.streakDays ?? 0;
 
   return (
     <header className="flex h-[84px] items-center justify-between border-b-[3px] border-ink bg-white px-5">
@@ -60,6 +62,11 @@ export const StudentTopBar = ({ user }: StudentTopBarProps) => {
       </button>
 
       <div className="flex items-center gap-3">
+        {/* Ancho fijo: sin acotarla, la barra crece con la cabecera y empuja el resto. */}
+        <div className="hidden w-[150px] sm:block">
+          <XPBar currentXP={user?.xp ?? 0} maxXP={PROVISIONAL_MAX_XP} />
+        </div>
+
         <div className="flex h-[52px] items-center gap-2 rounded-full border-[3px] border-ink bg-sun-soft px-5 font-display text-[18px] text-sun-dark shadow-[0_4px_0_rgba(42,27,69,0.15)]">
           <FireIcon />
           <span>{streakDays}</span>

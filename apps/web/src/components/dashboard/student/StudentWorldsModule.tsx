@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
+import { FALLBACK_STUDENT_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
 import {
   type CategoryKey,
@@ -89,9 +90,9 @@ const iconByTone = {
 };
 
 const getHeroName = (fullName: string | null | undefined) => {
-  if (!fullName) return 'Leo';
+  if (!fullName) return FALLBACK_STUDENT_NAME;
   const [firstName] = fullName.split(' ');
-  return firstName || 'Leo';
+  return firstName || FALLBACK_STUDENT_NAME;
 };
 
 const SelectField = ({

@@ -1,7 +1,6 @@
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { ROUTES } from '../constants/routes';
 import { AppError } from '../errors/AppError';
-import { createAppError } from '../errors/createAppError';
 import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
 import type { UserRole } from '../types/user.types';
@@ -38,6 +37,61 @@ interface AuthSessionData {
 }
 
 /*
+ * Los fallos de la capa de autenticación llegan en INGLÉS —el login enseñaba
+ * «Invalid login credentials»— en una aplicación en español para niños. Se
+ * traducen por código y no por el texto: una redacción nueva en el servidor
+ * dejaría muda cualquier comparación por mensaje. El original viaja como causa,
+ * para quien depure. Mismo patrón que `ERROR_MESSAGES` en `classrooms.service.ts`.
+ *
+ * `user_already_exists` no está aquí: `signUp` lo trata antes, con su propio
+ * código, porque el aviso tiene que quedarse en genérico y `AuthProvider` lo lee
+ * para decidir el salto a `/login`.
+ */
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  invalid_credentials: 'El correo o la contraseña no son correctos.',
+  email_not_confirmed: 'Todavía no has confirmado tu correo. Busca el mensaje que te enviamos.',
+  email_address_invalid: 'Ese correo no parece válido. Revísalo.',
+  weak_password: 'La contraseña es demasiado corta. Usa al menos 6 caracteres.',
+  same_password: 'La contraseña nueva tiene que ser distinta de la anterior.',
+  over_email_send_rate_limit:
+    'Se han enviado demasiados correos seguidos. Espera un momento y vuelve a intentarlo.',
+  over_request_rate_limit: 'Demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.',
+  otp_expired: 'Ese enlace ya caducó. Pide uno nuevo.',
+  flow_state_expired: 'Ese enlace ya caducó. Pide uno nuevo.',
+  /*
+   * El nonce por correo que `docs/CONTEXT.md` §2.2 dejó anotado: no se pudo
+   * fabricar, pero si aparece llega en inglés. Traducirlo era la respuesta
+   * prevista; implementar el envío, nunca.
+   */
+  reauthentication_needed: 'Por seguridad, vuelve a entrar antes de cambiar la contraseña.',
+  session_not_found: 'Tu sesión ya no es válida. Vuelve a entrar.',
+  user_not_found: 'No encontramos esa cuenta.',
+  signup_disabled: 'Ahora mismo no se pueden crear cuentas nuevas.',
+  validation_failed: 'Faltan datos o alguno no es válido. Revisa el formulario.',
+};
+
+const readErrorCode = (error: unknown): string | undefined => {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const { code } = error as { code?: unknown };
+
+    return typeof code === 'string' ? code : undefined;
+  }
+
+  return undefined;
+};
+
+/** Error de autenticación con mensaje en español, listo para pintarse. */
+const authError = (error: unknown, fallbackMessage: string, fallbackCode: string): AppError => {
+  const code = readErrorCode(error);
+
+  return new AppError(
+    (code && AUTH_ERROR_MESSAGES[code]) || fallbackMessage,
+    code ?? fallbackCode,
+    error
+  );
+};
+
+/*
  * Vuelve a `/auth/callback` y no a un panel: al construir esta URL todavía no se
  * sabe cuál será el rol —el perfil aún no existe—, así que cualquier ruta con
  * rol rebotaría a la mitad de la gente enseñando de paso el panel del otro.
@@ -61,11 +115,7 @@ const applyNewPassword = async (newPassword: string): ServiceResult<void> => {
   if (error) {
     return {
       data: null,
-      error: createAppError(
-        error,
-        'No se pudo cambiar la contraseña.',
-        'auth_update_password_error'
-      ),
+      error: authError(error, 'No se pudo cambiar la contraseña.', 'auth_update_password_error'),
     };
   }
 
@@ -121,11 +171,7 @@ export const authService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(
-          error,
-          'No se pudo recuperar la sesión actual.',
-          'auth_session_error'
-        ),
+        error: authError(error, 'No se pudo recuperar la sesión actual.', 'auth_session_error'),
       };
     }
 
@@ -145,7 +191,7 @@ export const authService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(
+        error: authError(
           error,
           'No se pudo enviar el correo de recuperación.',
           'auth_reset_request_error'
@@ -165,7 +211,7 @@ export const authService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(error, 'No se pudo iniciar sesión.', 'auth_sign_in_error'),
+        error: authError(error, 'No se pudo iniciar sesión.', 'auth_sign_in_error'),
       };
     }
 
@@ -189,7 +235,7 @@ export const authService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(
+        error: authError(
           error,
           'No se pudo iniciar sesión con Google.',
           'auth_google_sign_in_error'
@@ -200,7 +246,7 @@ export const authService = {
     if (!data.url) {
       return {
         data: null,
-        error: createAppError(
+        error: authError(
           new Error('Supabase no devolvió URL de redirección para Google OAuth.'),
           'No se pudo iniciar el flujo con Google.',
           'auth_google_redirect_missing'
@@ -217,7 +263,7 @@ export const authService = {
     if (error) {
       return {
         data: null,
-        error: createAppError(error, 'No se pudo cerrar la sesión.', 'auth_sign_out_error'),
+        error: authError(error, 'No se pudo cerrar la sesión.', 'auth_sign_out_error'),
       };
     }
 
@@ -258,7 +304,7 @@ export const authService = {
 
       return {
         data: null,
-        error: createAppError(error, 'No se pudo crear la cuenta.', 'auth_sign_up_error'),
+        error: authError(error, 'No se pudo crear la cuenta.', 'auth_sign_up_error'),
       };
     }
 
