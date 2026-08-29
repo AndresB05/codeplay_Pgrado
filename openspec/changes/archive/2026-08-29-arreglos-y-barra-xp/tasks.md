@@ -13,7 +13,7 @@
   | c) `probamigracion0019@…` | 18 | 200 | `probamigracion0019` |
 
   Las dos primeras respondían «Database error saving new user» antes de la 0019. La tercera confirma que la asignación normal sigue funcionando.
-- [ ] 1.6 Pedir al usuario que borre las tres cuentas de prueba desde el panel de Supabase: `apps/web/.env` sólo tiene la clave anónima, que no puede borrar usuarios.
+- [x] 1.6 Pedir al usuario que borre las tres cuentas de prueba desde el panel de Supabase: `apps/web/.env` sólo tiene la clave anónima, que no puede borrar usuarios. **Hecho por el usuario.**
 
 ## 2. Servicio de autenticación: mensajes en español
 
@@ -77,4 +77,4 @@ la misma mentira. Se testea la fontanería, que es donde un fallo pasa inadverti
 - [x] 7.3 Marcar la fila **28** en `docs/ROADMAP.md` §2, colocada **antes de la 16**, con su motivo en §2.1, y **retirar de §3 los tres cabos sueltos que este cambio cierra** (el `username` del disparador, los fallos en inglés y los datos inventados del panel). Al retirar el tercero, **corregir su recuento**: el cabo suelto dice «TRES archivos» y son **cinco**, con **siete** líneas —`Sidebar.tsx` ×2, `StudentTopBar.tsx`, `StudentSettingsModule.tsx` ×3 y `StudentWorldsModule.tsx` ×2, este último con el literal `'Leo'` a secas, que es por lo que no salió al buscar `'Explorer Leo'`—.
 - [x] 7.4 Corregir **`docs/ROADMAP.md` §3.2** en el mismo cierre: su párrafo sobre `XPBar` —«usa `text-neutral-light`, `bg-neutral-dark` y `from-secondary to-secondary-light`… Reutilizarla exige retintarla»— queda obsoleto en cuanto se retinte. Deja escrito que ya está hecho y en qué cambio, para que el paso 21 no lo lea como pendiente. La tabla de «¿Se renderiza?» de esa misma sección también cambia: el XP ya no se ve sólo en Ajustes.
 - [x] 7.5 Comprobar si `openspec/config.yaml` necesita réplica —sólo si cambiaron stack, estructura, convenciones o prioridades— y que `npx openspec doctor` sigue parseando.
-- [ ] 7.6 Preparar el commit **enumerando las rutas** en `git add`, nunca `git add -A`.
+- [x] 7.6 Preparar el commit **enumerando las rutas** en `git add`, nunca `git add -A`. **Hecho:** commit `6b219f2` con las 23 rutas enumeradas y el árbol limpio después.
