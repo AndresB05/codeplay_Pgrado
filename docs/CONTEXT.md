@@ -673,7 +673,7 @@ con las del tutor.
 | Aceptar o rechazar solicitud; aceptar se bloquea sin cupos | ✅ | `context/ClassroomsProvider.tsx` |
 | Reportes de 5 competencias con semáforo de dominio | ✅ | `getSkillReports()` en `classroomsData.ts` |
 | Selector de alcance: todos los salones o uno | ✅ | `teacher/TeacherPanelModule.tsx` |
-| Asignación de misiones | 🟡 | Estado local del componente (`assignedMissionIds`); se pierde al recargar |
+| Asignación de misiones | 🟡 | Estado local del componente (`assignedMissionIds`); se pierde al recargar, ignora el selector de alcance y el catálogo es ficticio — ver `ROADMAP.md` §3 |
 | Sumar alumnos compartiendo el ID público del salón | ✅ | `teacher/AddStudentsPanel.tsx` |
 | Recursos educativos | 🟡 | Tarjetas informativas sin destino |
 | Ajustes de cuenta: salir y cambiar contraseña | ✅ | `teacher/TeacherSettingsModule.tsx` + `shared/ChangePasswordPanel.tsx` — desde el paso 13, ver §2.2 |
