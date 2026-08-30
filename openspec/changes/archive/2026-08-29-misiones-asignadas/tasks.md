@@ -54,4 +54,4 @@
 - [x] 9.1 `npm run lint` (0 warnings), `npm run test:run` y `npm run build`: los tres pasan hoy y no deben romperse
 - [x] 9.2 `npx openspec validate misiones-asignadas --strict` — la opción es posicional, `--change` no existe en este comando
 - [x] 9.3 Comprobación **en pantalla** con las dos cuentas de `.env`: el tutor asigna, el niño la ve **en los dos sitios** sin recargar la aplicación entera, y el tutor ve a su salón entero en «Pendiente» con el motivo a la vista
-- [ ] 9.4 Preparar el commit **enumerando las rutas** en `git add`, nunca `git add -A`: con varios cambios vivos el árbol casi nunca contiene sólo lo que se está commiteando
+- [x] 9.4 Preparar el commit **enumerando las rutas** en `git add`, nunca `git add -A`: con varios cambios vivos el árbol casi nunca contiene sólo lo que se está commiteando
