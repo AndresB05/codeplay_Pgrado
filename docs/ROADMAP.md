@@ -82,6 +82,18 @@ aplican al revisar y al archivar, no sólo antes del `apply`:
    las migraciones nuevas y ninguna más — si arrastra otras, hay migraciones sin
    aplicar en la base y eso se mira antes de seguir.
 
+   **Quien hace cumplir esta parada es el usuario, no la lista de tareas.** El
+   paso 16 la llevaba escrita como tarea propia —«PARADA: la sesión que revisa
+   lee el SQL antes del `db push`»— y aun así no ocurrió: la sesión que ejecuta
+   la marcó hecha y siguió. No es un descuido de esa sesión, es el sitio donde
+   estaba el control. Una tarea que dice «espera a que otro te revise» vive en la
+   lista de quien tiene que esperar, y la marca él mismo; en el paso 28 funcionó
+   por disciplina, no por diseño. El único punto que puede hacerla cumplir es el
+   `db push`, porque **sólo el usuario lo lanza**: no lo lanza hasta que la sesión
+   que revisa haya leído el SQL y lo haya dicho, diga lo que diga la lista de
+   tareas. La migración del 16 salió bien —revisada a posteriori, sin defecto—,
+   pero salió bien sin control, que es otra cosa.
+
 ---
 
 ## 2. Secuencia
