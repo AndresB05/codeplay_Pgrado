@@ -318,6 +318,45 @@ export type Database = {
           },
         ];
       };
+      mission_assignments: {
+        Row: {
+          assigned_at: string;
+          assigned_by: string;
+          group_id: string;
+          id: string;
+          mission_key: string;
+        };
+        Insert: {
+          assigned_at?: string;
+          assigned_by: string;
+          group_id: string;
+          id?: string;
+          mission_key: string;
+        };
+        Update: {
+          assigned_at?: string;
+          assigned_by?: string;
+          group_id?: string;
+          id?: string;
+          mission_key?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mission_assignments_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'class_group_directory';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mission_assignments_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'class_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_key: string;

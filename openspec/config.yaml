@@ -54,7 +54,27 @@ context: |
   docs/CONTEXT.md 4.9). Cerro ademas lo que el paso 28 dejo fuera del panel del
   tutor: FALLBACK_TEACHER_NAME esta junto a FALLBACK_STUDENT_NAME en
   classrooms.service.ts y el correo inventado desaparecio. Sin migracion.
-  `npm run build`, `npm run lint` y `npm run test:run` pasan (79 tests).
+  EL PASO 16 (`misiones-asignadas`) persiste la asignacion de misiones. La
+  migracion 0020 crea mission_assignments colgando del SALON (no del tutor: el
+  nino se liga a un salon por su pertenencia, no a una persona), con
+  unique (group_id, mission_key), politicas de select/insert/delete y sin
+  update. mission_key es TEXTO SIN CLAVE AJENA a sabiendas: el catalogo son
+  cinco entradas en teacher/classroomsData.ts y no hay tabla a la que apuntar,
+  asi que el cliente ignora las claves que no reconoce. Va por
+  services/missions.service.ts + hooks/useMissionAssignments.ts, SIN tocar
+  ClassroomsProvider. El selector de alcance del panel dejo de ignorarse y ahora
+  gobierna tambien la escritura. El nino ve solo lo asignado, en
+  shared/AssignedMissionsPanel.tsx montado en Mundos y en Mi salon, y el panel
+  NO se pinta si no hay nada que ensenar.
+  LAS MISIONES TODAVIA NO SON JUGABLES: nada puede empezarlas ni completarlas
+  hasta el paso 21, asi que la tarjeta del nino no ofrece ningun boton y el
+  apartado de cumplimiento saca al salon entero en «Pendiente» con el motivo
+  escrito encima. NO se creo tabla de cumplimientos a proposito: el estado se
+  calcula, y decidir que reporta el juego es la pregunta abierta previa al paso
+  20. El premio en XP vive en Mission.xpReward (300/400/500 por dificultad),
+  por encima de los 260 del nivel mas generoso de la siembra; se muestra, pero
+  nada lo suma todavia.
+  `npm run build`, `npm run lint` y `npm run test:run` pasan (90 tests).
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
@@ -72,7 +92,7 @@ context: |
   apps/web/        front-end, workspace @codeplay/web
   apps/game/       proyecto de Unity — NO EXISTE TODAVÍA
   packages/        código compartido — vacío
-  supabase/        migrations/ (18 migraciones SQL; el seed vive en la 0012)
+  supabase/        migrations/ (20 migraciones SQL; el seed vive en la 0012)
   docs/            CONTEXT.md (estado y prioridades) y ESTADO-DEL-PROYECTO.md
   openspec/        specs y changes
   .github/         workflows de GitHub Actions (sólo ci.yml)

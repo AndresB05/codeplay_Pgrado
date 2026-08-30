@@ -1,4 +1,5 @@
 import { useClassrooms } from '../../../hooks/useClassrooms';
+import { AssignedMissionsPanel } from '../shared/AssignedMissionsPanel';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 import { StatCard } from '../shared/StatCard';
@@ -137,6 +138,8 @@ export const StudentClassroomModule = () => {
           tone="mint"
         />
       </section>
+
+      <AssignedMissionsPanel />
 
       <section className="mt-6 pb-4">
         <StudentRosterTable students={currentGroup.students} />

@@ -164,6 +164,7 @@ export const missionCatalog: Mission[] = [
     skill: 'sequences',
     difficultyLabel: 'Fácil',
     estimatedMinutes: 10,
+    xpReward: 300,
   },
   {
     id: 'm2',
@@ -172,6 +173,7 @@ export const missionCatalog: Mission[] = [
     skill: 'loops',
     difficultyLabel: 'Fácil',
     estimatedMinutes: 15,
+    xpReward: 300,
   },
   {
     id: 'm3',
@@ -180,6 +182,7 @@ export const missionCatalog: Mission[] = [
     skill: 'conditionals',
     difficultyLabel: 'Intermedio',
     estimatedMinutes: 20,
+    xpReward: 400,
   },
   {
     id: 'm4',
@@ -188,6 +191,7 @@ export const missionCatalog: Mission[] = [
     skill: 'debugging',
     difficultyLabel: 'Intermedio',
     estimatedMinutes: 20,
+    xpReward: 400,
   },
   {
     id: 'm5',
@@ -196,6 +200,7 @@ export const missionCatalog: Mission[] = [
     skill: 'decomposition',
     difficultyLabel: 'Difícil',
     estimatedMinutes: 30,
+    xpReward: 500,
   },
 ];
 

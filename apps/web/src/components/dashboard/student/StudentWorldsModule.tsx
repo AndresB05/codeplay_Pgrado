@@ -13,6 +13,7 @@ import {
   type WorldModuleCard,
 } from './worlds/worldsData';
 import { useWorlds } from '../../../hooks/useWorlds';
+import { AssignedMissionsPanel } from '../shared/AssignedMissionsPanel';
 import { useProgress } from '../../../hooks/useProgress';
 import { worldsService } from '../../../services/worlds.service';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
@@ -309,6 +310,8 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
           </div>
         </div>
       </section>
+
+      <AssignedMissionsPanel />
 
       <section className="card mt-6 px-5 py-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">

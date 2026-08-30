@@ -91,6 +91,12 @@ export interface Mission {
   skill: SkillKey;
   difficultyLabel: DifficultyLabel;
   estimatedMinutes: number;
+  /**
+   * XP que otorga. Está por encima del nivel más generoso de la siembra (260)
+   * porque una misión es un reto especial, no un nivel más. Se muestra al niño,
+   * pero todavía no lo suma nadie: eso llega con el juego.
+   */
+  xpReward: number;
 }
 
 export interface TeacherResource {

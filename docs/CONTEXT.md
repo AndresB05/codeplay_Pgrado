@@ -44,7 +44,7 @@ OpenSpec **ya está inicializado**, versión **1.10.0**, esquema `spec-driven`
 | --- | --- | --- |
 | §1 Contexto general | Clave `context:` de `openspec/config.yaml` (versión resumida) | ✅ **Integrado** |
 | §1.4 Convenciones | Claves `rules:` y `operations:` de `config.yaml` | ✅ **Integrado** |
-| §2 Especificaciones aplicadas | `openspec/specs/<capability>/spec.md` — 7 capacidades, 40 requisitos | ✅ **Sembrado** |
+| §2 Especificaciones aplicadas | `openspec/specs/<capability>/spec.md` — 8 capacidades. El recuento de requisitos ya no se escribe aquí: caducaba en cada cambio y llegó a decir 40 cuando eran 71. El vivo lo da `npx openspec list --specs` | ✅ **Sembrado** |
 | §3 Especificaciones por aplicar | `openspec/changes/<id>/` vía `/opsx:propose` | ⛔ Pendiente |
 
 A partir de aquí, **`openspec/specs/` es la verdad sobre el comportamiento** y §2
@@ -173,7 +173,7 @@ codeplayPGrado/
 │   └── game/                 Proyecto de Unity — NO EXISTE TODAVÍA
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
-│   ├── migrations/           15 migraciones SQL
+│   ├── migrations/           20 migraciones SQL
 │   └── seed.sql              Mundos y niveles iniciales
 ├── docs/                     CONTEXT.md (este) + ESTADO-DEL-PROYECTO.md
 ├── .github/workflows/ci.yml  CI: lint, tests y build en push y pull request
@@ -674,7 +674,7 @@ con las del tutor.
 | Aceptar o rechazar solicitud; aceptar se bloquea sin cupos | ✅ | `context/ClassroomsProvider.tsx` |
 | Reportes de 5 competencias con semáforo de dominio | ✅ | `getSkillReports()` en `classroomsData.ts` |
 | Selector de alcance: todos los salones o uno | ✅ | `teacher/TeacherPanelModule.tsx` |
-| Asignación de misiones | 🟡 | Estado local del componente (`assignedMissionIds`); se pierde al recargar, ignora el selector de alcance y el catálogo es ficticio — ver `ROADMAP.md` §3 |
+| Asignación de misiones | ✅ | `teacher/TeacherPanelModule.tsx` + `services/missions.service.ts` — persiste en la base y obedece al selector de alcance. La capacidad entera está en §2.8, **incluida la advertencia de que una misión todavía no se puede jugar** |
 | Sumar alumnos compartiendo el ID público del salón | ✅ | `teacher/AddStudentsPanel.tsx` |
 | Recursos educativos | 🟡 | Tarjetas informativas sin destino |
 | Ajustes de cuenta: salir y cambiar contraseña | ✅ | `teacher/TeacherSettingsModule.tsx` + `shared/ChangePasswordPanel.tsx` — desde el paso 13, ver §2.2 |
@@ -889,6 +889,32 @@ real:
 | Las dos vistas con la clave anónima | 401 en ambas |
 | Qué columnas trae el roster | Las siete previstas y ninguna más: sin correo, sin país, sin nombre de usuario |
 
+**La 0020, verificada con sesión real a 29-ago-2026.** Con las tres cuentas y
+casos negativos, catorce comprobaciones sin ninguna fallida:
+
+| Comprobado | Resultado |
+| --- | --- |
+| El tutor asigna en su salón | 201 |
+| La misma misión en otro salón suyo | 201: la unicidad es del par, no de la clave |
+| El tutor asigna en un salón que no es suyo | `42501` |
+| La misma misión dos veces en el mismo salón | `23505` |
+| Lo mismo con `resolution=ignore-duplicates` | 201 y **una sola fila**: es lo que usa el servicio para que «Todos» no muera por un salón que ya la tenía |
+| El niño lee las de su salón | Sólo las suyas |
+| El niño pide las de un salón ajeno | Cero filas |
+| Un niño **sin salón** consulta | Cero filas, con el contraste medido: el que sí tiene salón ve las dos asignadas |
+| El niño intenta asignar, incluso en su salón | `42501` |
+| El niño intenta retirar la de su salón | Cero filas borradas |
+| La clave anónima | 401 |
+| El tutor retira la suya | Una fila borrada, y el niño deja de verla |
+| Se borra el salón | Se van sus asignaciones |
+
+**Lo que NO se probó, y conviene saberlo:** que un tutor no pueda asignar en el
+salón **de otro tutor**. Sólo existe una cuenta de tutor, así que el caso se
+midió contra un salón **inexistente**, que la política rechaza por la misma
+condición. Discrimina más de lo que parece —una política mal correlacionada
+habría respondido `23503` y no `42501`—, pero no es el caso literal. Cerrarlo
+exige una segunda cuenta de tutor.
+
 **El cupo lleno, verificado desde la interfaz con los dos niños.** Salón de cupo
 1 con dos solicitudes pendientes: al aceptar la primera, los cupos libres pasan
 a 0, el botón «Aceptar» de la segunda queda deshabilitado con su `title`, y
@@ -927,6 +953,7 @@ la primera.
 | Tablas de salones, sus políticas, sus `grant` y `accept_join_request` | ✅ aplicado | `…0013_create_classroom_tables.sql` |
 | Arreglo de la recursión entre `profiles` y `join_requests` | ✅ aplicado | `…0014_fix_profiles_policy_recursion.sql` |
 | Vistas `class_group_directory` y `classroom_roster` | ✅ aplicado | `…0015_create_classroom_read_views.sql` |
+| Tabla `mission_assignments`, sus políticas y sus `grant` | ✅ aplicado | `…0020_create_mission_assignments.sql` |
 | Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
@@ -985,6 +1012,68 @@ la primera.
 - `profiles` tiene **dos** políticas de lectura: la propia y
   `profiles_select_own_students`, que deja al tutor leer el perfil de los niños
   de sus salones. Sin ella la lista del salón saldría sin nombres.
+
+
+### 2.8 `misiones-asignadas` — Misiones especiales del salón
+
+**Propósito.** Que el tutor asigne misiones a sus salones y que el niño las vea,
+aunque **todavía no pueda jugarlas**. Una misión es un reto *especial*: sólo
+existe para el niño si su tutor se la asignó, y premia más XP que un nivel.
+
+| Requisito | Estado | Dónde vive |
+| --- | --- | --- |
+| Tabla de asignaciones con RLS y `grant` | ✅ | `migrations/202606030020_create_mission_assignments.sql` |
+| Servicio con la forma `{ data, error }` | ✅ | `services/missions.service.ts` |
+| Hook de lectura y escritura | ✅ | `hooks/useMissionAssignments.ts` |
+| El tutor asigna al alcance elegido | ✅ | `teacher/TeacherPanelModule.tsx` |
+| Sin salones, los controles se deshabilitan | ✅ | `teacher/TeacherPanelModule.tsx` |
+| Apartado «Quién ha cumplido», con el motivo | ✅ | `teacher/TeacherPanelModule.tsx` |
+| El niño ve sólo las asignadas, en dos pantallas | ✅ | `shared/AssignedMissionsPanel.tsx`, montado en `student/StudentWorldsModule.tsx` y `student/StudentClassroomModule.tsx` |
+| El catálogo declara el premio en XP | ✅ | `Mission.xpReward` en `types/classroom.types.ts` + `teacher/classroomsData.ts` |
+| Jugar una misión | ❌ | **No existe.** Llega con el juego, pasos 20 y 21 |
+
+**LAS MISIONES TODAVÍA NO SON FUNCIONALES, y no es un descuido.** Se asignan, se
+guardan y se ven, pero **no se pueden jugar ni completar**: nada en la plataforma
+puede terminar una misión hasta que el juego reporte progreso (paso 21). De ahí
+salen dos cosas que parecen fallos y no lo son: la tarjeta del niño **no tiene
+botón** —ofrecerlo sería prometer algo que no ocurre al pulsarlo— y el salón
+entero sale en «Pendiente», con el motivo escrito encima de la tabla.
+
+**Decisiones de diseño**
+
+- **La asignación cuelga del salón, no del tutor.** El niño se liga a un salón
+  por su pertenencia, no a una persona, y su vista no expone quién es su tutor.
+  `assigned_by` conserva el autor como dato de auditoría, no de acceso.
+- **`mission_key` es texto sin clave ajena, a sabiendas.** El catálogo son cinco
+  entradas en `teacher/classroomsData.ts` y no existe tabla a la que apuntar; una
+  clave ajena a `levels` sería mentira, porque las misiones no son ninguno de los
+  nueve niveles. Escrito en la propia migración. Mientras tanto, **el cliente
+  ignora las claves que no reconoce** en vez de romper la pantalla.
+- **No hay tabla de cumplimientos, y es deliberado.** El estado se calcula.
+  Diseñarla obligaría a decidir qué reporta el juego y con qué garantía, que es
+  la pregunta abierta de `ROADMAP.md` §3.2, previa al paso 20.
+- **El premio ancla en la siembra: 300, 400 y 500 por dificultad.** Los nueve
+  niveles sembrados dan de 100 a 260, así que la misión más floja supera al nivel
+  más generoso. Es el único XP medible que existe: no hay catálogo de logros
+  (§4.2). **El premio se muestra, no se otorga**: nada suma XP todavía.
+- **El niño sólo ve lo asignado.** No hay catálogo en gris con candado: que la
+  misión esté bloqueada hasta que el tutor la asigne es regla del modelo y se
+  cumple sola, porque no hay superficie donde verla si no.
+- **El panel del niño no se pinta si no hay nada que enseñar.** Sin salón o sin
+  misiones, devuelve `null` sin dejar hueco. Un fallo de lectura sí se dice:
+  callarlo afirmaría que no hay misiones.
+- **El selector de alcance dejó de ignorarse.** Antes `assignedMissionIds` era
+  estado del componente, independiente de `selectedGroupId`. Con «Todos» la
+  misión sólo se ve «Asignada» si la tienen **todos** los salones, y si la tienen
+  algunos se dice en cuántos.
+- **Al asignar se mandan todos los salones del alcance**, incluidos los que ya la
+  tienen: la escritura ignora duplicados, así que no hay que calcular el
+  subconjunto con estado que puede estar viejo.
+- **El cumplimiento sólo aparece con un salón concreto elegido.** Con «Todos»
+  habría que mezclar alumnos de salones distintos en una misma tabla.
+- **Este cambio NO tocó `ClassroomsProvider`.** Va por su propio servicio y su
+  propio hook, como `worlds.service.ts` + `useWorlds()`. La frontera de §4.3
+  sigue en pie.
 
 ---
 
@@ -1189,7 +1278,6 @@ El build de WebGL va a `apps/web/public/game/`, carpeta ignorada por git.
 | --- | --- | --- |
 | Envío real de invitaciones | Elegir servicio de correo (Resend, SendGrid…) y enviar de verdad lo que hoy sólo se registra | P1 + servicio contratado |
 | Enlace de invitación canjeable | Generar y canjear tokens; probablemente con Supabase Edge Functions | Envío de correo |
-| Persistir la asignación de misiones | Hoy vive en el estado del componente y se pierde al recargar | P1 |
 | Editar o archivar un salón | No existe | P1 |
 | Exportar reportes | No existe | P1 |
 | Progreso, XP y rachas reales | El XP ya se lee de la base y se muestra en cuatro sitios desde `arreglos-y-barra-xp`; lo que falta es que **algo lo escriba**, y con él la racha | P4 |
