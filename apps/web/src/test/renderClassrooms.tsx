@@ -60,6 +60,8 @@ interface RenderClassroomsResult {
   /** Valor del contexto en el último render. Se llama en cada aserto. */
   store: () => ClassroomsContextValue;
   server: FakeClassrooms;
+  /** Para comprobar que la suscripción se cancela al desmontar. */
+  unmount: () => void;
 }
 
 /**
@@ -88,7 +90,7 @@ export const renderClassrooms = async (
     return null;
   };
 
-  render(
+  const { unmount } = render(
     <StrictMode>
       <AuthContext.Provider value={buildAuthValue(user)}>
         <ClassroomsProvider service={server.service}>
@@ -113,5 +115,5 @@ export const renderClassrooms = async (
     }
   });
 
-  return { store, server, screen };
+  return { store, server, screen, unmount };
 };

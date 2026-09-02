@@ -38,6 +38,7 @@ export interface ClassroomsService {
   requestJoin: (groupId: string, studentId: string) => ServiceResult<null>;
   cancelJoinRequest: (studentId: string) => ServiceResult<null>;
   leaveGroup: (studentId: string) => ServiceResult<null>;
+  subscribeToClassrooms: (userId: string, onChange: () => void) => () => void;
 }
 
 const EMPTY_MEMBERSHIP: StudentMembership = { status: 'none', groupId: null };
@@ -537,5 +538,43 @@ export const classroomsService: ClassroomsService = {
     }
 
     return { data: null, error: null };
+  },
+
+  /**
+   * Avisa de que algo cambió en los salones de esta sesión, para que quien
+   * escucha vuelva a consultar. Vive aquí y no en el store por la misma razón
+   * que las lecturas: `ClassroomsProvider` no habla con Supabase, y así los
+   * tests pueden disparar un evento sin red.
+   *
+   * **No entrega el cambio, sólo la noticia de que lo hubo.** Quien escucha
+   * relee, y esa consulta sí pasa por la RLS. Es lo que hace inofensivo que un
+   * `delete` llegue sin filtrar: Realtime no puede comprobar quién tenía acceso
+   * a una fila que ya no existe, así que lo reparte a todos los suscriptores
+   * con la clave primaria dentro y nada más.
+   */
+  subscribeToClassrooms(userId: string, onChange: () => void): () => void {
+    /*
+     * Nombre único por llamada, no `classrooms:${userId}`. En desarrollo React
+     * monta dos veces bajo StrictMode, y dos canales con el mismo topic sobre el
+     * mismo cliente es justo lo que `realtime-js` no admite.
+     */
+    const channel = supabase.channel(`classrooms:${userId}:${crypto.randomUUID()}`);
+
+    /*
+     * Las dos tablas que cuentan la historia de un salón, y todas sus
+     * operaciones: la respuesta es la misma para las tres —volver a
+     * consultar—, y enumerarlas sólo daría una lista que se queda corta.
+     */
+    for (const table of ['join_requests', 'class_memberships'] as const) {
+      channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => {
+        onChange();
+      });
+    }
+
+    channel.subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   },
 };

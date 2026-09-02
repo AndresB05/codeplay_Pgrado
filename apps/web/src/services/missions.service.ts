@@ -21,6 +21,7 @@ export interface MissionsService {
   listAssignments: () => ServiceResult<MissionAssignment[]>;
   assignMission: (missionKey: string, groupIds: string[], tutorId: string) => ServiceResult<null>;
   unassignMission: (missionKey: string, groupIds: string[]) => ServiceResult<null>;
+  subscribeToAssignments: (onChange: () => void) => () => void;
 }
 
 /*
@@ -144,5 +145,30 @@ export const missionsService: MissionsService = {
     }
 
     return { data: null, error: null };
+  },
+
+  /**
+   * Avisa de que cambiaron las asignaciones, para que quien escucha vuelva a
+   * consultar. Sin parámetro de usuario, por lo mismo que `listAssignments()`
+   * tampoco lo lleva: una sola suscripción sirve a los dos roles y quién recibe
+   * qué lo decide la RLS.
+   */
+  subscribeToAssignments(onChange: () => void): () => void {
+    /* Topic único por llamada: ver `subscribeToClassrooms`. */
+    const channel = supabase.channel(`mission-assignments:${crypto.randomUUID()}`);
+
+    channel.on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'mission_assignments' },
+      () => {
+        onChange();
+      }
+    );
+
+    channel.subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   },
 };

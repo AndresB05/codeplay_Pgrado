@@ -64,10 +64,29 @@ export interface FakeClassrooms {
   seedMember: (groupId: string, studentId: string) => void;
   /** Escrituras recibidas. Es lo que delata una mutación duplicada. */
   writeCount: () => number;
+  /**
+   * Dispara un cambio como lo haría la base. Es lo que permite probar la
+   * sincronización en vivo sin red: el servicio real entrega la noticia de que
+   * algo cambió, nunca el cambio.
+   */
+  emit: () => void;
+  /**
+   * Suscripciones vivas. Bajo StrictMode tiene que ser una, y cero tras
+   * desmontar: es lo que delata un canal que se quedó abierto.
+   */
+  subscriptionCount: () => number;
   /** Hace fallar la siguiente escritura, para probar el camino de error. */
   failNextWrite: (message: string) => void;
   /** Hace fallar todas las lecturas. */
   failReads: (message: string | null) => void;
+  /**
+   * Deja las lecturas siguientes colgadas y devuelve con qué soltarlas. Sin
+   * esto no hay forma de mirar el estado **mientras** se consulta: una lectura
+   * que resuelve al instante deja el `loading` intermedio dentro del mismo lote
+   * de React, y un test que sólo mira el final pasa igual aunque la pantalla
+   * parpadee.
+   */
+  holdReads: () => () => void;
 }
 
 export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassrooms => {
@@ -76,10 +95,20 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
   const requests: RequestRow[] = [];
   const profiles = new Map<string, string>();
 
+  const listeners = new Set<() => void>();
+
   let sequence = 0;
   let writes = 0;
   let nextWriteError: string | null = null;
   let readError: string | null = null;
+  let readGate: Promise<void> | null = null;
+
+  /** La espera que imita el viaje a la base. Sin retención, no espera nada. */
+  const awaitGate = async (): Promise<void> => {
+    if (readGate) {
+      await readGate;
+    }
+  };
 
   const nextId = (prefix: string): string => {
     sequence += 1;
@@ -158,6 +187,8 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
 
   const service: ClassroomsService = {
     async getTutorSnapshot(requestingTutorId: string) {
+      await awaitGate();
+
       if (readError) {
         return fail(readError);
       }
@@ -174,6 +205,8 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
     },
 
     async getStudentSnapshot(studentId: string) {
+      await awaitGate();
+
       if (readError) {
         return fail(readError);
       }
@@ -349,6 +382,19 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
         return ok;
       });
     },
+
+    /*
+     * No se guarda a quién pertenece cada oyente, y no hace falta: el servicio
+     * real tampoco entrega el cambio, sólo la noticia de que lo hubo. Quien
+     * escucha vuelve a consultar, y ahí es donde se decide qué ve.
+     */
+    subscribeToClassrooms(_userId, onChange) {
+      listeners.add(onChange);
+
+      return () => {
+        listeners.delete(onChange);
+      };
+    },
   };
 
   return {
@@ -384,12 +430,33 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
 
     writeCount: () => writes,
 
+    emit: () => {
+      listeners.forEach((listener) => {
+        listener();
+      });
+    },
+
+    subscriptionCount: () => listeners.size,
+
     failNextWrite: (message) => {
       nextWriteError = message;
     },
 
     failReads: (message) => {
       readError = message;
+    },
+
+    holdReads: () => {
+      let release = (): void => {};
+
+      readGate = new Promise<void>((resolve) => {
+        release = () => {
+          readGate = null;
+          resolve();
+        };
+      });
+
+      return release;
     },
   };
 };

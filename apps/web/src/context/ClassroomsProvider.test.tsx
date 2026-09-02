@@ -2,6 +2,7 @@ import { act } from '@testing-library/react';
 import { StudentClassroomModule } from '../components/dashboard/student/StudentClassroomModule';
 import { describe, expect, it } from 'vitest';
 import { buildUser, renderClassrooms } from '../test/renderClassrooms';
+import { createFakeClassrooms } from '../test/fakeClassroomsService';
 import type { FakeClassrooms } from '../test/fakeClassroomsService';
 import type { ClassroomsContextValue } from './ClassroomsContext';
 import type { ClassGroup, StudentMembership } from '../types/classroom.types';
@@ -666,5 +667,114 @@ describe('Historial de solicitudes acumulado', () => {
       status: 'pending',
       groupId: SALON_1A,
     });
+  });
+});
+
+/**
+ * El servidor falso entrega la noticia de que algo cambió, nunca el cambio,
+ * igual que el servicio real: quien escucha vuelve a consultar, y ahí es donde
+ * la base decide qué ve.
+ */
+describe('Sincronización en vivo', () => {
+  it('una solicitud que entra aparece en el panel del tutor sin volver a montar', async () => {
+    const { store, server } = await renderClassrooms({ user: currentTutor, seed: seedTwoGroups });
+
+    expect(findGroup(store(), SALON_2B).pendingRequests).toHaveLength(0);
+
+    server.seedRequest(SALON_2B, CURRENT_STUDENT_ID);
+
+    await act(async () => {
+      server.emit();
+    });
+
+    expect(findGroup(store(), SALON_2B).pendingRequests).toHaveLength(1);
+  });
+
+  /**
+   * El aserto tiene que caer MIENTRAS la relectura está en vuelo. Mirar el
+   * estado final no sirve —para entonces la espera ya se apagó—, y mirar el
+   * historial de renders tampoco: con una lectura que resuelve al instante,
+   * React agrupa el `loading` intermedio y nadie llega a verlo. De ahí la
+   * retención: es el hueco que en la aplicación abre el viaje a la base.
+   *
+   * Sin este test, cualquiera que unifique los dos caminos de recarga vuelve a
+   * blanquear el panel del tutor con cada evento ajeno.
+   */
+  it('un evento no vuelve a declarar espera mientras relee', async () => {
+    const { store, server } = await renderClassrooms({
+      user: currentTutor,
+      seed: seedTwoGroups,
+    });
+
+    server.seedRequest(SALON_2B, CURRENT_STUDENT_ID);
+
+    const releaseRead = server.holdReads();
+
+    act(() => {
+      server.emit();
+    });
+
+    /* La consulta está a medias y la pantalla no se ha movido. */
+    expect(store().loading).toBe(false);
+
+    await act(async () => {
+      releaseRead();
+    });
+
+    expect(store().loading).toBe(false);
+    expect(findGroup(store(), SALON_2B).pendingRequests).toHaveLength(1);
+  });
+
+  /**
+   * La otra mitad de la regla, y la que la hace estrecha: la recarga silenciosa
+   * NO declara espera, pero sí la apaga. Si un evento entra con la carga
+   * inicial todavía en vuelo, aquélla se descarta por `loadId` sin apagar nada,
+   * así que si ésta tampoco lo hiciera el indicador se quedaría encendido para
+   * siempre.
+   */
+  it('un evento durante la carga inicial no deja el indicador encendido', async () => {
+    const server = createFakeClassrooms(TUTOR_ID);
+
+    seedTwoGroups(server);
+
+    const releaseRead = server.holdReads();
+
+    const mounted = renderClassrooms({ user: currentTutor, server });
+
+    /* El evento entra antes de que la primera consulta haya resuelto. */
+    act(() => {
+      server.emit();
+    });
+
+    await act(async () => {
+      releaseRead();
+    });
+
+    const { store } = await mounted;
+
+    expect(store().loading).toBe(false);
+  });
+
+  it('bajo StrictMode queda una sola suscripción, y ninguna al desmontar', async () => {
+    const { server, unmount } = await renderClassrooms({
+      user: currentTutor,
+      seed: seedTwoGroups,
+    });
+
+    expect(server.subscriptionCount()).toBe(1);
+
+    unmount();
+
+    expect(server.subscriptionCount()).toBe(0);
+  });
+
+  /*
+   * Un canal abierto sin sesión pasa la autorización con las manos vacías y no
+   * se reintenta solo cuando después llega el usuario.
+   */
+  it('sin sesión no se suscribe', async () => {
+    const { server } = await renderClassrooms({ user: null, seed: seedTwoGroups });
+
+    expect(server.subscriptionCount()).toBe(0);
   });
 });

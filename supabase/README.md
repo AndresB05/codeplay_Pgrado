@@ -131,6 +131,33 @@ migración 0012 y se aplica como todo lo demás.
       porque ya está aplicada; **que la recoja la próxima migración que toque
       esta función.**
 
+> **Faltan las entradas de la 0019 y la 0020**, que aplicaron los pasos 28 y 16 y
+> nunca llegaron aquí. Están descritas en `docs/CONTEXT.md` §2.7 y §2.8. Se anota
+> en vez de rellenarse: escribirlas ahora sería documentar de oídas el trabajo de
+> otros dos pasos.
+
+21. `202606030021_publish_realtime_tables.sql`
+    - Añade `join_requests`, `class_memberships` y `mission_assignments` a la
+      publicación `supabase_realtime`. **No crea la publicación ni toca qué
+      operaciones emite:** ya existía en el proyecto con `insert`, `update`,
+      `delete` y `truncate` los cuatro activos, y con **cero tablas**, que es lo
+      que la hacía muda. Comprobado en el panel el 2 de septiembre de 2026.
+    - **No trae políticas ni `grant`, y es la excepción que confirma la regla de
+      abajo**: no crea ninguna tabla. Quién recibe cada evento lo deciden las
+      políticas de `select` que ya existen —`join_requests_select_related`,
+      `class_memberships_select_related` y `mission_assignments_select_related`—,
+      porque Realtime las evalúa por cada suscriptor.
+    - **Los `delete` son la excepción, y está aceptada a sabiendas.** Cuando llega
+      el evento la fila ya no existe, así que no hay contra qué evaluar la
+      política y la base entrega el borrado a **todos** los suscriptores de la
+      tabla. Con la identidad de réplica por defecto lo que viaja es la clave
+      primaria y nada más. **No se toca `replica identity`**: ponerla en `full`
+      haría viajar la fila entera, o sea más filtración y no menos.
+    - Idempotente por comprobación contra `pg_publication_tables`, porque
+      `alter publication ... add table` no admite `if not exists` y falla si la
+      tabla ya está publicada.
+    - **No exige regenerar los tipos:** publicar una tabla no cambia el esquema.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI:
@@ -139,7 +166,7 @@ Si ya tienes el proyecto Supabase enlazado con la CLI:
 supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las dieciocho migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las veintiuna migraciones —siembra
 incluida—:
 
 ```sh

@@ -1,10 +1,19 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MissionAssignment } from '../../../services/missions.service';
 import { AssignedMissionsPanel } from './AssignedMissionsPanel';
 
 const mocks = vi.hoisted(() => ({
   listAssignments: vi.fn(),
+  /* Guarda al oyente para poder disparar un cambio como haría la base. */
+  emit: null as null | (() => void),
+  subscribeToAssignments: vi.fn((onChange: () => void) => {
+    mocks.emit = onChange;
+
+    return () => {
+      mocks.emit = null;
+    };
+  }),
 }));
 
 vi.mock('../../../hooks/useAuth', () => ({
@@ -16,6 +25,7 @@ vi.mock('../../../services/missions.service', () => ({
     listAssignments: mocks.listAssignments,
     assignMission: vi.fn(),
     unassignMission: vi.fn(),
+    subscribeToAssignments: mocks.subscribeToAssignments,
   },
 }));
 
@@ -84,5 +94,60 @@ describe('AssignedMissionsPanel', () => {
     await screen.findByText('La ruta del leopardo');
 
     expect(screen.getByText('1 misión especial')).toBeInTheDocument();
+  });
+
+  it('la misión que el tutor acaba de asignar aparece sin volver a montar', async () => {
+    mocks.listAssignments.mockResolvedValue({ data: [buildAssignment('m1')], error: null });
+
+    render(<AssignedMissionsPanel />);
+    await screen.findByText('La ruta del leopardo');
+
+    mocks.listAssignments.mockResolvedValue({
+      data: [buildAssignment('m1'), buildAssignment('m3')],
+      error: null,
+    });
+
+    await act(async () => {
+      mocks.emit?.();
+    });
+
+    expect(screen.getByText('El puente que decide')).toBeInTheDocument();
+    expect(screen.getByText('2 misiones especiales')).toBeInTheDocument();
+  });
+
+  /*
+   * Este panel no pinta nada mientras carga, así que declarar espera en una
+   * recarga ajena no lo haría parpadear: lo haría DESAPARECER y volver. El
+   * aserto tiene que caer mientras la consulta está en vuelo, porque al
+   * terminar el panel ya volvió y un test que mire el final pasa igual.
+   */
+  it('un evento no hace desaparecer el panel mientras relee', async () => {
+    mocks.listAssignments.mockResolvedValue({ data: [buildAssignment('m1')], error: null });
+
+    render(<AssignedMissionsPanel />);
+    await screen.findByText('La ruta del leopardo');
+
+    let releaseRead = (): void => {};
+
+    mocks.listAssignments.mockReturnValue(
+      new Promise((resolve) => {
+        releaseRead = () => {
+          resolve({ data: [buildAssignment('m1'), buildAssignment('m3')], error: null });
+        };
+      })
+    );
+
+    act(() => {
+      mocks.emit?.();
+    });
+
+    /* La consulta está a medias y el panel sigue en pie. */
+    expect(screen.getByText('La ruta del leopardo')).toBeInTheDocument();
+
+    await act(async () => {
+      releaseRead();
+    });
+
+    expect(screen.getByText('El puente que decide')).toBeInTheDocument();
   });
 });

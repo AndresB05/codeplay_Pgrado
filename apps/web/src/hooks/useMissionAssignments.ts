@@ -25,30 +25,59 @@ export const useMissionAssignments = (): UseMissionAssignmentsReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
 
-  const refresh = useCallback(async (): Promise<void> => {
-    if (!userId) {
-      setAssignments([]);
-      return;
-    }
+  /**
+   * El único camino de carga, como en el store de salones. `silent` separa lo
+   * que hizo quien mira de lo que hizo su tutor desde otra sesión: la recarga
+   * ajena no declara espera —este panel devuelve `null` mientras carga, así que
+   * declararla lo haría desaparecer y volver— pero **sí la apaga**.
+   *
+   * El error tampoco se limpia de entrada en el camino silencioso: la pantalla
+   * pinta el motivo en lugar del panel, y borrarlo para reponerlo un instante
+   * después es el mismo parpadeo por otra puerta. Se fija con el resultado.
+   */
+  const runLoad = useCallback(
+    async (silent: boolean): Promise<void> => {
+      if (!userId) {
+        setAssignments([]);
+        return;
+      }
 
-    setLoading(true);
-    setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
 
-    const result = await missionsService.listAssignments();
+      const result = await missionsService.listAssignments();
 
-    if (result.error) {
-      setError(result.error);
+      if (result.error) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
+
+      setAssignments(result.data ?? []);
+      setError(null);
       setLoading(false);
-      return;
-    }
+    },
+    [userId]
+  );
 
-    setAssignments(result.data ?? []);
-    setLoading(false);
-  }, [userId]);
+  const refresh = useCallback((): Promise<void> => runLoad(false), [runLoad]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  /* Nunca antes de tener `userId`: ver `ClassroomsProvider`. */
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    return missionsService.subscribeToAssignments(() => {
+      void runLoad(true);
+    });
+  }, [runLoad, userId]);
 
   /*
    * Se recarga el estado entero tras cada escritura, como hace el store de

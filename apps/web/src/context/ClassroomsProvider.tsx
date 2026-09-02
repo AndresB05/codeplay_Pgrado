@@ -58,45 +58,81 @@ export const ClassroomsProvider = ({
    */
   const loadId = useRef(0);
 
-  const refresh = useCallback(async (): Promise<void> => {
-    const currentLoad = loadId.current + 1;
-    loadId.current = currentLoad;
+  /**
+   * El único camino de carga. `silent` decide si se declara la espera, y es lo
+   * que separa lo que hizo quien mira de lo que hizo otra persona.
+   *
+   * OJO CON LA ASIMETRÍA, QUE NO ES UN DESCUIDO: el camino silencioso se salta
+   * el `setLoading(true)` pero **conserva todos los `setLoading(false)`**. Si un
+   * evento entra mientras la carga inicial sigue en vuelo, aquélla resuelve, se
+   * encuentra el `loadId` cambiado y vuelve sin apagar la espera; si la
+   * silenciosa tampoco la apagara, el indicador se quedaría encendido para
+   * siempre.
+   */
+  const runLoad = useCallback(
+    async (silent: boolean): Promise<void> => {
+      const currentLoad = loadId.current + 1;
+      loadId.current = currentLoad;
 
-    if (!userId) {
-      setGroups([]);
-      setMembership(EMPTY_MEMBERSHIP);
+      if (!userId) {
+        setGroups([]);
+        setMembership(EMPTY_MEMBERSHIP);
+        setLoading(false);
+
+        return;
+      }
+
+      if (!silent) {
+        setLoading(true);
+      }
+
+      const { data, error: readError } =
+        userRole === 'tutor'
+          ? await service.getTutorSnapshot(userId)
+          : await service.getStudentSnapshot(userId);
+
+      if (loadId.current !== currentLoad) {
+        return;
+      }
+
+      if (readError || !data) {
+        setError(readError);
+        setLoading(false);
+
+        return;
+      }
+
+      setGroups(data.groups);
+      setMembership(data.membership);
+      setError(null);
       setLoading(false);
+    },
+    [service, userId, userRole]
+  );
 
-      return;
-    }
+  const refresh = useCallback((): Promise<void> => runLoad(false), [runLoad]);
 
-    setLoading(true);
-
-    const { data, error: readError } =
-      userRole === 'tutor'
-        ? await service.getTutorSnapshot(userId)
-        : await service.getStudentSnapshot(userId);
-
-    if (loadId.current !== currentLoad) {
-      return;
-    }
-
-    if (readError || !data) {
-      setError(readError);
-      setLoading(false);
-
-      return;
-    }
-
-    setGroups(data.groups);
-    setMembership(data.membership);
-    setError(null);
-    setLoading(false);
-  }, [service, userId, userRole]);
+  /** La recarga que provoca un cambio ajeno: actualiza sin hacer parpadear. */
+  const refreshSilently = useCallback((): Promise<void> => runLoad(true), [runLoad]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  /*
+   * Nunca antes de tener `userId`: un canal abierto con la clave anónima pasa la
+   * autorización con las manos vacías y no se reintenta solo cuando después
+   * llega la sesión, así que quedaría mudo para siempre.
+   */
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    return service.subscribeToClassrooms(userId, () => {
+      void refreshSilently();
+    });
+  }, [refreshSilently, service, userId]);
 
   /** Ejecuta una escritura y recarga si salió bien. */
   const runWrite = useCallback(

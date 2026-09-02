@@ -6,6 +6,15 @@ import { TeacherPanelModule } from './TeacherPanelModule';
 
 const mocks = vi.hoisted(() => ({
   listAssignments: vi.fn(),
+  /* Guarda al oyente para poder disparar un cambio como haría la base. */
+  emit: null as null | (() => void),
+  subscribeToAssignments: vi.fn((onChange: () => void) => {
+    mocks.emit = onChange;
+
+    return () => {
+      mocks.emit = null;
+    };
+  }),
 }));
 
 vi.mock('../../../hooks/useAuth', () => ({
@@ -17,6 +26,7 @@ vi.mock('../../../services/missions.service', () => ({
     listAssignments: mocks.listAssignments,
     assignMission: vi.fn(),
     unassignMission: vi.fn(),
+    subscribeToAssignments: mocks.subscribeToAssignments,
   },
 }));
 

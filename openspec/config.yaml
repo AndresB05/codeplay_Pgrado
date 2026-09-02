@@ -74,7 +74,31 @@ context: |
   20. El premio en XP vive en Mission.xpReward (300/400/500 por dificultad),
   por encima de los 260 del nivel mas generoso de la siembra; se muestra, pero
   nada lo suma todavia.
-  `npm run build`, `npm run lint` y `npm run test:run` pasan (90 tests).
+  EL PASO 18 (`sincronizacion-en-vivo`) da sincronizacion en vivo con Supabase
+  Realtime, y NO son notificaciones: no hay campana, ni lista de avisos, ni no
+  leidos, ni tabla que persista un aviso. Son tres pantallas que ya existian y
+  ahora se actualizan solas —la bandeja del tutor, la pertenencia del nino y sus
+  misiones—. La migracion 0021 anade join_requests, class_memberships y
+  mission_assignments a la publicacion supabase_realtime, que ya existia con las
+  cuatro operaciones activas y CERO tablas; no crea la publicacion ni toca sus
+  operaciones, y no exige gen types porque publicar no cambia el esquema.
+  LA SUSCRIPCION ENTRA POR EL SERVICIO, nunca por `supabase` dentro de un
+  provider: subscribeToClassrooms() en classrooms.service.ts y
+  subscribeToAssignments() en missions.service.ts, cada una devolviendo su
+  cancelacion, con topic unico por llamada para que StrictMode no colisione
+  consigo mismo. Nunca se abre canal sin userId. El aviso NO trae el cambio: se
+  vuelve a consultar, y esa consulta pasa por la RLS.
+  REGLA QUE NO SE DEBE DESHACER: una recarga disparada desde fuera NO declara
+  espera, pero SI la apaga. Se quita el setLoading(true) del camino silencioso y
+  se conservan TODOS los setLoading(false) —al reves, la guarda loadId deja el
+  indicador encendido para siempre—. Vale para ClassroomsProvider y para
+  useMissionAssignments, y hay un test por hook que falla al revertirlo.
+  LIMITE MEDIDO: los delete de postgres_changes no los filtra la RLS y llegan a
+  todo suscriptor de la tabla, con la clave primaria como maximo; la clave
+  anonima recibe el sobre vacio, sin una sola columna. No se corrige con
+  replica identity full. La salida, si algun dia importa, es
+  realtime.broadcast_changes() desde disparadores.
+  `npm run build`, `npm run lint` y `npm run test:run` pasan (97 tests).
 
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.

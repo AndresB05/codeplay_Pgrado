@@ -2,7 +2,7 @@
 
 > **Fuente de verdad del estado del proyecto.** Este archivo se mantiene
 > sincronizado entre sesiones de Claude Code y OpenSpec.
-> Última verificación contra el código: **27 de agosto de 2026**.
+> Última verificación contra el código: **2 de septiembre de 2026**.
 
 ---
 
@@ -744,7 +744,8 @@ Los diagramas y el detalle paso a paso de cada flujo están en
 
 **Propósito.** Ser el único punto por el que la aplicación lee y escribe
 salones. Desde el paso 10 lo hace contra la base real: la solicitud que envía el
-niño le llega al tutor desde otro dispositivo, no desde el mismo navegador.
+niño le llega al tutor desde otro dispositivo, no desde el mismo navegador. Y
+desde el paso 18 le llega **sin que el tutor recargue**.
 
 | Requisito | Estado | Dónde vive |
 | --- | --- | --- |
@@ -756,6 +757,8 @@ niño le llega al tutor desde otro dispositivo, no desde el mismo navegador.
 | Motivos de la base traducidos al español | ✅ | `ERROR_MESSAGES` en `services/classrooms.service.ts` |
 | Guarda de «un alumno, un salón» antes de escribir | ✅ | `requestJoin()` en `ClassroomsProvider.tsx` |
 | Acceso único desde componentes | ✅ | `hooks/useClassrooms.ts` |
+| Suscripción en vivo, cancelable, por el servicio | ✅ | `subscribeToClassrooms()` en `services/classrooms.service.ts` |
+| Recarga silenciosa al llegar un cambio ajeno | ✅ | `runLoad(silent)` + `refreshSilently()` en `ClassroomsProvider.tsx` |
 
 **Decisiones de diseño**
 
@@ -801,6 +804,29 @@ niño le llega al tutor desde otro dispositivo, no desde el mismo navegador.
 - `ClassroomsProvider` acepta una prop `service` que **sólo usan los tests**.
   Es lo que deja la lista de dependencias del provider en un único archivo,
   `test/renderClassrooms.tsx`, en vez de repartirla por cada test.
+- **La suscripción en vivo entra por el servicio, no por `supabase`** (paso 18).
+  Un `supabase.channel(...)` dentro del provider habría roto la frontera de §4.3
+  y dejado los tests sin forma de disparar un evento, porque montan un servidor
+  falso sin red. `subscribeToClassrooms(userId, onChange)` devuelve su
+  cancelación, y el falso gana un `emit()`.
+- **El aviso no trae el cambio, sólo la noticia de que lo hubo.** El store vuelve
+  a consultar y se queda con lo que devuelva esa consulta, que es la que pasa por
+  la RLS. De ahí sale que un `delete` ajeno sin filtrar sólo cueste una relectura
+  de más (§2.7), y que no haga falta un segundo camino de actualización.
+- **Nunca se abre un canal sin `userId`.** Con la clave anónima pasaría la
+  autorización con las manos vacías y no se reintenta solo cuando después llega
+  la sesión: quedaría mudo para siempre.
+- **Una recarga que no pidió quien mira NO declara espera, pero sí la apaga.** Es
+  la misma enfermedad del `loading` global de §2.2, entrando por otra puerta:
+  `refresh()` levantaba `loading` en cada recarga, así que cada evento habría
+  blanqueado el panel del tutor entero —con su desplazamiento y sus diálogos—,
+  puesto un spinner sobre la pantalla del salón y hecho **desaparecer** el panel
+  de misiones, que devuelve `null` mientras carga. La regla es estrecha a
+  propósito: **se quita el `setLoading(true)`, se conservan todos los
+  `setLoading(false)`**. Al revés sería peor que un parpadeo: la guarda `loadId`
+  descarta la carga inicial que llega tarde sin apagar la espera, así que el
+  indicador se quedaría encendido para siempre. Hay un test por hook que lo fija,
+  y los dos **fallan al revertir el arreglo**: se comprobó, no se supuso.
 
 #### Claves de `localStorage`
 
@@ -912,8 +938,51 @@ casos negativos, catorce comprobaciones sin ninguna fallida:
 salón **de otro tutor**. Sólo existe una cuenta de tutor, así que el caso se
 midió contra un salón **inexistente**, que la política rechaza por la misma
 condición. Discrimina más de lo que parece —una política mal correlacionada
-habría respondido `23503` y no `42501`—, pero no es el caso literal. Cerrarlo
-exige una segunda cuenta de tutor.
+habría respondido `23503` y no `42501`—, pero no es el caso literal.
+
+**CERRADO EN EL PASO 18, con las dos cuentas de tutor.** Medido el 2 de
+septiembre de 2026: el tutor 1 asigna y retira `m5` en su salón mientras el tutor
+2 escucha, y **al tutor 2 no le llega ni el sobre del `insert`**. Es el caso
+literal —dos tutores de verdad, un salón que existe y es de otro— y no el que se
+midió en el paso 16 contra un salón inexistente. Se comprobó por Realtime y no
+por REST, que discrimina **más**: la RLS del `insert` se evalúa por suscriptor
+sobre una fila que sí existe, así que un `[]` por «no hay nada» está descartado
+por construcción. El positivo emparejado ocurrió en la misma ventana: al tutor 1
+sí le llegó.
+
+**La 0021, verificada con sesión real a 2-sep-2026.** Cuatro oyentes a la vez
+sobre las tres tablas publicadas, y los negativos con su positivo ocurriendo en
+la misma ventana:
+
+| Comprobado | Resultado |
+| --- | --- |
+| La publicación lista las tres tablas | `join_requests`, `class_memberships`, `mission_assignments`; system id 16430, con las cuatro operaciones ya activas de antes |
+| El dueño del salón escucha un `insert` suyo | Recibe la fila entera |
+| Un tutor ajeno escucha ese mismo `insert` | **No recibe ni el sobre**: la RLS del `insert` sí se evalúa por suscriptor |
+| Un niño sin salón escucha ese `insert` | Tampoco recibe nada, con su positivo emparejado en la misma ventana |
+| La clave anónima escucha un `insert` | Recibe el **sobre vacío**, con `errors: ["Error 401: Unauthorized"]` y cero columnas |
+| Cualquiera escucha un `delete` | Le llega. Al autenticado ajeno con la clave primaria dentro; a la clave anónima, **sin siquiera eso** |
+| El niño pide entrar al salón del tutor 2 | Lo reciben el tutor 2 y el propio niño; el tutor 1, nada |
+
+**El `delete` sin filtrar es del sistema, no un defecto del cliente.** Realtime no
+puede comprobar quién tenía acceso a una fila que ya no existe, así que reparte el
+borrado a todos los suscriptores de esa tabla. No se corrige con
+`replica identity full`: eso haría viajar la fila entera en vez de un uuid, o sea
+más filtración y no menos. Se acepta porque el store **no lee el payload** —vuelve
+a consultar, y esa consulta sí pasa por la RLS—, y la salida, si algún día
+importa, es `realtime.broadcast_changes()` desde disparadores.
+
+**Lo que gana quien escucha sin sesión es saber que algo cambió**, nunca qué.
+Mientras la base tenga un salón de pruebas eso es ruido; desplegada y con salones
+reales pasa a ser telemetría de uso visible para cualquiera, porque la clave es
+pública por diseño. Anotado como cabo suelto del paso 27 en `ROADMAP.md` §3.
+
+**Los tres casos del paso 18, verificados desde la interfaz con dos sesiones.**
+El tutor con el panel abierto ve entrar la solicitud; el niño ve que lo aceptan,
+que lo rechazan y que lo retiran; y ve aparecer y desaparecer la misión que su
+tutor asigna y quita. **Cero apariciones del indicador de carga en todos los
+casos**, medidas con un observador de mutaciones y no a ojo, y sin que se cerrara
+el panel que el tutor tenía abierto.
 
 **El cupo lleno, verificado desde la interfaz con los dos niños.** Salón de cupo
 1 con dos solicitudes pendientes: al aceptar la primera, los cupos libres pasan
@@ -924,10 +993,24 @@ aparece el aviso de salón lleno. La solicitud sigue `pending`.
 simultáneas sobre el mismo salón no se reproducen a mano. El cupo está
 comprobado **funcionalmente**, no bajo concurrencia.
 
-**Estado de la base de pruebas: limpia.** Los salones de prueba se borraron al
-terminar, y con ellos sus solicitudes y pertenencias —comprobado tras el paso
-10: `class_groups`, `class_memberships`, `join_requests` e `invitations`
-devuelven cero filas—. Las tres cuentas siguen existiendo, sin salón ninguna.
+**Estado de la base de pruebas: limpia otra vez, RECOGIDA EN EL PASO 18.** El
+residuo del paso 16 —el salón `CP-5J6H` «salon sigma», con dos miembros, las
+misiones `m1` y `m3` y su historial de solicitudes— se conservó a propósito
+mientras duró el paso 18, porque era el escenario poblado que hacía falta para
+ver llegar eventos, y se borró al terminar. Comprobado el 2 de septiembre de 2026
+con la sesión del tutor 1: `class_groups`, `class_memberships`, `join_requests`,
+`invitations` y `mission_assignments` devuelven **cero filas**. Las tres cuentas
+siguen existiendo, ninguna con salón.
+
+Borrar el salón bastó para todo: las claves ajenas de las migraciones 0013 y 0020
+son `on delete cascade`, así que se llevó por delante miembros, solicitudes,
+invitaciones y asignaciones con una sola sentencia.
+
+**Lo que cuesta, y conviene saberlo antes del paso 17:** los reportes de
+habilidades sobre progreso real necesitan alumnos dentro de un salón, así que ese
+paso tendrá que volver a montar el escenario. Es barato —crear salón, solicitar,
+aceptar— y se prefirió a arrastrar un residuo que cada paso siguiente tendría que
+distinguir de los datos de siembra.
 
 **Arista de privacidad que hereda el paso 14.** Desde el paso 10, un niño ve de
 cada compañero de su salón el nombre completo, el avatar, el XP y la racha. Es
@@ -954,6 +1037,7 @@ la primera.
 | Arreglo de la recursión entre `profiles` y `join_requests` | ✅ aplicado | `…0014_fix_profiles_policy_recursion.sql` |
 | Vistas `class_group_directory` y `classroom_roster` | ✅ aplicado | `…0015_create_classroom_read_views.sql` |
 | Tabla `mission_assignments`, sus políticas y sus `grant` | ✅ aplicado | `…0020_create_mission_assignments.sql` |
+| Tres tablas publicadas en `supabase_realtime` | ✅ aplicado | `…0021_publish_realtime_tables.sql` |
 | Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
@@ -1030,6 +1114,7 @@ existe para el niño si su tutor se la asignó, y premia más XP que un nivel.
 | Apartado «Quién ha cumplido», con el motivo | ✅ | `teacher/TeacherPanelModule.tsx` |
 | El niño ve sólo las asignadas, en dos pantallas | ✅ | `shared/AssignedMissionsPanel.tsx`, montado en `student/StudentWorldsModule.tsx` y `student/StudentClassroomModule.tsx` |
 | El catálogo declara el premio en XP | ✅ | `Mission.xpReward` en `types/classroom.types.ts` + `teacher/classroomsData.ts` |
+| El niño ve la asignación y la retirada sin recargar | ✅ | `subscribeToAssignments()` en `services/missions.service.ts` + `hooks/useMissionAssignments.ts` |
 | Jugar una misión | ❌ | **No existe.** Llega con el juego, pasos 20 y 21 |
 
 **LAS MISIONES TODAVÍA NO SON FUNCIONALES, y no es un descuido.** Se asignan, se
@@ -1062,6 +1147,12 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
 - **El panel del niño no se pinta si no hay nada que enseñar.** Sin salón o sin
   misiones, devuelve `null` sin dejar hueco. Un fallo de lectura sí se dice:
   callarlo afirmaría que no hay misiones.
+- **Y por eso mismo, la recarga en vivo del paso 18 no declara espera aquí.** Que
+  el panel no se pinte mientras carga significa que un evento ajeno no lo haría
+  parpadear: lo haría **desaparecer y volver**. El camino silencioso de
+  `useMissionAssignments` tampoco limpia el error de entrada, porque la pantalla
+  pinta el motivo en lugar del panel y borrarlo para reponerlo un instante
+  después es el mismo defecto por otra puerta: el error se fija con el resultado.
 - **El selector de alcance dejó de ignorarse.** Antes `assignedMissionIds` era
   estado del componente, independiente de `selectedGroupId`. Con «Todos» la
   misión sólo se ve «Asignada» si la tienen **todos** los salones, y si la tienen
@@ -1444,13 +1535,14 @@ mañana. Cerrarlo de verdad es censar antes lo que hay.
 
 ## 5. Estado verificado
 
-Comprobado el **27 de agosto de 2026** ejecutando los comandos:
+Comprobado el **2 de septiembre de 2026** ejecutando los comandos:
 
 | Comprobación | Resultado |
 | --- | --- |
 | `npm run build` | ✅ Pasa. 164 módulos, 2,1 s. Sólo avisa del tamaño del chunk |
 | `npm run lint` | ✅ Pasa. Cero errores y cero warnings |
-| `npm run test:run` | ✅ Pasa. **75 tests** en 8 archivos tras el paso 15, que añadió nueve y no retiró ninguno —comparados por el nombre de cada `it(`, no por el total—. Eran 66 Eran 67 hasta `invitaciones-sin-correo`, que retiró `inviteByEmail añade la invitación con el correo normalizado` al desaparecer la función que probaba: baja legítima, comprobada por nombre y no por recuento |
+| `npm run test:run` | ✅ Pasa. **97 tests** en 12 archivos tras el paso 18, que añadió siete y **no retiró ninguno** —comparados por el nombre de cada `it(`, no por el total—. Eran 90 tras el paso 16 y 75 tras el 15. La única baja del proyecto sigue siendo `inviteByEmail añade la invitación con el correo normalizado`, que se fue con `invitaciones-sin-correo` al desaparecer la función que probaba: baja legítima, comprobada por nombre y no por recuento |
+| **Los dos tests del `loading` del paso 18 tienen dientes** | ✅ Comprobado revirtiendo el arreglo, no supuesto. El primero falla si el camino silencioso vuelve a levantar `loading`; el segundo, si deja de apagarlo. El primer intento **no** los tenía —con una lectura que resuelve al instante, React agrupa el `loading` intermedio y nadie llega a verlo—, y por eso el servidor falso gana `holdReads()`: el aserto cae **mientras** la consulta está en vuelo |
 | Panel del tutor y del niño con la sesión de invitado | ✅ Navegan sin errores en consola. Los mundos se pintan desde Supabase —«Selva Algorítmica», `0/3 NIVELES`—, no desde el respaldo local |
 | Flujo de salones de punta a punta contra la base real | ✅ Crear salón, buscar por ID público, solicitar, ver la solicitud con nombre, aceptar, ver compañeros, rechazar, reintentar y borrar en cascada |
 | Registro real con rol, contra la base | ✅ Tutor registrado desde la interfaz: `profiles.role = 'tutor'` y aterriza en `/teacher/groups`. Alta por `curl` con `role: "superadmin"` en los metadatos: el alta no falla, el perfil sale `child` y aterriza en `/dashboard/worlds` |
@@ -1472,10 +1564,22 @@ demasiado pronto.
 paso 9 y probó que la verificación de contraseña del paso 13 no era decorativa—
 y no estaba escrito en ninguna parte.
 
-Las credenciales de las **dos cuentas de prueba** —tutor y niño— están en
-`apps/web/.env`, que está en `.gitignore`: `VITE_DEV_TUTOR_EMAIL`,
-`VITE_DEV_TUTOR_PASSWORD`, `VITE_DEV_CHILD_EMAIL`, `VITE_DEV_CHILD_PASSWORD`,
+Las credenciales de las **tres cuentas de prueba que están en `.env`** —dos
+tutores y un niño— viven en `apps/web/.env`, que está en `.gitignore`:
+`VITE_DEV_TUTOR_EMAIL`, `VITE_DEV_TUTOR_PASSWORD`, `VITE_DEV_TUTOR2_EMAIL`,
+`VITE_DEV_TUTOR2_PASSWORD`, `VITE_DEV_CHILD_EMAIL`, `VITE_DEV_CHILD_PASSWORD`,
 junto a `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
+
+**El segundo tutor lo creó el usuario el 2 de septiembre de 2026, desde
+`/signup`** y no desde el panel, para que el rol quedara fijado en el registro
+como manda la 0018. Verificado contra la base: autentica, `profiles.role` es
+`tutor` y **no tiene ningún salón propio**, que es justo lo que hace útil el
+contraste. **No lo lee ningún código**: `VITE_DEV_TUTOR2_*` existe para abrir una
+segunda sesión de tutor por `curl` o en otro navegador, así que `config/env.ts`
+no lo valida y el botón «Sin login» lo ignora.
+
+Existe además un **segundo niño**, de las tres cuentas del paso 11, que **no está
+en `.env`**: se usó para el cupo lleno y sus credenciales las tiene el usuario.
 
 El patrón son dos pasos: se pide un token y se consulta con él.
 
