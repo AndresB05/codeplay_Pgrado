@@ -73,4 +73,4 @@ imprimir una contraseña ni un `access_token` en la salida.**
 - [x] 9.3 Marcar el paso 18 como ✅ en la secuencia de `docs/ROADMAP.md` §2, con el nombre del cambio en la columna «Vía», y ajustar la fila para que diga sincronización en vivo y no «notificaciones».
 - [x] 9.4 Añadir a la tabla de cabos sueltos de `docs/ROADMAP.md` §3, con «Paso 27» en la columna de dónde se resuelve: el sobre vacío que recibe la clave anónima es ruido mientras la base tenga un salón de pruebas, pero **desplegada y con salones reales pasa a ser telemetría de uso** —cuánta actividad y cuándo— visible para cualquiera, porque la clave es pública por diseño. Verificar que la fila queda en esa tabla y no en otra.
 - [x] 9.5 Replicar en `openspec/config.yaml` lo que corresponda del estado y las convenciones, y comprobar con `npx openspec doctor` que el YAML sigue parseando.
-- [ ] 9.6 Preparar el commit **enumerando las rutas** en `git add`, nunca `git add -A` (`CLAUDE.md`).
+- [x] 9.6 Preparar el commit **enumerando las rutas** en `git add`, nunca `git add -A` (`CLAUDE.md`).
