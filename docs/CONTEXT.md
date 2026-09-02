@@ -633,6 +633,41 @@ puede hacer. Los tres primeros se leen con la clave anónima en
 | **Site URL** | `http://localhost:5173` | Sin él, el enlace del correo no vuelve a la aplicación |
 | **Redirect URLs** | `/reset-password`, `/auth/callback` y el comodín `http://localhost:5173/**` | Sin la entrada, Supabase **no da error**: devuelve en silencio al Site URL y el fallo parece del código. **Al desplegar (paso 27) hay que hacer DOS cosas, no una: añadir las del dominio real Y RETIRAR EL COMODÍN.** El comodín enmascara errores de ruta —una vuelta equivocada casa igual— y, con el flujo `implicit` que usa este cliente, sobre el dominio real dejaría que **cualquier** ruta reciba un refresh token en el fragmento de la URL |
 
+#### Quién decide el destino tras autenticarse
+
+**Lo decide `resolveLandingRoute()` en `context/auth.helpers.ts`, y la llaman
+tres**: `PublicRoute`, `AuthCallback` y `useRoleHomeRedirect`. Una
+implementación y tres puntos de llamada, para que gane quien gane la carrera el
+destino sea el mismo.
+
+**Hasta el paso 19 este documento decía que lo resolvía un único hook, y era
+falso desde antes.** `PublicRoute` también decidía, y **el hook no gana nunca**:
+`useActiveRole()` devuelve `user?.role`, así que el rol llega en el mismo render
+que el usuario y la guarda —el padre— devuelve `<Navigate>` sin llegar a
+renderizar a su hijo, de modo que el efecto del hook no corre porque el hook ya
+no existe. No se notaba porque los tres calculaban el mismo destino; el enlace de
+invitación fue lo primero que los hizo discrepar.
+
+**Medido en las dos mitades, no razonado.** El inicio de sesión queda fijado en
+`router/PublicRoute.test.tsx`. El **registro** —el único caso donde el hook podría
+ganar, porque la sesión llega antes que el perfil y durante esa ventana
+`user?.role` es nulo y la guarda no aparta— se midió instrumentando las dos vías
+con un log temporal y dando un alta real desde un enlace: **sólo registró
+`PublicRoute`**, dos veces por StrictMode, y el hook no navegó ni una vez.
+
+**La llamada del hook parece código muerto y NO lo es.** Es alcanzable sólo por
+`/reset-password`, que va tras `PrivateRoute` y donde `PublicRoute` no
+interviene. Sin ella, quien abre el enlace del correo con una invitación
+pendiente aterriza en su panel y **el token se queda vivo para la siguiente
+persona que use ese navegador**.
+
+**`resolveLandingRoute()` es PURA, y tiene que serlo:** `PublicRoute` la llama
+durante el render. La primera versión consumía el token allí y el test la tumbó
+—StrictMode invoca el render dos veces, así que la primera pasada lo gastaba y la
+segunda ya no lo encontraba: el token se consumía **y** la persona acababa en su
+panel—. Consume quien llega, no quien decide: el borrado vive en `pages/Invite`,
+único destino al que ese token puede llevar.
+
 #### Rutas
 
 | Ruta | Rol | Pantalla |
@@ -676,6 +711,8 @@ con las del tutor.
 | Selector de alcance: todos los salones o uno | ✅ | `teacher/TeacherPanelModule.tsx` |
 | Asignación de misiones | ✅ | `teacher/TeacherPanelModule.tsx` + `services/missions.service.ts` — persiste en la base y obedece al selector de alcance. La capacidad entera está en §2.8, **incluida la advertencia de que una misión todavía no se puede jugar** |
 | Sumar alumnos compartiendo el ID público del salón | ✅ | `teacher/AddStudentsPanel.tsx` |
+| Generar un enlace de invitación canjeable, copiarlo y retirarlo | ✅ | `teacher/AddStudentsPanel.tsx` + `services/invitations.service.ts` + `hooks/useInvitations.ts` — paso 19, mitad A |
+| Lista de enlaces con sus **tres** estados y purga de los caducados | ✅ | `useInvitations.ts` + `readState()` en `invitations.service.ts` |
 | Recursos educativos | 🟡 | Tarjetas informativas sin destino |
 | Ajustes de cuenta: salir y cambiar contraseña | ✅ | `teacher/TeacherSettingsModule.tsx` + `shared/ChangePasswordPanel.tsx` — desde el paso 13, ver §2.2 |
 
@@ -693,8 +730,21 @@ con las del tutor.
   quiere «recuperar» el formulario, esto es lo que tiene que resolver antes.**
 - **La tabla `invitations` se quedó en pie a propósito**, sin la columna: el
   token, la caducidad, las tres políticas y la cascada de la 0013 sirven tal
-  cual para el paso 19. Queda sin escrituras hasta ese paso, y eso es deuda
-  visible, no un olvido.
+  cual para el paso 19. **Desde el paso 19 ya recibe escrituras**, y sirvieron
+  tal cual: no hizo falta añadirle ni una columna.
+- **El enlace canjeable NO sustituye al ID público, lo complementa.** El ID
+  público es la vía para muchos a la vez —el mismo código sirve para todo un
+  curso— y pasa por la bandeja de solicitudes; el enlace es la vía para uno y
+  **entra sin pasar por la bandeja**, porque el tutor ya consintió al generarlo
+  y pedirle que apruebe otra vez sería aprobar dos veces lo mismo. Los dos
+  conviven en `AddStudentsPanel.tsx`, y **ninguno pide ni guarda una dirección
+  de correo**: el envío real sigue sin existir y es la mitad B del paso 19.
+- **Los tres estados del enlace se calculan de DOS datos**, `status` y
+  `expires_at`, nunca de uno. El panel anterior a `invitaciones-sin-correo`
+  pintaba `status === 'pending' ? 'Pendiente' : 'Aceptada'` y una invitación
+  caducada habría salido como «Aceptada»; estaba dormido porque nada escribía
+  filas. `status` admite `expired` desde la 0013 pero **nada lo escribe ni va a
+  escribirlo**, así que la caducidad la decide la fecha.
 - `classroomsData.ts` reúne los datos de ejemplo **y las funciones puras de
   cálculo** (`getSkillReports`, `buildGroup`, `generatePublicId`…). Al conectar
   el backend, los datos se van y las funciones puras se quedan.
@@ -716,6 +766,7 @@ con las del tutor.
 | Pantalla de espera con opción de cancelar | ✅ | `student/StudentClassroomModule.tsx` |
 | Ver el salón propio y a los compañeros | ✅ | `student/StudentClassroomModule.tsx` |
 | Bloqueo de solicitud si el salón está lleno | ✅ | `student/StudentClassroomSearch.tsx` |
+| Entrar a un salón canjeando un enlace de invitación | ✅ | `pages/Invite/Invite.tsx` + `redeemInvitation()` en `ClassroomsProvider.tsx` — paso 19, mitad A |
 
 #### Máquina de estados del alumno
 
@@ -733,9 +784,21 @@ con las del tutor.
 | En espera | En un salón | `acceptRequest()` | Tutor |
 | En un salón | Sin salón | `removeStudent()` / `leaveGroup()` | Tutor / Alumno |
 | En espera o en un salón | Sin salón | `deleteGroup()` | Tutor |
+| Sin salón | **En un salón** | `redeemInvitation()` | Alumno |
+| En espera | **En un salón** | `redeemInvitation()` | Alumno |
 
 No existe transición directa de «En un salón» a «En espera» en otro salón: hay
 que quedar sin salón primero. **Un alumno pertenece como máximo a un salón.**
+
+**Las dos últimas transiciones las trajo el paso 19 y saltan la espera**: el
+enlace mete al niño directo, sin crear solicitud, porque el tutor ya consintió al
+generarlo. La segunda es la que obligó a decidir algo que nadie había decidido:
+si quien canjea tiene una **solicitud pendiente** —en el salón del enlace o en
+otro—, esa solicitud **se cancela** en la misma transacción que crea la
+pertenencia. No se marca `accepted` ni `rejected`: ningún tutor la resolvió, y
+con `accepted` en otro salón además contradiría a la pertenencia. Borrarla es
+exactamente la cancelación que el niño podía hacer él mismo, y la alternativa
+—dejarla viva— es media violación de «un alumno, un salón».
 
 Los diagramas y el detalle paso a paso de cada flujo están en
 `ESTADO-DEL-PROYECTO.md` §1.4 y §1.5.
@@ -993,6 +1056,77 @@ aparece el aviso de salón lleno. La solicitud sigue `pending`.
 simultáneas sobre el mismo salón no se reproducen a mano. El cupo está
 comprobado **funcionalmente**, no bajo concurrencia.
 
+**La 0022, verificada con sesión real a 2-sep-2026.** Trece comprobaciones por
+`curl` en el grupo 6, cada negativo con su positivo emparejado en la misma
+ventana, y ninguna fallida:
+
+| Comprobado | Resultado |
+| --- | --- |
+| El niño hace `select` sobre `invitations` | **Cero filas** —200, no 403: lo filtra la RLS, no el permiso— |
+| El niño hace `update` sobre `invitations` | `42501` |
+| **El tutor** hace `update` sobre `invitations` | `42501` **también él**: es el muro que obliga a la RPC incluso al dueño |
+| Canje de un token inexistente | `ZC010` |
+| Canje con la clave anónima | 401 |
+| Canje desde una sesión de **tutor** | `42501` |
+| `preview_invitation` sin sesión | 401 — no se concede a `anon` |
+| `preview_invitation` con sesión de niño | 200 con el salón: el positivo emparejado |
+| **Canje bueno** | 200, pertenencia creada, invitación `accepted` con `accepted_at` |
+| Canje sobre un salón **lleno** | `23514`, sin pertenencia, y **la invitación sigue `pending`** |
+| Canje de un enlace ya canjeado | `ZC012` |
+| Canje de un enlace **caducado** | `ZC011`, y `preview` devuelve `state=expired` sin levantar excepción |
+| Canje estando ya en un salón, con cupo libre en el del enlace | `23505`, y **el enlace no se gasta** |
+
+**La transacción está probada por las fechas, en los tres canjes que hubo:**
+`class_memberships.joined_at` y `invitations.accepted_at` coinciden **al
+microsegundo** en todos ellos. Es la misma prueba que se usó con
+`accept_join_request` y su disparador de `resolved_at`.
+
+**La cancelación de la solicitud pendiente, medida en sus dos variantes.** Con
+pendiente en **otro** salón: el niño queda inscrito en el del enlace y la
+pendiente desaparece. Con pendiente en **el mismo**: inscrito una sola vez. En
+los dos casos la solicitud ya `accepted` del niño conservó su `resolved_at`
+**idéntico al microsegundo** (`15:30:07.886963`), antes y después de las trece
+comprobaciones: el `delete` que corre como definer **no rozó el historial
+resuelto**, que es lo que sostiene el `where status = 'pending'` escrito a mano.
+
+**Verificado además desde la interfaz, a 2-sep-2026:**
+
+| Comprobado | Resultado |
+| --- | --- |
+| El tutor genera un enlace | Recibe el token **en la misma llamada** del `insert`: 48 hex, o sea los 24 bytes de `gen_random_bytes` |
+| La lista de enlaces | Los **tres** estados con datos reales, y sólo el activo ofrece «Copiar» y «Retirar» |
+| Retirar un enlace sin usar | La fila desaparece de la base, y después `preview` y `redeem` responden `ZC010` |
+| La purga | Con una invitación vencida sembrada, abrir el panel **la borra de la base**, no sólo deja de pintarla |
+| **El token sobrevive el viaje a Google** | Con la cuenta **axoluk**, dada de alta con Google: enlace abierto sin sesión, vuelta por `/auth/callback`, y **el canje ocurre solo al terminar**, sin reabrir el enlace |
+| El token sobrevive un registro con contraseña | Cuenta nueva desde el enlace: `/signup/child` → `/invite/…` → canje |
+| Abrir la pantalla y no pulsar | El enlace **sigue sin gastarse**: el canje es un acto, no una consecuencia de cargar |
+| La invitación no alcanza al siguiente | Consumida, otra cuenta entra en el mismo navegador y **aterriza en su propio panel** |
+| El tutor mirando mientras alguien canjea | De 2 a 3 exploradores **sin recargar y con cero apariciones del indicador de carga**, contadas con un observador de mutaciones |
+| Sesión de tutor abriendo un enlace | Se le explica que los salones se canjean desde una cuenta de niño; **no** un «no tienes permiso» |
+
+**`expires_at` no lo acota nada, y eso importa más allá de este paso.** La tabla
+no tiene ningún `check` sobre esa columna —el único de `invitations` es el de
+`status`— y `invitations_insert_own_groups` sólo comprueba `invited_by` y que el
+salón sea del tutor. **Quien inserta elige la fecha**, y puede ponerla en el
+pasado o **en 2126**. Se usó a propósito para sembrar el caso `ZC011` y el
+fixture de la purga.
+
+**Los catorce días NO los garantiza el esquema:** los sostienen el `default` de
+la columna y que el cliente no mande ese campo. Alargar no es simétrico con
+acortar, y por eso queda anotado en vez de darse por menor:
+
+1. **La purga nunca se la lleva**, porque se apoya en esa misma fecha. Vuelve la
+   fila que nada borra, que es justo lo que `invitaciones-sin-correo` vino a
+   quitar y por lo que el roadmap pedía la purga «desde el primer día».
+2. **Un enlace que no caduca es otra cosa que uno de catorce días**: si se
+   filtra, no deja de servir.
+
+Hoy sólo puede insertar el tutor del salón, y sólo en el suyo, así que el daño se
+lo hace a sí mismo, y **no se migró en este paso a propósito**. Pero **ningún
+requisito puede prometer los catorce días como propiedad del sistema**, y quien
+llegue al paso 14 o a la mitad B del 19 tiene que saber que ahí no hay barrera:
+ponerla sería acotar la columna en el esquema.
+
 **Estado de la base de pruebas: limpia otra vez, RECOGIDA EN EL PASO 18.** El
 residuo del paso 16 —el salón `CP-5J6H` «salon sigma», con dos miembros, las
 misiones `m1` y `m3` y su historial de solicitudes— se conservó a propósito
@@ -1011,6 +1145,32 @@ habilidades sobre progreso real necesitan alumnos dentro de un salón, así que 
 paso tendrá que volver a montar el escenario. Es barato —crear salón, solicitar,
 aceptar— y se prefirió a arrastrar un residuo que cada paso siguiente tendría que
 distinguir de los datos de siembra.
+
+**ESTADO QUE DEJA VIVO EL PASO 19, y esta vez NO se recogió.** Al revés que el
+18, aquí queda escenario dentro a propósito, porque es justo el que al paso 17 le
+va a hacer falta. Medido el 2 de septiembre de 2026:
+
+| Qué queda | Detalle |
+| --- | --- |
+| Salón `CP-PJE6` «salon pinpon», del tutor 1 | **2 de 30**, con una misión asignada y una solicitud `accepted` en el historial |
+| Sus dos miembros | **Axoluk**, dada de alta con Google, y **Invitada Prueba** |
+| Tres invitaciones, las tres `accepted` | Ninguna sirve ya; se las llevará la purga el 16 de septiembre |
+| El niño de `.env` | **Sin salón**, con su solicitud `accepted` intacta desde `15:30:07.886963` |
+| El salón `CP-CUP1` «cupo uno» | Borrado con su cascada al terminar el grupo 6 |
+
+**Dos cuentas sintéticas creadas para el paso 19**, las dos con contraseña
+`Selva2026Prueba` y correo que no existe —la confirmación por correo está
+apagada en este proyecto, así que no hacía falta bandeja—:
+
+- `invitacion-7-4@codeplay.test` («Invitada Prueba»), **dentro de `CP-PJE6`**.
+  Borrarla desde Authentication → Users se lleva su pertenencia por la cascada
+  de la 0013.
+- `invitacion-7-4b@codeplay.test` («Carrera Prueba»), sin salón. Se creó para
+  medir quién gana la carrera del destino en el registro; ver §2.2.
+
+Quien llegue al paso 17 o al 20 se va a encontrar esto, y **conviene no
+confundirlo con los datos de siembra**: los mundos y niveles de la 0012 sí lo
+son; este salón y estas cuentas, no.
 
 **Arista de privacidad que hereda el paso 14.** Desde el paso 10, un niño ve de
 cada compañero de su salón el nombre completo, el avatar, el XP y la racha. Es
@@ -1038,6 +1198,7 @@ la primera.
 | Vistas `class_group_directory` y `classroom_roster` | ✅ aplicado | `…0015_create_classroom_read_views.sql` |
 | Tabla `mission_assignments`, sus políticas y sus `grant` | ✅ aplicado | `…0020_create_mission_assignments.sql` |
 | Tres tablas publicadas en `supabase_realtime` | ✅ aplicado | `…0021_publish_realtime_tables.sql` |
+| `redeem_invitation` y `preview_invitation`, el canje de enlaces | ✅ aplicado | `…0022_create_invitation_redemption.sql` |
 | Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
@@ -1367,8 +1528,7 @@ El build de WebGL va a `apps/web/public/game/`, carpeta ignorada por git.
 
 | Funcionalidad | Descripción | Dependencias |
 | --- | --- | --- |
-| Envío real de invitaciones | Elegir servicio de correo (Resend, SendGrid…) y enviar de verdad lo que hoy sólo se registra | P1 + servicio contratado |
-| Enlace de invitación canjeable | Generar y canjear tokens; probablemente con Supabase Edge Functions | Envío de correo |
+| Envío real de invitaciones (**mitad B del paso 19**) | Elegir servicio de correo (Resend, SendGrid…) y enviarlo. Hoy el tutor comparte el enlace a mano, que es lo que hace la mitad A | P1 + **servicio contratado** |
 | Editar o archivar un salón | No existe | P1 |
 | Exportar reportes | No existe | P1 |
 | Progreso, XP y rachas reales | El XP ya se lee de la base y se muestra en cuatro sitios desde `arreglos-y-barra-xp`; lo que falta es que **algo lo escriba**, y con él la racha | P4 |
@@ -1376,6 +1536,33 @@ El build de WebGL va a `apps/web/public/game/`, carpeta ignorada por git.
 | Recursos educativos con destino | Hoy son tarjetas informativas sin enlace | Contenido |
 | CI en GitHub Actions | Verificar lint y build en cada push | Ninguna |
 | Abrir los cambios en OpenSpec | Convertir P1–P4 en `openspec/changes/` con `/opsx:propose` | Ninguna |
+
+### `enlace-de-invitacion` (paso 19, mitad A): APLICADO
+
+El tutor genera un enlace, lo comparte por donde quiera, y quien lo abre **entra
+al salón sin pasar por la bandeja de solicitudes**. Es la mitad del paso 19 que
+no dependía de contratar nada; la otra —el envío por correo— sigue esperando
+servicio, y **este cambio no acerca ni una columna de correo a ninguna tabla**.
+
+**La fila que había aquí se equivocaba en las dos cosas que decía.** No hacen
+falta Edge Functions —basta una función `security definer`, el patrón que el
+proyecto ya usaba tres veces— y **no depende del envío de correo**: el enlace se
+comparte a mano. Se corrige aquí para que nadie vuelva a leerlo.
+
+**Dónde vive:** migración `202606030022`, `services/invitations.service.ts`,
+`hooks/useInvitations.ts`, `context/invitationToken.helpers.ts`,
+`pages/Invite/Invite.tsx`, `components/dashboard/teacher/AddStudentsPanel.tsx`,
+y la acción `redeemInvitation` en `ClassroomsProvider.tsx`. El detalle del
+esquema está en §2.7, el del tutor en §2.3 y el del niño en §2.4.
+
+**Por qué el canje es RPC y no escrituras del cliente:** los permisos de la 0013
+son tres muros, y ninguno se tocó. Quien tiene el token **no puede leer su propia
+fila** —las tres políticas de `invitations` son del tutor del salón—, **nadie
+puede modificarla** —no hay grant de `update` para ninguna sesión, ni siquiera
+para el tutor— y `class_memberships` no tiene política de inserción.
+
+**Lo que decidió este paso y nadie había decidido:** qué pasa con una solicitud
+pendiente al canjear. Se **cancela**, ni se acepta ni se rechaza. Ver §2.4.
 
 ### P6 — `assets-graficos`: ilustraciones generadas por IA
 
@@ -1541,8 +1728,10 @@ Comprobado el **2 de septiembre de 2026** ejecutando los comandos:
 | --- | --- |
 | `npm run build` | ✅ Pasa. 164 módulos, 2,1 s. Sólo avisa del tamaño del chunk |
 | `npm run lint` | ✅ Pasa. Cero errores y cero warnings |
-| `npm run test:run` | ✅ Pasa. **97 tests** en 12 archivos tras el paso 18, que añadió siete y **no retiró ninguno** —comparados por el nombre de cada `it(`, no por el total—. Eran 90 tras el paso 16 y 75 tras el 15. La única baja del proyecto sigue siendo `inviteByEmail añade la invitación con el correo normalizado`, que se fue con `invitaciones-sin-correo` al desaparecer la función que probaba: baja legítima, comprobada por nombre y no por recuento |
+| `npm run test:run` | ✅ Pasa. **109 tests** en 15 archivos tras el paso 19, que añadió doce y **no retiró ninguno** —comparados por el nombre de cada `it(`, no por el total; ver la nota de abajo sobre la codificación—. Eran 97 en 12 archivos tras el paso 18, que añadió siete y **no retiró ninguno** —comparados por el nombre de cada `it(`, no por el total—. Eran 90 tras el paso 16 y 75 tras el 15. La única baja del proyecto sigue siendo `inviteByEmail añade la invitación con el correo normalizado`, que se fue con `invitaciones-sin-correo` al desaparecer la función que probaba: baja legítima, comprobada por nombre y no por recuento |
 | **Los dos tests del `loading` del paso 18 tienen dientes** | ✅ Comprobado revirtiendo el arreglo, no supuesto. El primero falla si el camino silencioso vuelve a levantar `loading`; el segundo, si deja de apagarlo. El primer intento **no** los tenía —con una lectura que resuelve al instante, React agrupa el `loading` intermedio y nadie llega a verlo—, y por eso el servidor falso gana `holdReads()`: el aserto cae **mientras** la consulta está en vuelo |
+| **Los tests del enlace de invitación tienen dientes** | ✅ Comprobado rompiendo el código, no supuesto. Quitando el borrado de `takePendingInvitationToken()` caen dos de los cinco del helper; haciendo el borrado de `Invite` condicional al token que coincide cae **sólo** el del token viejo, que es el que se pagó por tener; y consumiendo el token dentro de `resolveLandingRoute()` caen tres de los cuatro de `PublicRoute` bajo StrictMode |
+| **Cuidado al comparar tests por nombre en Windows** | La salida de `git show` sale en cp1252, así que compararla con archivos leídos en UTF-8 marca como «retirados» todos los nombres con acento. Hay que decodificar la salida de git como UTF-8 explícitamente: sin eso, el primer intento dio 52 falsos retirados |
 | Panel del tutor y del niño con la sesión de invitado | ✅ Navegan sin errores en consola. Los mundos se pintan desde Supabase —«Selva Algorítmica», `0/3 NIVELES`—, no desde el respaldo local |
 | Flujo de salones de punta a punta contra la base real | ✅ Crear salón, buscar por ID público, solicitar, ver la solicitud con nombre, aceptar, ver compañeros, rechazar, reintentar y borrar en cascada |
 | Registro real con rol, contra la base | ✅ Tutor registrado desde la interfaz: `profiles.role = 'tutor'` y aterriza en `/teacher/groups`. Alta por `curl` con `role: "superadmin"` en los metadatos: el alta no falla, el perfil sale `child` y aterriza en `/dashboard/worlds` |
@@ -1551,6 +1740,15 @@ Comprobado el **2 de septiembre de 2026** ejecutando los comandos:
 | **El cambio desde Ajustes con «Secure password change» ENCENDIDO** (tarea 10.1) | ✅ Cuenta nueva, probado por API y desde la pantalla: `updateUser` responde 200 sin pedir nonce, la pantalla confirma, la anterior deja de entrar y la nueva entra. La sesión de segundos que emite `signInWithPassword` le basta al servidor, así que el interruptor se queda encendido y no hay código que cambiar |
 | **`/reset-password` con el interruptor ENCENDIDO** — el camino que **no** reautentica | ✅ Medido con la cuenta del correo del dueño del proyecto, no deducido: el enlace aterrizó en la pantalla de contraseña nueva sin rebotar, el cambio se guardó sin exigencia de nonce y después se entró por `/login` con la contraseña nueva. La sesión que abre el enlace cuenta como reciente |
 | **Recuperación de la contraseña olvidada** (mitad B del paso 13), de punta a punta | ✅ Petición hecha **una sola vez** contra la dirección del dueño del proyecto —la única a la que el correo de fábrica llega con fiabilidad—; el correo llegó, el enlace aterrizó en `/reset-password` sin rebotar a ningún panel y la contraseña nueva quedó fijada: comprobado por `curl` que la anterior dejó de entrar. `/reset-password` sin sesión redirige a `/login`, y `/forgot-password` con sesión y rol lleva al panel de ese rol |
+
+**El paso 19, mitad A, verificado de punta a punta el 2 de septiembre de 2026.**
+Trece comprobaciones por `curl` con cada negativo emparejado a su positivo, más
+la verificación desde la interfaz con dos cuentas reales —una de Google y una
+creada durante la prueba—. El detalle, tabla a tabla, está en §2.7. Lo que no se
+podía suponer y sí se midió: **el token sobrevive el viaje a Google**, el canje y
+la marca de la invitación ocurren **en la misma transacción** —`joined_at` y
+`accepted_at` coinciden al microsegundo en los tres canjes—, y un canje fallido
+**no gasta el enlace**.
 
 **Cuidado al comprobar la pantalla de mundos:** `useWorlds()` arranca con la
 lista vacía, así que durante la carga se pinta el respaldo de `worldsData.ts`

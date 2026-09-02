@@ -1,3 +1,7 @@
+import { useState } from 'react';
+import { ROUTES } from '../../../constants/routes';
+import { useInvitations } from '../../../hooks/useInvitations';
+import type { Invitation, InvitationState } from '../../../services/invitations.service';
 import type { ClassGroup } from '../../../types/classroom.types';
 
 interface AddStudentsPanelProps {
@@ -35,15 +39,68 @@ const IdCardIcon = () => (
   </svg>
 );
 
+/** Enlace absoluto que el tutor comparte por donde quiera. */
+const buildInviteUrl = (token: string): string =>
+  `${window.location.origin}${ROUTES.INVITE}/${token}`;
+
+/*
+ * TRES estados y no dos. El panel anterior a `invitaciones-sin-correo` pintaba
+ * `status === 'pending' ? 'Pendiente' : 'Aceptada'`, con lo que un enlace
+ * caducado salía como «Aceptada»: le diría al tutor que puede compartir algo
+ * que no va a funcionar.
+ */
+const STATE_LABELS: Record<InvitationState, string> = {
+  valid: 'Activo',
+  used: 'Usado',
+  expired: 'Caducado',
+};
+
+const STATE_CHIPS: Record<InvitationState, string> = {
+  valid: 'chip chip-leaf',
+  used: 'chip chip-mint',
+  expired: 'chip chip-coral',
+};
+
+const formatDate = (iso: string): string =>
+  new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' });
+
 /**
- * Cómo entra hoy un alumno en el salón: el tutor le pasa el ID público y el
- * niño lo busca y solicita entrar.
+ * Las dos vías por las que hoy entra un alumno al salón: el ID público, que
+ * sirve para todo un curso y pasa por la bandeja de solicitudes, y el enlace de
+ * invitación, que mete a UNO directamente porque el tutor ya consintió al
+ * generarlo.
  *
- * Antes había aquí un formulario de invitación por correo que no enviaba
- * ningún correo y que guardaba la dirección de un tercero sin cuenta. Ver el
- * cambio `invitaciones-sin-correo`: el envío real es el paso 19.
+ * Antes había aquí un formulario de invitación por correo que no enviaba ningún
+ * correo y que guardaba la dirección de un tercero sin cuenta. Ver el cambio
+ * `invitaciones-sin-correo`: **el envío sigue sin existir**, y este enlace lo
+ * comparte el tutor por donde quiera. Ninguna dirección se pide ni se guarda.
  */
 export const AddStudentsPanel = ({ group, freeSeats }: AddStudentsPanelProps) => {
+  const { create, error, invitations, loading, revoke } = useInvitations(group.id);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  const handleCopy = async (invitation: Invitation): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(buildInviteUrl(invitation.token));
+      setCopiedToken(invitation.token);
+    } catch {
+      /*
+       * El portapapeles puede estar denegado por el navegador. No es un fallo
+       * del salón, así que no se pinta como error: el enlace se ve entero en
+       * pantalla y se puede seleccionar a mano.
+       */
+      setCopiedToken(null);
+    }
+  };
+
+  const handleCreate = async (): Promise<void> => {
+    const created = await create();
+
+    if (created) {
+      void handleCopy(created);
+    }
+  };
+
   return (
     <section className="card px-6 py-5">
       <div className="flex items-center gap-3">
@@ -88,15 +145,80 @@ export const AddStudentsPanel = ({ group, freeSeats }: AddStudentsPanelProps) =>
             3
           </span>
           <p className="text-[16px] font-semibold text-ink-soft">
-            Su solicitud aparece aquí, en{' '}
-            <strong className="text-ink">Alumnos en espera</strong>, y tú la aceptas.
+            Su solicitud aparece aquí, en <strong className="text-ink">Alumnos en espera</strong>, y
+            tú la aceptas.
           </p>
         </li>
       </ol>
 
-      <p className="mt-4 rounded-[16px] border-2 border-line bg-white px-4 py-3 text-[15px] font-semibold text-ink-faint">
-        Todavía no enviamos correos de invitación. Cuando los enviemos, se avisará aquí.
-      </p>
+      <div className="mt-6 border-t-2 border-line pt-5">
+        <h3 className="font-display text-[17px] text-ink">O envíale un enlace directo</h3>
+        <p className="subtitle mt-1">
+          Quien abra el enlace entra al salón sin que tengas que aceptarlo. Sirve una sola vez y
+          caduca a los 14 días. Compártelo tú: nosotros no enviamos correos.
+        </p>
+
+        <button
+          type="button"
+          onClick={handleCreate}
+          disabled={loading}
+          className="btn btn-sun btn-sm mt-4"
+        >
+          Generar enlace
+        </button>
+
+        {error ? (
+          <p className="mt-4 rounded-[16px] border-2 border-coral-dark bg-coral-soft px-4 py-3 text-[15px] font-bold text-coral-dark">
+            {error.message}
+          </p>
+        ) : null}
+
+        {invitations.length > 0 ? (
+          <ul className="mt-4 space-y-3">
+            {invitations.map((invitation) => (
+              <li
+                key={invitation.id}
+                className="rounded-[18px] border-2 border-line bg-cream px-4 py-3"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={STATE_CHIPS[invitation.state]}>
+                    {STATE_LABELS[invitation.state]}
+                  </span>
+                  <span className="text-[13px] font-bold text-ink-faint">
+                    {invitation.state === 'used'
+                      ? `Usado el ${formatDate(invitation.acceptedAt ?? invitation.sentAt)}`
+                      : `Caduca el ${formatDate(invitation.expiresAt)}`}
+                  </span>
+                </div>
+
+                <p className="mt-2 break-all text-[14px] font-semibold text-ink-soft">
+                  {buildInviteUrl(invitation.token)}
+                </p>
+
+                {invitation.state === 'valid' ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleCopy(invitation)}
+                      className="btn btn-ghost btn-sm"
+                    >
+                      {copiedToken === invitation.token ? '¡Copiado!' : 'Copiar enlace'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void revoke(invitation.id)}
+                      className="btn btn-ghost btn-sm"
+                    >
+                      Retirar
+                    </button>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
     </section>
   );
 };

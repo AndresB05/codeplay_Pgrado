@@ -36,6 +36,14 @@ interface RequestRow {
   requestedAt: string;
 }
 
+interface InvitationRow {
+  id: string;
+  groupId: string;
+  token: string;
+  status: 'pending' | 'accepted';
+  expiresAt: string;
+}
+
 const EMPTY_SKILLS: Record<SkillKey, number> = {
   sequences: 0,
   loops: 0,
@@ -62,6 +70,16 @@ export interface FakeClassrooms {
   seedProfile: (studentId: string, fullName: string) => void;
   seedRequest: (groupId: string, studentId: string) => string;
   seedMember: (groupId: string, studentId: string) => void;
+  /** Un enlace del salón. `expired` lo deja con la fecha ya pasada. */
+  seedInvitation: (groupId: string, options?: { token?: string; expired?: boolean }) => string;
+  /** Estado de un enlace, para comprobar si un canje lo consumió o no. */
+  invitationStatus: (token: string) => 'pending' | 'accepted' | null;
+  /**
+   * Quién canjea. El servicio real no lleva al niño en la llamada —el servidor
+   * lo saca de `auth.uid()`—, así que el doble tiene que saberlo por otra vía en
+   * vez de fingir un parámetro que la interfaz real no tiene.
+   */
+  actAs: (studentId: string) => void;
   /** Escrituras recibidas. Es lo que delata una mutación duplicada. */
   writeCount: () => number;
   /**
@@ -93,7 +111,10 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
   const groups: GroupRow[] = [];
   const memberships: MembershipRow[] = [];
   const requests: RequestRow[] = [];
+  const invitations: InvitationRow[] = [];
   const profiles = new Map<string, string>();
+
+  let actingStudentId = 'nino-de-prueba';
 
   const listeners = new Set<() => void>();
 
@@ -323,6 +344,57 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
       });
     },
 
+    /*
+     * Imita a `redeem_invitation`, no al store: mismas comprobaciones y en el
+     * mismo orden, para que un test que pase aquí describa algo que la base
+     * también haría. Incluida la que decidió este paso: la solicitud pendiente
+     * se BORRA, no se resuelve.
+     */
+    async redeemInvitation(token) {
+      return write(() => {
+        const invitation = invitations.find((entry) => entry.token === token);
+
+        if (!invitation) {
+          return fail('Invitation not found');
+        }
+
+        if (invitation.status === 'accepted') {
+          return fail('Invitation already redeemed');
+        }
+
+        if (Date.parse(invitation.expiresAt) <= Date.now()) {
+          return fail('Invitation has expired');
+        }
+
+        const group = groups.find((row) => row.id === invitation.groupId);
+
+        if (!group) {
+          return fail('Classroom not found');
+        }
+
+        if (membersOf(group.id).length >= group.capacity) {
+          return fail('Classroom is full');
+        }
+
+        if (memberships.some((entry) => entry.studentId === actingStudentId)) {
+          return fail('Student already belongs to a classroom');
+        }
+
+        for (let position = requests.length - 1; position >= 0; position -= 1) {
+          const entry = requests[position];
+
+          if (entry.studentId === actingStudentId && entry.status === 'pending') {
+            requests.splice(position, 1);
+          }
+        }
+
+        memberships.push({ groupId: invitation.groupId, studentId: actingStudentId });
+        invitation.status = 'accepted';
+
+        return ok;
+      });
+    },
+
     async rejectRequest(requestId) {
       return write(() => {
         const request = requests.find((entry) => entry.id === requestId);
@@ -426,6 +498,28 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
 
     seedMember: (groupId, studentId) => {
       memberships.push({ groupId, studentId });
+    },
+
+    seedInvitation: (groupId, options) => {
+      const token = options?.token ?? nextId('token');
+      const offsetMs = options?.expired ? -1000 : 14 * 24 * 60 * 60 * 1000;
+
+      invitations.push({
+        id: nextId('inv'),
+        groupId,
+        token,
+        status: 'pending',
+        expiresAt: new Date(Date.now() + offsetMs).toISOString(),
+      });
+
+      return token;
+    },
+
+    invitationStatus: (token) =>
+      invitations.find((entry) => entry.token === token)?.status ?? null,
+
+    actAs: (studentId) => {
+      actingStudentId = studentId;
     },
 
     writeCount: () => writes,

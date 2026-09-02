@@ -24,6 +24,16 @@ export interface ClassroomsContextValue {
 
   // Acciones del niño
   requestJoin: (groupId: string) => Promise<void>;
+  /**
+   * Entra al salón con el token de un enlace de invitación. Devuelve si entró,
+   * porque la pantalla del enlace navega sólo cuando sí.
+   *
+   * Vive en el store y no en un hook aparte —al revés que generar y listar
+   * enlaces, que son cosa del tutor— porque su efecto **es** la pertenencia, que
+   * es el estado que este store posee. Fuera de aquí, la pantalla del niño se
+   * quedaría con la `membership` vieja hasta que llegara el evento de Realtime.
+   */
+  redeemInvitation: (token: string) => Promise<boolean>;
   cancelJoinRequest: () => Promise<void>;
   leaveGroup: () => Promise<void>;
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getHomeRouteForRole } from '../context/auth.helpers';
+import { resolveLandingRoute } from '../context/auth.helpers';
 import { useAuth } from './useAuth';
 
 interface RoleHomeRedirect {
@@ -21,6 +21,11 @@ interface RoleHomeRedirect {
  * Se espera en un efecto y no dentro del manejador del envío porque el perfil
  * llega en un render posterior: allí habría que adivinar el rol antes de
  * tenerlo, que es exactamente lo que hacía el destino fijo.
+ *
+ * Con un enlace de invitación esperando, el destino es el canje y no el panel.
+ * Se resuelve AQUÍ y no en `/login` y `/signup` por separado porque este hook es
+ * el único sitio del proyecto que decide a dónde va alguien tras autenticarse, y
+ * duplicar esa decisión en una pantalla es justo lo que la convención prohíbe.
  */
 export const useRoleHomeRedirect = (): RoleHomeRedirect => {
   const navigate = useNavigate();
@@ -33,7 +38,7 @@ export const useRoleHomeRedirect = (): RoleHomeRedirect => {
     }
 
     setAwaitingProfile(false);
-    navigate(getHomeRouteForRole(user.role));
+    navigate(resolveLandingRoute(user.role));
   }, [awaitingProfile, navigate, user]);
 
   const start = useCallback(() => {

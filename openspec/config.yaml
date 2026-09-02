@@ -156,9 +156,32 @@ context: |
   - Variables de entorno: config/env.ts valida con zod y LANZA al importarse.
     Sin VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY válidas la app no arranca.
   - El destino tras autenticarse lo decide el rol del PERFIL, nunca el
-    formulario ni el botón pulsado, y lo resuelve un único hook,
-    hooks/useRoleHomeRedirect.ts, que usan Login, Signup y Navbar. No duplicar
-    esa lógica en una pantalla nueva.
+    formulario ni el botón pulsado. Lo resuelve una única función,
+    resolveLandingRoute() en context/auth.helpers.ts, y la llaman TRES:
+    PublicRoute, AuthCallback y hooks/useRoleHomeRedirect.ts (que usan Login,
+    Signup, Navbar y ResetPassword). No duplicar esa lógica en una pantalla
+    nueva.
+    OJO, ESTO DECIA ANTES QUE EL HOOK ERA EL UNICO QUE DECIDIA, Y ERA FALSO
+    desde antes del enlace de invitacion: PublicRoute tambien decide, y EL HOOK
+    NO GANA NUNCA. useActiveRole devuelve user?.role, asi que el rol llega en el
+    mismo render que el usuario y la guarda —el padre— devuelve <Navigate> sin
+    llegar a renderizar al hijo, de modo que el efecto del hook no corre porque
+    el hook no existe. No se notaba porque los tres calculaban el mismo destino.
+    MEDIDO EN LAS DOS MITADES, no razonado. (a) Inicio de sesion: fijado en
+    router/PublicRoute.test.tsx —quien redirige es la guarda, y la pantalla que
+    monta el hook no llega a montarse—. (b) REGISTRO, que es el unico caso donde
+    el hook podria ganar porque la sesion llega antes que el perfil y durante esa
+    ventana user?.role es nulo y la guarda no aparta: se instrumentaron las dos
+    vias con un log temporal y un alta real desde un enlace de invitacion, y solo
+    registro PublicRoute, dos veces por StrictMode. El hook no navego ni una vez:
+    cuando el perfil aterriza, sesion y rol estan listos en el mismo render y la
+    guarda sustituye al hijo antes de que el efecto corra.
+    CONSECUENCIA QUE HAY QUE LEER ANTES DE BORRAR NADA: la llamada del hook a
+    resolveLandingRoute() es alcanzable SOLO por /reset-password, que va detras
+    de PrivateRoute y donde PublicRoute no interviene. PARECE CODIGO MUERTO Y NO
+    LO ES: sin ella, quien abre el enlace del correo con una invitacion pendiente
+    aterriza en su panel y el token se queda vivo en localStorage para la
+    siguiente persona que use ese navegador.
   - Sólo la ausencia de perfil (código PROFILE_NOT_FOUND de profile.service.ts)
     cierra la sesión. Cualquier otro fallo al cargarlo la deja abierta: un corte
     de red no dice nada sobre si la cuenta tiene perfil.
@@ -166,6 +189,10 @@ context: |
     quien tenga sesión y no tenga rol; si la segunda apartara a todo el que tiene
     sesión lo devolvería a getHomeRouteForRole(null), que es /dashboard/worlds, y
     se cierra un bucle. Por eso PublicRoute exige sesión Y rol.
+    Y NO son simetricas en lo que deciden: PrivateRoute NO decide destino, solo
+    corta —manda a /login a quien no puede pasar—; la que elige a donde va
+    alguien recien autenticado es PublicRoute, y por eso el resolutor de
+    aterrizaje se llama desde ella y no desde su pareja.
   - La ruta de vuelta de OAuth, /auth/callback, NO lleva guarda, y es la unica
     del proyecto asi. Resuelve cuatro estados: error del proveedor (lo muestra),
     sin sesion (a /login), rol bloqueado (aviso neutro) y rol por fijar. Una
@@ -177,6 +204,23 @@ context: |
     con get + clear separados, un camino que devuelva antes de la segunda deja una
     intencion viva que se aplicaria al viaje siguiente, que en un aula puede ser el
     de otra persona.
+    EL TOKEN DE INVITACION SIGUE ESE PATRON PERO CON UN MATIZ QUE HAY QUE LEER
+    ANTES DE «ARREGLAR» NADA. context/invitationToken.helpers.ts expone DOS
+    lecturas y los nombres mandan: takePendingInvitationToken() borra —la usa
+    pages/Invite y nadie mas—, y peekPendingInvitationToken() NO borra —la usa
+    resolveLandingRoute()—. La pura no es un descuido: PublicRoute decide
+    durante el RENDER, que StrictMode invoca dos veces, y borrar ahi es una
+    escritura en un camino que se ejecuta dos veces; medido, la primera pasada
+    gastaba el token y la segunda ya no lo encontraba, asi que el token se
+    consumia Y la persona acababa en su panel.
+    Lo que el patron de oauthRole prohibe es repartir el get y el clear entre
+    caminos que pueden volver antes del segundo. Aqui no ocurre: el borrado
+    tiene UN DUEÑO UNICO, pages/Invite, que ademas es el UNICO DESTINO al que
+    ese token puede llevar, asi que no hay camino que se lo salte. Consume quien
+    llega, no quien decide. Al montar con sesion borra INCONDICIONALMENTE, no
+    solo el token que coincide con la URL: quien llega puede arrastrar el de un
+    rodeo abandonado, y el condicional dejaria vivo el viejo. Fijado en
+    pages/Invite/Invite.test.tsx con los tres casos.
   - La RPC del rol se llama SIEMPRE que hay intencion, coincida o no con el rol
     actual. "Hace falta escribir" no es "el rol difiere" sino "hay intencion y el
     rol aun no esta declarado", y ese segundo dato solo lo tiene el servidor. El

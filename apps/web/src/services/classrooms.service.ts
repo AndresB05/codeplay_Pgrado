@@ -4,6 +4,7 @@ import {
   generatePublicId,
   pickAvatarTone,
 } from '../components/dashboard/teacher/classroomsData';
+import { invitationError } from './invitations.service';
 import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
 import type { Database } from '../types/database.types';
@@ -34,6 +35,7 @@ export interface ClassroomsService {
   deleteGroup: (groupId: string) => ServiceResult<null>;
   removeStudent: (groupId: string, studentId: string) => ServiceResult<null>;
   acceptRequest: (requestId: string) => ServiceResult<null>;
+  redeemInvitation: (token: string) => ServiceResult<null>;
   rejectRequest: (requestId: string) => ServiceResult<null>;
   requestJoin: (groupId: string, studentId: string) => ServiceResult<null>;
   cancelJoinRequest: (studentId: string) => ServiceResult<null>;
@@ -454,6 +456,34 @@ export const classroomsService: ClassroomsService = {
           error,
           'No se pudo aceptar la solicitud.',
           'join_request_accept_error'
+        ),
+      };
+    }
+
+    return { data: null, error: null };
+  },
+
+  /*
+   * El otro camino de ingreso, y por los mismos motivos que el primero: no hay
+   * política de inserción sobre `class_memberships` y no la habrá. La RPC
+   * comprueba el cupo, «un alumno, un salón» y la validez del enlace dentro de
+   * una transacción, y cancela de paso la solicitud pendiente que hubiera.
+   *
+   * Traduce con el mapa de `invitations.service.ts` y NO con el de aquí, aunque
+   * `23514` y `23505` los levanten las dos RPC: los mensajes de este archivo
+   * están redactados para el tutor —«Quita a algún explorador o amplía los
+   * cupos»— y a un canje sólo llega un niño, que no puede ampliar nada.
+   */
+  async redeemInvitation(token: string): ServiceResult<null> {
+    const { error } = await supabase.rpc('redeem_invitation', { input_token: token });
+
+    if (error) {
+      return {
+        data: null,
+        error: invitationError(
+          error,
+          'No se pudo entrar al salón con ese enlace.',
+          'invitation_redeem_error'
         ),
       };
     }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SignupField } from '../../components/auth/SignupField';
 import { signupSchema } from '../../components/auth/SignupForm.schema';
 import { SignupRoleCard } from '../../components/auth/SignupRoleCard';
@@ -43,8 +43,24 @@ export const Signup = () => {
   const { clearError, error, loading, signInWithGoogle, signUp } = useAuth();
   const { awaitingProfile, cancel, start } = useRoleHomeRedirect();
 
-  const [step, setStep] = useState<SignupStep>('role');
-  const [role, setRole] = useState<UserRole>('child');
+  /*
+   * Rol traído en la dirección, que se salta la pantalla de elegir tipo.
+   * Lo estrena el enlace de invitación: un enlace es SIEMPRE para un niño —la
+   * RPC del canje rechaza a los tutores—, así que preguntárselo al invitado no
+   * es darle una opción, es darle ocasión de equivocarse. Y equivocarse aquí no
+   * tiene arreglo: desde la 0018 el rol se fija en el primer registro y no
+   * cambia nunca, así que quien pulse «Tutor» se queda sin poder entrar al salón
+   * al que le acaban de invitar, y sin vuelta atrás por ninguna pantalla.
+   *
+   * Un valor que no sea `child` ni `tutor` cae en la pantalla de elegir, que es
+   * lo que había antes.
+   */
+  const { role: roleParam } = useParams<{ role?: string }>();
+  const presetRole: UserRole | null =
+    roleParam === 'child' || roleParam === 'tutor' ? roleParam : null;
+
+  const [step, setStep] = useState<SignupStep>(presetRole ? 'form' : 'role');
+  const [role, setRole] = useState<UserRole>(presetRole ?? 'child');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -338,13 +354,22 @@ export const Signup = () => {
                   </button>
                 </p>
 
-                <button
-                  type="button"
-                  onClick={() => setStep('role')}
-                  className="btn btn-sm btn-ghost mt-4"
-                >
-                  Cambiar tipo de usuario
-                </button>
+                {/*
+                 * No se ofrece cuando el rol vino en la dirección. Volver al
+                 * selector desde una invitación es exactamente el error que
+                 * saltarse el selector viene a evitar, y ese error no tiene
+                 * arreglo después. Quien de verdad quiera el otro tipo entra por
+                 * `/signup` a secas, que sigue empezando por el selector.
+                 */}
+                {presetRole ? null : (
+                  <button
+                    type="button"
+                    onClick={() => setStep('role')}
+                    className="btn btn-sm btn-ghost mt-4"
+                  >
+                    Cambiar tipo de usuario
+                  </button>
+                )}
               </div>
             </section>
           )}

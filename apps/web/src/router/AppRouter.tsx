@@ -5,6 +5,7 @@ import { ClassroomsProvider } from '../context/ClassroomsProvider';
 import { ROUTES } from '../constants/routes';
 import { Dashboard } from '../pages/Dashboard/Dashboard';
 import { ForgotPassword } from '../pages/ForgotPassword/ForgotPassword';
+import { Invite } from '../pages/Invite/Invite';
 import { Landing } from '../pages/Landing/Landing';
 import { Login } from '../pages/Login/Login';
 import { ResetPassword } from '../pages/ResetPassword/ResetPassword';
@@ -43,6 +44,19 @@ export const AppRouter = () => {
                 </PublicRoute>
               }
             />
+            {/*
+             * El registro con el tipo ya elegido, que estrena el enlace de
+             * invitación. Existía en `ROUTES` desde antes sin ninguna ruta
+             * detrás; ahora la tiene.
+             */}
+            <Route
+              path={`${ROUTES.SIGNUP}/:role`}
+              element={
+                <PublicRoute>
+                  <Signup />
+                </PublicRoute>
+              }
+            />
             <Route
               path={ROUTES.FORGOT_PASSWORD}
               element={
@@ -71,9 +85,9 @@ export const AppRouter = () => {
             />
 
             {/*
-             * SIN guarda, y es la única ruta del proyecto que lo está a
-             * propósito. Una guarda sólo sabe que no hay sesión, y con eso no
-             * puede distinguir «el proveedor falló» de «alguien escribió esta
+             * SIN guarda a propósito, como `/invite/:token` de aquí abajo. Una
+             * guarda sólo sabe que no hay sesión, y con eso no puede
+             * distinguir «el proveedor falló» de «alguien escribió esta
              * dirección»: cuando Google devuelve un error no hay sesión, así que
              * `PrivateRoute` rebotaba a `/login` y borraba el motivo antes de
              * que la pantalla llegara a montarse. Los tres estados los resuelve
@@ -83,6 +97,23 @@ export const AppRouter = () => {
              * sabe nada de esta ruta.
              */}
             <Route path={ROUTES.AUTH_CALLBACK} element={<AuthCallback />} />
+
+            {/*
+             * SIN guarda, y la SEGUNDA ruta del proyecto así. El comentario de
+             * arriba decía «la única»; deja de serlo por el mismo motivo, no por
+             * una excepción cómoda.
+             *
+             * Una guarda sólo sabe si hay sesión o no. `PrivateRoute` mandaría a
+             * `/login` a quien llega sin cuenta —el caso NORMAL de una
+             * invitación, porque el tutor se la pasa a una familia nueva— y se
+             * llevaría por delante el token, que viaja en la dirección y es lo
+             * único que esa persona traía. `PublicRoute` haría lo simétrico con
+             * quien sí tiene sesión: apartarlo a su panel sin canjear nada.
+             *
+             * `PrivateRoute` y `PublicRoute` no se tocan: ninguna sabe nada de
+             * esta ruta.
+             */}
+            <Route path={`${ROUTES.INVITE}/:token`} element={<Invite />} />
 
             {/* Panel del niño */}
             <Route

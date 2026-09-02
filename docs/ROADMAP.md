@@ -129,7 +129,7 @@ escrito en §2.1.
 | 16 | Persistir la asignación de misiones — la migración 0020 cuelga la asignación **del salón**, con `mission_key` como texto sin clave ajena porque el catálogo sigue en el cliente. El selector de alcance dejó de ignorarse y el niño ve sólo lo asignado, en dos pantallas. **NO las hace jugables**: nada puede completar una misión hasta el paso 21, así que el salón entero sale en «Pendiente» con el motivo escrito en la pantalla, y la tarjeta del niño no ofrece ningún botón. **Sin tabla de cumplimientos a propósito**, para no decidir de paso la pregunta abierta de §3.2 | ✅ | `misiones-asignadas` |
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
 | 18 | ★ Sincronización en vivo (Supabase Realtime) — **no eran «notificaciones»**: no hay campana, ni lista de avisos, ni no leídos, ni nada que persista un aviso. Son tres pantallas que ya existían y ahora se actualizan solas: la bandeja del tutor, la pertenencia del niño y sus misiones. La migración 0021 publica tres tablas en `supabase_realtime`, que existía con las cuatro operaciones activas y **cero tablas**. De paso cerró el defecto del `loading` que el paso 13 dejó a medias: **una recarga disparada desde fuera no declara espera, pero sí la apaga**, en los dos hooks. Verificado con dos sesiones y con los tres negativos emparejados; cierra además el caso «tutor contra salón ajeno» del paso 16 | ✅ | `sincronizacion-en-vivo` |
-| 19 | Invitaciones por correo reales y enlace canjeable — **hereda tres cosas del cambio `invitaciones-sin-correo`**: vuelve a decidir explícitamente si guarda la dirección y con qué autorización, trae la **purga por `expires_at`** desde el primer día, y la tabla le espera con token, caducidad, políticas y cascada, sin columna de correo | ⬜ | P5 |
+| 19 | Invitaciones por correo reales y enlace canjeable — **PARTIDO EN DOS, ver §2.1.** **Mitad A hecha:** el tutor genera un enlace canjeable, lo comparte por donde quiera, y quien lo abre entra al salón **sin pasar por la bandeja**; el token sobrevive el registro, incluida la vuelta por Google. La purga por `expires_at` entró desde el primer día, y **ninguna tabla ganó columna de correo**: por eso esta mitad esquiva entera la decisión de privacidad de §3.4. **Mitad B pendiente:** el envío real, que necesita **servicio de correo contratado** (§2.2) | 🔄 | `enlace-de-invitacion` + servicio |
 | 20 | Contrato de integración y pantalla de nivel con contenedor — **exige cerrar antes la pregunta abierta de §3.2.** Incluye conectar la selección de niveles al backend, hoy maqueta (§3.3) | ⬜ | P4 |
 | 21 | Escritura de progreso y XP desde el juego — **ver §3.2** | ⬜ | P4 |
 | 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye el catálogo y retirar las estrellas. **Ver §3.2** | ⬜ | P4 |
@@ -187,6 +187,22 @@ concedido a cada niño —`user_id`, `achievement_key`, `title`, `awarded_xp`,
 posibles con sus condiciones de desbloqueo. Mientras esa tabla no exista, la
 sala de trofeos sólo puede mostrar lo conseguido: el requisito de
 `contenido-mundos` se ajustó a esa realidad y habrá que volver a ampliarlo aquí.
+
+**El paso 19 se parte en dos, y la mitad A va primero porque no depende de
+nadie.** El 19 eran dos cosas —el enlace canjeable y el envío por correo— y sólo
+una necesita que el usuario contrate un servicio. Hacer primero la que no
+depende de nada es el mismo criterio que adelantó el 11 sobre el 10: avanzar por
+donde se puede ver funcionar.
+
+**Y la mitad A tiene una propiedad que conviene no perder: con enlace y sin
+correo no se almacena la dirección de nadie**, así que esquiva entera la decisión
+de privacidad de §3.4 —la misma que motivó `invitaciones-sin-correo`, que borró
+`invitations.email` a propósito—. El tutor comparte el enlace por donde quiera y
+la plataforma no manda nada. **Si un cambio se ve añadiendo una columna de
+correo, se salió del alcance de la mitad A.**
+
+La mitad B queda pendiente **sólo** del servicio contratado, y su dependencia
+está anotada en §2.2 y en la fila del 19.
 
 **El apartado gráfico (26) queda casi al final a propósito.** No bloquea ninguna
 funcionalidad y el foco actual son las funcionalidades.
@@ -250,7 +266,7 @@ introducir credenciales:
 | 7 | `npx supabase login`, `link --project-ref` y `db push` — piden credenciales por consola |
 | 15 | Dar de alta Google OAuth en el panel de Supabase — **hecho**, y además hizo falta crear el cliente en Google Cloud, añadir `/auth/callback` a Redirect URLs y **repegar el Client Secret**, que estaba mal y tuvo el paso bloqueado |
 | 18 | `npx supabase db push` de la 0021, que publica tres tablas en `supabase_realtime` — pide credenciales por consola. **Y hace cumplir la parada de §1.3:** no se lanza hasta que la sesión que revisa haya leído el SQL y lo haya dicho |
-| 19 | Contratar el servicio de correo |
+| 19 | Contratar el servicio de correo — **sólo para la mitad B**. La mitad A (el enlace canjeable) está hecha y no necesitó nada de esto; su `db push` de la 0022 lo lanzó el usuario el 2-sep-2026 |
 | 23 | Instalar Unity y crear el proyecto |
 | 27 | Configurar el despliegue |
 
@@ -287,6 +303,9 @@ perderse:
 | **Los fallos de autenticación llegaban en INGLÉS.** Cerrado con `AUTH_ERROR_MESSAGES` y el helper `authError()` en `auth.service.ts`, por código y no por texto, con el mensaje del servidor conservado como causa. `createAppError.ts` **no se tocó**, porque lo usan otros seis servicios contra PostgREST — y por eso `profile.service.ts` sigue en inglés, anotado en `CONTEXT.md` §4.5. Comprobado en pantalla: `/login` con la contraseña equivocada responde «El correo o la contraseña no son correctos.» Ocho de las quince ramas del mapa **no puede dispararlas la interfaz de hoy**: cuáles y por qué, en `CONTEXT.md` §4.6 | Cerrado en el paso 28 |
 | **El disparador construía el `username` sin comprobar la longitud, y eso ABORTABA el alta entera.** Cerrado por la migración `202606030019`, que acota a 3–30 tras normalizar y deja `null` cuando no encaja, como ya hacía con el duplicado. El `check` de la `202606030002` **no se relajó**: el formato es del dominio y cedió quien lo deriva. Verificado contra la base real con tres altas por `curl` —local-part de 2, de 33 y de 18—, y la tercera es la que prueba que la asignación normal sigue funcionando | Cerrado en el paso 28 |
 | **Quien escucha sin sesión sabe que algo cambió, aunque no sepa qué.** Con la publicación puesta, una suscripción con la clave anónima recibe el **sobre vacío** de cada cambio en las tres tablas —sin columnas, sin identificadores; medido, no razonado—. Hoy es ruido, porque la base tiene un salón de pruebas y nada más. **Desplegada y con salones reales dentro, esa cadencia pasa a ser telemetría de uso** —cuánta actividad hay y cuándo— visible para cualquiera, porque la clave es pública por diseño. No cambia la decisión del paso 18; se anota para que entonces no se descubra desde cero, y la salida sigue siendo `realtime.broadcast_changes()` desde disparadores | Paso 27 |
+| **El ternario de dos ramas NO se repitió, y el aviso queda cerrado.** El paso 19 reconstruyó la lista de enlaces derivando el estado de **dos** datos —`status` y `expires_at`—, con sus tres salidas: activo, usado y caducado. Comprobado en pantalla con datos reales, y sólo el activo ofrece «Copiar» y «Retirar» | Cerrado en el paso 19 |
+| **La purga de invitaciones depende de que el tutor entre a mirar.** El panel borra las caducadas de sus salones al listarlas, con la política de la 0013, así que un salón cuyo tutor no vuelve conserva filas vencidas. **No es riesgo de seguridad** —el enlace está muerto por `expires_at`, y eso lo comprueba la RPC, no el borrado— ni de privacidad —desde la 0016 la fila no lleva el dato de ningún tercero—. Lo que queda es una tabla que crece. La salida es `pg_cron`, que exige activarlo en el panel y por tanto **al usuario** | Paso 27, con lo demás que sólo tiene sentido desplegado |
+| **`invitations.expires_at` no lo acota ningún `check`**, así que quien inserta puede **alargar** la caducidad tanto como acortarla, y entonces la purga no se la lleva nunca. Los catorce días los sostienen el `default` de la columna y que el cliente no mande el campo, **no el esquema**. Hoy sólo el tutor del salón puede insertar, y sólo en el suyo, así que el daño se lo hace a sí mismo | Anotado; material para el paso 14 y para la mitad B del 19. Detalle en `CONTEXT.md` §2.7 |
 | **Las misiones se persisten desde el paso 16, y lo que NO cierra conviene tenerlo escrito.** La migración 0020 cuelga la asignación del **salón** —no del tutor: el niño se liga a un salón, no a una persona—, el selector de alcance dejó de ignorarse y el niño ve sólo lo asignado. **Siguen sin ser jugables**: nada puede empezar ni completar una misión, así que la tarjeta del niño no ofrece botón y el salón entero sale en «Pendiente» con el motivo a la vista. **El catálogo sigue siendo local y sin clave ajena a `levels`**: son las mismas cinco entradas `m1`…`m5` de `teacher/classroomsData.ts`, ahora con su premio en XP, y `mission_key` es texto libre porque no hay tabla a la que apuntar. Y **no se creó tabla de cumplimientos** a propósito, para no decidir de paso la PREGUNTA ABIERTA de §3.2 | Persistido en el paso 16; jugables en los pasos 20 y 21; el catálogo con tabla propia, sin paso asignado |
 
 ### 3.1 Historial previo al ingreso en un salón

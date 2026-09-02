@@ -158,6 +158,49 @@ migración 0012 y se aplica como todo lo demás.
       tabla ya está publicada.
     - **No exige regenerar los tipos:** publicar una tabla no cambia el esquema.
 
+22. `202606030022_create_invitation_redemption.sql`
+    - Añade las dos funciones del canje de invitaciones: `redeem_invitation`,
+      que mete a un niño en el salón con el token del enlace, y
+      `preview_invitation`, que dice a qué salón invita y si sigue sirviendo
+      **sin consumirlo**. Es la primera migración que le da uso a `invitations`,
+      que llevaba desde la 0013 con token, caducidad, políticas y cascada y
+      **sin una sola escritura**.
+    - **NO crea ni altera ninguna tabla, ninguna política y ningún `grant` de
+      tabla**, y no toca `accept_join_request`. El grafo de RLS verificado en la
+      0013 y la 0014 queda exactamente como estaba.
+    - **Por qué una función y no escrituras del cliente.** Los permisos de la
+      0013 son tres muros: las tres políticas de `invitations` son del **tutor**
+      del salón, así que quien tiene el token no puede leer su propia fila; el
+      grant es `select, insert, delete` **sin `update`**, así que nadie puede
+      marcarla aceptada desde el cliente; y `class_memberships` no tiene política
+      de inserción. **No hacen falta Edge Functions**, y la fila que lo suponía
+      en `docs/CONTEXT.md` estaba equivocada.
+    - `redeem_invitation` copia la forma de `accept_join_request`: `auth.uid()`
+      leído dentro y nunca como parámetro, `for update` sobre el salón **antes**
+      del recuento de alumnos, cupo, «un alumno, un salón» y ningún estado
+      intermedio. Bloquea además la **invitación** antes de mirarla, porque un
+      enlace es de un solo uso y dos canjes simultáneos del mismo token son la
+      carrera del cupo por otra puerta. El orden de bloqueo es siempre invitación
+      y después salón; nadie lo toma al revés.
+    - **La solicitud pendiente de quien canjea se BORRA, no se resuelve.** Ni
+      `accepted` ni `rejected`: ningún tutor la resolvió, y con `accepted` en otro
+      salón contradiría además a la pertenencia. Borrarla es la cancelación que
+      el niño ya podía hacer por `join_requests_delete_own_pending`. El
+      `status = 'pending'` va escrito y no implícito: este `delete` corre como
+      definer y sin él se llevaría por delante el historial resuelto.
+    - **La caducidad la impone la fecha, no la columna.** `status` admite
+      `expired` desde la 0013, pero nada lo escribe ni va a escribirlo. Se
+      comprueban las dos cosas igualmente para que no haya dos verdades.
+    - Motivos distinguibles con el precedente `ZC0xx` de la 0018: `ZC010` el
+      token no existe, `ZC011` caducada, `ZC012` ya canjeada. Los estándar se
+      reutilizan donde son los honestos: `42501` sin sesión o rol distinto de
+      `child`, `23514` cupo y `23505` ya pertenece a un salón.
+    - `preview_invitation` es `stable` y **no escribe nada**. Como las dos, exige
+      sesión: no se concede a `anon`, porque con el token se sabe el nombre de un
+      salón.
+    - **SÍ exige regenerar los tipos**: añade dos funciones que el cliente llama
+      por `rpc()`, aunque no cambie el esquema de ninguna tabla.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI:

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Canopy, MonsteraLeaf, Toucan } from '../../components/decor/JungleDecor';
 import { ROUTES } from '../../constants/routes';
-import { getHomeRouteForRole } from '../../context/auth.helpers';
+import { resolveLandingRoute } from '../../context/auth.helpers';
 import { takePendingSignupRole } from '../../context/oauthRole.helpers';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -64,6 +64,7 @@ export const AuthCallback = () => {
   const [providerError] = useState(readProviderError);
   const [roleFailed, setRoleFailed] = useState(false);
   const [roleLocked, setRoleLocked] = useState(false);
+
 
   /*
    * El efecto depende de `user`, que se reconstruye al fijar el rol, así que sin
@@ -137,17 +138,18 @@ export const AuthCallback = () => {
         // pero navegar con lo pedido es el error que `useRoleHomeRedirect`
         // existe para no cometer: si algún día dejaran de coincidir, se vería el
         // desajuste en vez de un rebote de `PrivateRoute` sin explicación.
-        navigate(getHomeRouteForRole(applied.user.role));
+        navigate(resolveLandingRoute(applied.user.role));
         return;
       }
 
-      navigate(getHomeRouteForRole(user.role));
+      navigate(resolveLandingRoute(user.role));
     };
 
     void resolveRole();
   }, [loading, navigate, providerError, session, updateRole, user]);
 
   const failureMessage = providerError ?? (roleFailed ? error?.message ?? null : null);
+
 
   return (
     <div className="jungle-surface relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-4">
@@ -182,7 +184,7 @@ export const AuthCallback = () => {
 
             <button
               type="button"
-              onClick={() => navigate(getHomeRouteForRole(user?.role ?? null))}
+              onClick={() => navigate(resolveLandingRoute(user?.role ?? null))}
               className="btn btn-grape mt-7 w-full"
             >
               Continuar
@@ -211,7 +213,7 @@ export const AuthCallback = () => {
             <button
               type="button"
               onClick={() =>
-                navigate(providerError ? ROUTES.LOGIN : getHomeRouteForRole(user?.role ?? null))
+                navigate(providerError ? ROUTES.LOGIN : resolveLandingRoute(user?.role ?? null))
               }
               className="btn btn-grape mt-7 w-full"
             >

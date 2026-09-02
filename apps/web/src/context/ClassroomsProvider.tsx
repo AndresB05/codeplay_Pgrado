@@ -212,6 +212,30 @@ export const ClassroomsProvider = ({
     [membership.status, runWrite, service, userId]
   );
 
+  /*
+   * SIN la guarda que sí lleva `requestJoin`, y es deliberado. Aquélla existe
+   * porque saltársela devuelve un 42501 crudo; aquí el servidor responde 23505 y
+   * el servicio lo traduce a un motivo que el niño entiende, así que adelantarse
+   * sólo escondería la razón. Quien mira decide qué enseñar ANTES de llamar.
+   */
+  const redeemInvitation = useCallback(
+    async (token: string): Promise<boolean> => {
+      const { error: writeError } = await service.redeemInvitation(token);
+
+      if (writeError) {
+        setError(writeError);
+
+        return false;
+      }
+
+      setError(null);
+      await refresh();
+
+      return true;
+    },
+    [refresh, service]
+  );
+
   const cancelJoinRequest = useCallback(async (): Promise<void> => {
     if (!userId) {
       return;
@@ -245,6 +269,7 @@ export const ClassroomsProvider = ({
       leaveGroup,
       loading,
       membership,
+      redeemInvitation,
       rejectRequest,
       removeStudent,
       requestJoin,
@@ -260,6 +285,7 @@ export const ClassroomsProvider = ({
       leaveGroup,
       loading,
       membership,
+      redeemInvitation,
       rejectRequest,
       removeStudent,
       requestJoin,

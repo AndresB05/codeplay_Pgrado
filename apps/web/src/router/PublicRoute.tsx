@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { getHomeRouteForRole, isAuthenticated } from '../context/auth.helpers';
+import { isAuthenticated, resolveLandingRoute } from '../context/auth.helpers';
 import { useActiveRole } from '../hooks/useActiveRole';
 import { useAuth } from '../hooks/useAuth';
 
@@ -25,9 +25,13 @@ export const PublicRoute = ({ children }: PublicRouteProps) => {
    * manda a `/login`, y devolverlo aquí a `getHomeRouteForRole(null)` —que es
    * `/dashboard/worlds`, una ruta de niño— cerraría un bucle entre las dos
    * guardas. Se ajustan a la vez o ninguna.
+   *
+   * `PrivateRoute` NO decide destino, sólo corta: manda a `/login` a quien no
+   * puede pasar. La que elige a dónde va alguien recién autenticado es ésta, y
+   * por eso el resolutor de aterrizaje se llama desde aquí.
    */
   if (isAuthenticated(session) && activeRole) {
-    return <Navigate to={getHomeRouteForRole(activeRole)} replace />;
+    return <Navigate to={resolveLandingRoute(activeRole)} replace />;
   }
 
   return <>{children}</>;
