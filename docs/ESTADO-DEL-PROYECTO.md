@@ -479,8 +479,8 @@ codeplayPGrado/
 │   └── game/                 Proyecto de Unity (pendiente de crear)
 ├── packages/                 Código compartido entre apps (vacío)
 ├── supabase/                 Esquema de base de datos
-│   ├── migrations/           9 migraciones SQL
-│   └── seed.sql              Contenido inicial de mundos y niveles
+│   └── migrations/           22 migraciones SQL (la siembra vive en la 0012,
+│                             no hay seed.sql suelto)
 ├── docs/                     Este documento
 ├── package.json              Raíz del monorepo (npm workspaces)
 ├── .eslintrc.cjs             Config de ESLint compartida

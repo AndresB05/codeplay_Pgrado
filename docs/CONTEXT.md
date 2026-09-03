@@ -15,6 +15,7 @@
 | [`CLAUDE.md`](../CLAUDE.md) | Punteros y reglas mínimas. Claude Code lo carga solo al empezar cada sesión | Automático — mantenerlo delgado |
 | **`docs/CONTEXT.md`** (este) | Qué está aplicado, qué falta, con qué prioridad y bajo qué convenciones | Siempre, al empezar una sesión |
 | [`docs/ESTADO-DEL-PROYECTO.md`](ESTADO-DEL-PROYECTO.md) | **Guía de estilos completa** (paleta, tipografía, componentes, espaciado) y los flujos de usuario en detalle | Al tocar UI o al implementar un flujo de salones |
+| [`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md) | Qué debe cumplir el juego para integrarse y qué le garantiza la plataforma. **Es el único documento del proyecto escrito para quien NO conoce este repositorio**: se sostiene solo y no remite a ningún otro | Al construir el juego, o al implementar el puente del lado web |
 | [`README.md`](../README.md) | Puesta en marcha, comandos y convenciones de integración de Unity | Al configurar el entorno |
 | [`supabase/README.md`](../supabase/README.md) | Detalle migración por migración del esquema SQL | Al tocar la base de datos |
 | [`openspec/config.yaml`](../openspec/config.yaml) | Versión resumida de §1 que OpenSpec inyecta a la IA al crear artefactos | Al cambiar stack, convenciones o prioridades — **hay que actualizarlo a la vez que este documento** |
@@ -173,8 +174,8 @@ codeplayPGrado/
 │   └── game/                 Proyecto de Unity — NO EXISTE TODAVÍA
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
-│   ├── migrations/           20 migraciones SQL
-│   └── seed.sql              Mundos y niveles iniciales
+│   └── migrations/           22 migraciones SQL (la siembra vive en la 0012,
+│                             no hay seed.sql suelto)
 ├── docs/                     CONTEXT.md (este) + ESTADO-DEL-PROYECTO.md
 ├── .github/workflows/ci.yml  CI: lint, tests y build en push y pull request
 ├── .claude/launch.json       Config del preview: npm run dev, puerto 5173
@@ -929,11 +930,12 @@ progreso conseguido.
 seguras del backend.
 
 **Estado global: aplicado.** El proyecto de Supabase existe, está enlazado con la
-CLI y las quince migraciones se ejecutaron contra la base real
-(`backend-supabase-real` 25-ago-2026, `tablas-salones` 26-ago-2026). Verificado
-por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels` responden con
-los 3 mundos y los 9 niveles de la siembra, y las cuatro tablas de salones
-responden 401 a la clave anónima.
+CLI y **las 22 migraciones** se ejecutaron contra la base real. Las quince
+primeras entraron con `backend-supabase-real` (25-ago-2026) y `tablas-salones`
+(26-ago-2026); las siete restantes las fueron añadiendo los pasos 15, 16, 18, 19
+y 28. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
+responden con los 3 mundos y los 9 niveles de la siembra, y las cuatro tablas de
+salones responden 401 a la clave anónima.
 
 **La 0013 salió con un fallo, y conviene que quede en el registro.** Sus
 políticas formaban un ciclo: la de inserción de `join_requests` consulta
@@ -1202,6 +1204,39 @@ la primera.
 | Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
+**Las tres RPC de la 0006, medidas por fin (2-sep-2026).** Hasta este paso sólo
+`update_my_profile` se había ejercitado de verdad: `create_level_attempt` y
+`upsert_my_progress` estaban escritas desde el 25-ago-2026 y **no las había
+llamado nadie nunca**, ni la aplicación ni un `curl`. El paso 23.1 no podía
+describirlas en el contrato del juego sin medirlas antes. Comprobadas con la
+cuenta `userkid2`, que partía de `total_xp: 0`, sin progreso y sin intentos:
+
+| Comprobación | Resultado |
+| --- | --- |
+| `create_level_attempt` con los **seis** parámetros | Fila creada; `metadata` y `runtime_ms` **sí llegan** por la RPC |
+| Con un `input_level_id` inexistente | `P0002 Level not found or unavailable` |
+| Con `input_score: 200` | Guarda **100**: recorta en silencio, no rechaza |
+| Con `input_submitted_code: "x"`, que no es JSON | Se guarda tal cual. La columna es `text` **sin `check`**: nada valida lo que entra |
+| `upsert_my_progress` en `in_progress` | Fila creada, `total_xp` sigue en 0 |
+| El mismo nivel a `completed` | `total_xp` pasa a **100**, el `xp_reward` de ese nivel |
+| `completed` **por segunda vez** | `total_xp` **sigue en 100**; `best_score` no baja de 90 a 50; `completed_at` congelado; `attempt_count` sí sube |
+| Con un estado que no es de los dos | `22023 Invalid completion status` |
+| `insert` directo en `level_attempts`, autenticado | `42501` |
+| `insert` directo en `achievements`, autenticado | `42501`: **no hay `grant insert` para ningún rol** |
+| Cualquiera de las dos RPC con la clave anónima | `42501 permission denied for function` |
+| `levels` con la clave anónima | `validation_rules` y `starter_code` **se leen sin sesión** |
+
+**Dos consecuencias que el paso 22 hereda.** La primera: `attempt_count` cuenta
+llamadas a `upsert_my_progress`, no filas de `level_attempts`. Son dos contadores
+independientes y **nada los sincroniza**; quien escriba el puente tiene que
+llamar a las dos. La segunda: como `achievements` no concede `insert` a nadie, la
+única vía para otorgar un logro es una función `security definer`, que **no
+existe**. No es una preferencia de diseño, es la única puerta abierta.
+
+**Quedaron filas de prueba** en la cuenta `userkid2`: dos en `level_attempts`,
+una en `user_progress` y `total_xp: 100`. No se pueden borrar desde el cliente
+—la 0009 revoca `delete`—; se limpian desde el panel si estorban.
+
 **Decisiones de diseño**
 
 - **Plazo de conservación, decidido por el usuario el 28-ago-2026:** los datos
@@ -1220,10 +1255,21 @@ la primera.
 - Las escrituras principales quedan encapsuladas en **RPCs** en vez de permitir
   escritura directa desde el cliente, para reducir la manipulación.
 - `achievements` es de sólo lectura para el cliente autenticado; otorgarlos
-  requerirá lógica segura adicional (Edge Function o SQL controlado). Es el
-  **registro de logros concedidos**, no un catálogo: no existe la tabla que
+  requerirá lógica segura adicional. **Medido el 2-sep-2026: no hay `grant
+  insert` para ningún rol**, así que la única vía posible es una función
+  `security definer` —no una Edge Function: `supabase/functions/` no existe—. Es
+  el **registro de logros concedidos**, no un catálogo: no existe la tabla que
   enumere los posibles, así que la sala de trofeos sólo lista lo conseguido
   (§4.2).
+- **Las misiones no pueden montar sobre `achievements`, decidido en el paso
+  23.1.** Su `unique (user_id, achievement_key)` significa «una vez en la vida»,
+  que es lo correcto para un logro y un accidente para una misión: el propio
+  `unique (group_id, mission_key)` de la 0020 declara que la misma misión en dos
+  salones es lo normal, y reasignarla a otra cohorte también lo es. Misma
+  maquinaria de concesión, cardinalidad distinta. El cumplimiento además debe
+  **guardar el salón, no derivarlo**: derivarlo por `class_memberships` haría
+  desaparecer lo cumplido de los informes en cuanto el niño cambie de salón. La
+  tabla la crea el paso 22.
 - `role` es un **enum** `user_role`, no un `text` con `check`: sólo el enum llega
   a los tipos generados, y una unión escrita a mano junto a un check de la base
   volvería a abrir la brecha entre tipo y realidad.
@@ -1233,7 +1279,17 @@ la primera.
 - `leaderboard_weekly` es una vista que expone únicamente campos seguros.
 - `levels` guarda `starter_code`, `validation_rules` y `programming_language`:
   el esquema se diseñó para un **editor de código en el navegador**, no para un
-  juego de Unity. Hay que decidir si se amplía o se reinterpreta (§3.4).
+  juego de Unity. **Se reinterpreta, decidido en el paso 23.1**, porque con
+  codificación por bloques sigue habiendo programa: `validation_rules` lleva la
+  definición del puzle, `starter_code` la disposición inicial de bloques y
+  `programming_language` —hoy `'javascript'` en las nueve filas, y **sin
+  `check`**— se reaprovecha como versión del formato de serialización. Ninguna
+  columna sobra y ninguna hace falta. Ver `CONTRATO-DE-INTEGRACION.md`.
+- **En `validation_rules` va la definición del puzle, nunca su solución ni la
+  condición de un logro sorpresa.** La columna la lee cualquiera **sin sesión**
+  —medido—, por el `grant select ... to anon` y la política de la 0009. Para una
+  rejilla de A a B es inofensivo; para un logro secreto lo revela, así que esas
+  condiciones van al catálogo del paso 22, que no necesita ser público.
 - `supabase/` está en la raíz del repo siguiendo la convención del CLI, para que
   `supabase db push` y `supabase db reset` funcionen sin flags.
 - **Los salones escriben por RLS, no por RPC**, al revés que perfil y progreso.
@@ -1625,6 +1681,28 @@ La tabla `achievements` es el registro de logros **concedidos** a cada niño
 `unique (user_id, achievement_key)`). No existe la tabla que enumere los logros
 posibles con sus condiciones de desbloqueo, así que la sala de trofeos sólo puede
 listar lo conseguido. Diseñarla es el **paso 22** del roadmap.
+
+**El paso 23.1 le dejó tres cosas decididas al 22**, para que ese catálogo no
+tenga que redescubrirlas:
+
+1. **Nada del cliente concede un logro.** El juego no los nombra siquiera: manda
+   el intento y el servidor decide qué ganó. Es lo que permite añadir un logro
+   sin volver a publicar el juego.
+2. **La condición de cada logro es de una de dos clases**, y sólo una es barata.
+   Un **predicado estructural sobre el programa enviado** —«usa un bucle», «lo
+   resolvió con ≤ N bloques»— es una condición `jsonb` dentro de la RPC, y no es
+   falsificable porque el servidor lee el programa en vez de fiarse. **Ejecutar
+   el programa contra la rejilla** para comprobar que de verdad resuelve el nivel
+   exige un intérprete de bloques en plpgsql, que es un proyecto propio y queda
+   fuera. Eso deja **un solo bit confiado al cliente**, `is_success`, que es el
+   mismo del que ya cuelga el XP por completar un nivel: los logros no añaden
+   riesgo, sólo lo hacen visible.
+3. **Las condiciones no van en `validation_rules`**, que se lee sin sesión. Ver
+   §2.7.
+
+Todo esto sólo funciona si el programa de bloques se serializa como **JSON**, y
+por eso es la línea irreversible del contrato: ver `CONTRATO-DE-INTEGRACION.md`
+§4.
 
 ### 4.3 Frontera del store: aguantó, y se mantiene
 

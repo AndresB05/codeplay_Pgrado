@@ -84,6 +84,12 @@ El detalle de cada migración está en `supabase/README.md`.
 
 ## Integrar el juego de Unity
 
+**Lee primero [`docs/CONTRATO-DE-INTEGRACION.md`](docs/CONTRATO-DE-INTEGRACION.md).**
+Define qué debe cumplir el juego para integrarse —qué recibe, qué manda, en qué
+formato— y qué le garantiza la plataforma. Está escrito para quien construye el
+juego y **no da por conocido este repositorio**: se sostiene solo. Lo de abajo es
+sólo dónde van los archivos.
+
 Convenciones acordadas para cuando entre el proyecto de Unity:
 
 1. El proyecto de Unity va en `apps/game/`. El `.gitignore` de la raíz ya excluye
@@ -92,7 +98,9 @@ Convenciones acordadas para cuando entre el proyecto de Unity:
 2. El build de WebGL se genera en `apps/web/public/game/`. Vite sirve todo lo que
    hay en `public/` tal cual, así que el front puede embeber el juego desde
    `/game/`. Esa carpeta está ignorada por git: es un artefacto de build y se
-   regenera, no se versiona.
+   regenera, no se versiona. **`apps/web/public/` todavía no existe**: el
+   `.gitignore` apunta a `public/game/`, cuyo directorio padre nadie ha creado
+   aún. Lo crea quien deje ahí el primer build.
 3. **Antes del primer commit de Unity**, configurar [Git LFS](https://git-lfs.com)
    para los binarios (texturas, audio, modelos) y `unityyamlmerge` para resolver
    conflictos en escenas y prefabs. Sin LFS, el repositorio se vuelve inmanejable

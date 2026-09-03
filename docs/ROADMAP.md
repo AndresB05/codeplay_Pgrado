@@ -127,9 +127,9 @@ escrito en §2.1.
 | 29 | ★ Nombre editable desde Ajustes — **adelantado, ver §2.1**. Un panel compartido que montan las dos pantallas de Ajustes, con la acción en `AuthProvider` para que las **siete** superficies que leen `user.fullName` se refresquen sin recargar. La longitud (2–60) se declara una vez y la heredan el registro y Ajustes; el máximo no existía en ninguna parte. De paso cerró el panel del tutor, que el paso 28 dejó fuera: cuatro «Sr. Robot» y un correo inventado | ✅ | `nombre-editable` |
 | 16 | Persistir la asignación de misiones — la migración 0020 cuelga la asignación **del salón**, con `mission_key` como texto sin clave ajena porque el catálogo sigue en el cliente. El selector de alcance dejó de ignorarse y el niño ve sólo lo asignado, en dos pantallas. **NO las hace jugables**: nada puede completar una misión hasta el paso 21, así que el salón entero sale en «Pendiente» con el motivo escrito en la pantalla, y la tarjeta del niño no ofrece ningún botón. **Sin tabla de cumplimientos a propósito**, para no decidir de paso la pregunta abierta de §3.2 | ✅ | `misiones-asignadas` |
 | 18 | ★ Sincronización en vivo (Supabase Realtime) — **no eran «notificaciones»**: no hay campana, ni lista de avisos, ni no leídos, ni nada que persista un aviso. Son tres pantallas que ya existían y ahora se actualizan solas: la bandeja del tutor, la pertenencia del niño y sus misiones. La migración 0021 publica tres tablas en `supabase_realtime`, que existía con las cuatro operaciones activas y **cero tablas**. De paso cerró el defecto del `loading` que el paso 13 dejó a medias: **una recarga disparada desde fuera no declara espera, pero sí la apaga**, en los dos hooks. Verificado con dos sesiones y con los tres negativos emparejados; cierra además el caso «tutor contra salón ajeno» del paso 16 | ✅ | `sincronizacion-en-vivo` |
-| 23 | ★ **PARTIDO EN DOS, ver §2.1.** **23.1 — Preparar el terreno y escribir el contrato:** todo lo que la web debe tener listo para recibir el juego, y un documento en `docs/` con lo que el juego debe cumplir para integrarse. **No necesita Unity ni al usuario.** Cierra de paso la PREGUNTA ABIERTA de §3.2, porque no se puede escribir qué manda el juego sin decidir cómo se verifica. **23.2 — Poner la casa encima:** cuando el juego esté construido, integrarlo de verdad —Unity en `apps/game/`, Git LFS y build de WebGL—. Necesita que el usuario instale Unity (§2.2) **y que el juego exista**, que es lo único de la secuencia que no depende de este repositorio | ⬜ | — |
+| 23 | ★ **PARTIDO EN DOS, ver §2.1.** **23.1 — Preparar el terreno y escribir el contrato: HECHO.** Cerró las tres decisiones —cómo se verifica un logro (§3.2), si las misiones necesitan tabla propia (§3), y dónde vive la configuración de un nivel (§3.3)— y escribió [`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md). **Ninguna exigió migración.** De paso midió por primera vez `create_level_attempt` y `upsert_my_progress`, escritas hacía ocho días y nunca ejecutadas: ver `CONTEXT.md` §2.7. **No entró el puente ni el contenedor del build** —dependen de un WebGL que no existe y no se verifican de punta a punta—: siguen en el paso 20. **23.2 — Poner la casa encima:** cuando el juego esté construido, integrarlo de verdad —Unity en `apps/game/`, Git LFS y build de WebGL—. Necesita que el usuario instale Unity (§2.2) **y que el juego exista**, que es lo único de la secuencia que no depende de este repositorio | 🔄 | 23.1 directo · 23.2 pendiente |
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
-| 20 | Contrato de integración y pantalla de nivel con contenedor — **exige cerrar antes la pregunta abierta de §3.2.** Incluye conectar la selección de niveles al backend, hoy maqueta (§3.3) | ⬜ | P4 |
+| 20 | Pantalla de nivel con contenedor, y el puente hacia el juego — **el contrato ya está escrito, lo hizo el 23.1**: [`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md). Este paso lo implementa del lado web. Incluye conectar la selección de niveles al backend, hoy maqueta (§3.3), crear la ruta de nivel —`constants/routes.ts` llega a `WORLDS/:worldId` y no hay ninguna de nivel—, y mapear `starter_code` y `validation_rules`, que `mapLevelRow` no trae aunque el `select('*')` los traiga. **Arrastra un defecto medido de §3.3:** no es que la pantalla enseñe diez niveles falsos, es que siempre enseña el **mismo mundo falso**, porque resuelve el mundo contra ids de maqueta con el uuid real | ⬜ | P4 |
 | 21 | Escritura de progreso y XP desde el juego — **ver §3.2** | ⬜ | P4 |
 | 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye el catálogo y retirar las estrellas. **Ver §3.2** | ⬜ | P4 |
 | — | 🔬 **PRUEBA PRELIMINAR** — la hacen el usuario y gente cercana con cuentas de prueba, **sin menores de fuera**. Por eso el 14 puede ir detrás: ver §2.1 | ⬜ | — |
@@ -345,7 +345,7 @@ perderse:
 | No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones. La sala de trofeos sólo puede listar lo conseguido, y el requisito de `contenido-mundos` se ajustó a eso | Paso 22 |
 | **El progreso no sabe nada de salones**, así que al aceptar a un alumno el tutor pasará a ver *todo* su historial, incluido el anterior al ingreso. Hoy nadie lo ha decidido: se dará por accidente | Paso 17, y ver §3.1 |
 | **El XP casi no tenía superficie en la interfaz.** El paso 28 le dio cuatro —barra lateral, barra superior y la tabla de seguimiento en sus dos vistas—, con `XPBar` retintada al tema de selva y un máximo provisional. Lo que sigue abierto no es dónde se ve, sino que **nada lo escribe**: todas las barras muestran el cero verdadero | Superficie cerrada en el paso 28; la escritura, paso 21 |
-| **PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió. No se ha profundizado en qué envía el juego, en qué formato ni con qué garantía. No es un paso nuevo: resolver con `/opsx:explore` | **Paso 23.1**, que escribe el contrato y no puede redactarlo sin esto. Ver §3.2 |
+| ~~**PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió~~ **CERRADA en el paso 23.1.** El juego nunca nombra un logro: manda el intento y el servidor concede, leyendo el programa enviado y el historial. Con eso queda **un solo bit confiado al cliente** —`is_success`—, que es el mismo del que ya colgaba el XP por completar un nivel. La raya que abarata todo: inspeccionar el programa es una condición `jsonb`; ejecutarlo contra la rejilla sería un intérprete de bloques en plpgsql, y queda fuera | Cerrada en el paso 23.1. Ver §3.2 y el contrato |
 | **El historial de solicitudes se acumula en filas**: un mismo par `(student_id, group_id)` puede tener una resuelta y una pendiente nueva. Resuelto ordenando por `requested_at` y quedándose con la última, con `maybeSingle()` y nunca `single()`. **Comprobado con el caso real**: niño rechazado que vuelve a pedir entrar, dos filas, la pantalla lee «En espera» | Cerrado en el paso 10 |
 | **Las políticas de salones están probadas con sesión real**, las once comprobaciones que lista `CONTEXT.md` §2.7, casos negativos incluidos. Lo único que queda fuera es la **carrera** del `for update`: el cupo se probó funcionalmente, no bajo concurrencia | Cerrado en el paso 11 |
 | **A la migración 0009 le falta `revoke ... from anon`**, que la 0013 sí trae: sólo revoca de `public`, y eso no retira lo concedido directamente a un rol. **No hay fuga, está medido:** consultadas con la clave anónima, `profiles`, `user_progress`, `level_attempts` y `achievements` devuelven 401 con código `42501` —permiso denegado a nivel de `grant`, no un vacío por RLS—, y `worlds` y `levels` devuelven 200, que es justo lo que sus políticas `to anon` quieren. Este proyecto no tiene privilegios por defecto para `anon` en el esquema `public`, así que el `revoke` que falta es defensa en profundidad, no un agujero. **Decidido: se anota, no se migra.** Si alguna vez se toca, que sea sabiendo esto y no creyendo que hay algo abierto | Ninguno: queda anotado a propósito |
@@ -361,7 +361,7 @@ perderse:
 | **El ternario de dos ramas NO se repitió, y el aviso queda cerrado.** El paso 19 reconstruyó la lista de enlaces derivando el estado de **dos** datos —`status` y `expires_at`—, con sus tres salidas: activo, usado y caducado. Comprobado en pantalla con datos reales, y sólo el activo ofrece «Copiar» y «Retirar» | Cerrado en el paso 19 |
 | **La purga de invitaciones depende de que el tutor entre a mirar.** El panel borra las caducadas de sus salones al listarlas, con la política de la 0013, así que un salón cuyo tutor no vuelve conserva filas vencidas. **No es riesgo de seguridad** —el enlace está muerto por `expires_at`, y eso lo comprueba la RPC, no el borrado— ni de privacidad —desde la 0016 la fila no lleva el dato de ningún tercero—. Lo que queda es una tabla que crece. La salida es `pg_cron`, que exige activarlo en el panel y por tanto **al usuario** | Paso 27, con lo demás que sólo tiene sentido desplegado |
 | **`invitations.expires_at` no lo acota ningún `check`**, así que quien inserta puede **alargar** la caducidad tanto como acortarla, y entonces la purga no se la lleva nunca. Los catorce días los sostienen el `default` de la columna y que el cliente no mande el campo, **no el esquema**. Hoy sólo el tutor del salón puede insertar, y sólo en el suyo, así que el daño se lo hace a sí mismo | Anotado; material para el paso 14 y para la mitad B del 19. Detalle en `CONTEXT.md` §2.7 |
-| **Las misiones se persisten desde el paso 16, y lo que NO cierra conviene tenerlo escrito.** La migración 0020 cuelga la asignación del **salón** —no del tutor: el niño se liga a un salón, no a una persona—, el selector de alcance dejó de ignorarse y el niño ve sólo lo asignado. **Siguen sin ser jugables**: nada puede empezar ni completar una misión, así que la tarjeta del niño no ofrece botón y el salón entero sale en «Pendiente» con el motivo a la vista. **El catálogo sigue siendo local y sin clave ajena a `levels`**: son las mismas cinco entradas `m1`…`m5` de `teacher/classroomsData.ts`, ahora con su premio en XP, y `mission_key` es texto libre porque no hay tabla a la que apuntar. Y **no se creó tabla de cumplimientos** a propósito, para no decidir de paso la PREGUNTA ABIERTA de §3.2 | Persistido en el paso 16. **CUMPLIRLAS NO TIENE PASO ASIGNADO, comprobado el 2-sep-2026:** las filas 20, 21 y 22 no mencionan las misiones ni una vez, y el 21 escribe progreso de **niveles**, que no las alcanza —`mission_key` no tiene clave ajena a `levels` porque una misión no es un nivel—. **El dueño natural es el 22, y el motivo lo puso el usuario:** una misión y un logro son el mismo objeto con la misma maquinaria, y lo único que los separa es la puerta de entrada —el logro se saca en cualquier momento, la misión sólo si el tutor la asignó—. El 22 construye justo esa maquinaria: el catálogo y la lógica de conceder. **De ahí sale una pregunta que cambia el trabajo: si montan sobre `achievements`, que ya tiene `unique (user_id, achievement_key)` —una vez cada uno— y `awarded_xp`, puede que la tabla de cumplimientos NO haga falta**, y entonces el 16 acertó al no crearla. Lo decide el 23.1, porque cambia lo que el contrato le exige al juego | El 22 lo construye; el 23.1 decide si hace falta tabla propia |
+| **Las misiones se persisten desde el paso 16, y lo que NO cierra conviene tenerlo escrito.** La migración 0020 cuelga la asignación del **salón** —no del tutor: el niño se liga a un salón, no a una persona—, el selector de alcance dejó de ignorarse y el niño ve sólo lo asignado. **Siguen sin ser jugables**: nada puede empezar ni completar una misión, así que la tarjeta del niño no ofrece botón y el salón entero sale en «Pendiente» con el motivo a la vista. **El catálogo sigue siendo local y sin clave ajena a `levels`**: son las mismas cinco entradas `m1`…`m5` de `teacher/classroomsData.ts`, ahora con su premio en XP, y `mission_key` es texto libre porque no hay tabla a la que apuntar. Y **no se creó tabla de cumplimientos** a propósito, para no decidir de paso la PREGUNTA ABIERTA de §3.2 | Persistido en el paso 16. **CUMPLIRLAS NO TIENE PASO ASIGNADO, comprobado el 2-sep-2026:** las filas 20, 21 y 22 no mencionan las misiones ni una vez, y el 21 escribe progreso de **niveles**, que no las alcanza —`mission_key` no tiene clave ajena a `levels` porque una misión no es un nivel—. **El dueño natural es el 22, y el motivo lo puso el usuario:** una misión y un logro son el mismo objeto con la misma maquinaria, y lo único que los separa es la puerta de entrada —el logro se saca en cualquier momento, la misión sólo si el tutor la asignó—. El 22 construye justo esa maquinaria: el catálogo y la lógica de conceder. **DECIDIDO EN EL 23.1: sí hace falta tabla propia, y el motivo no era el que se suponía.** `unique (user_id, achievement_key)` significa «una vez en la vida», que es correcto para un logro y accidental para una misión: la propia 0020 declara `unique (group_id, mission_key)` porque la misma misión en dos salones es lo normal, y reasignarla a otra cohorte también lo es. Misma maquinaria de concesión, **cardinalidad distinta**. Y el cumplimiento debe **guardar el salón, no derivarlo** —derivarlo por `class_memberships` borraría lo cumplido de los informes en cuanto el niño cambie de salón, que es la lección de §3.1—. **Lo que no cambió es el contrato:** como el juego no nombra ni logros ni misiones, esta decisión no le exige nada, al revés de lo que esta fila daba por hecho. **Queda un precedente para el 22:** `mission_key` no apunta a `levels` y las misiones no son ninguno de los niveles sembrados, así que antes de construir la maquinaria hay que decidir **qué es una misión en términos de contenido**; mientras no lo sea, nada puede cumplirla | El 22 lo construye, con tabla propia; el 23.1 lo decidió |
 
 ### 3.1 Historial previo al ingreso en un salón
 
@@ -455,45 +455,65 @@ pase: no lee nada. Para que el XP dependa de la dificultad del mundo hay que
 añadir la columna, derivarla de sus niveles, o usar `sort_order` como proxy —el
 orden ya va de menos a más—. Decisión del paso 22.
 
-#### PREGUNTA ABIERTA: cómo se verifica que un logro se consiguió
+#### Cómo se verifica que un logro se consiguió: DECIDIDO en el paso 23.1
 
-**Sin decidir y sin profundizar.** Queda pendiente de una conversación propia.
+**Ya no es una pregunta abierta.** El detalle está en
+[`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md) §5; aquí queda el
+razonamiento, porque es material de la memoria del proyecto.
 
-Lo que no se ha explorado: **qué envía exactamente el juego al terminar una
-partida, en qué formato, y con qué garantía de que lo enviado ocurrió de
-verdad.** Eso es lo que falta, no la teoría de abajo.
+**La regla, en una frase: el juego nunca nombra un logro.** Manda el intento —el
+programa de bloques, si lo resolvió, cuánto tardó— y el servidor decide qué ganó
+ese intento. El juego no sabe qué logros existen. Ésa es la frontera que hace que
+añadir un logro nuevo **no obligue a volver a publicar el juego**, que es la
+misma exigencia de escalabilidad de §3.3.
 
-**No es un paso nuevo de la secuencia, y desde la reordenación del 2 de
-septiembre de 2026 le toca al 23.1**, no al 20. El 23.1 escribe el contrato de
-integración —qué manda el juego y con qué garantía—, y eso no puede redactarse
-sin haber cerrado esto antes. La vía sigue siendo `/opsx:explore`, y de ahí sale
-el diseño con el que arrancan el 23.1 y, detrás, el 20.
+**La raya que abarató la decisión** es la que §3.3 punto 3 insinuaba y no
+separaba. La familia B de la tabla de abajo eran en realidad dos cosas de coste
+muy distinto:
 
-Lo de abajo es **un punto de partida para esa conversación**, no una decisión
-tomada.
+| Qué se comprueba | Cómo | Coste |
+| --- | --- | --- |
+| **Qué escribió el niño** — «usa un bucle», «≤ N bloques», «tres giros» | Condición `jsonb` sobre el programa enviado, dentro de la RPC | Una condición en SQL |
+| **Qué ha hecho hasta ahora** — primer nivel, mundo completo, racha | Lectura de `user_progress` y `level_attempts` | Ya se podía |
+| **Que el programa de verdad resuelva el nivel** | Ejecutarlo contra la rejilla, o sea un intérprete de bloques en plpgsql | Un proyecto propio. **Fuera** |
 
-El problema: «da tres vueltas sobre tu eje» sólo lo sabe el juego, que corre en
-el navegador del niño. Pero el esquema hace los logros de sólo lectura para el
-cliente justamente para que nadie se los conceda a sí mismo.
+Las dos primeras **no son falsificables**: el servidor lee el dato en vez de
+fiarse de quien lo manda. Buena parte de lo que §3.3 llamaba familia B cae ahí.
 
-Una posibilidad: **partirlos en dos familias según quién puede saber que se
-cumplieron.**
+**Lo que queda confiado al cliente es un solo bit: `is_success`.** Y conviene
+decirlo entero en vez de presentarlo como un defecto de los logros: **ese bit ya
+sostenía el XP por completar un nivel**, medido —el servidor acepta el `success`
+que le manden—. Los logros no añaden una vía de trampa nueva; hacen visible la
+que ya había. La mitigación que sí se aplica es la que este apartado ya proponía:
+un logro que dependa de un nivel exige **un intento con éxito de ese nivel**.
+
+Y sigue en pie el argumento de proporción: plataforma para niños, sin dinero de
+por medio, y quien hace trampa se engaña a sí mismo. El único motivo real de
+preocupación era el ranking, y ya está acotado al salón.
+
+**Lo que hace posible todo esto es que el programa se serialice en JSON**, para
+que `submitted_code::jsonb` funcione dentro de la RPC. Es la línea irreversible
+del contrato: si el juego manda un formato opaco, la primera fila de la tabla
+desaparece y **ninguna migración posterior lo arregla sin volver a publicar el
+juego**.
+
+**Y una consecuencia del esquema que zanja el «quién concede», medida el
+2-sep-2026:** `achievements` **no tiene `grant insert` para ningún rol** —ni
+autenticado—, así que la única puerta abierta es una función `security definer`.
+No hubo que elegir el diseño seguro: es el único que el esquema permite.
+
+<details>
+<summary>La tabla de dos familias que este apartado traía antes</summary>
 
 | Familia | Quién concede | Falsificable |
 | --- | --- | --- |
 | **A** — derivables del progreso: primer nivel, mundo completo, racha de N días, N niveles | El servidor, leyendo `user_progress` y `level_attempts`. Nadie reporta nada | No |
 | **B** — comportamiento dentro del juego | Unity lo reporta al terminar | Sí, desde la consola |
 
-Mitigación barata para la familia B: que la RPC que concede exija **un intento
-exitoso de ese nivel**. Sube el listón de «escribir en la consola» a «jugar el
-nivel y además escribir en la consola», y cuesta una condición en el SQL.
+Se queda como registro: el reencuadre consistió en partir la B en dos y llevarse
+la mitad estructural a la A.
 
-Lo que **no** parece proporcionado aquí es validar la partida entera en el
-servidor: reimplementar la lógica del juego para comprobar cada logro es un
-proyecto en sí mismo. Es una plataforma para niños, sin dinero de por medio, y
-quien hace trampa se engaña a sí mismo. El único motivo real de preocupación es
-el ranking — otro argumento para acotarlo al salón o convertirlo en meta
-colectiva.
+</details>
 
 **Las estrellas por nivel se retiran.** `levels.stars_reward` y
 `user_progress.stars_earned` existen en el esquema y los atraviesan servicios y
@@ -555,6 +575,26 @@ En la base (`levels.validation_rules`, que ya es `jsonb`) añadir un nivel es
 **insertar una fila**. Dentro del build de Unity, añadir un nivel es
 **recompilar y volver a desplegar el juego**. La base puede ser todo lo escalable
 que se quiera: si los niveles están cocidos en el build, el proyecto no escala.
+
+**DECIDIDO EN EL 23.1: en la base, y las tres columnas se reparten el trabajo.**
+`validation_rules` lleva la definición del puzle, `starter_code` la disposición
+inicial de bloques, y `programming_language` —hoy `'javascript'` en las nueve
+filas y **sin `check` que lo ate**— se reaprovecha como **versión del formato de
+serialización**. Ese último es el campo de versionado que la decisión de §3.2
+necesitaba para poder leer programas cuando el formato de bloques evolucione, y
+salió gratis.
+
+**Con un límite que hay que respetar y que está medido:** `validation_rules`
+**se lee sin sesión** —`grant select ... to anon` y la política de la 0009—. Ahí
+va la definición del puzle, **nunca su solución ni la condición de un logro
+sorpresa**; esas van al catálogo del 22, que no necesita ser público. A favor de
+la decisión, la siembra ya tiene esa forma: los nueve niveles de la 0012 llevan
+`{"goal":"reach_flower","maxSteps":6}` y similares.
+
+**Sin migración.** Las tres columnas existen; lo que cambia es su contenido, y
+eso lo escribe el paso 20 o el 21 cuando haya juego. Renombrar
+`programming_language` hoy etiquetaría como bloques un `starter_code` que sigue
+siendo JavaScript.
 
 De ahí dos reglas para el contrato del 23.1:
 

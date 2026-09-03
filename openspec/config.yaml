@@ -116,8 +116,9 @@ context: |
   apps/web/        front-end, workspace @codeplay/web
   apps/game/       proyecto de Unity — NO EXISTE TODAVÍA
   packages/        código compartido — vacío
-  supabase/        migrations/ (20 migraciones SQL; el seed vive en la 0012)
-  docs/            CONTEXT.md (estado y prioridades) y ESTADO-DEL-PROYECTO.md
+  supabase/        migrations/ (22 migraciones SQL; el seed vive en la 0012)
+  docs/            CONTEXT.md (estado y prioridades), ESTADO-DEL-PROYECTO.md,
+                   ROADMAP.md y CONTRATO-DE-INTEGRACION.md (el contrato del juego)
   openspec/        specs y changes
   .github/         workflows de GitHub Actions (sólo ci.yml)
 
@@ -332,6 +333,12 @@ context: |
   - docs/ESTADO-DEL-PROYECTO.md §2: guía de estilos completa (paleta,
     tipografía, componentes, espaciado). Consultarla antes de tocar UI.
   - supabase/README.md: detalle migración por migración.
+  - docs/CONTRATO-DE-INTEGRACION.md: qué manda y qué recibe el juego. Es el
+    único documento escrito para quien NO conoce el repositorio, así que no
+    debe ganar referencias a sus secciones ni a sus nombres de código.
+    Decidido en el paso 23.1: el juego no nombra logros ni misiones, el
+    servidor concede leyendo el programa enviado, y ese programa debe
+    serializarse en JSON.
 
 # Reglas por artefacto.
 rules:
