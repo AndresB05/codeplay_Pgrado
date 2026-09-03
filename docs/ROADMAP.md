@@ -543,6 +543,36 @@ sólo está tomada la primera.
 - **Sólo el mundo 1 está definido:** niveles de cuadrícula donde el personaje va
   del punto A al punto B. Los mundos 2 y 3 siguen siendo concepto.
 
+**EL PROYECTO TIENE QUE ESCALAR**, y lo pidió el usuario el mismo día: en el
+futuro puede haber más mundos y más niveles, así que nada debe darlos por fijos.
+**La base ya lo cumple** —`worlds` y `levels` son tablas con `sort_order`, y
+añadir contenido es insertar filas—, pero eso deja **una decisión al 23.1 que
+decide si el resto escala o no**:
+
+> **¿Dónde vive la configuración de un nivel: la rejilla, la salida, la meta?**
+
+En la base (`levels.validation_rules`, que ya es `jsonb`) añadir un nivel es
+**insertar una fila**. Dentro del build de Unity, añadir un nivel es
+**recompilar y volver a desplegar el juego**. La base puede ser todo lo escalable
+que se quiera: si los niveles están cocidos en el build, el proyecto no escala.
+
+De ahí dos reglas para el contrato del 23.1:
+
+- **Describe estructura, no inventario.** Nunca «hay tres mundos de diez
+  niveles», sino «un mundo contiene N niveles ordenados». Un contrato que cuenta
+  el contenido hay que reescribirlo cada vez que se añade contenido.
+- **El juego no trae la lista de niveles: la recibe.** Debe cargar el nivel que se
+  le indique con la configuración que se le pase; si la lleva dentro, cada nivel
+  nuevo obliga a un build nuevo.
+
+Lo rígido que queda hoy es maqueta y lo sustituye el paso 20:
+`worlds/worldsData.ts` con `totalLevels: 10` escrito a mano, y
+`StudentWorldsModule.tsx:251`, que fija la dificultad a `'easy'`.
+
+Y esto **reabre con más filo la pregunta del final de este apartado**: si el
+contenido escala, sembrar por migración deja de bastar y hace falta una pantalla
+para administrarlo.
+
 **De ahí salen tres correcciones a lo que este documento daba por sentado:**
 
 1. **El «10» de la maqueta no era ficción: es el objetivo.** Lo de abajo dice «el
