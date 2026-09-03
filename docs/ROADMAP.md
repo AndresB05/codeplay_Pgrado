@@ -123,23 +123,77 @@ escrito en §2.1.
 | 12 | Login y registro reales con rol | ✅ | `auth-real` |
 | 13 | Recuperar y cambiar contraseña — **las dos mitades verificadas contra la base real**: el cambio desde Ajustes pide la contraseña actual y la verifica, y el correo de recuperación llegó y su enlace fijó la nueva | ✅ | `password-recovery` |
 | 15 | Google OAuth — **la mina era el rol, y se cerró con una regla: el rol se fija en el primer registro y no cambia nunca.** El disparador crea todo perfil de Google como `child` porque el alta no puede llevar metadatos; la migración 0018 añade `is_role_declared` y hace que `set_my_role` rechace tanto si el rol ya se declaró como si el perfil tiene lazos de salón. **Verificado contra la base real**, incluido el daño que lo motivó —un niño con membresía que acababa tutor y fuera de su salón— reproducido paso por paso y ya no ocurriendo. **No cierra** registrarse como tutor de entrada: eso sigue abierto y lo cierra el código de institución | ✅ | `google-oauth` |
-| 14 | ★ Consentimiento del acudiente y política de privacidad — **adelantado en parte y aplazado el resto, ver §2.1 y §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó el único sitio donde se guardaban datos de terceros. Lo que falta **se retoma después de la prueba preliminar, y en todo caso antes del primer usuario real**. Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los compañeros se ven entre sí nombre, XP y racha (§3.2) | 🔄 | `invitaciones-sin-correo` + §3.4 |
 | 28 | ★ Tres arreglos vivos y la barra de XP — **adelantado, ver §2.1**. El `username` del disparador ya no aborta el alta (migración 0019, verificada con tres altas por `curl`), los fallos de autenticación salen en español por código, el panel dejó de inventar nombre, correo y racha en **cinco** archivos, y el XP se ve en cuatro sitios con `XPBar` retintada | ✅ | `arreglos-y-barra-xp` |
 | 29 | ★ Nombre editable desde Ajustes — **adelantado, ver §2.1**. Un panel compartido que montan las dos pantallas de Ajustes, con la acción en `AuthProvider` para que las **siete** superficies que leen `user.fullName` se refresquen sin recargar. La longitud (2–60) se declara una vez y la heredan el registro y Ajustes; el máximo no existía en ninguna parte. De paso cerró el panel del tutor, que el paso 28 dejó fuera: cuatro «Sr. Robot» y un correo inventado | ✅ | `nombre-editable` |
 | 16 | Persistir la asignación de misiones — la migración 0020 cuelga la asignación **del salón**, con `mission_key` como texto sin clave ajena porque el catálogo sigue en el cliente. El selector de alcance dejó de ignorarse y el niño ve sólo lo asignado, en dos pantallas. **NO las hace jugables**: nada puede completar una misión hasta el paso 21, así que el salón entero sale en «Pendiente» con el motivo escrito en la pantalla, y la tarjeta del niño no ofrece ningún botón. **Sin tabla de cumplimientos a propósito**, para no decidir de paso la pregunta abierta de §3.2 | ✅ | `misiones-asignadas` |
-| 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
 | 18 | ★ Sincronización en vivo (Supabase Realtime) — **no eran «notificaciones»**: no hay campana, ni lista de avisos, ni no leídos, ni nada que persista un aviso. Son tres pantallas que ya existían y ahora se actualizan solas: la bandeja del tutor, la pertenencia del niño y sus misiones. La migración 0021 publica tres tablas en `supabase_realtime`, que existía con las cuatro operaciones activas y **cero tablas**. De paso cerró el defecto del `loading` que el paso 13 dejó a medias: **una recarga disparada desde fuera no declara espera, pero sí la apaga**, en los dos hooks. Verificado con dos sesiones y con los tres negativos emparejados; cierra además el caso «tutor contra salón ajeno» del paso 16 | ✅ | `sincronizacion-en-vivo` |
-| 19 | Invitaciones por correo reales y enlace canjeable — **PARTIDO EN DOS, ver §2.1.** **Mitad A hecha:** el tutor genera un enlace canjeable, lo comparte por donde quiera, y quien lo abre entra al salón **sin pasar por la bandeja**; el token sobrevive el registro, incluida la vuelta por Google. La purga por `expires_at` entró desde el primer día, y **ninguna tabla ganó columna de correo**: por eso esta mitad esquiva entera la decisión de privacidad de §3.4. **Mitad B pendiente:** el envío real, que necesita **servicio de correo contratado** (§2.2) | 🔄 | `enlace-de-invitacion` + servicio |
+| 23 | ★ **PARTIDO EN DOS, ver §2.1.** **23.1 — Preparar el terreno y escribir el contrato:** todo lo que la web debe tener listo para recibir el juego, y un documento en `docs/` con lo que el juego debe cumplir para integrarse. **No necesita Unity ni al usuario.** Cierra de paso la PREGUNTA ABIERTA de §3.2, porque no se puede escribir qué manda el juego sin decidir cómo se verifica. **23.2 — Unity en `apps/game/`, Git LFS y build de WebGL:** necesita que el usuario instale Unity (§2.2) | ⬜ | — |
+| 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
 | 20 | Contrato de integración y pantalla de nivel con contenedor — **exige cerrar antes la pregunta abierta de §3.2.** Incluye conectar la selección de niveles al backend, hoy maqueta (§3.3) | ⬜ | P4 |
 | 21 | Escritura de progreso y XP desde el juego — **ver §3.2** | ⬜ | P4 |
 | 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye el catálogo y retirar las estrellas. **Ver §3.2** | ⬜ | P4 |
-| 23 | Unity en `apps/game/`, Git LFS y build de WebGL | ⬜ | P4 |
+| — | 🔬 **PRUEBA PRELIMINAR** — la hacen el usuario y gente cercana con cuentas de prueba, **sin menores de fuera**. Por eso el 14 puede ir detrás: ver §2.1 | ⬜ | — |
+| 14 | ★ Consentimiento del acudiente y política de privacidad — **adelantado en parte y el resto DETRÁS de la prueba preliminar, ver §2.1 y §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó el único sitio donde se guardaban datos de terceros. Lo que falta **se retoma después de la prueba preliminar, y en todo caso antes del primer usuario real**. Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los compañeros se ven entre sí nombre, XP y racha (§3.2) | 🔄 | `invitaciones-sin-correo` + §3.4 |
+| 19 | Invitaciones por correo reales y enlace canjeable — **PARTIDO EN DOS, ver §2.1.** **Mitad A hecha:** el tutor genera un enlace canjeable, lo comparte por donde quiera, y quien lo abre entra al salón **sin pasar por la bandeja**; el token sobrevive el registro, incluida la vuelta por Google. La purga por `expires_at` entró desde el primer día, y **ninguna tabla ganó columna de correo**: por eso esta mitad esquiva entera la decisión de privacidad de §3.4. **Mitad B pendiente:** el envío real, que necesita **servicio de correo contratado** (§2.2) | 🔄 | `enlace-de-invitacion` + servicio |
 | 24 | Retirar la sesión de invitado | ⬜ | — |
-| 25 | ★ Responsive, accesibilidad y `ErrorBoundary` — **medido**: con el viewport a 375 px la barra lateral se queda 262 px fijos y el panel del tutor entero cae a 73 px de ancho. Ver `CONTEXT.md` §4.4 | ⬜ | — |
-| 26 | Ilustraciones con Higgsfield | ⬜ | P6 |
+| 26 | Ilustraciones con Higgsfield — **va ANTES del 25, ver §2.1**: hacer responsive un diseño que el apartado gráfico va a cambiar es hacerlo dos veces | ⬜ | P6 |
+| 25 | ★ Responsive, accesibilidad y `ErrorBoundary` — **detrás del 26 a propósito.** **Medido**: cero clases `sm:`/`md:`/`lg:` en las pantallas clave, `w-[262px] shrink-0` duplicado en `Sidebar.tsx:134` y `TeacherSidebar.tsx:66`, y **ningún `ErrorBoundary` en todo `apps/web/src`**. Hereda además `/invite/:token` del paso 19, que es la pantalla con más probabilidad de abrirse en un móvil. Ver `CONTEXT.md` §4.4 | ⬜ | — |
+| 30 | ★ Migración al servidor de la universidad — **alcance por decidir, ver §2.1.** Supabase fue para probar funcionalidades con usuarios; lo definitivo va al servidor de la universidad. **Qué se mueve depende de lo que ofrezcan**, y eso se pregunta antes de planificarlo | ⬜ | — |
 | 27 | ★ Despliegue y URL de demo | ⬜ | — |
 
 ### 2.1 Decisiones de orden que conviene no deshacer
+
+**REORDENACIÓN DEL 2 DE SEPTIEMBRE DE 2026, y es la que manda sobre todo lo que
+sigue.** La decisión es del usuario y el criterio es uno: **la integración del
+juego deja de esperar y todo lo demás se ordena alrededor de ella.**
+
+La secuencia queda en tres tramos:
+
+1. **El 23**, preparar el terreno de la integración.
+2. **17, 20, 21 y 22** — lo que sólo puede hacerse con el juego integrado.
+3. **La prueba preliminar**, y detrás **14, 19, 24, 26, 25, 30 y 27**.
+
+**El 17 baja del segundo lugar al tramo del juego, y no es una preferencia.** Sus
+reportes tienen que calcularse sobre `user_progress` real, y **nada escribe ahí
+hasta el paso 21**, que viene del juego. Hacerlo antes sería volver a maquetar
+con datos de ejemplo, que es exactamente lo que ese paso existe para quitar.
+
+**El 23 se parte en dos, y la primera mitad no necesita a nadie.** 23.1 prepara la
+web para recibir el juego y **escribe el contrato**: qué manda el juego, en qué
+formato y con qué garantía. Eso no pide Unity instalado, así que puede hacerse ya.
+23.2 —Unity, Git LFS y el build de WebGL— sí lo pide, y está en §2.2.
+
+**23.1 hereda la PREGUNTA ABIERTA de §3.2 y tiene que cerrarla.** No es opcional:
+no se puede escribir qué manda el juego al terminar una partida sin haber decidido
+cómo verifica el servidor que un logro se consiguió. Antes esa pregunta colgaba
+del paso 20; con el 23 delante, le toca al 23.1 y con `/opsx:explore`, que es la
+vía que §3.2 ya señalaba.
+
+**El 26 pasa por delante del 25, y el motivo es no pagar dos veces.** El 25 hace
+responsive el diseño actual; el 26 lo cambia. Hacerlos en ese orden significaría
+replegar pantallas que van a dejar de existir. El 26 baja del final porque ya no
+es «no bloquea nada»: bloquea al 25.
+
+**El 14 puede ir detrás de la prueba preliminar porque esa prueba no lleva
+menores de fuera.** La hacen el usuario y gente cercana con cuentas de prueba, así
+que §3.4 se cumple: la obligación nace con el primer usuario real. **Si eso
+cambiara —si entrara un niño ajeno al proyecto—, la política de privacidad y el
+consentimiento del acudiente se adelantan a antes de la prueba.** Queda escrito
+aquí para que no se descubra el día antes.
+
+**El 30 es nuevo y va delante del 27.** Supabase se eligió para probar
+funcionalidades con usuarios, no como destino: lo definitivo va al servidor de la
+universidad. **Su alcance está sin decidir a propósito**, porque depende de lo que
+la universidad ofrezca, y eso no se ha preguntado todavía. Lo que hay que
+averiguar antes de poder planificarlo: si dan **Postgres** —y con qué versión, que
+la RLS y las siete RPC son suyas—, si dan **HTTPS con certificado**, si dejan
+**correr procesos propios** o sólo servir archivos, y si hay algo equivalente a
+**Realtime** y a la **autenticación con OAuth**. Según la respuesta, el 30 va de
+mover una URL a reimplementar medio backend, y por eso no lleva estimación.
+
+Va delante del 27 porque desplegar sobre Supabase y volver a desplegar sobre otra
+cosa es hacer el 27 dos veces.
+
 
 **El paso 11 se adelanta al 10, y valió la pena a la primera.** La primera
 comprobación con sesión real destapó que ningún niño podía solicitar entrar a un
@@ -267,7 +321,8 @@ introducir credenciales:
 | 15 | Dar de alta Google OAuth en el panel de Supabase — **hecho**, y además hizo falta crear el cliente en Google Cloud, añadir `/auth/callback` a Redirect URLs y **repegar el Client Secret**, que estaba mal y tuvo el paso bloqueado |
 | 18 | `npx supabase db push` de la 0021, que publica tres tablas en `supabase_realtime` — pide credenciales por consola. **Y hace cumplir la parada de §1.3:** no se lanza hasta que la sesión que revisa haya leído el SQL y lo haya dicho |
 | 19 | Contratar el servicio de correo — **sólo para la mitad B**. La mitad A (el enlace canjeable) está hecha y no necesitó nada de esto; su `db push` de la 0022 lo lanzó el usuario el 2-sep-2026 |
-| 23 | Instalar Unity y crear el proyecto |
+| 23.2 | Instalar Unity y crear el proyecto — **sólo la segunda mitad**. La 23.1, que prepara el terreno y escribe el contrato, no necesita nada de esto |
+| 30 | **Preguntar a la universidad qué ofrece su servidor** —Postgres y su versión, HTTPS, si dejan correr procesos, si hay algo como Realtime y como OAuth— y conseguir los accesos. Sin esa respuesta el paso no se puede ni planificar (§2.1) |
 | 27 | Configurar el despliegue |
 
 Fuera de la secuencia, siguen pendientes dos tareas de cuenta que dejó anotadas
@@ -290,7 +345,7 @@ perderse:
 | No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones. La sala de trofeos sólo puede listar lo conseguido, y el requisito de `contenido-mundos` se ajustó a eso | Paso 22 |
 | **El progreso no sabe nada de salones**, así que al aceptar a un alumno el tutor pasará a ver *todo* su historial, incluido el anterior al ingreso. Hoy nadie lo ha decidido: se dará por accidente | Paso 17, y ver §3.1 |
 | **El XP casi no tenía superficie en la interfaz.** El paso 28 le dio cuatro —barra lateral, barra superior y la tabla de seguimiento en sus dos vistas—, con `XPBar` retintada al tema de selva y un máximo provisional. Lo que sigue abierto no es dónde se ve, sino que **nada lo escribe**: todas las barras muestran el cero verdadero | Superficie cerrada en el paso 28; la escritura, paso 21 |
-| **PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió. No se ha profundizado en qué envía el juego, en qué formato ni con qué garantía. Decisión previa al paso 20, no un paso nuevo: resolver con `/opsx:explore` | Antes del paso 20, ver §3.2 |
+| **PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió. No se ha profundizado en qué envía el juego, en qué formato ni con qué garantía. No es un paso nuevo: resolver con `/opsx:explore` | **Paso 23.1**, que escribe el contrato y no puede redactarlo sin esto. Ver §3.2 |
 | **El historial de solicitudes se acumula en filas**: un mismo par `(student_id, group_id)` puede tener una resuelta y una pendiente nueva. Resuelto ordenando por `requested_at` y quedándose con la última, con `maybeSingle()` y nunca `single()`. **Comprobado con el caso real**: niño rechazado que vuelve a pedir entrar, dos filas, la pantalla lee «En espera» | Cerrado en el paso 10 |
 | **Las políticas de salones están probadas con sesión real**, las once comprobaciones que lista `CONTEXT.md` §2.7, casos negativos incluidos. Lo único que queda fuera es la **carrera** del `for update`: el cupo se probó funcionalmente, no bajo concurrencia | Cerrado en el paso 11 |
 | **A la migración 0009 le falta `revoke ... from anon`**, que la 0013 sí trae: sólo revoca de `public`, y eso no retira lo concedido directamente a un rol. **No hay fuga, está medido:** consultadas con la clave anónima, `profiles`, `user_progress`, `level_attempts` y `achievements` devuelven 401 con código `42501` —permiso denegado a nivel de `grant`, no un vacío por RLS—, y `worlds` y `levels` devuelven 200, que es justo lo que sus políticas `to anon` quieren. Este proyecto no tiene privilegios por defecto para `anon` en el esquema `public`, así que el `revoke` que falta es defensa en profundidad, no un agujero. **Decidido: se anota, no se migra.** Si alguna vez se toca, que sea sabiendo esto y no creyendo que hay algo abierto | Ninguno: queda anotado a propósito |
@@ -408,10 +463,11 @@ Lo que no se ha explorado: **qué envía exactamente el juego al terminar una
 partida, en qué formato, y con qué garantía de que lo enviado ocurrió de
 verdad.** Eso es lo que falta, no la teoría de abajo.
 
-**No es un paso nuevo de la secuencia**, es una decisión previa al paso 20:
-condiciona el contrato de integración, así que hay que cerrarla antes de
-proponerlo. La vía natural es `/opsx:explore`, el modo de exploración de
-OpenSpec, y de ahí sale el diseño con el que arrancar el 20.
+**No es un paso nuevo de la secuencia, y desde la reordenación del 2 de
+septiembre de 2026 le toca al 23.1**, no al 20. El 23.1 escribe el contrato de
+integración —qué manda el juego y con qué garantía—, y eso no puede redactarse
+sin haber cerrado esto antes. La vía sigue siendo `/opsx:explore`, y de ahí sale
+el diseño con el que arrancan el 23.1 y, detrás, el 20.
 
 Lo de abajo es **un punto de partida para esa conversación**, no una decisión
 tomada.
