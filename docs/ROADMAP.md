@@ -534,6 +534,37 @@ sólo está tomada la primera.
 
 ### 3.3 El contenido sembrado es mínimo, y dos pantallas se contradicen
 
+**EL DISEÑO DEL JUEGO, dicho por el usuario el 2 de septiembre de 2026.** Es lo
+único que hay y condiciona el paso 23.1, así que se escribe aquí antes que nada:
+
+- **Tres mundos de diez niveles cada uno**, treinta en total, cada mundo con un
+  tema distinto de pensamiento computacional.
+- **Codificación por bloques**, y el juego es **3D**.
+- **Sólo el mundo 1 está definido:** niveles de cuadrícula donde el personaje va
+  del punto A al punto B. Los mundos 2 y 3 siguen siendo concepto.
+
+**De ahí salen tres correcciones a lo que este documento daba por sentado:**
+
+1. **El «10» de la maqueta no era ficción: es el objetivo.** Lo de abajo dice «el
+   3 es la verdad; el 10, la ficción», y hay que leerlo con este matiz: el 3 es lo
+   que **hay sembrado hoy**, y el 10 es lo que el diseño **quiere**. La maqueta
+   acertó por accidente. Faltan veintiún niveles, no tres pantallas que arreglar.
+2. **El esquema del «editor de código en el navegador» NO está muerto.** Con
+   bloques hay programa: `levels.programming_language` pasa de `'javascript'` a
+   los bloques, `starter_code` es la disposición inicial, y `validation_rules`
+   puede llevar la rejilla, la salida y la meta del mundo 1. Y **el juego SÍ manda
+   un programa**: la disposición de bloques se serializa, así que
+   `create_level_attempt(input_submitted_code text)` es **reutilizable**, no
+   herencia que retirar. Lo que §3 llama «esquema diseñado para otra cosa» encaja
+   mejor de lo que parecía.
+3. **La PREGUNTA ABIERTA de §3.2 se reencuadra.** Parte de que el comportamiento
+   sólo lo sabe el juego, y por eso la familia B es falsificable. Con bloques **la
+   solución es un dato que el servidor puede inspeccionar**: «da tres vueltas
+   usando bloques» se comprueba leyendo el programa enviado, no confiando en lo
+   que el juego reporte. Buena parte de la familia B pasa a la A. **Es la primera
+   cosa que el 23.1 debe mirar** antes de dar por buena la teoría de §3.2.
+
+
 **La pantalla de selección de niveles es maqueta pura.**
 `StudentWorldLevelsModule` no toca Supabase: importa sólo
 `components/dashboard/student/worlds/worldsData.ts`, un archivo local con
