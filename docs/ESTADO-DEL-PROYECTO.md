@@ -1,16 +1,32 @@
 # CodePlay — Estado del proyecto
 
 > Documento de referencia para retomar el desarrollo sin perder contexto.
-> Última actualización: **18 de agosto de 2026**.
+> Última actualización: **3 de septiembre de 2026**.
 
 CodePlay es una plataforma web para enseñar pensamiento computacional a niños,
 con un juego de Unity que se integrará más adelante. Este documento mapea qué
 está construido, cómo se ve y con qué está hecho.
 
-**Lo primero que hay que entender:** hoy la aplicación funciona **sin backend**.
-No hay login real ni base de datos conectada. Todo el estado de salones vive en
-`localStorage` del navegador, sembrado con datos de ejemplo. Las pantallas son
-reales y navegables; los datos, no.
+**Lo primero que hay que entender:** la aplicación **está conectada a un backend
+real**. Hay un proyecto de Supabase con su esquema aplicado —22 migraciones—, el
+acceso y el registro son de verdad, y los salones se guardan en la base y se
+sincronizan entre dispositivos. Lo que aún no existe es **el juego**: nada
+escribe progreso, XP ni rachas, así que todas esas cifras muestran el cero
+verdadero.
+
+Si vienes de una versión anterior de este documento: decía que no había backend
+y que los salones vivían en `localStorage`. Eso dejó de ser cierto a finales de
+agosto de 2026.
+
+**Los otros documentos, y cuándo leer cada uno**
+
+| Documento | Para qué |
+| --- | --- |
+| **Este** | Qué hay construido, cómo se ve y con qué está hecho. **La §2 es la guía de estilos completa: es la referencia al tocar interfaz** |
+| [`CONTEXT.md`](CONTEXT.md) | El estado al detalle, decisión por decisión, y la deuda técnica con su medición. Más largo y más técnico que este |
+| [`ROADMAP.md`](ROADMAP.md) | En qué orden se construye y qué falta |
+| [`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md) | Qué debe cumplir el juego. **Se lee sin conocer este repositorio** |
+| [`../supabase/README.md`](../supabase/README.md) | Detalle migración por migración |
 
 ---
 
@@ -29,8 +45,8 @@ reales y navegables; los datos, no.
 
 | Símbolo | Significado |
 | --- | --- |
-| ✅ **Funcional** | Implementado y operativo sobre el store local. Funcionará igual al conectar el backend. |
-| 🟡 **Prototipo** | La interfaz existe y responde, pero no produce el efecto real (no se envía nada, no persiste fuera del navegador). |
+| ✅ **Funcional** | Implementado y operativo **contra la base real**. Persiste y se ve desde otro dispositivo. |
+| 🟡 **Prototipo** | La interfaz existe y responde, pero no produce el efecto real: son datos de ejemplo escritos en el cliente, o una acción que no llega a ninguna parte. |
 | ⛔ **Pendiente** | No existe todavía. |
 
 ### 1.1 Rol Tutor
@@ -45,18 +61,19 @@ En la interfaz se etiqueta "Tutor"; el nombre del profesor se muestra por salón
 | Generación de ID público único por salón | ✅ | `generatePublicId()` en `classroomsData.ts` |
 | Identidad visual automática por salón | ✅ | `groupThemes.ts` + `GroupBadge.tsx` |
 | Detalle del salón con estadísticas | ✅ | `TeacherGroupDetailModule.tsx` |
-| Tabla de seguimiento (mundo, actividad, racha) | ✅ | `StudentRosterTable.tsx` |
 | Eliminar alumno del salón (con confirmación en línea) | ✅ | `StudentRosterTable.tsx` |
 | Eliminar salón (diálogo con recuento de afectados) | ✅ | `ConfirmDialog.tsx` |
 | Bandeja "Alumnos en espera" | ✅ | `PendingRequestsSection.tsx` |
-| Aceptar / rechazar solicitud de ingreso | ✅ | `ClassroomsProvider.tsx` |
-| Reportes de habilidades (5 competencias) | ✅ | `getSkillReports()` |
+| Aceptar / rechazar solicitud de ingreso | ✅ | `ClassroomsProvider.tsx` — aceptar respeta el cupo y no se puede saltar |
 | Selector de alcance (todos los salones / uno) | ✅ | `TeacherPanelModule.tsx` |
-| Asignación de misiones | 🟡 | Estado local del componente; se pierde al recargar |
-| Invitar alumnos por correo | 🟡 | Registra la invitación, **no envía ningún correo** |
-| Enlace de invitación que lleva al salón | ⛔ | Requiere tokens y backend |
+| Asignación de misiones | ✅ | Persiste en la base (`mission_assignments`). **Pero nadie puede cumplirlas**: sin juego no hay forma de completar una, así que el salón entero sale en «Pendiente» con el motivo escrito en la pantalla |
+| Enlace de invitación que lleva al salón | ✅ | El tutor genera un enlace y lo comparte por donde quiera; quien lo abre entra **sin pasar por la bandeja**. Caduca a los 14 días |
+| Invitar alumnos por correo | ⛔ | El enlace se comparte a mano. **Enviarlo automáticamente requiere contratar un servicio de correo**, y ninguna tabla guarda direcciones a propósito |
+| La bandeja se actualiza sola | ✅ | Si un niño solicita mientras el panel está abierto, la solicitud aparece sin recargar |
+| Ajustes de cuenta | ✅ | Cambiar el nombre y cambiar la contraseña funcionan de verdad |
+| Reportes de habilidades (5 competencias) | 🟡 | `getSkillReports()` — **calculado sobre datos de ejemplo.** Necesita progreso real, que llega con el juego |
+| Tabla de seguimiento (mundo, actividad, racha) | 🟡 | La estructura es real, pero mundo, actividad y racha son de ejemplo. El XP sí es el de la base: hoy, cero |
 | Recursos educativos | 🟡 | Tarjetas informativas sin destino |
-| Ajustes de cuenta | 🟡 | Muestra datos; "Cambiar contraseña" no hace nada |
 | Editar o archivar un salón existente | ⛔ | — |
 | Exportar reportes | ⛔ | — |
 
@@ -71,23 +88,44 @@ En la interfaz se etiqueta "Tutor"; el nombre del profesor se muestra por salón
 | Pantalla de espera con cancelación | ✅ | `StudentClassroomModule.tsx` |
 | Ver el salón propio y a los compañeros | ✅ | `StudentClassroomModule.tsx` |
 | Bloqueo de solicitud si el salón está lleno | ✅ | `StudentClassroomSearch.tsx` |
-| Listado de mundos | 🟡 | `StudentWorldsModule.tsx` — datos de ejemplo, **con errores de tipos** |
-| Niveles de un mundo | 🟡 | `StudentWorldLevelsModule.tsx` |
-| Sala de trofeos | 🟡 | `StudentTrophiesModule.tsx` |
-| Ajustes de cuenta | 🟡 | `StudentSettingsModule.tsx` |
+| Entrar por un enlace de invitación | ✅ | `pages/Invite/Invite.tsx` — el token sobrevive registrarse, incluso pasando por Google |
+| Ver sus misiones asignadas | ✅ | Ve sólo lo que su tutor asignó a su salón. **No puede jugarlas**: no hay botón, porque no hay juego |
+| Su salón se actualiza solo | ✅ | Ve que lo aceptan, lo rechazan o lo quitan sin recargar |
+| Ajustes de cuenta | ✅ | `StudentSettingsModule.tsx` — cambiar nombre y contraseña funcionan |
+| Listado de mundos | ✅ | `StudentWorldsModule.tsx` — los 3 mundos vienen de la base. La **dificultad** sí está escrita a mano: los tres dicen «Fácil» |
+| Sala de trofeos | 🟡 | `StudentTrophiesModule.tsx` — lee de la base, pero **sólo lista lo conseguido**: no existe el catálogo de logros posibles, así que hoy está vacía |
+| Niveles de un mundo | 🟡 | `StudentWorldLevelsModule.tsx` — **maqueta pura, y con un defecto conocido**: enseña 10 niveles inventados y siempre los del *mismo* mundo, sea el que sea el que elijas. Lo arregla el paso 20 |
 | Jugar (juego de Unity) | ⛔ | El proyecto de Unity todavía no existe |
-| Progreso, XP y rachas reales | ⛔ | Requiere backend |
-| Pertenecer a varios salones | ⛔ | El modelo actual admite uno solo |
+| Progreso, XP y rachas reales | ⛔ | La fontanería está escrita y medida, pero **nada la llama**: llega con el juego. El XP se ve en cuatro sitios y muestra cero |
+
+> **Un niño pertenece a un solo salón, y eso es una decisión de diseño, no una
+> limitación pendiente de resolver.** No es que «todavía» no se pueda estar en
+> varios: el modelo lo impide a propósito, y lo hace cumplir el servidor en tres
+> sitios a la vez —una restricción de unicidad sobre la pertenencia, un índice
+> único sobre las solicitudes pendientes, y la propia política de escritura, que
+> rechaza pedir entrar a otro salón siendo ya miembro—. Ninguno de los tres
+> sobra.
+>
+> Si algún día se quisiera cambiar, no sería añadir una funcionalidad: sería
+> rehacer el modelo de pertenencia y todo lo que cuelga de él. **Nadie lo ha
+> pedido y no está en el roadmap.**
 
 ### 1.3 Transversal
 
 | Funcionalidad | Estado | Notas |
 | --- | --- | --- |
 | Enrutado y guardas por rol | ✅ | Cada rol es devuelto a su panel si entra en el ajeno |
-| Sesión de invitado (entrar sin login) | ✅ | Solo en desarrollo (`import.meta.env.DEV`) |
-| Persistencia del estado de salones | ✅ | `localStorage`, un solo navegador |
-| Registro y login reales | ⛔ | Formularios existen; Supabase Auth sin conectar |
-| Login con Google | ⛔ | `signInWithGoogle` escrito, sin configurar |
+| Registro y login reales | ✅ | Contra Supabase Auth. El rol se elige al registrarse |
+| Login con Google | ✅ | Funciona por los dos caminos. **El rol se fija en el primer registro y no cambia nunca** |
+| Recuperar la contraseña olvidada | ✅ | Correo real con enlace, verificado de punta a punta |
+| Cambiar la contraseña desde Ajustes | ✅ | Pide la actual y la verifica contra el servidor |
+| Cambiar el nombre desde Ajustes | ✅ | Se refresca en las siete pantallas que lo muestran, sin recargar |
+| Persistencia del estado de salones | ✅ | **En Supabase**, no en el navegador: se ve desde cualquier dispositivo |
+| Sincronización en vivo | ✅ | Tres pantallas se actualizan solas. **No hay notificaciones**: ni campana, ni avisos, ni no leídos |
+| Sesión de invitado (entrar sin login) | ✅ | Sólo en desarrollo (`import.meta.env.DEV`). **Ya no simula nada**: autentica de verdad con cuentas de prueba |
+| Mensajes de error en español | 🟡 | Los de acceso sí. Los de perfil siguen llegando en inglés |
+| Responsive y accesibilidad | ⛔ | **El panel no se repliega en móvil.** A 375 px la barra lateral se come la pantalla. Es el paso 25 |
+| Consentimiento del acudiente y política de privacidad | ⛔ | Obligatorio antes del primer usuario real. Es el paso 14 |
 
 ### 1.4 Flujos de usuario principales
 
@@ -101,14 +139,24 @@ Tutor → "Mis salones" → botón "Crear salón"
   → se añade al store y redirige a /teacher/groups/{id}
 ```
 
-#### Invitar por correo — 🟡 prototipo
+#### Invitar con un enlace
 
 ```
 Tutor → detalle del salón → "Invitar"
-  → escribe correo → valida formato y duplicados
-  → inviteByEmail(): guarda la invitación en estado "pending", normalizada a minúsculas
-  → aparece en "Invitaciones enviadas"
-  ⚠️ NO se envía ningún correo. El alumno no puede canjearla.
+  → createInvitation(): el servidor genera un token y lo devuelve en la misma llamada
+  → el tutor copia el enlace /invite/{token} y lo comparte por donde quiera
+  → aparece en la lista con uno de tres estados: activo, usado o caducado
+  → caduca a los 14 días, y al abrir el panel se purgan los vencidos
+
+Quien abre el enlace:
+  → si no tiene cuenta, se registra; el token sobrevive el registro,
+    incluso pasando por Google
+  → redeem_invitation(): entra al salón SIN pasar por la bandeja del tutor
+  → si tenía una solicitud pendiente en otro salón, se cancela
+  → si ya estaba en un salón, no entra y el enlace NO se gasta
+
+La plataforma no manda ningún correo: ninguna tabla guarda direcciones,
+y eso es una decisión de privacidad, no una funcionalidad a medias.
 ```
 
 #### Solicitar ingreso
@@ -125,12 +173,16 @@ Alumno sin salón → buscador → busca por nombre o ID
 
 ```
 Tutor → detalle del salón → "Alumnos en espera"
-  ├── Aceptar  → acceptRequest(): el niño pasa a la tabla sin actividad previa
-  │              si es el alumno de la sesión → membership = member
-  └── Rechazar → rejectRequest(): se descarta la solicitud
-                 si es el alumno de la sesión → membership = none
+  ├── Aceptar  → accept_join_request(): el servidor comprueba el cupo, que el
+  │              salón sea suyo y que el niño no esté ya en otro, y escribe
+  │              las dos tablas en una sola transacción
+  └── Rechazar → rejectRequest(): la solicitud queda rechazada, y es inmutable
+                 — el niño no puede borrarla ni reescribirla
 
-Nota: "Aceptar" se deshabilita cuando no quedan cupos libres.
+El niño lo ve sin recargar, esté donde esté.
+
+Nota: "Aceptar" se deshabilita cuando no quedan cupos libres, y aunque se
+fuerce la llamada, el servidor la rechaza con "Classroom is full".
 ```
 
 #### Eliminar alumno
@@ -159,6 +211,8 @@ Tutor → detalle del salón → "Eliminar salón"
 stateDiagram-v2
     [*] --> SinSalon
     SinSalon --> EnEspera: solicita ingreso
+    SinSalon --> EnSalon: canjea un enlace de invitación
+    EnEspera --> EnSalon: canjea un enlace (su solicitud se cancela)
     EnEspera --> SinSalon: cancela su solicitud
     EnEspera --> SinSalon: el tutor rechaza
     EnEspera --> SinSalon: el tutor elimina el salón
@@ -166,6 +220,11 @@ stateDiagram-v2
     EnSalon --> SinSalon: el tutor lo quita del salón
     EnSalon --> SinSalon: el tutor elimina el salón
 ```
+
+**El enlace de invitación es el único camino que salta la espera.** Entra
+directo, y si el niño tenía una solicitud pendiente —en ese salón o en otro— se
+**cancela**: ni se acepta ni se rechaza. Su historial de solicitudes ya
+resueltas no se toca.
 
 | Estado | `membership.status` | `groupId` | Qué ve el alumno |
 | --- | --- | --- | --- |
@@ -178,6 +237,7 @@ stateDiagram-v2
 | Desde | Hacia | Disparador | Quién |
 | --- | --- | --- | --- |
 | Sin salón | En espera | `requestJoin()` | Alumno |
+| Sin salón / En espera | En un salón | `redeemInvitation()` | Alumno, con un enlace |
 | En espera | Sin salón | `cancelJoinRequest()` | Alumno |
 | En espera | Sin salón | `rejectRequest()` | Tutor |
 | En espera | En un salón | `acceptRequest()` | Tutor |
@@ -411,13 +471,27 @@ Entorno de referencia: **Node.js 22.17.1**, **npm 10.9.2**.
 | `tailwindcss` | 3.4.19 | Estilos |
 | `postcss` / `autoprefixer` | 8.5.26 / 10.5.4 | Procesado de CSS |
 
-#### Dependencias presentes, aún sin uso real
+#### Backend y validación
 
-| Paquete | Versión | Estado |
+| Paquete | Versión | Para qué |
 | --- | --- | --- |
-| `@supabase/supabase-js` | 2.112.3 | Cliente y servicios escritos; sin proyecto conectado, ninguna consulta llega a resolverse |
-| `zod` | 3.25.76 | Valida las variables de entorno (`config/env.ts`) y los esquemas de login y registro |
-| `framer-motion` | 10.18.0 | **Sin uso.** Candidato a eliminar si no se anima nada |
+| `@supabase/supabase-js` | 2.112.3 | **En uso real.** Cliente y 8 servicios contra un proyecto conectado |
+| `zod` | 3.25.76 | Valida las variables de entorno y los formularios de acceso |
+
+> `framer-motion` **ya no está**: se eliminó porque nada lo usaba.
+
+#### Tests
+
+| Paquete | Versión | Para qué |
+| --- | --- | --- |
+| `vitest` | 3.2.7 | Ejecutor de tests |
+| `jsdom` | 30.0.1 | DOM simulado |
+| `@testing-library/react` | 16.3.2 | Renderizar componentes y buscar por lo que ve el usuario |
+
+Hoy hay **109 tests en 15 archivos**, y pasan. No los rompas: existen sobre todo
+para que reescribir `ClassroomsProvider` tenga red. Si uno falla después de un
+cambio tuyo, **eso es la señal que se pagó por tener**; no se «arregla» tocando
+el test.
 
 #### Calidad
 
@@ -450,8 +524,16 @@ cp apps/web/.env.example apps/web/.env
 | `VITE_SUPABASE_URL` | URL del proyecto de Supabase |
 | `VITE_SUPABASE_ANON_KEY` | Clave pública (anon) |
 
-> La aplicación arranca aunque estas variables estén vacías: ninguna pantalla
-> construida hasta ahora depende de Supabase.
+> ⚠️ **La aplicación NO arranca sin estas dos variables.** `config/env.ts` las
+> valida con zod y **lanza al importarse**, así que una pantalla en blanco al
+> empezar casi siempre es esto. Copiar `.env.example` da valores de relleno que
+> pasan la validación, pero **no apuntan a ningún proyecto real**: para trabajar
+> contra la base de verdad hay que pedirle a Andrés las credenciales, que no
+> están en el repositorio.
+
+El `.env` de quien tiene acceso lleva además seis variables `VITE_DEV_*` con las
+cuentas de prueba que usa el botón «Sin login». Sin ellas ese botón cae en una
+marca de invitado que no autentica contra nada.
 
 ```bash
 npm run dev
@@ -459,13 +541,25 @@ npm run dev
 
 #### Comandos
 
+Todos desde la raíz. Para uno concreto: `npm run <script> -w @codeplay/web`.
+
 | Comando | Qué hace |
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo en el puerto 5173 |
-| `npm run build` | Chequeo de tipos + build de producción — **hoy falla**, ver §4 |
+| `npm run build` | Chequeo de tipos + build de producción |
+| `npm run lint` | ESLint sin tolerancia a warnings |
+| `npm run test` | Tests en modo vigilancia |
+| `npm run test:run` | Tests, una pasada |
 | `npm run preview` | Sirve el build de producción |
-| `npm run lint` | ESLint sin tolerancia a warnings — **hoy falla**, ver §4 |
 | `npm run format` | Prettier sobre `src` |
+
+**Los tres que hay que dejar en verde antes de subir nada** son `lint`,
+`test:run` y `build`. Se ejecutan además en GitHub Actions en cada push y en
+cada pull request contra `main`.
+
+> ⚠️ Ejecuta los tests con `npm run test:run`, **no** con `npx vitest run`: por
+> la raíz se salta la configuración del workspace, no carga el DOM simulado y
+> verás decenas de fallos que no existen.
 
 Para operar sobre un workspace concreto: `npm run <script> -w @codeplay/web`.
 Para instalar una dependencia solo en el front: `npm install <paquete> -w @codeplay/web`.
@@ -481,7 +575,9 @@ codeplayPGrado/
 ├── supabase/                 Esquema de base de datos
 │   └── migrations/           22 migraciones SQL (la siembra vive en la 0012,
 │                             no hay seed.sql suelto)
-├── docs/                     Este documento
+├── docs/                     Este documento, CONTEXT.md, ROADMAP.md y
+│                             CONTRATO-DE-INTEGRACION.md
+├── .github/workflows/        CI: lint, tests y build
 ├── package.json              Raíz del monorepo (npm workspaces)
 ├── .eslintrc.cjs             Config de ESLint compartida
 ├── .prettierrc               Config de Prettier compartida
@@ -499,9 +595,10 @@ codeplayPGrado/
 | `components/home/` | Navbar y secciones de la landing |
 | `components/auth/`, `components/ui/` | Formularios de acceso y primitivas antiguas |
 | `context/` | `AuthProvider` (Supabase), `ClassroomsProvider` (store de salones), helpers de rol y de sesión de invitado |
-| `hooks/` | `useAuth`, `useClassrooms`, `useActiveRole` y hooks de datos aún sin conectar |
-| `services/` | 7 servicios de Supabase. Los consumen `AuthProvider` y los hooks de datos; **ninguna pantalla de salones los usa** |
-| `types/` | Tipos de dominio. `classroom.types.ts` es el modelo vivo; `database.types.ts` está desincronizado |
+| `hooks/` | `useAuth`, `useClassrooms`, `useActiveRole` y los hooks de datos (`useWorlds`, `useProgress`, `useAchievements`, `useProfile`, `useInvitations`, `useMissionAssignments`) |
+| `services/` | 8 servicios de Supabase, **todos en uso**. Devuelven siempre `{ data, error }` y **nunca lanzan** |
+| `types/` | Tipos de dominio. `classroom.types.ts` es el modelo vivo; `database.types.ts` **se genera con la CLI de Supabase y no se edita a mano** |
+| `test/` | Infraestructura de tests: `setup.ts` y `renderClassrooms.tsx` |
 | `router/` | `AppRouter` y las guardas `PrivateRoute` / `PublicRoute` |
 | `pages/` | Un componente por pantalla de nivel superior |
 | `constants/`, `config/`, `lib/`, `errors/` | Rutas, entorno, cliente de Supabase, tipos de error |
@@ -512,6 +609,11 @@ codeplayPGrado/
 | --- | --- | --- |
 | `/` | Público | Landing |
 | `/login`, `/signup` | Público | Acceso y registro |
+| `/signup/child`, `/signup/tutor` | Público | Registro con el rol ya elegido |
+| `/forgot-password` | Público | Pedir el correo de recuperación |
+| `/reset-password` | Con sesión, sin rol | Fijar la contraseña nueva desde el enlace del correo |
+| `/auth/callback` | Sin guarda | Vuelta de Google. **Sin guarda a propósito**: si el proveedor falla no hay sesión, y una guarda borraría el motivo |
+| `/invite/:token` | Sin guarda | Canjear un enlace. **Sin guarda a propósito**: quien llega normalmente no tiene cuenta, y una guarda se llevaría el token por delante |
 | `/dashboard`, `/dashboard/worlds` | Alumno | Mundos |
 | `/dashboard/worlds/:worldId` | Alumno | Niveles de un mundo |
 | `/dashboard/trophies` | Alumno | Sala de trofeos |
@@ -527,112 +629,143 @@ Quien entra en un panel que no le corresponde es redirigido al suyo.
 
 #### Claves de `localStorage`
 
+**Los salones ya no se guardan aquí.** `codeplay:classrooms` dejó de escribirse
+al conectar el backend; si te queda de una sesión vieja, es inerte y puedes
+borrarla. Lo que sí vive en el navegador:
+
 | Clave | Contenido |
 | --- | --- |
-| `codeplay:classrooms` | Estado completo de salones y pertenencia. Versionado (`version: 1`); si la versión no cuadra, se resiembra |
-| `dev:skipAuth` | Marca de sesión de invitado. Solo en desarrollo |
+| `dev:skipAuth` | Marca de sesión de invitado. Sólo en desarrollo |
 | `dev:guestRole` | Rol de la sesión de invitado: `child` o `tutor` |
+| `classrooms:pendingInvitationToken` | El token de un enlace abierto sin sesión. Es lo que le permite sobrevivir al registro, incluido el viaje a Google |
+
+Ningún componente lee `localStorage` directamente: la sesión de invitado pasa
+por `guest.helpers.ts` y el token por `invitationToken.helpers.ts`.
 
 ### 3.4 Herramientas pendientes de integrar
 
+**Ya integradas** (estaban en esta lista y salieron de ella): Supabase Postgres,
+Supabase Auth, Google OAuth, Supabase Realtime y el CI en GitHub Actions. Los
+enlaces de invitación **no necesitaron Edge Functions**: bastó una función SQL
+`security definer`, que es el patrón que el proyecto ya usaba.
+
+Lo que sigue pendiente:
+
 | Herramienta | Necesaria para | Situación |
 | --- | --- | --- |
-| **Supabase Postgres** | Persistir salones, solicitudes, alumnos y progreso entre dispositivos | Proyecto y CLI sin conectar. Faltan tablas de salones |
-| **Supabase Auth** | Login real, distinguir tutor de alumno en el servidor | `auth.service.ts` escrito; falta configurar el proyecto |
-| **Google OAuth** | Acceso con Google | `signInWithGoogle()` escrito; falta darlo de alta |
-| **Servicio de correo** (Resend, SendGrid o similar) | Enviar de verdad las invitaciones | Sin elegir. Es el bloqueo de la funcionalidad 🟡 más visible |
-| **Supabase Edge Functions** | Generar y canjear los enlaces de invitación con token | Sin empezar |
-| **Unity + WebGL** | El juego | El proyecto irá en `apps/game/`; el build en `apps/web/public/game/` |
-| **Git LFS** | Binarios de Unity (texturas, audio, modelos) | Reglas preparadas y comentadas en `.gitattributes`. **Activar antes del primer commit de Unity** |
-| **CI (GitHub Actions)** | Verificar lint y build en cada push | Sin configurar |
+| **Unity + WebGL** | El juego, que es la pieza que falta | El proyecto irá en `apps/game/` y el build en `apps/web/public/game/`. Hay que instalar Unity **con el módulo WebGL Build Support**, que no viene por defecto. **Antes hay que decidir en equipo si el juego vive aquí o en un repositorio propio** |
+| **Git LFS** | Binarios de Unity (texturas, audio, modelos) | Reglas preparadas y **comentadas** en `.gitattributes`. Están comentadas a propósito: los filtros de LFS rompen el clone de quien no lo tenga instalado, así que encenderlas **obliga a todo el equipo a instalar git-lfs** |
+| **Servicio de correo** (Resend, SendGrid…) | Enviar la invitación en vez de que el tutor pase el enlace a mano | Sin elegir, y **hay que contratarlo**. No bloquea nada: el enlace ya funciona |
+| **Servidor de la universidad** | El despliegue definitivo; Supabase era para probar | Sin preguntar qué ofrece. Hace falta saber si dan Postgres y con qué versión, HTTPS, si dejan correr procesos y si hay algo equivalente a Realtime y a OAuth |
 
-#### Qué desbloquea cada pieza
+#### Qué desbloquea el juego
 
-| Si conectas… | Se vuelve funcional |
+Es la única pieza que bloquea a otras, y bloquea a cuatro:
+
+| Se vuelve posible | Por qué depende del juego |
 | --- | --- |
-| Postgres + Auth | Todo el store de salones deja de ser local: solicitudes reales entre dispositivos, roles verificados en servidor |
-| Servicio de correo + Edge Functions | Invitación por correo completa, con enlace que mete al alumno en el salón |
-| Postgres (tabla de habilidades) | Reportes calculados sobre progreso real en vez de datos de ejemplo |
-| Unity WebGL | Jugar, y con ello progreso, XP y rachas auténticas |
+| Progreso, XP y rachas reales | Nada escribe progreso hasta que haya partidas que reportar |
+| Reportes de habilidades de verdad | Se calculan sobre el progreso real, que hoy no existe |
+| Logros y catálogo de logros | El servidor los concede leyendo el programa de bloques que manda el juego |
+| Cumplir una misión | Una misión asignada no tiene forma de completarse sin juego |
 
 ---
 
 ## 4. Deuda técnica conocida
 
-Cuatro cosas que conviene atacar antes de seguir añadiendo funcionalidad.
+**Lo que había aquí antes ya está resuelto**, y conviene decirlo porque era lo
+primero que este documento te mandaba arreglar: `build` y `lint` **ya no fallan**
+—los tres errores de `StudentWorldsModule.tsx` desaparecieron al reescribir el
+archivo—, `database.types.ts` **se regeneró** contra la base real, las **tablas
+de salones existen** desde la migración 0013, y el rediseño **ya alcanza** a
+todas las pantallas que antes desentonaban.
 
-### 4.1 `npm run build` y `npm run lint` fallan
+Lo que queda hoy. El detalle medido de cada punto está en
+[`CONTEXT.md`](CONTEXT.md) §4; aquí va lo justo para no tropezar.
 
-Los tres errores están en el **mismo archivo**,
-[`StudentWorldsModule.tsx`](../apps/web/src/components/dashboard/student/StudentWorldsModule.tsx),
-y son anteriores a todo el trabajo reciente:
+### 4.1 El panel no funciona en móvil
 
-| Línea | Problema |
-| --- | --- |
-| 233 | `difficultyLabel: w.name ? 'Fácil' : 'Fácil'` — el ternario ensancha el tipo a `string` y deja de encajar con `'Fácil' \| 'Intermedio' \| 'Difícil'`. Rompe `tsc` |
-| 200 | `as any` sobre el mapeo de `fallbackWorlds` — viola la regla de ESLint |
-| 234 | `(w as any).difficulty` — viola la regla de ESLint |
+Con el viewport a 375 px la barra lateral ocupa **262 px fijos** y al contenido
+le quedan **113**: cada sección del panel mide 73 px de ancho. No es una pantalla
+concreta, es la maquetación entera, que nunca tuvo repliegue. Está medido, no
+estimado.
 
-Son correcciones de una línea cada una. Mientras sigan ahí, **no hay build de
-producción posible** y el CI no podrá ponerse en verde.
+Es el **paso 25** del roadmap, y va detrás del apartado gráfico a propósito:
+hacer responsive un diseño que las ilustraciones van a cambiar es pagarlo dos
+veces.
 
-### 4.2 `database.types.ts` no describe la base de datos real
+### 4.2 No existe el catálogo de logros
 
-El archivo declara campos que **no existen** en las migraciones:
+La tabla `achievements` guarda los logros **concedidos** a cada niño, no la lista
+de los posibles con sus condiciones. Por eso la sala de trofeos sólo puede
+listar lo conseguido, y hoy está vacía. Diseñar ese catálogo es el **paso 22**.
 
-| `database.types.ts` declara | La tabla `profiles` tiene realmente |
-| --- | --- |
-| `role`, `email`, `avatar_url`, `streak_days`, `xp` | `username`, `full_name`, `avatar_key`, `country_code`, `total_xp`, `current_streak`, `max_streak` |
+Y una consecuencia que conviene saber antes de intentarlo: **nada del cliente
+puede conceder un logro.** La tabla no da permiso de escritura a ningún rol, así
+que la única vía es una función SQL del servidor, y no existe todavía.
 
-Consecuencias: **no hay columna `role`**, así que el backend no puede distinguir
-tutor de alumno; y todo lo que dependa de `user.streakDays`, `user.xp` o
-`user.email` fallará en cuanto se conecte Supabase.
+### 4.3 Los errores de perfil llegan en inglés
 
-Ese archivo debe **regenerarse**, no editarse a mano:
+Los fallos de acceso están traducidos —`auth.service.ts` los mapea por código—,
+pero `profile.service.ts` y otros cinco servicios pasan el mensaje del servidor
+tal cual. **El patrón ya está escrito**, así que cerrarlo es copiarlo, no
+diseñarlo.
 
-```bash
-supabase gen types typescript --local > apps/web/src/types/database.types.ts
-```
+### 4.4 El nombre sólo lo valida el navegador
 
-### 4.3 Faltan tablas de salones
+La función del servidor que actualiza el perfil **no valida `full_name` en
+absoluto**: ni longitud, ni recorte, ni rechazo de la cadena vacía. La única
+defensa es un esquema de zod en el cliente, que basta para lo que la motivaba
+—que un nombre de 500 caracteres no reviente la tabla del salón— pero se salta
+cualquiera que llame a la función por fuera de la aplicación.
 
-No existe nada equivalente a `ClassGroup`. Como mínimo harán falta:
+No se cerró con una restricción en la base a propósito: podría **rechazar filas
+ya guardadas**, porque ese campo nunca tuvo validación.
 
-| Tabla | Para qué |
-| --- | --- |
-| `class_groups` | Salón: profesor, nombre, grado, id público, cupos |
-| `class_memberships` | Relación alumno ↔ salón |
-| `join_requests` | Solicitudes pendientes con su estado |
-| `invitations` | Invitaciones por correo con token y caducidad |
-| `profiles.role` | Columna nueva para distinguir `child` de `tutor` |
+### 4.5 Dos cosas menores, sin urgencia
 
-**Los puntos 4.2 y 4.3 se solapan: conviene resolverlos en una sola tanda.**
-
-### 4.4 Aislamiento del store
-
-`ClassroomsProvider` es el único archivo que cambia de raíz al conectar el
-backend. Todos los componentes consumen los datos vía `useClassrooms()`, así que
-sustituir el estado local por consultas **no obliga a tocar ninguna vista**. Se
-diseñó así a propósito; conviene mantener esa frontera.
-
-### 4.5 Alcance del rediseño
-
-El sistema visual (tipografías, paleta, fondo) se aplica globalmente, pero estas
-pantallas conservan su maquetación y colores originales y desentonarán de cerca:
-
-- Secciones de la landing (héroe, cómo se aprende, tutores, pie)
-- Login y registro
-- Módulos del alumno: Mundos, Sala de Trofeos, Ajustes
+- **ESLint 8 ya no recibe soporte.** Migrar a la versión 9 con configuración
+  plana está pendiente y no corre prisa.
+- **El bundle pasa de 500 kB** (596 kB) y el build lo avisa. Hoy es inofensivo,
+  pero cobrará importancia al meter el juego: un build de WebGL ronda los
+  5–20 MB. Se resuelve partiendo el bundle por rutas.
 
 ---
 
 ## Resumen para quien retoma esto
 
-1. Ejecuta `npm install` y `npm run dev`. Entra con los botones **Sin login** de
-   la barra superior: elige *Niño* o *Profesor*.
-2. Para reiniciar los datos de ejemplo, borra la clave `codeplay:classrooms` de
-   `localStorage`.
-3. Antes de tocar nada: arregla los tres errores de `StudentWorldsModule.tsx`
-   (§4.1) para recuperar el build.
-4. El siguiente hito grande es el esquema de base de datos (§4.2 y §4.3). Sin él,
-   todo lo demás sigue siendo una demostración de un solo navegador.
+**Para arrancar**
+
+1. `npm install` en la raíz. Un solo install sirve para todo el monorepo.
+2. Pídele a Andrés las credenciales de `apps/web/.env`. **Sin ellas la aplicación
+   no arranca**, y con las de relleno de `.env.example` arranca pero no habla con
+   ninguna base de datos.
+3. `npm run dev`, y entra en `http://localhost:5173`.
+4. Entra con una cuenta real por `/login`, o crea una en `/signup`. Los botones
+   **Sin login** de la barra superior siguen ahí en desarrollo y **autentican de
+   verdad** con las cuentas de prueba del `.env`.
+
+**Antes de subir nada**
+
+`npm run lint`, `npm run test:run` y `npm run build`. Los tres pasan hoy —109
+tests— y el CI los repite en cada pull request.
+
+**Qué conviene entender del estado, en tres frases**
+
+- **El backend está hecho y funciona.** Salones, acceso, roles, invitaciones y
+  sincronización en vivo son reales y están probados contra la base.
+- **Falta el juego, y es lo que bloquea el resto.** Sin él no hay progreso, ni
+  XP, ni rachas, ni logros, ni forma de cumplir una misión: todo eso está
+  esperando partidas que reportar.
+- **Lo que aún es maqueta está señalado con 🟡 en §1**, y de todo ello lo más
+  visible es la pantalla de niveles, que enseña diez niveles inventados.
+
+**Si vas a tocar interfaz**, la §2 de este documento es la guía completa: usa los
+nombres de color del tema y nunca hex sueltos. Y hay dos reglas que sorprenden si
+nadie las cuenta: los huecos de la mascota se dejan **vacíos** a propósito hasta
+que existan las ilustraciones definitivas, y ninguna pantalla habla con Supabase
+directamente —los salones pasan siempre por `useClassrooms()`—.
+
+**Si vas a hacer el juego**, tu documento es
+[`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md), que se lee sin
+conocer nada de este repositorio.

@@ -1588,10 +1588,24 @@ El build de WebGL va a `apps/web/public/game/`, carpeta ignorada por git.
 | Editar o archivar un salón | No existe | P1 |
 | Exportar reportes | No existe | P1 |
 | Progreso, XP y rachas reales | El XP ya se lee de la base y se muestra en cuatro sitios desde `arreglos-y-barra-xp`; lo que falta es que **algo lo escriba**, y con él la racha | P4 |
-| Pertenecer a varios salones | El modelo actual admite uno solo; cambiarlo afecta a `StudentMembership` | P3 |
 | Recursos educativos con destino | Hoy son tarjetas informativas sin enlace | Contenido |
-| CI en GitHub Actions | Verificar lint y build en cada push | Ninguna |
 | Abrir los cambios en OpenSpec | Convertir P1–P4 en `openspec/changes/` con `/opsx:propose` | Ninguna |
+
+**Dos filas salieron de esta tabla el 3-sep-2026, y por motivos distintos.**
+
+«CI en GitHub Actions» estaba **hecha** desde el paso 5 (`ci-github-actions`), y
+además hace más de lo que la fila pedía: verifica `lint`, `test:run` y `build`,
+en cada push a `main` y en cada pull request.
+
+«Pertenecer a varios salones» **nunca fue una funcionalidad pendiente**, y
+tenerla aquí contradecía a §2.7 de este mismo documento, que la describe como lo
+que es: el invariante **«un alumno, un salón»**, que vive a propósito en tres
+sitios —`unique (student_id)` en `class_memberships`, el índice único parcial
+sobre las solicitudes pendientes, y el `with check` de la política de inserción—
+y del que §2.7 dice que ninguno de los tres sobra. Lo confirmó el usuario el
+3-sep-2026: **no se ha hablado nunca de permitir varios salones**, así que
+listarlo como pendiente sugería un compromiso que no existe. Cambiarlo no sería
+añadir una funcionalidad, sería rehacer el modelo de pertenencia.
 
 ### `enlace-de-invitacion` (paso 19, mitad A): APLICADO
 
