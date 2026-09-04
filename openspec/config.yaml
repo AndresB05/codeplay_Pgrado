@@ -117,7 +117,9 @@ context: |
   ESTRUCTURA (monorepo con npm workspaces, node_modules compartido en la raíz)
   apps/web/        front-end, workspace @codeplay/web. El juego vive DENTRO,
                    en src/game/ (decidido el 4-sep-2026, ver
-                   docs/DISENO-DEL-JUEGO.md §6)
+                   docs/DISENO-DEL-JUEGO.md §6). public/models/ guarda los
+                   482 modelos .glb de Kenney (5,96 MB, CC0) con su README;
+                   van en public/ porque GLTFLoader los pide por URL
   apps/game/       NO EXISTE y ya no existirá: no hay Unity
   packages/        código compartido — vacío
   supabase/        migrations/ (22 migraciones SQL; el seed vive en la 0012)

@@ -163,8 +163,11 @@ de integración. Ahorra tres cosas de golpe:
 2. **Desaparece el problema de Git LFS.** Era el único argumento fuerte para
    sacar el juego a un repositorio propio: encenderlo obligaba a todo el equipo a
    instalar `git-lfs`. Sin Unity no hay escenas, ni prefabs, ni `Library/`;
-   quedan unos pocos modelos `.glb` de kilobytes. **Por eso el juego se queda en
-   este monorepo**, decidido el mismo día.
+   quedan sólo modelos `.glb`. **Por eso el juego se queda en este monorepo**,
+   decidido el mismo día. Los dos kits ya están dentro y suman **5,96 MB**: se
+   dijo «unos pocos de kilobytes» y son 482 archivos, pero el argumento aguanta
+   igual, porque eso sigue siendo dos órdenes de magnitud por debajo de lo que
+   justificaría encender LFS.
 3. **Desaparece «instalar Unity»** como paso que requiere una persona.
 
 Lo que **no** cambia: sigue siendo 3D y sigue teniendo que **cargar assets**.
@@ -207,6 +210,30 @@ que hablan las decisiones visuales del proyecto, y su licencia es libre.
 **No lo cubre Higgsfield.** Esa decisión era para las ilustraciones 2D de la
 plataforma —la mascota, las portadas de mundo—, que es otra cosa y sigue en pie
 por su lado.
+
+### Y ya están en el repositorio — 4-sep-2026
+
+Los dos kits que aportó el usuario viven en **`apps/web/public/models/`**, con su
+`README.md` al lado explicando el detalle. Lo que conviene saber sin abrir esa
+carpeta:
+
+- **`nature/`** (Nature Kit 2.1, 329 modelos) es el decorado —árboles,
+  acantilados, caminos, puentes— y **`platformer/`** (Platformer Kit 4.1, 153) es
+  el juego: cinco personajes, 39 variantes de bloque de rejilla, bandera de meta,
+  flechas, puertas y llaves. Los dos son **CC0**.
+- **Sólo se guardó el GLB.** El FBX, el OBJ, el DAE, el STL y las ~1.800 vistas
+  previas se quedaron fuera: son unos 30 MB que el navegador no sabe leer.
+- **Van en `public/` y no en `src/`** porque `GLTFLoader` los pide por URL en
+  tiempo de ejecución. Metidos en `src/` entrarían en el grafo del bundle, que es
+  lo contrario de lo que se quiere.
+- **`platformer/Textures/colormap.png` no se puede mover.** Los 153 modelos de
+  ese kit apuntan a él por ruta relativa, así que tiene que seguir siendo hermano
+  de los `.glb`. Aplanar la carpeta los deja en blanco **sin error en consola**.
+  Los 329 de `nature/` sí son autocontenidos. Comprobado en los 482, uno a uno.
+
+Estar en el repositorio **no es entrar en el juego**: `ROADMAP-JUEGO.md` §2 sigue
+mandando, y la fase A se hace entera con cubos de colores. Están ahí para no
+tener que buscarlos el día que hagan falta.
 
 **Aviso de tamaño:** el bundle ya supera los 500 kB y el build lo avisa. Three
 más Blockly suman bastante más, así que **el juego debe cargarse sólo en la

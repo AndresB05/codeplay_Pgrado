@@ -177,7 +177,9 @@ codeplayPGrado/
 │   └── web/                  Front-end (@codeplay/web). El juego vive DENTRO,
 │                             en src/game/: decidido el 4-sep-2026, ver
 │                             DISENO-DEL-JUEGO.md §6. `apps/game/` no existe y
-│                             ya no existirá — no hay Unity
+│                             ya no existirá — no hay Unity.
+│                             public/models/ guarda los 482 .glb de Kenney
+│                             (5,96 MB, CC0), con su propio README
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
 │   └── migrations/           22 migraciones SQL (la siembra vive en la 0012,

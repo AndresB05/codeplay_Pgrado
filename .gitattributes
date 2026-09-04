@@ -19,11 +19,8 @@
 *.wav binary
 *.mp4 binary
 
-# --- Unity (cuando entre apps/game) ---
-# Antes del primer commit de Unity, instalar Git LFS y descomentar:
-# *.unity      merge=unityyamlmerge eol=lf
-# *.prefab     merge=unityyamlmerge eol=lf
-# *.asset      merge=unityyamlmerge eol=lf
-# *.psd        filter=lfs diff=lfs merge=lfs -text
-# *.fbx        filter=lfs diff=lfs merge=lfs -text
-# *.unitypackage filter=lfs diff=lfs merge=lfs -text
+# Modelos 3D del juego (apps/web/public/models). Declarados a mano y no dejados
+# a la autodeteccion de text=auto: son 482 archivos y basta que uno se cuele
+# como texto para que la conversion de finales de linea lo corrompa.
+*.glb binary
+*.gltf text

@@ -11,24 +11,6 @@ dist/
 .vite/
 *.tsbuildinfo
 
-# --- Build de Unity WebGL servido por el front (artefacto, se genera) ---
-apps/web/public/game/
-
-# --- Unity (apps/game) ---
-apps/game/Library/
-apps/game/Temp/
-apps/game/Obj/
-apps/game/Build/
-apps/game/Builds/
-apps/game/Logs/
-apps/game/UserSettings/
-apps/game/MemoryCaptures/
-apps/game/Recordings/
-apps/game/*.csproj
-apps/game/*.sln
-apps/game/*.unityproj
-apps/game/*.user
-
 # --- Supabase CLI (estado local) ---
 supabase/.temp/
 supabase/.branches/
