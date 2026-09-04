@@ -165,6 +165,24 @@ export const AppRouter = () => {
               }
             />
 
+            {/*
+             * El banco de pruebas del juego, SÓLO en desarrollo. La bandera va
+             * aquí —en la puerta— y no dentro de `game/`: ese código no es de
+             * desarrollo, es el juego, y en el J8 lo monta la pantalla de nivel
+             * de verdad. En producción esta ruta no se registra y escribir la
+             * dirección cae en el comodín `*` de más abajo.
+             */}
+            {import.meta.env.DEV && (
+              <Route
+                path={ROUTES.GAME_LAB}
+                element={
+                  <PrivateRoute role="child">
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+            )}
+
             {/* Panel del profesor */}
             <Route
               path={ROUTES.TEACHER}

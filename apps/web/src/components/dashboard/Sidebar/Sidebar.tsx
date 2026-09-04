@@ -87,6 +87,24 @@ const LogoutIcon = () => (
   </svg>
 );
 
+const CubeIcon = ({ active = false }: { active?: boolean }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M12 3L20 7.5V16.5L12 21L4 16.5V7.5L12 3Z"
+      fill={active ? '#FFC93C' : '#F0E6FF'}
+      stroke={active ? '#FFFFFF' : '#2A1B45'}
+      strokeWidth="2.2"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M4 7.5L12 12L20 7.5M12 12V21"
+      stroke={active ? '#FFFFFF' : '#2A1B45'}
+      strokeWidth="2.2"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const FireIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
@@ -116,6 +134,14 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
     { route: ROUTES.WORLDS, label: 'Mundos', icon: CompassIcon },
     { route: ROUTES.TROPHY_ROOM, label: 'Sala de Trofeos', icon: TrophyIcon },
     { route: ROUTES.CLASSROOM, label: 'Salón de clases', icon: GraduationIcon },
+    /*
+     * El banco de pruebas del juego. Sólo en desarrollo, como el botón «Sin
+     * login»: en producción su ruta ni siquiera se registra, así que un enlace
+     * aquí llevaría al comodín del router.
+     */
+    ...(import.meta.env.DEV
+      ? [{ route: ROUTES.GAME_LAB, label: 'Laboratorio 3D', icon: CubeIcon, dev: true }]
+      : []),
   ];
 
   /*
@@ -197,6 +223,11 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
             >
               <Icon active={isActive} />
               <span>{item.label}</span>
+              {'dev' in item ? (
+                <span className="ml-auto rounded-full border-2 border-dashed border-line px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-ink-faint">
+                  Dev
+                </span>
+              ) : null}
             </button>
           );
         })}

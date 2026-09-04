@@ -56,6 +56,13 @@ y §5; aquí sólo el resultado:
    `@react-three/fiber`**; `drei`, Blockly y `@react-spring/three` entran en el
    paso que primero los importe.
 
+   **Y `three` queda fijado a ^0.170, medido en el J1 contra el navegador.** Con
+   fiber 8.18 contra `three` 0.185 el lienzo se crea y **la escena sale vacía**,
+   con un solo aviso de `THREE.Clock` deprecado como indicio. Quien añada `drei`
+   en un paso posterior tiene que traerlo a esa misma versión de `three`: **una
+   sola copia**, o los `instanceof` de fiber dejan de cuadrar. Y la salida nunca
+   es subir fiber, que arrastra React 19.
+
 **Los assets ya no bloquean nada**: salen de [Kenney](https://kenney.nl) y de lo
 que cree el propio usuario, en 3D, con 2D donde convenga —iconos de bloques,
 interfaz, carteles—. El detalle está en `DISENO-DEL-JUEGO.md` §5.
@@ -72,7 +79,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 
 | Nº | Paso | Se ve funcionar cuando… | Estado |
 | --- | --- | --- | --- |
-| **J1** | Esqueleto: las dos dependencias y un componente que pinta una escena 3D vacía dentro de la aplicación, cargado en diferido | Aparece algo en 3D en una pantalla del panel | ⬜ |
+| **J1** | Esqueleto: las dos dependencias y un componente que pinta una escena 3D vacía dentro de la aplicación, cargado en diferido | Aparece algo en 3D en una pantalla del panel | ✅ |
 | **J2** | La cuadrícula y el personaje, montados desde un objeto de configuración **escrito a mano en el código** | Se ve el tablero y el personaje se mueve llamando funciones desde la consola | ⬜ |
 | **J3** | **Fijar el formato** de `config` y de `program` | Está escrito en el contrato, no en la cabeza de nadie | ⬜ |
 | **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ⬜ |

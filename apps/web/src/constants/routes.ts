@@ -14,6 +14,12 @@ export const ROUTES = {
   TROPHY_ROOM: '/dashboard/trophies',
   CLASSROOM: '/dashboard/classroom',
   SETTINGS: '/dashboard/settings',
+  /*
+   * NO cuelga de WORLDS: `Dashboard.tsx` colapsa cualquier ruta bajo
+   * `${WORLDS}/` en WORLDS antes del `switch`, así que ahí debajo esta pantalla
+   * no llegaría nunca a su caso y saldría la de mundos, sin error que lo delate.
+   */
+  GAME_LAB: '/dashboard/game',
   TEACHER: '/teacher',
   TEACHER_GROUPS: '/teacher/groups',
   TEACHER_PANEL: '/teacher/panel',

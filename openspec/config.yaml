@@ -105,6 +105,21 @@ context: |
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
   react-router-dom 6.30, @supabase/supabase-js 2.112, zod 3.25.
+  Juego 3D: three 0.170 + @react-three/fiber 8.18, con @types/three 0.170
+  (three no publica tipos propios y sin ellos el tsc del build falla). Fiber se
+  queda en la rama 8 porque la 9 exige React >= 19. Y three esta FIJADO a 0.170
+  por el runtime, no por gusto: con fiber 8.18 contra three 0.185 el lienzo se
+  crea, el contexto WebGL vive y la escena sale VACIA, con un unico aviso de
+  THREE.Clock deprecado como indicio. Tiene que haber UNA sola copia de three en
+  node_modules; si queda una izada en la raiz y otra en apps/web, los instanceof
+  de fiber dejan de cuadrar. Se arregla restaurando package-lock.json y
+  reinstalando, NUNCA regenerandolo: regenerar el lockfile en Windows se lleva
+  por delante los binarios opcionales de otras plataformas (@supabase/cli-linux-*)
+  y el CI corre npm ci sobre ubuntu-latest.
+  El juego se carga en DIFERIDO desde el J1: src/game/GameScene.tsx es el unico
+  modulo que importa three o fiber, y src/game/GameSceneLoader.tsx es la frontera
+  (React.lazy + Suspense) y no importa ninguno de los dos. Juntarlos anula la
+  separacion.
   ESLint 8.57 (config heredada) + Prettier 3.9. Node >= 18.18.
   Tests: Vitest 3.2 + jsdom + Testing Library. Los tests se colocan junto al
   archivo que prueban; src/test/ guarda el setup y el helper renderClassrooms.

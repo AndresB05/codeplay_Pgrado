@@ -1,6 +1,7 @@
 import { useLocation, useParams } from 'react-router-dom';
 import { Sidebar } from '../../components/dashboard/Sidebar/Sidebar';
 import { StudentClassroomModule } from '../../components/dashboard/student/StudentClassroomModule';
+import { StudentGameLabModule } from '../../components/dashboard/student/StudentGameLabModule';
 import { StudentSettingsModule } from '../../components/dashboard/student/StudentSettingsModule';
 import { StudentTopBar } from '../../components/dashboard/student/StudentTopBar';
 import { StudentTrophiesModule } from '../../components/dashboard/student/StudentTrophiesModule';
@@ -41,6 +42,8 @@ export const Dashboard = () => {
         return <StudentClassroomModule />;
       case ROUTES.SETTINGS:
         return <StudentSettingsModule user={user} />;
+      case ROUTES.GAME_LAB:
+        return import.meta.env.DEV ? <StudentGameLabModule /> : <StudentWorldsModule user={user} />;
       default:
         return <StudentWorldsModule user={user} />;
     }

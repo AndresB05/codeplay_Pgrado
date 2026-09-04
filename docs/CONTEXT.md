@@ -153,6 +153,7 @@ Entorno de referencia: **Node.js 22.17.1**, **npm 10.9.2** (`engines` exige `>=1
 | Tipado | `typescript` | 5.9.3 (modo estricto) |
 | Build | `vite` + `@vitejs/plugin-react` | 5.4.21 / 4.7.0 |
 | Estilos | `tailwindcss` + `postcss` + `autoprefixer` | 3.4.19 |
+| Juego 3D | `three` + `@react-three/fiber` | 0.170.0 / 8.18.0 |
 | Backend | `@supabase/supabase-js` | 2.112.3 |
 | Validación | `zod` | 3.25.76 |
 | Calidad | `eslint` 8.57.1 (config heredada) + `prettier` 3.9.6 | — |
@@ -203,6 +204,7 @@ codeplayPGrado/
 | `components/dashboard/student/` | Módulos del alumno: salón, buscador, mundos, niveles, trofeos, ajustes |
 | `components/dashboard/shared/` | Componentes de ambos roles (`ConfirmDialog`, `StatCard`, `StudentRosterTable`, `GroupBadge`) y `groupThemes.ts` |
 | `components/decor/` | `JungleDecor.tsx`: SVG decorativos del tema selva |
+| `game/` | El juego (J1 en adelante). `GameScene.tsx` es el **único** módulo que importa `three`; `GameSceneLoader.tsx` es la frontera de carga diferida y no importa ninguno de los dos |
 | `components/home/` | Navbar, secciones de la landing y `shared.tsx` (contenedores y huecos de mascota) |
 | `components/auth/`, `components/ui/` | Formularios de acceso y primitivas antiguas |
 | `context/` | `AuthProvider` (Supabase), `ClassroomsProvider` (store local), helpers de rol y de invitado |
@@ -1392,6 +1394,57 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
 - **Este cambio NO tocó `ClassroomsProvider`.** Va por su propio servicio y su
   propio hook, como `worlds.service.ts` + `useWorlds()`. La frontera de §4.3
   sigue en pie.
+
+### 2.9 `juego-3d` — El esqueleto del juego (J1)
+
+**Aplicado con `esqueleto-del-juego`, el J1 de `ROADMAP-JUEGO.md`.** Lo que hay
+es el esqueleto y nada más: una escena 3D dentro del panel del niño, cargada en
+diferido. **Sin rejilla, sin personaje, sin bloques y sin backend** — la fase A
+no toca Supabase ni una vez, y eso es deliberado.
+
+| Archivo | Qué es |
+| --- | --- |
+| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>`, una luz y un cubo. **El único módulo del repositorio que importa `three` o `@react-three/fiber`** |
+| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida: `React.lazy` + `Suspense`. **No importa ninguno de los dos**, o la separación no existiría |
+| `apps/web/src/components/dashboard/student/StudentGameLabModule.tsx` | El banco de pruebas, con la escena en un contenedor de altura fija |
+| `apps/web/src/constants/routes.ts` | `GAME_LAB: '/dashboard/game'` |
+| `apps/web/src/router/AppRouter.tsx` | Registra esa ruta **sólo** bajo `import.meta.env.DEV` |
+| `apps/web/src/pages/Dashboard/Dashboard.tsx` | Un caso más en el `switch`, con la misma bandera |
+| `apps/web/src/components/dashboard/Sidebar/Sidebar.tsx` | La entrada «Laboratorio 3D», visible sólo en desarrollo |
+
+**La ruta NO puede colgar de `/dashboard/worlds/`.** `Dashboard.tsx` colapsa todo
+lo que empiece por ese prefijo en `ROUTES.WORLDS` **antes** del `switch`, así que
+una pantalla nueva ahí debajo no llega a su caso: sale la de mundos, sin error
+que lo delate.
+
+**El banco de pruebas no es de usar y tirar.** El J2, el J4, el J5 y el J6 se ven
+funcionar ahí, porque la pantalla de nivel real no llega hasta el J8 (paso 20).
+Cuando exista, esta pantalla se revisa.
+
+**`three` está fijado a 0.170 por el runtime, no por gusto.** Con
+`@react-three/fiber` 8.18 —la rama que se queda en React 18— contra `three`
+0.185.1 el lienzo se crea, el contexto WebGL vive y **la escena sale vacía**; el
+único indicio es un aviso de `THREE.Clock` deprecado en consola. Con 0.170.0 el
+cubo se ve. **La salida NUNCA es subir fiber**: fiber 9 exige React ≥ 19 y
+arrastraría `react-dom`, los tipos, Testing Library y los 109 tests.
+
+**Y `three` tiene que ser UNA sola copia.** Bajar la versión sólo en el workspace
+deja 0.185.1 izada en la raíz para fiber y 0.170.0 en `apps/web` para el código
+propio, que es peor que cualquiera de las dos. Se arregla restaurando el
+`package-lock.json` y reinstalando; **no regenerándolo**: regenerar el lockfile
+en Windows se lleva por delante los binarios opcionales de otras plataformas
+—los `@supabase/cli-linux-*`— y el CI corre `npm ci` sobre ubuntu-latest.
+
+**Lo que la carga diferida consigue, medido:** el trozo principal pasa de
+623,18 kB a 624,57 kB (+1,39 kB, que es el ayudante de precarga que Vite añade al
+primer `import()` del proyecto y se paga una sola vez), y el motor 3D viaja
+entero en un trozo aparte de 823,50 kB. `WebGLRenderer` aparece 36 veces en ese
+trozo y **cero** en el principal, e `index.html` **no lo precarga**, así que quien
+no abra una pantalla con juego no lo descarga — tampoco en producción.
+
+**Sin tests, a propósito.** jsdom no implementa WebGL: un test que monte
+`<Canvas>` no prueba la escena, prueba el simulacro. El criterio del J1 es ver el
+cubo en el navegador, y así se verificó.
 
 ---
 
