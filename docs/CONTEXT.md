@@ -1699,6 +1699,19 @@ se edita a mano**.
 npx supabase gen types typescript --linked > apps/web/src/types/database.types.ts
 ```
 
+### 4.2b Los nueve niveles sembrados son de otro juego
+
+Descubierto el 4-sep-2026 leyendo la migración 0012. Las nueve filas de `levels`
+llevan `validation_rules` del concepto anterior —el de escribir JavaScript—:
+`requiresAsyncAwait`, `requiresRecursion`, `requiresArray`, `requiresDebugging`.
+`starter_code` es texto JS. **No hay rejilla, ni salida, ni meta, ni pasos
+óptimos en ninguna.** Existen los títulos y las narrativas, no los puzles.
+
+Los diseña el usuario, y con ellos se rediseñan los títulos. Lo aplica el J7 del
+roadmap del juego, que pasa a reescribir título, narrativa y `validation_rules`
+además de sembrar la configuración. Ver `DISENO-DEL-JUEGO.md` §2 y
+`ROADMAP-JUEGO.md` §3.
+
 ### 4.2 No hay catálogo de logros
 
 La tabla `achievements` es el registro de logros **concedidos** a cada niño

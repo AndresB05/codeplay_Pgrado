@@ -43,12 +43,21 @@ mundo a otro: cambia qué tiene que pensar el niño para resolverlo.
 3-sep-2026 para que el alcance sea abarcable por una sola persona, que es quien
 está haciendo la página, la documentación y el juego.
 
-> **Nueve es exactamente lo que ya hay sembrado en la base**, tres por mundo,
-> desde el primer día, así que **no falta crear ningún nivel**. Los temas de los
-> sembrados —bucles, condicionales, funciones, recursión— son ámbitos del
-> pensamiento computacional igualmente, así que no contradicen nada: afinar sus
-> títulos para que acompañen mejor a cada mundo es cosmética, no trabajo
-> pendiente.
+> **En la base hay nueve filas, no nueve niveles**, y la diferencia importa.
+> Corregido el 4-sep-2026 leyendo la migración 0012: decía aquí que «no falta
+> crear ningún nivel», y era cierto de las filas y falso de los puzles.
+>
+> Lo sembrado es de **otro juego**, el de escribir JavaScript que se descartó. Sus
+> `validation_rules` dicen `requiresAsyncAwait`, `requiresRecursion`,
+> `requiresArray`, `requiresDebugging`; su `starter_code` es texto JS
+> (`const pasos = []…`). **No hay ni una rejilla, ni una casilla de salida, ni una
+> meta, ni un número de pasos óptimo.** Lo que existe son nueve títulos, nueve
+> narrativas y la identidad colombiana de los tres mundos.
+>
+> **Los nueve puzles hay que diseñarlos, y los diseña el usuario.** Decidido el
+> 4-sep-2026, y con ellos se rediseñan los títulos: el título sale del puzle y no
+> al revés. Eso convierte la migración del J7 en una que además reescribe título,
+> narrativa y `validation_rules`, no sólo en una que siembra configuración.
 
 ## 3. Cómo se puntúa
 

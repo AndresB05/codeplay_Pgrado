@@ -85,6 +85,56 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J11** | La barra de XP por tramos de 300 | El niño sube de nivel al terminar un mundo | ⬜ |
 | **J12** | Mundos 2 y 3 | Hay nueve niveles jugables | ⬜ |
 
+### El apartado gráfico va por mundo, y detrás de lo funcional
+
+Decidido por el usuario el 4-sep-2026, porque **no era de nadie**: los doce pasos
+de arriba no tenían ninguno que fuera la cámara, la luz, los modelos o el encaje
+con el tema selva de la plataforma. Estaba repartido entre el J2, el J8 y el J12,
+que es como un apartado se queda sin hacer.
+
+**La regla es una: primero el mundo funciona, después se viste.** Funcionar es lo
+vital —moverse por la rejilla, ejecutar el programa, terminar el nivel—; vestirlo
+es una pasada aparte con los modelos de `apps/web/public/models/`. Y dentro de
+esa pasada, **primero los assets del nivel y después el del personaje**.
+
+No lleva número todavía a propósito. La secuencia se deja como está y la pasada
+del mundo 1 se coloca cuando se llegue, que es cuando se sabrá si va pegada al J7
+o detrás de la fontanería. Cambiar el orden sobre la marcha es lo que manda §1.
+
+**Lo que sí hay que respetar desde el J2**, y es la única atadura que deja esta
+decisión: **el paso de la rejilla es la constante 1,0 y no se deduce de ningún
+modelo.** Medido en los kits: `block-grass` ocupa 1,082 × 1,000 × 1,082 y
+`ground_grass` 1,000 × 0 × 1,000. Ese 0,082 es el labio de hierba, que se solapa
+a propósito. Código que saque el paso del tamaño del modelo produce rendijas
+entre casillas, y con los modelos entrando tarde el fallo aparecería con la
+mecánica ya escrita encima.
+
+**El personaje trae 25 animaciones con esqueleto** —`idle`, `walk`, `jump`,
+`emote-yes`, `emote-no`—, así que cuando llegue su pasada, el J5 no tiene que
+inventar el andar: `@react-spring/three` interpola la posición entre casillas y
+el clip mueve las piernas. Hasta entonces, un cuerpo de relleno.
+
+### Los nueve puzles no existen, y los diseña el usuario
+
+`DISENO-DEL-JUEGO.md` §2 lo explica con la prueba delante. Resumen: en la base
+hay nueve **títulos** de un juego anterior —el de escribir JavaScript—, no nueve
+niveles. Ninguna fila tiene rejilla, salida, meta ni pasos óptimos.
+
+**Ninguna sesión se inventa un puzle.** El J7 y el J12 siembran lo que el usuario
+haya diseñado, y no antes. Los títulos se rediseñan con ellos, decidido el
+4-sep-2026: el título sale del puzle y no al revés, así que la migración del J7
+reescribe además título, narrativa y `validation_rules`.
+
+**Y el primer diseño hace falta en el J2**, no en el J7: ese paso monta la
+cuadrícula desde «un objeto de configuración escrito a mano», y ese objeto es el
+diseño del nivel 1.
+
+**Cuidado con «Puente Condicional»**, el nivel 2 sembrado del mundo 1: pide una
+condición, y §3 del diseño avisa de que las condiciones que dependen del entorno
+rompen el recuento de pasos —lo señalaba como riesgo del mundo 3—. Al rediseñar
+los títulos con los puzles, eso deja de ser un choque; queda anotado para que no
+se recupere sin querer.
+
 ### J3 es más importante de lo que parece, y por eso va antes que Blockly
 
 El formato del programa **lo leen tres sitios distintos**: el juego para
