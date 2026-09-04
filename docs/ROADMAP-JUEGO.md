@@ -141,9 +141,21 @@ haya diseñado, y no antes. Los títulos se rediseñan con ellos, decidido el
 4-sep-2026: el título sale del puzle y no al revés, así que la migración del J7
 reescribe además título, narrativa y `validation_rules`.
 
-**Y el primer diseño hace falta en el J2**, no en el J7: ese paso monta la
-cuadrícula desde «un objeto de configuración escrito a mano», y ese objeto es el
-diseño del nivel 1.
+**Cuándo hace falta el primer diseño, corregido el 4-sep-2026.** Decía aquí que
+en el J2, y era pasarse: ese paso monta la cuadrícula desde «un objeto de
+configuración escrito a mano», y para eso vale una rejilla de pega —5×5, salida
+en una esquina y meta en otra—. De hecho conviene que lo sea: depurar el pintado
+del tablero contra un puzle que además importa es depurar dos cosas a la vez.
+
+El diseño de verdad hace falta en el **J6**, que es el primero que compara contra
+un número de pasos óptimo, y se siembra en el **J7.1**.
+
+**Lo que sí conviene fijar antes del J2** es mucho más pequeño que un puzle: si la
+rejilla **admite huecos y muros** o es siempre un rectángulo lleno. Cambia la
+forma del `config` y cómo se pinta. Recomendado que los admita desde el J2 —los
+niveles tipo Lightbot casi nunca son rectángulos, y el mundo 3 ya está señalado
+como candidato a «si hay pared, gira»—; meterlo después obliga a rehacer el
+pintado. El formato definitivo lo fija el J3 igualmente.
 
 **Cuidado con «Puente Condicional»**, el nivel 2 sembrado del mundo 1: pide una
 condición, y §3 del diseño avisa de que las condiciones que dependen del entorno
