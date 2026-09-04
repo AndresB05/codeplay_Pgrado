@@ -38,9 +38,10 @@ de datos es depurar dos cosas a la vez.
 
 ---
 
-## 2. Tres decisiones antes de la primera línea
+## 2. Dos decisiones antes de la primera línea
 
-Están en `DISENO-DEL-JUEGO.md` §6 y **bloquean el J1**:
+Están en `DISENO-DEL-JUEGO.md` §6, **las decide el usuario** y **bloquean el
+J1**:
 
 1. **Dónde vive el juego.** `packages/game/` o `apps/web/src/game/`.
    Recomendado `packages/game/`: conserva la frontera que describe el contrato,
@@ -48,8 +49,14 @@ Están en `DISENO-DEL-JUEGO.md` §6 y **bloquean el J1**:
    logros y misiones. Fuerza además a declarar qué entra y qué sale.
 2. **Confirmar las librerías**: React Three Fiber con `drei` para el 3D, y
    Blockly para los bloques.
-3. **De dónde salen los modelos 3D.** No bloquea la mecánica —se empieza con
-   cubos de colores— pero sí el acabado.
+
+**Los assets ya no bloquean nada**: salen de [Kenney](https://kenney.nl) y de lo
+que cree el propio usuario, en 3D, con 2D donde convenga —iconos de bloques,
+interfaz, carteles—. El detalle está en `DISENO-DEL-JUEGO.md` §5.
+
+Y no hace falta esperarlos para empezar: **la fase A se hace entera con cubos de
+colores.** Los modelos entran cuando la mecánica ya funciona, que es cuando se
+sabe qué piezas hacen falta de verdad.
 
 ---
 

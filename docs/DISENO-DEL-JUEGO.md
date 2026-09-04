@@ -175,33 +175,46 @@ Lo que **no** cambia: sigue siendo 3D y sigue teniendo que **cargar assets**.
 | --- | --- | --- |
 | 3D | **React Three Fiber** + `drei` | Es Three.js como componentes de React, así que el juego encaja dentro de la aplicación que ya existe. `drei` trae cámaras, controles y cargadores ya hechos |
 | Bloques | **Blockly** | Serializa el programa a **JSON de forma nativa**, que es justo lo que el contrato exige. Es lo que hay detrás de Code.org |
-| Assets | **glTF / GLB** | Formato estándar, con cargador incluido en Three. Modelos libres en Kenney y Quaternius |
+| Assets | **glTF / GLB** | Formato estándar, con cargador incluido en Three. Ver abajo de dónde salen |
 | Animación | `@react-spring/three` | Para el movimiento del personaje. Nada más pesado hace falta |
 
 Descartadas: **Babylon.js** (integra peor con React y no hacen falta físicas: el
 personaje se mueve por casillas) y **Scratch Blocks** (más pesado y más opinado
 que Blockly para embeberlo en una pantalla propia).
 
+### De dónde salen los assets — decidido el 3-sep-2026
+
+**De [Kenney](https://kenney.nl) y del propio usuario**, que crea los que hagan
+falta. Son **3D**, que es lo que pide el juego, y **también se usará 2D donde
+convenga** —iconos de los bloques, interfaz del editor, carteles— sin que eso
+contradiga nada: el 3D es el terreno, no la pantalla entera.
+
+Kenney encaja bien porque su estilo de cubos con colores planos es el mismo del
+que hablan las decisiones visuales del proyecto, y su licencia es libre.
+
+**No lo cubre Higgsfield.** Esa decisión era para las ilustraciones 2D de la
+plataforma —la mascota, las portadas de mundo—, que es otra cosa y sigue en pie
+por su lado.
+
 **Aviso de tamaño:** el bundle ya supera los 500 kB y el build lo avisa. Three
 más Blockly suman bastante más, así que **el juego debe cargarse sólo en la
 pantalla de nivel**, con importación dinámica. Es una línea, pero hay que
-acordarse.
+acordarse. Los modelos cuentan aparte y conviene vigilarlos: es fácil meter un
+`.glb` de varios megas sin darse cuenta.
 
 ## 6. Lo que este diseño deja sin decidir
 
 1. **¿Contra qué se compara para saber si un intento fue perfecto?** El número de
    pasos óptimo de cada nivel tiene que estar escrito en alguna parte —lo natural
    es junto a la definición del puzle— y definido a mano al diseñar el nivel.
-2. **¿De dónde salen los modelos 3D?** La decisión de generar ilustraciones con
-   Higgsfield era para 2D; los modelos 3D son otra cosa.
-3. **¿Dónde vive el juego dentro del monorepo?** Ya no es un proyecto aparte.
+2. **¿Dónde vive el juego dentro del monorepo?** Ya no es un proyecto aparte.
    `packages/game/` mantiene la frontera que el contrato describe;
    `apps/web/src/game/` es más simple. Recomendado el primero: trabajando solo,
    esa frontera es lo que impide que el juego acabe sabiendo de logros y
    misiones.
-4. **Confirmar las librerías** de §5, que están recomendadas y no elegidas.
+3. **Confirmar las librerías** de §5, que están recomendadas y no elegidas.
 
 **Cerradas el 3-sep-2026**, y quedan escritas arriba: qué cuenta como un paso
-(§3), cómo se reparten los tramos de la barra de XP (§3), y que los tres mundos
+(§3), cómo se reparten los tramos de la barra de XP (§3), que los tres mundos
 tocan ámbitos distintos del pensamiento computacional sin cambiar de estructura
-(§2).
+(§2), y de dónde salen los assets (§5).
