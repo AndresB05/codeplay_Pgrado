@@ -3,6 +3,10 @@
 > **En qué orden se construye el proyecto y quién hace cada parte.**
 > Última actualización: **2 de septiembre de 2026**.
 
+**El juego tiene su propia hoja de ruta:**
+[`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md), en cuatro fases. Aquí sólo aparece como
+los pasos 20, 21, 22 y 23; el detalle de cómo se construye está allí.
+
 Este documento responde a *cuándo* y *quién*.
 Para *qué* y *por qué*, ver [`docs/CONTEXT.md`](CONTEXT.md) §3, que describe cada
 bloque de trabajo con sus dependencias. Las etiquetas P1–P6 que aparecen abajo

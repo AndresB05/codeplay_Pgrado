@@ -16,6 +16,7 @@
 | **`docs/CONTEXT.md`** (este) | Qué está aplicado, qué falta, con qué prioridad y bajo qué convenciones | Siempre, al empezar una sesión |
 | [`docs/ESTADO-DEL-PROYECTO.md`](ESTADO-DEL-PROYECTO.md) | **Guía de estilos completa** (paleta, tipografía, componentes, espaciado) y los flujos de usuario en detalle | Al tocar UI o al implementar un flujo de salones |
 | [`docs/DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) | Qué es el juego, cómo se juega y cómo se puntúa. Fuente de verdad del diseño desde el 3-sep-2026 | Al construir el juego, o al tocar el modelo de XP |
+| [`docs/ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md) | En qué orden se construye el juego, en cuatro fases | Al empezar cualquier paso del juego |
 | [`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md) | Qué debe cumplir el juego para integrarse y qué le garantiza la plataforma. **Es el único documento del proyecto escrito para quien NO conoce este repositorio**: se sostiene solo y no remite a ningún otro | Al construir el juego, o al implementar el puente del lado web |
 | [`README.md`](../README.md) | Puesta en marcha, comandos y convenciones de integración del juego | Al configurar el entorno |
 | [`supabase/README.md`](../supabase/README.md) | Detalle migración por migración del esquema SQL | Al tocar la base de datos |

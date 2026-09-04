@@ -335,6 +335,10 @@ context: |
   - docs/ESTADO-DEL-PROYECTO.md §2: guía de estilos completa (paleta,
     tipografía, componentes, espaciado). Consultarla antes de tocar UI.
   - supabase/README.md: detalle migración por migración.
+  - docs/DISENO-DEL-JUEGO.md: qué es el juego, qué cuenta como un paso y
+    cómo se puntúa. Fuente de verdad del diseño desde el 3-sep-2026.
+  - docs/ROADMAP-JUEGO.md: en qué orden se construye el juego, en cuatro
+    fases. El backend entra tarde a propósito.
   - docs/CONTRATO-DE-INTEGRACION.md: qué manda y qué recibe el juego. Es el
     único documento escrito para quien NO conoce el repositorio, así que no
     debe ganar referencias a sus secciones ni a sus nombres de código.

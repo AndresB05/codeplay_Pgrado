@@ -26,6 +26,7 @@ agosto de 2026.
 | [`CONTEXT.md`](CONTEXT.md) | El estado al detalle, decisión por decisión, y la deuda técnica con su medición. Más largo y más técnico que este |
 | [`ROADMAP.md`](ROADMAP.md) | En qué orden se construye y qué falta |
 | [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) | Qué es el juego, cómo se juega y cómo se puntúa |
+| [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md) | En qué orden se construye el juego |
 | [`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md) | Qué debe cumplir el juego. **Se lee sin conocer este repositorio** |
 | [`../supabase/README.md`](../supabase/README.md) | Detalle migración por migración |
 
