@@ -78,12 +78,20 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ⬜ |
 | **J5** | El intérprete: ejecutar el programa, animar al personaje y detectar si llegó a la meta | **Un nivel se resuelve de principio a fin, sin backend** | ⬜ |
 | **J6** | Recuento de pasos y pantalla de resultado | Al terminar dice cuántos pasos usó y cuántos eran óptimos | ⬜ |
-| **J7** | Sembrar el mundo 1: los tres niveles reales con su configuración | Los tres niveles se juegan leyendo su definición de la base | ⬜ |
+| **J7** | **Sembrar el mundo 1** — partido en cuatro, uno por nivel más el aspecto | Los tres niveles se juegan leyendo su definición de la base, y el mundo se ve como debe verse | ⬜ |
+| J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra | Se juega el nivel 1 leyendo su fila, no el objeto escrito a mano del J2 | ⬜ |
+| J7.2 | Nivel 2, igual | Se juega el nivel 2 desde la base | ⬜ |
+| J7.3 | Nivel 3, igual | Se juega el nivel 3 desde la base | ⬜ |
+| J7.4 | **Assets y diseño del mundo 1** | Los tres niveles dejan los cubos: bloques de rejilla, decorado, cámara y luz, y por último el personaje | ⬜ |
 | **J8** | Conectar la pantalla de nivel al backend y montar el juego dentro | Se elige un nivel en la web y arranca el que se eligió | ⬜ |
 | **J9** | Mandar el intento al servidor con el programa | La partida aparece guardada en la base | ⬜ |
 | **J10** | La migración del XP: contar pasos y conceder por marca de agua | El XP sube 80, y 20 al mejorar. Nunca más de 100 | ⬜ |
 | **J11** | La barra de XP por tramos de 300 | El niño sube de nivel al terminar un mundo | ⬜ |
-| **J12** | Mundos 2 y 3 | Hay nueve niveles jugables | ⬜ |
+| **J12** | **Mundos 2 y 3** — partido en ocho, con el mismo patrón que el J7 | Hay nueve niveles jugables y los tres mundos vestidos | ⬜ |
+| J12.1 · .2 · .3 | Los tres niveles del mundo 2, uno por punto | Cada nivel se juega desde la base en cuanto se cierra su punto | ⬜ |
+| J12.4 | Assets y diseño del mundo 2 | El mundo 2 se ve como debe verse | ⬜ |
+| J12.5 · .6 · .7 | Los tres niveles del mundo 3, uno por punto | Igual que arriba | ⬜ |
+| J12.8 | Assets y diseño del mundo 3 | El mundo 3 se ve como debe verse | ⬜ |
 
 ### El apartado gráfico va por mundo, y detrás de lo funcional
 
@@ -97,9 +105,10 @@ vital —moverse por la rejilla, ejecutar el programa, terminar el nivel—; ves
 es una pasada aparte con los modelos de `apps/web/public/models/`. Y dentro de
 esa pasada, **primero los assets del nivel y después el del personaje**.
 
-No lleva número todavía a propósito. La secuencia se deja como está y la pasada
-del mundo 1 se coloca cuando se llegue, que es cuando se sabrá si va pegada al J7
-o detrás de la fontanería. Cambiar el orden sobre la marcha es lo que manda §1.
+**Y ya tiene número**, decidido el mismo día al partir los pasos de niveles:
+**J7.4** para el mundo 1, **J12.4** para el mundo 2 y **J12.8** para el mundo 3.
+Cada uno va detrás de los tres niveles de su mundo, que es la regla de arriba
+puesta en la secuencia en vez de dejada al criterio de quien llegue.
 
 **Lo que sí hay que respetar desde el J2**, y es la única atadura que deja esta
 decisión: **el paso de la rejilla es la constante 1,0 y no se deduce de ningún
@@ -160,15 +169,23 @@ J10, ahí se cambia, y con casos reales delante.
 repeticiones sean **números presentes en el programa**. Es lo que permite contar
 los pasos sin simular el juego. Está explicado en el contrato §3.
 
-### J7 y J10 son las dos migraciones, y las dos tienen parada
+### Las migraciones y sus paradas
 
 `ROADMAP.md` §1.3 punto 9: **el SQL se lee antes de aplicarlo, y quien hace
 cumplir esa parada es el usuario**, porque sólo él lanza `supabase db push`. No
 se lanza hasta que la sesión que revisa haya leído el SQL y lo haya dicho.
 
-- **J7** siembra la configuración de los tres niveles del mundo 1 en
-  `levels.validation_rules`, e iguala `xp_reward` a 100 en los nueve, que hoy
-  está sembrado con 100, 120, 140, 180, 200, 240 y 260.
+**Partir el J7 multiplica sus paradas: son tres, no una.** Una migración aplicada
+no se edita, así que cada nivel que se cierre por separado trae su propia
+migración y su propia lectura previa. Es más ceremonia y es el precio de ver un
+nivel funcionando antes de diseñar el siguiente.
+
+- **J7.1, J7.2 y J7.3** siembran, cada una, el puzle de su nivel en
+  `levels.validation_rules` y reescriben su título, su narrativa y su
+  `starter_code`, que hoy son de otro juego. La primera de las tres iguala además
+  `xp_reward` a 100 en los nueve niveles, que hoy está sembrado con 100, 120,
+  140, 180, 200, 240 y 260.
+- **J12** repite el patrón seis veces más, una por nivel de los mundos 2 y 3.
 - **J10** es la de fondo, y la que `ROADMAP.md` §3.2 ya describe: hoy
   `upsert_my_progress` concede el XP **una sola vez**, así que un segundo intento
   perfecto suma cero. Hay que pasar a conceder por diferencia de marca, y a
