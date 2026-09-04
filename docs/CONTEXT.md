@@ -15,8 +15,9 @@
 | [`CLAUDE.md`](../CLAUDE.md) | Punteros y reglas mínimas. Claude Code lo carga solo al empezar cada sesión | Automático — mantenerlo delgado |
 | **`docs/CONTEXT.md`** (este) | Qué está aplicado, qué falta, con qué prioridad y bajo qué convenciones | Siempre, al empezar una sesión |
 | [`docs/ESTADO-DEL-PROYECTO.md`](ESTADO-DEL-PROYECTO.md) | **Guía de estilos completa** (paleta, tipografía, componentes, espaciado) y los flujos de usuario en detalle | Al tocar UI o al implementar un flujo de salones |
+| [`docs/DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) | Qué es el juego, cómo se juega y cómo se puntúa. Fuente de verdad del diseño desde el 3-sep-2026 | Al construir el juego, o al tocar el modelo de XP |
 | [`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md) | Qué debe cumplir el juego para integrarse y qué le garantiza la plataforma. **Es el único documento del proyecto escrito para quien NO conoce este repositorio**: se sostiene solo y no remite a ningún otro | Al construir el juego, o al implementar el puente del lado web |
-| [`README.md`](../README.md) | Puesta en marcha, comandos y convenciones de integración de Unity | Al configurar el entorno |
+| [`README.md`](../README.md) | Puesta en marcha, comandos y convenciones de integración del juego | Al configurar el entorno |
 | [`supabase/README.md`](../supabase/README.md) | Detalle migración por migración del esquema SQL | Al tocar la base de datos |
 | [`openspec/config.yaml`](../openspec/config.yaml) | Versión resumida de §1 que OpenSpec inyecta a la IA al crear artefactos | Al cambiar stack, convenciones o prioridades — **hay que actualizarlo a la vez que este documento** |
 
@@ -129,7 +130,9 @@ npx openspec doctor
 
 CodePlay es una plataforma web para enseñar pensamiento computacional a niños.
 Es un **proyecto de grado**. Consta de tres piezas: un front-end en React, un
-backend en Supabase y un juego de Unity que se embeberá como build de WebGL.
+backend en Supabase y un juego 3D en el navegador. **Desde el 3-sep-2026 el
+juego NO se hace con Unity**: se construye con librerías de JavaScript dentro de
+la propia aplicación web. Ver `docs/DISENO-DEL-JUEGO.md`.
 
 **Punto de partida imprescindible:** el backend **está conectado**. El esquema
 vive en un proyecto real de Supabase, los salones dejaron de estar en
@@ -171,18 +174,21 @@ mande. Al build se le pasan los valores de relleno de `apps/web/.env.example`:
 codeplayPGrado/
 ├── apps/
 │   ├── web/                  Front-end (@codeplay/web)
-│   └── game/                 Proyecto de Unity — NO EXISTE TODAVÍA
+│   └── game/                 NO EXISTE. Y ya no será Unity: el juego se hará
+│                             con librerías, dentro de la web o en packages/
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
 │   └── migrations/           22 migraciones SQL (la siembra vive en la 0012,
 │                             no hay seed.sql suelto)
-├── docs/                     CONTEXT.md (este) + ESTADO-DEL-PROYECTO.md
+├── docs/                     CONTEXT.md (este), ESTADO-DEL-PROYECTO.md,
+│                             ROADMAP.md, CONTRATO-DE-INTEGRACION.md y
+│                             DISENO-DEL-JUEGO.md
 ├── .github/workflows/ci.yml  CI: lint, tests y build en push y pull request
 ├── .claude/launch.json       Config del preview: npm run dev, puerto 5173
 ├── package.json              Raíz del monorepo (workspaces + scripts proxy)
 ├── .eslintrc.cjs             ESLint compartido
 ├── .prettierrc               Prettier compartido
-└── .gitattributes            Fin de línea + reglas de Unity (LFS comentado)
+└── .gitattributes            Fin de línea + reglas de Unity ya inservibles
 ```
 
 #### Dentro de `apps/web/src`
@@ -1389,8 +1395,8 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
 
 **Objetivo del siguiente hito:** tener funcionalidades completas de punta a punta
 — base de datos real en Supabase, roles funcionales de verdad, y el apartado
-donde se implementarán los niveles del juego. El juego de Unity sigue en
-desarrollo: aquí sólo entra el lado web de la integración.
+donde se implementarán los niveles del juego. El juego sigue sin construirse —y
+desde el 3-sep-2026 **ya no será Unity**—: aquí sólo entra el lado web.
 
 El **apartado gráfico queda fuera de este hito a propósito** (P6): la
 herramienta ya está elegida, pero las ilustraciones no se abordan hasta que las
@@ -1552,8 +1558,9 @@ personales** porque el repositorio es público.
 
 **Descripción.** Dejar montado el hueco donde entrará el juego: la pantalla de
 nivel con el contenedor del build de WebGL, el paso de parámetros al juego y la
-recepción del resultado. **El juego de Unity sigue en desarrollo**; esta tarea
-cubre sólo el apartado de integración del lado web.
+recepción del resultado. **El juego sigue sin construirse**, y desde el
+3-sep-2026 ya no será Unity sino librerías dentro de esta misma aplicación, lo
+que simplifica mucho esta tarea: ver `DISENO-DEL-JUEGO.md` §5.
 
 **Tareas**
 
@@ -1566,19 +1573,19 @@ cubre sólo el apartado de integración del lado web.
    `progressService` y `attemptsService`.
 4. Mientras no exista el build: mostrar en ese contenedor un hueco reservado
    coherente con el resto de la interfaz, no una pantalla de error.
-5. Decidir qué hacer con `levels.starter_code`, `levels.validation_rules` y
-   `levels.programming_language`, pensados para un editor de código y no para
-   Unity: ampliar el esquema o reinterpretar esos campos.
+5. ~~Decidir qué hacer con `levels.starter_code`, `levels.validation_rules` y
+   `levels.programming_language`~~ — **hecho en el paso 23.1**: se reinterpretan,
+   no se amplía el esquema. Ver §2.7.
 
 **Dependencias.** Ninguna: `levels`, `user_progress` y `level_attempts` ya
 existen en la base real.
 No depende de que el juego esté terminado: el contrato se define primero.
 
-**Bloqueos conocidos.** El proyecto de Unity no existe todavía en `apps/game/`.
-Antes de su primer commit hay que activar **Git LFS** (reglas ya preparadas y
-comentadas en `.gitattributes`) y `unityyamlmerge`; y en Unity dejar
-*Version Control: Visible Meta Files* y *Asset Serialization: Force Text*.
-El build de WebGL va a `apps/web/public/game/`, carpeta ignorada por git.
+**Bloqueos conocidos: NINGUNO, desde el 3-sep-2026.** Este apartado listaba
+Unity, Git LFS, `unityyamlmerge` y el build de WebGL a `apps/web/public/game/`.
+Al descartarse Unity **cae la lista entera**: el juego se construye con librerías
+dentro de la aplicación, así que no hay instalación, ni filtros de LFS que
+obliguen a nadie, ni build que copiar. Ver `DISENO-DEL-JUEGO.md` §5.
 
 ### P5 — Pendientes sin prioridad asignada
 
@@ -1666,9 +1673,9 @@ pesan una fracción de lo que pesaría un PNG. No hay motivo para reemplazarlos.
    entre sí y con la interfaz ya construida.
 3. Generar primero la mascota: es la que aparece en más pantallas y la que fija
    el estilo del resto.
-4. Definir dónde se guardan (`apps/web/public/` o `apps/web/src/assets/`),
-   formato y tamaños. Decidir si entran en Git LFS junto con los binarios de
-   Unity.
+4. Definir dónde se guardan (`apps/web/public/` o `apps/web/src/assets/`) y con
+   qué formato y tamaños. **Ya no hay que decidir nada sobre Git LFS**: sin Unity
+   no hay binarios de motor que lo justifiquen.
 5. Sustituir los huecos por las imágenes, retirando el contorno discontinuo.
 
 **Dependencias.** MCP de Higgsfield conectado (hoy no lo está). Ninguna

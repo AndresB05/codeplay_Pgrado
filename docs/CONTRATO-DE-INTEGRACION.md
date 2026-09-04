@@ -35,12 +35,23 @@ juego no sabe que existe y no tiene que tenerlo en cuenta para nada.
 
 ### Las tres piezas
 
-Hay tres, y la del medio es la que hace que esto funcione:
+Hay tres, y la del medio es la que hace que esto funcione.
+
+> **Nota del 3-sep-2026.** El juego **ya no es un programa aparte**: se descartó
+> Unity y se hace con librerías de JavaScript dentro de la misma aplicación web,
+> así que el juego y el anfitrión **corren en la misma página**. El reparto de
+> responsabilidades de abajo **no cambia** —quién recibe qué, quién habla con el
+> servidor y quién decide la puntuación son los mismos—, pero el juego ya no
+> tiene que mandar mensajes a través de una frontera: llama a una función. Lo que
+> desaparece es el mecanismo, no la separación.
+>
+> **Y la separación conviene conservarla aunque ya no la imponga la tecnología**:
+> es lo que permite añadir un logro o un nivel sin tocar el juego.
 
 ```
     EL JUEGO                EL ANFITRIÓN                 EL SERVIDOR
-  (build de WebGL)       (la página que lo               (base de datos
-                          incrusta)                       con reglas)
+  (la parte que se       (la página que lo               (base de datos
+   juega)                 aloja y tiene la sesión)        con reglas)
 
   recibe un nivel   ◀────  se lo pasa            ◀────  guarda el catálogo
                                                          de niveles
@@ -52,9 +63,8 @@ Hay tres, y la del medio es la que hace que esto funcione:
 **El juego no habla con el servidor.** Habla sólo con el anfitrión. Tres
 consecuencias, y las tres son deliberadas:
 
-1. **El juego no lleva credenciales dentro.** Un build de WebGL es un archivo
-   público: cualquiera puede descargarlo y abrirlo. Nada secreto puede vivir
-   ahí.
+1. **El juego no lleva credenciales dentro.** Todo lo que corre en el navegador
+   es público: cualquiera puede leerlo. Nada secreto puede vivir ahí.
 2. **La sesión del niño la tiene el anfitrión**, que ya la abrió antes de cargar
    el juego. El juego no sabe quién está jugando y no lo necesita.
 3. **Cambiar de servidor no toca el juego.** Está previsto que la base cambie de
@@ -73,9 +83,9 @@ sostiene todo lo demás, y conviene entender por qué antes que cómo.
 
 Añadir un nivel debe costar una fila en una base de datos, no un build nuevo. Si
 el juego lleva los niveles cocidos dentro, cada nivel nuevo obliga a recompilar,
-volver a subir y volver a desplegar el juego entero. Con treinta niveles
-previstos y más después, eso convierte el crecimiento del contenido en un
-problema de ingeniería que no tiene por qué serlo.
+volver a subir y volver a desplegar el juego entero. En cuanto el contenido
+crezca, eso convierte añadir un nivel en un problema de ingeniería que no tiene
+por qué serlo.
 
 De ahí dos exigencias sobre el juego:
 
@@ -119,13 +129,38 @@ solo mensaje**. No dos, no uno por logro: uno.
 | `levelId` | texto | Sí | El mismo que recibió. Si no existe o no está publicado, el servidor responde con error |
 | `program` | JSON | Sí | El programa de bloques que el niño construyó, serializado. Ver §4 |
 | `success` | booleano | Sí | Si el niño resolvió el nivel |
-| `score` | entero 0–100 | No | Un porcentaje. Fuera de rango **se recorta en silencio**: enviar 200 guarda 100 |
+| `score` | entero 0–100 | **No, y mejor no lo mande** | Ver el aviso de abajo: desde el 3-sep-2026 **lo calcula el servidor** leyendo el programa |
 | `runtimeMs` | entero ≥ 0 | No | Cuánto duró la partida |
 | `metadata` | objeto JSON | No | Observaciones del juego que no encajan en los campos de arriba |
 
-**`score` es un porcentaje y no está definido qué mide.** El servidor lo acota
-entre 0 y 100 y guarda el mejor histórico del niño en ese nivel. Si el juego no
-tiene nada sensato que medir, **no lo mande**: vale 0 y no estorba.
+**La puntuación la calcula el servidor, no el juego.** Decidido el 3-sep-2026, y
+cambia lo que este campo era antes.
+
+La puntuación mide **eficiencia**: cuantos menos pasos use el niño para llegar a
+la meta, más alta. Y el servidor puede calcularla él mismo, porque el programa de
+bloques le llega entero y en JSON (§4) — no necesita que nadie se la diga.
+
+**Un paso es una casilla recorrida o un giro.** Avanzar cuatro casillas son
+cuatro pasos; girar es uno, y ocurre sin cambiar de casilla. Se cuentan
+movimientos, no bloques: repetir cuatro veces «avanzar» son cuatro pasos aunque
+se escriba con dos bloques.
+
+Eso le impone una condición al formato del programa: **las repeticiones tienen
+que ser números presentes en el propio programa**. Mientras lo sean, el servidor
+suma recorriendo el JSON. Si un bloque repite un número de veces que sólo se sabe
+al ejecutarlo —«repite hasta chocar»—, el recuento deja de poder calcularse
+leyendo, y ese caso hay que hablarlo antes de introducirlo.
+
+El motivo no es desconfianza: es que el servidor **ya tiene que leer ese programa
+de todos modos** para conceder logros (§5), así que puntuar ahí evita escribir la
+misma lógica en dos sitios y que las dos se separen con el tiempo.
+
+Para quien construye el juego eso simplifica: **mande el programa y no se
+preocupe de puntuar.** Puede mostrar en pantalla su propia estimación de lo bien
+que lo ha hecho el niño, pero la que cuenta es la del servidor.
+
+El campo sigue existiendo por compatibilidad y el servidor lo acota entre 0 y
+100, guardando siempre la mejor marca histórica del niño en ese nivel.
 
 **No mande estrellas.** El servidor todavía acepta un campo de estrellas por
 nivel, pero es herencia de un diseño anterior, ninguna pantalla lo muestra y está
@@ -279,8 +314,11 @@ jugando aunque el guardado falle.
 Escrito a propósito, para que nadie lo dé por resuelto:
 
 - **El mecanismo concreto** por el que el juego y el anfitrión se pasan los
-  mensajes. Depende de un build de WebGL que aún no existe y se define cuando lo
-  haya.
+  mensajes. Desde que el juego dejó de ser un programa aparte (§1) esto se
+  simplificó mucho —comparten página, así que basta una llamada—, pero la forma
+  exacta se fija al construirlo.
+- **Cuántos pasos se consideran «perfectos» en cada nivel**, que es lo que
+  convierte un programa en una puntuación. Sale del diseño de cada nivel.
 - **La estructura interna de `program` y de `config`.** Las fija quien diseñe los
   bloques. Este documento sólo exige que sean JSON recorrible.
 - **El catálogo de logros**: cuáles hay, qué condición cumple cada uno y cuánta

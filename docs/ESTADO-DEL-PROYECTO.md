@@ -4,7 +4,7 @@
 > Última actualización: **3 de septiembre de 2026**.
 
 CodePlay es una plataforma web para enseñar pensamiento computacional a niños,
-con un juego de Unity que se integrará más adelante. Este documento mapea qué
+con un juego 3D que se integrará más adelante. Este documento mapea qué
 está construido, cómo se ve y con qué está hecho.
 
 **Lo primero que hay que entender:** la aplicación **está conectada a un backend
@@ -25,6 +25,7 @@ agosto de 2026.
 | **Este** | Qué hay construido, cómo se ve y con qué está hecho. **La §2 es la guía de estilos completa: es la referencia al tocar interfaz** |
 | [`CONTEXT.md`](CONTEXT.md) | El estado al detalle, decisión por decisión, y la deuda técnica con su medición. Más largo y más técnico que este |
 | [`ROADMAP.md`](ROADMAP.md) | En qué orden se construye y qué falta |
+| [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) | Qué es el juego, cómo se juega y cómo se puntúa |
 | [`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md) | Qué debe cumplir el juego. **Se lee sin conocer este repositorio** |
 | [`../supabase/README.md`](../supabase/README.md) | Detalle migración por migración |
 
@@ -74,6 +75,7 @@ En la interfaz se etiqueta "Tutor"; el nombre del profesor se muestra por salón
 | Reportes de habilidades (5 competencias) | 🟡 | `getSkillReports()` — **calculado sobre datos de ejemplo.** Necesita progreso real, que llega con el juego |
 | Tabla de seguimiento (mundo, actividad, racha) | 🟡 | La estructura es real, pero mundo, actividad y racha son de ejemplo. El XP sí es el de la base: hoy, cero |
 | Recursos educativos | 🟡 | Tarjetas informativas sin destino |
+| Ver el seguimiento de **un alumno concreto** por mundos | ⛔ | Seleccionar a un alumno y ver qué niveles y qué mundos ha completado. Pedido el 3-sep-2026; es el paso 31 del roadmap. Necesita progreso real, que llega con el juego |
 | Editar o archivar un salón existente | ⛔ | — |
 | Exportar reportes | ⛔ | — |
 
@@ -95,7 +97,7 @@ En la interfaz se etiqueta "Tutor"; el nombre del profesor se muestra por salón
 | Listado de mundos | ✅ | `StudentWorldsModule.tsx` — los 3 mundos vienen de la base. La **dificultad** sí está escrita a mano: los tres dicen «Fácil» |
 | Sala de trofeos | 🟡 | `StudentTrophiesModule.tsx` — lee de la base, pero **sólo lista lo conseguido**: no existe el catálogo de logros posibles, así que hoy está vacía |
 | Niveles de un mundo | 🟡 | `StudentWorldLevelsModule.tsx` — **maqueta pura, y con un defecto conocido**: enseña 10 niveles inventados y siempre los del *mismo* mundo, sea el que sea el que elijas. Lo arregla el paso 20 |
-| Jugar (juego de Unity) | ⛔ | El proyecto de Unity todavía no existe |
+| Jugar | ⛔ | El juego todavía no existe. **Ya no será Unity**: desde el 3-sep-2026 se hace con librerías dentro de esta misma aplicación. Ver [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) |
 | Progreso, XP y rachas reales | ⛔ | La fontanería está escrita y medida, pero **nada la llama**: llega con el juego. El XP se ve en cuatro sitios y muestra cero |
 
 > **Un niño pertenece a un solo salón, y eso es una decisión de diseño, no una
@@ -570,7 +572,7 @@ Para instalar una dependencia solo en el front: `npm install <paquete> -w @codep
 codeplayPGrado/
 ├── apps/
 │   ├── web/                  Front-end (React + TS + Vite + Tailwind)
-│   └── game/                 Proyecto de Unity (pendiente de crear)
+│   └── game/                 NO EXISTE, y ya no será Unity (ver §3.4)
 ├── packages/                 Código compartido entre apps (vacío)
 ├── supabase/                 Esquema de base de datos
 │   └── migrations/           22 migraciones SQL (la siembra vive en la 0012,
@@ -581,7 +583,7 @@ codeplayPGrado/
 ├── package.json              Raíz del monorepo (npm workspaces)
 ├── .eslintrc.cjs             Config de ESLint compartida
 ├── .prettierrc               Config de Prettier compartida
-└── .gitattributes            Normalización de fin de línea + reglas de Unity
+└── .gitattributes            Normalización de fin de línea + reglas de Unity ya inservibles
 ```
 
 #### Dentro de `apps/web/src`
@@ -653,8 +655,7 @@ Lo que sigue pendiente:
 
 | Herramienta | Necesaria para | Situación |
 | --- | --- | --- |
-| **Unity + WebGL** | El juego, que es la pieza que falta | El proyecto irá en `apps/game/` y el build en `apps/web/public/game/`. Hay que instalar Unity **con el módulo WebGL Build Support**, que no viene por defecto. **Antes hay que decidir en equipo si el juego vive aquí o en un repositorio propio** |
-| **Git LFS** | Binarios de Unity (texturas, audio, modelos) | Reglas preparadas y **comentadas** en `.gitattributes`. Están comentadas a propósito: los filtros de LFS rompen el clone de quien no lo tenga instalado, así que encenderlas **obliga a todo el equipo a instalar git-lfs** |
+| **Librerías del juego** | El juego, que es la pieza que falta | **Ya no es Unity**: se descartó el 3-sep-2026 en favor de librerías de JavaScript, para que el juego sea un componente más de esta aplicación. Recomendadas y pendientes de confirmar: **React Three Fiber** para el 3D y **Blockly** para los bloques. Ver [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) §5 |
 | **Servicio de correo** (Resend, SendGrid…) | Enviar la invitación en vez de que el tutor pase el enlace a mano | Sin elegir, y **hay que contratarlo**. No bloquea nada: el enlace ya funciona |
 | **Servidor de la universidad** | El despliegue definitivo; Supabase era para probar | Sin preguntar qué ofrece. Hace falta saber si dan Postgres y con qué versión, HTTPS, si dejan correr procesos y si hay algo equivalente a Realtime y a OAuth |
 

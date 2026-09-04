@@ -5,7 +5,9 @@ schema: spec-driven
 context: |
   CodePlay es una plataforma web para enseñar pensamiento computacional a niños.
   Es un proyecto de grado. Consta de tres piezas: un front-end en React, un
-  backend en Supabase y un juego de Unity que se embeberá como build de WebGL.
+  backend en Supabase y un juego 3D en el navegador. NO es Unity: el
+  3-sep-2026 se descartó en favor de librerías de JavaScript, así que el juego
+  será parte de la propia aplicación web. Ver docs/DISENO-DEL-JUEGO.md.
 
   ESTADO ACTUAL (verificado el 29-ago-2026)
   El esquema de Supabase está APLICADO en un proyecto real: tablas, RPC, RLS y
@@ -114,7 +116,7 @@ context: |
 
   ESTRUCTURA (monorepo con npm workspaces, node_modules compartido en la raíz)
   apps/web/        front-end, workspace @codeplay/web
-  apps/game/       proyecto de Unity — NO EXISTE TODAVÍA
+  apps/game/       NO EXISTE, y ya no será Unity (ver docs/DISENO-DEL-JUEGO.md)
   packages/        código compartido — vacío
   supabase/        migrations/ (22 migraciones SQL; el seed vive en la 0012)
   docs/            CONTEXT.md (estado y prioridades), ESTADO-DEL-PROYECTO.md,

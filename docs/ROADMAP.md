@@ -127,8 +127,9 @@ escrito en §2.1.
 | 29 | ★ Nombre editable desde Ajustes — **adelantado, ver §2.1**. Un panel compartido que montan las dos pantallas de Ajustes, con la acción en `AuthProvider` para que las **siete** superficies que leen `user.fullName` se refresquen sin recargar. La longitud (2–60) se declara una vez y la heredan el registro y Ajustes; el máximo no existía en ninguna parte. De paso cerró el panel del tutor, que el paso 28 dejó fuera: cuatro «Sr. Robot» y un correo inventado | ✅ | `nombre-editable` |
 | 16 | Persistir la asignación de misiones — la migración 0020 cuelga la asignación **del salón**, con `mission_key` como texto sin clave ajena porque el catálogo sigue en el cliente. El selector de alcance dejó de ignorarse y el niño ve sólo lo asignado, en dos pantallas. **NO las hace jugables**: nada puede completar una misión hasta el paso 21, así que el salón entero sale en «Pendiente» con el motivo escrito en la pantalla, y la tarjeta del niño no ofrece ningún botón. **Sin tabla de cumplimientos a propósito**, para no decidir de paso la pregunta abierta de §3.2 | ✅ | `misiones-asignadas` |
 | 18 | ★ Sincronización en vivo (Supabase Realtime) — **no eran «notificaciones»**: no hay campana, ni lista de avisos, ni no leídos, ni nada que persista un aviso. Son tres pantallas que ya existían y ahora se actualizan solas: la bandeja del tutor, la pertenencia del niño y sus misiones. La migración 0021 publica tres tablas en `supabase_realtime`, que existía con las cuatro operaciones activas y **cero tablas**. De paso cerró el defecto del `loading` que el paso 13 dejó a medias: **una recarga disparada desde fuera no declara espera, pero sí la apaga**, en los dos hooks. Verificado con dos sesiones y con los tres negativos emparejados; cierra además el caso «tutor contra salón ajeno» del paso 16 | ✅ | `sincronizacion-en-vivo` |
-| 23 | ★ **PARTIDO EN DOS, ver §2.1.** **23.1 — Preparar el terreno y escribir el contrato: HECHO.** Cerró las tres decisiones —cómo se verifica un logro (§3.2), si las misiones necesitan tabla propia (§3), y dónde vive la configuración de un nivel (§3.3)— y escribió [`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md). **Ninguna exigió migración.** De paso midió por primera vez `create_level_attempt` y `upsert_my_progress`, escritas hacía ocho días y nunca ejecutadas: ver `CONTEXT.md` §2.7. **No entró el puente ni el contenedor del build** —dependen de un WebGL que no existe y no se verifican de punta a punta—: siguen en el paso 20. **23.2 — Poner la casa encima:** cuando el juego esté construido, integrarlo de verdad —Unity en `apps/game/`, Git LFS y build de WebGL—. Necesita que el usuario instale Unity (§2.2) **y que el juego exista**, que es lo único de la secuencia que no depende de este repositorio | 🔄 | 23.1 directo · 23.2 pendiente |
+| 23 | ★ **PARTIDO EN DOS, ver §2.1.** **23.1 — Preparar el terreno y escribir el contrato: HECHO.** Cerró las tres decisiones —cómo se verifica un logro (§3.2), si las misiones necesitan tabla propia (§3), y dónde vive la configuración de un nivel (§3.3)— y escribió [`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md). **Ninguna exigió migración.** De paso midió por primera vez `create_level_attempt` y `upsert_my_progress`, escritas hacía ocho días y nunca ejecutadas: ver `CONTEXT.md` §2.7. **No entró el puente ni el contenedor del build** —dependen de un WebGL que no existe y no se verifican de punta a punta—: siguen en el paso 20. **23.2 — Construir el juego: REPLANTEADO EL 3-SEP-2026.** Se descartó Unity en favor de librerías de JavaScript, así que ya no hay que instalar nada ni activar Git LFS ni generar un build de WebGL: **el juego pasa a ser parte de la aplicación web**. Con eso, 23.2 deja de depender de una persona y deja de ser lo único ajeno a este repositorio. El diseño está en [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) | 🔄 | 23.1 directo · 23.2 pendiente |
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
+| 31 | ★ **Seguimiento por alumno en el panel del tutor.** Pedido por el usuario el 3-sep-2026: desde el apartado de salones, el tutor selecciona a un alumno y ve **su avance por mundos** —qué niveles ha completado y qué mundos ha terminado—. Hoy no existe: la tabla de seguimiento enseña una fila por alumno con datos de ejemplo, y no hay ninguna vista de detalle. **Va detrás del 21 por la misma razón que el 17**: sin progreso real escrito no hay nada que mostrar que no sea inventado. Hereda además la decisión de §3.1, que este paso hace visible por primera vez: **el tutor verá también lo que el niño jugó antes de entrar al salón**, salvo que se acote por `joined_at` | ⬜ | — |
 | 20 | Pantalla de nivel con contenedor, y el puente hacia el juego — **el contrato ya está escrito, lo hizo el 23.1**: [`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md). Este paso lo implementa del lado web. Incluye conectar la selección de niveles al backend, hoy maqueta (§3.3), crear la ruta de nivel —`constants/routes.ts` llega a `WORLDS/:worldId` y no hay ninguna de nivel—, y mapear `starter_code` y `validation_rules`, que `mapLevelRow` no trae aunque el `select('*')` los traiga. **Arrastra un defecto medido de §3.3:** no es que la pantalla enseñe diez niveles falsos, es que siempre enseña el **mismo mundo falso**, porque resuelve el mundo contra ids de maqueta con el uuid real | ⬜ | P4 |
 | 21 | Escritura de progreso y XP desde el juego — **ver §3.2** | ⬜ | P4 |
 | 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye el catálogo y retirar las estrellas. **Ver §3.2** | ⬜ | P4 |
@@ -150,7 +151,9 @@ juego deja de esperar y todo lo demás se ordena alrededor de ella.**
 La secuencia queda en tres tramos:
 
 1. **El 23**, preparar el terreno de la integración.
-2. **17, 20, 21 y 22** — lo que sólo puede hacerse con el juego integrado.
+2. **17, 31, 20, 21 y 22** — lo que sólo puede hacerse con el juego integrado.
+   El **31** se añadió el 3-sep-2026 y va junto al 17 por el mismo motivo: los
+   dos enseñan al tutor progreso real, y no hay progreso real hasta el 21.
 3. **La prueba preliminar**, y detrás **14, 19, 24, 26, 25, 30 y 27**.
 
 **El 17 baja del segundo lugar al tramo del juego, y no es una preferencia.** Sus
@@ -160,8 +163,14 @@ con datos de ejemplo, que es exactamente lo que ese paso existe para quitar.
 
 **El 23 se parte en dos, y la primera mitad no necesita a nadie.** 23.1 prepara la
 web para recibir el juego y **escribe el contrato**: qué manda el juego, en qué
-formato y con qué garantía. Eso no pide Unity instalado, así que puede hacerse ya.
-23.2 —Unity, Git LFS y el build de WebGL— sí lo pide, y está en §2.2.
+formato y con qué garantía. Eso no pide el juego construido, así que puede
+hacerse ya. 23.2 —construir el juego— sí.
+
+> **Actualización del 3-sep-2026.** Esta división se escribió cuando el juego iba
+> a ser un proyecto de Unity, y por eso 23.2 aparecía como «el único paso que no
+> depende de este repositorio». **Ya no es así**: sin Unity, el juego se
+> construye aquí dentro con librerías, no hay que instalar nada y nadie tiene que
+> esperar a nadie. Ver [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) §5.
 
 **23.1 hereda la PREGUNTA ABIERTA de §3.2 y tiene que cerrarla.** No es opcional:
 no se puede escribir qué manda el juego al terminar una partida sin haber decidido
@@ -321,7 +330,7 @@ introducir credenciales:
 | 15 | Dar de alta Google OAuth en el panel de Supabase — **hecho**, y además hizo falta crear el cliente en Google Cloud, añadir `/auth/callback` a Redirect URLs y **repegar el Client Secret**, que estaba mal y tuvo el paso bloqueado |
 | 18 | `npx supabase db push` de la 0021, que publica tres tablas en `supabase_realtime` — pide credenciales por consola. **Y hace cumplir la parada de §1.3:** no se lanza hasta que la sesión que revisa haya leído el SQL y lo haya dicho |
 | 19 | Contratar el servicio de correo — **sólo para la mitad B**. La mitad A (el enlace canjeable) está hecha y no necesitó nada de esto; su `db push` de la 0022 lo lanzó el usuario el 2-sep-2026 |
-| 23.2 | Instalar Unity y crear el proyecto — **sólo la segunda mitad**. La 23.1, que prepara el terreno y escribe el contrato, no necesita nada de esto. **Y antes de eso, validar con el equipo y el profesor si el juego vive en `apps/game/` o en un repositorio propio**: la decisión no es sólo del usuario porque encender Git LFS aquí obliga a todo el equipo a instalarlo. Ver los cabos sueltos de §3 |
+| ~~23.2~~ | ~~Instalar Unity y crear el proyecto~~ — **YA NO REQUIERE A NADIE, desde el 3-sep-2026.** Se descartó Unity: el juego se construye con librerías dentro de la aplicación web, así que no hay instalación, ni Git LFS, ni build que generar. La otra pregunta que colgaba de aquí —si el juego vivía en un repositorio propio— también quedó cerrada: **se queda en el monorepo** |
 | 30 | **Preguntar a la universidad qué ofrece su servidor** —Postgres y su versión, HTTPS, si dejan correr procesos, si hay algo como Realtime y como OAuth— y conseguir los accesos. Sin esa respuesta el paso no se puede ni planificar (§2.1) |
 | 27 | Configurar el despliegue |
 
@@ -341,7 +350,7 @@ perderse:
 | Hallazgo | Dónde se resuelve |
 | --- | --- |
 | El invariante «un alumno, un salón» **ya vive en el modelo** desde el paso 9 —restricción, índice parcial y política—, y desde el paso 10 el store tampoco lo contradice: `requestJoin()` comprueba la pertenencia y la solicitud pendiente antes de escribir | Cerrado en el paso 10 |
-| `levels` guarda `starter_code`, `validation_rules` y `programming_language`: el esquema se diseñó para un editor de código en el navegador, no para Unity | Paso 20 |
+| `levels` guarda `starter_code`, `validation_rules` y `programming_language`: el esquema se diseñó para un editor de código en el navegador | **Cerrado en el paso 23.1: se reinterpretan**, no se amplía el esquema. `validation_rules` lleva la definición del puzle, `starter_code` la disposición inicial de bloques y `programming_language` la versión del formato |
 | No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones. La sala de trofeos sólo puede listar lo conseguido, y el requisito de `contenido-mundos` se ajustó a eso | Paso 22 |
 | **El progreso no sabe nada de salones**, así que al aceptar a un alumno el tutor pasará a ver *todo* su historial, incluido el anterior al ingreso. Hoy nadie lo ha decidido: se dará por accidente | Paso 17, y ver §3.1 |
 | **El XP casi no tenía superficie en la interfaz.** El paso 28 le dio cuatro —barra lateral, barra superior y la tabla de seguimiento en sus dos vistas—, con `XPBar` retintada al tema de selva y un máximo provisional. Lo que sigue abierto no es dónde se ve, sino que **nada lo escribe**: todas las barras muestran el cero verdadero | Superficie cerrada en el paso 28; la escritura, paso 21 |
@@ -362,7 +371,7 @@ perderse:
 | **La purga de invitaciones depende de que el tutor entre a mirar.** El panel borra las caducadas de sus salones al listarlas, con la política de la 0013, así que un salón cuyo tutor no vuelve conserva filas vencidas. **No es riesgo de seguridad** —el enlace está muerto por `expires_at`, y eso lo comprueba la RPC, no el borrado— ni de privacidad —desde la 0016 la fila no lleva el dato de ningún tercero—. Lo que queda es una tabla que crece. La salida es `pg_cron`, que exige activarlo en el panel y por tanto **al usuario** | Paso 27, con lo demás que sólo tiene sentido desplegado |
 | **`invitations.expires_at` no lo acota ningún `check`**, así que quien inserta puede **alargar** la caducidad tanto como acortarla, y entonces la purga no se la lleva nunca. Los catorce días los sostienen el `default` de la columna y que el cliente no mande el campo, **no el esquema**. Hoy sólo el tutor del salón puede insertar, y sólo en el suyo, así que el daño se lo hace a sí mismo | Anotado; material para el paso 14 y para la mitad B del 19. Detalle en `CONTEXT.md` §2.7 |
 | **Las misiones se persisten desde el paso 16, y lo que NO cierra conviene tenerlo escrito.** La migración 0020 cuelga la asignación del **salón** —no del tutor: el niño se liga a un salón, no a una persona—, el selector de alcance dejó de ignorarse y el niño ve sólo lo asignado. **Siguen sin ser jugables**: nada puede empezar ni completar una misión, así que la tarjeta del niño no ofrece botón y el salón entero sale en «Pendiente» con el motivo a la vista. **El catálogo sigue siendo local y sin clave ajena a `levels`**: son las mismas cinco entradas `m1`…`m5` de `teacher/classroomsData.ts`, ahora con su premio en XP, y `mission_key` es texto libre porque no hay tabla a la que apuntar. Y **no se creó tabla de cumplimientos** a propósito, para no decidir de paso la PREGUNTA ABIERTA de §3.2 | Persistido en el paso 16. **CUMPLIRLAS NO TIENE PASO ASIGNADO, comprobado el 2-sep-2026:** las filas 20, 21 y 22 no mencionan las misiones ni una vez, y el 21 escribe progreso de **niveles**, que no las alcanza —`mission_key` no tiene clave ajena a `levels` porque una misión no es un nivel—. **El dueño natural es el 22, y el motivo lo puso el usuario:** una misión y un logro son el mismo objeto con la misma maquinaria, y lo único que los separa es la puerta de entrada —el logro se saca en cualquier momento, la misión sólo si el tutor la asignó—. El 22 construye justo esa maquinaria: el catálogo y la lógica de conceder. **DECIDIDO EN EL 23.1: sí hace falta tabla propia, y el motivo no era el que se suponía.** `unique (user_id, achievement_key)` significa «una vez en la vida», que es correcto para un logro y accidental para una misión: la propia 0020 declara `unique (group_id, mission_key)` porque la misma misión en dos salones es lo normal, y reasignarla a otra cohorte también lo es. Misma maquinaria de concesión, **cardinalidad distinta**. Y el cumplimiento debe **guardar el salón, no derivarlo** —derivarlo por `class_memberships` borraría lo cumplido de los informes en cuanto el niño cambie de salón, que es la lección de §3.1—. **Lo que no cambió es el contrato:** como el juego no nombra ni logros ni misiones, esta decisión no le exige nada, al revés de lo que esta fila daba por hecho. **Queda un precedente para el 22:** `mission_key` no apunta a `levels` y las misiones no son ninguno de los niveles sembrados, así que antes de construir la maquinaria hay que decidir **qué es una misión en términos de contenido**; mientras no lo sea, nada puede cumplirla | El 22 lo construye, con tabla propia; el 23.1 lo decidió |
-| **DÓNDE VIVE EL JUEGO ESTÁ SIN VALIDAR, y no es decisión de una sola persona.** Lo preguntó el usuario el 3-sep-2026 y decidió consultarlo con su equipo y su profesor antes de tocar nada. **No es una cuestión de escalabilidad:** la de contenido ya la cerró el 23.1 metiendo la configuración del nivel en `levels.validation_rules` —añadir un nivel es insertar una fila—, y el build de WebGL **no se versiona en ningún caso**, porque `apps/web/public/game/` está en `.gitignore`. Lo único que decide el reparto es dónde vive el **código fuente** de Unity. **El argumento real es el LFS:** las reglas están comentadas en `.gitattributes` porque los filtros rompen el clone de quien no tenga git-lfs instalado, así que encenderlas aquí obliga a **todo el equipo** —también a quien sólo toca la web—; en un repositorio aparte ese requisito recae sólo en quien haga el juego. En contra de separar: el build tendría que viajar de un repositorio al otro, que es maquinaria nueva, y en la sustentación son dos historiales que explicar. **La decisión es reversible**: un proyecto de Unity es una carpeta autocontenida | Antes del 23.2, y lo valida el usuario con su equipo (§2.2). **Mientras siga sin validar quedan sin hacer dos cosas pequeñas** que eran el residuo de «preparar el terreno» del 23.1: crear `apps/web/public/`, que no existe aunque el `.gitignore` apunte dentro, y descomentar las reglas de Unity de `.gitattributes` |
+| ~~**DÓNDE VIVE EL JUEGO ESTÁ SIN VALIDAR**~~ **CERRADO EN LA SOCIALIZACIÓN DEL 3-SEP-2026: el juego se queda en este monorepo.** La pregunta se planteó porque encender Git LFS aquí habría obligado a **todo el equipo** a instalarlo, y en un repositorio aparte ese requisito recaería sólo en quien hiciera el juego. **La misma reunión disolvió el argumento**: al descartar Unity no hay escenas, ni prefabs, ni `Library/`, ni binarios de motor —sólo unos pocos modelos `.glb` de kilobytes—, así que LFS deja de hacer falta y el monorepo deja de tener coste. La decisión que sí queda abierta es más pequeña y es de estructura, no de repositorio: si el juego va en `packages/game/`, que conserva la frontera que describe el contrato, o en `apps/web/src/game/`, que es más simple. Ver [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) §6 | Cerrado el 3-sep-2026. **Y de paso caen las dos tareas pequeñas que colgaban de aquí**: `apps/web/public/` ya no hace falta —no hay build que dejar ahí— y las reglas de Unity de `.gitattributes` se quedan comentadas para siempre, o se borran |
 
 ### 3.1 Historial previo al ingreso en un salón
 
@@ -433,8 +442,37 @@ El XP **se queda** y se consigue por **dos vías independientes**:
 
 | Vía | Cuánta XP |
 | --- | --- |
-| Completar un nivel | Poca, y **mayor cuanto más difícil el mundo** |
+| Jugar un nivel | Hasta **100 por nivel**, según la **eficiencia** de la solución |
 | Conseguir un logro | Variable según el logro: puede ser mucha o poca |
+
+**REESCRITO EL 3-SEP-2026, y ya no es «poca y mayor cuanto más difícil el
+mundo».** El detalle está en [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) §3; lo
+que hay que saber aquí es qué trabajo implica:
+
+- **La XP de un nivel se completa hasta su tope, no se acumula.** 80 al primer
+  intento y 20 al segundo si lo mejora, nunca más de 100. Con tres niveles por
+  mundo salen 300 por mundo y **900 en total**, que es el máximo del juego.
+- **Eso exige una migración**, y es la primera consecuencia dura de esta reunión:
+  `upsert_my_progress` concede la XP **una sola vez**, en la transición a
+  completado, así que hoy un segundo intento perfecto suma cero. Está medido en
+  el SQL, no supuesto.
+- **La pieza que lo resuelve ya existe:** `best_score` está acotado de 0 a 100 y
+  nunca baja, así que la regla es conceder
+  `(marca nueva − marca anterior) × tope ÷ 100`. Sin columnas nuevas.
+- **Hay que igualar `levels.xp_reward` a 100**, hoy sembrado con 100, 120, 140,
+  180, 200, 240 y 260.
+- **Y hay que rehacer la barra de XP del panel del niño**, que hoy va contra un
+  máximo inventado (`PROVISIONAL_MAX_XP = 1000`). Pasa a marcar **tramos de 300
+  XP** —lo que da un mundo entero perfecto—, calculados en vez de enumerados:
+  `tramo = parte entera de (XP ÷ 300) + 1`. **No lleva techo a propósito**: los
+  logros y las misiones también reparten XP y no se sabrá cuánta hasta que exista
+  el catálogo del paso 22, así que la barra tiene que seguir funcionando cuando
+  esa XP aparezca. El máximo real se calculará entonces, no se inventa ahora.
+
+**La puntuación la calcula el servidor**, contando el programa de bloques que
+recibe, no creyéndose una que le manden. No es desconfianza: el servidor ya tiene
+que leer ese programa para conceder logros, así que puntuar ahí evita escribir la
+misma lógica dos veces.
 
 **Los logros no son por avanzar, son por hacer cosas.** No se ganan por completar
 un nivel —salvo alguno concreto—, sino por comportamientos dentro del juego: por
@@ -555,14 +593,33 @@ sólo está tomada la primera.
 
 ### 3.3 El contenido sembrado es mínimo, y dos pantallas se contradicen
 
-**EL DISEÑO DEL JUEGO, dicho por el usuario el 2 de septiembre de 2026.** Es lo
-único que hay y condiciona el paso 23.1, así que se escribe aquí antes que nada:
+**EL DISEÑO DEL JUEGO YA TIENE DOCUMENTO PROPIO:**
+[`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md), escrito tras la socialización del
+**3 de septiembre de 2026**. Es la fuente de verdad; aquí queda sólo lo que
+cambia el orden del trabajo.
+
+**Lo que dijo esa reunión, y corrige lo que este apartado daba por bueno:**
+
+- **Tres niveles por mundo, nueve en total** —no diez y treinta—, para que el
+  alcance sea abarcable por una sola persona.
+- **Sin Unity.** El juego se hace con librerías de JavaScript dentro de la
+  aplicación web. Sigue siendo **3D** y tiene que **cargar assets**.
+- **Los tres mundos están definidos**, uno por pilar: algoritmos y
+  reconocimiento de patrones, descomposición y abstracción, y evaluación de
+  problemas. Ya no hay dos mundos «concepto».
+- **La mecánica es la misma en los tres**: personaje de A a B por cuadrícula con
+  bloques, al estilo *Lightbot*.
+
+<details>
+<summary>Lo que este apartado decía el 2 de septiembre, un día antes</summary>
 
 - **Tres mundos de diez niveles cada uno**, treinta en total, cada mundo con un
   tema distinto de pensamiento computacional.
 - **Codificación por bloques**, y el juego es **3D**.
 - **Sólo el mundo 1 está definido:** niveles de cuadrícula donde el personaje va
   del punto A al punto B. Los mundos 2 y 3 siguen siendo concepto.
+
+</details>
 
 **EL PROYECTO TIENE QUE ESCALAR**, y lo pidió el usuario el mismo día: en el
 futuro puede haber más mundos y más niveles, así que nada debe darlos por fijos.
@@ -573,9 +630,10 @@ decide si el resto escala o no**:
 > **¿Dónde vive la configuración de un nivel: la rejilla, la salida, la meta?**
 
 En la base (`levels.validation_rules`, que ya es `jsonb`) añadir un nivel es
-**insertar una fila**. Dentro del build de Unity, añadir un nivel es
-**recompilar y volver a desplegar el juego**. La base puede ser todo lo escalable
-que se quiera: si los niveles están cocidos en el build, el proyecto no escala.
+**insertar una fila**. Cocido dentro del juego, añadir un nivel es **volver a
+compilar y desplegar**. La base puede ser todo lo escalable que se quiera: si los
+niveles están dentro del juego, el proyecto no escala. Sigue valiendo igual sin
+Unity: lo que cambió es el motor, no dónde tiene que vivir el contenido.
 
 **DECIDIDO EN EL 23.1: en la base, y las tres columnas se reparten el trabajo.**
 `validation_rules` lleva la definición del puzle, `starter_code` la disposición
@@ -616,10 +674,13 @@ para administrarlo.
 
 **De ahí salen tres correcciones a lo que este documento daba por sentado:**
 
-1. **El «10» de la maqueta no era ficción: es el objetivo.** Lo de abajo dice «el
-   3 es la verdad; el 10, la ficción», y hay que leerlo con este matiz: el 3 es lo
-   que **hay sembrado hoy**, y el 10 es lo que el diseño **quiere**. La maqueta
-   acertó por accidente. Faltan veintiún niveles, no tres pantallas que arreglar.
+1. ~~**El «10» de la maqueta no era ficción: es el objetivo.**~~ **VUELVE A SER
+   FICCIÓN, y esta vez del todo.** El 2 de septiembre esto decía que faltaban
+   veintiún niveles porque el diseño quería diez por mundo. La reunión del día
+   siguiente lo bajó a **tres por mundo**, así que **el 3 vuelve a ser la única
+   verdad** y además ya está sembrado: no falta ningún nivel por crear, sólo
+   resembrar sus temas para que encajen con los tres pilares. Lo que sigue
+   sobrando es el 10 de la maqueta.
 2. **El esquema del «editor de código en el navegador» NO está muerto.** Con
    bloques hay programa: `levels.programming_language` pasa de `'javascript'` a
    los bloques, `starter_code` es la disposición inicial, y `validation_rules`
