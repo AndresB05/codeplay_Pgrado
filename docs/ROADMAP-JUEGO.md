@@ -38,17 +38,23 @@ de datos es depurar dos cosas a la vez.
 
 ---
 
-## 2. Dos decisiones antes de la primera línea
+## 2. Las dos decisiones que bloqueaban el J1 — cerradas el 4-sep-2026
 
-Están en `DISENO-DEL-JUEGO.md` §6, **las decide el usuario** y **bloquean el
-J1**:
+Las decidió el usuario. El detalle y el porqué están en `DISENO-DEL-JUEGO.md` §6
+y §5; aquí sólo el resultado:
 
-1. **Dónde vive el juego.** `packages/game/` o `apps/web/src/game/`.
-   Recomendado `packages/game/`: conserva la frontera que describe el contrato,
-   y trabajando solo esa frontera es lo que impide que el juego acabe sabiendo de
-   logros y misiones. Fuerza además a declarar qué entra y qué sale.
-2. **Confirmar las librerías**: React Three Fiber con `drei` para el 3D, y
-   Blockly para los bloques.
+1. **El juego vive en `apps/web/src/game/`.** No en `packages/`: los tres scripts
+   de la raíz —`lint`, `test:run` y `build`— proxean a `-w @codeplay/web` y nada
+   más, y el CI corre esos tres, así que un workspace nuevo habría quedado fuera
+   de todos ellos desde el primer commit. La frontera del contrato se sostiene
+   por convención de carpeta, como ya la sostienen `components/decor/` y el store
+   de salones.
+2. **Librerías confirmadas, y entran escalonadas.** React Three Fiber para el 3D
+   y Blockly para los bloques, **fijadas a React 18**: fiber 9 exige React ≥ 19 y
+   el repositorio va con 18.2, así que la pareja es `@react-three/fiber` ^8.18
+   con `@react-three/drei` ^9.122. **El J1 instala sólo `three` y
+   `@react-three/fiber`**; `drei`, Blockly y `@react-spring/three` entran en el
+   paso que primero los importe.
 
 **Los assets ya no bloquean nada**: salen de [Kenney](https://kenney.nl) y de lo
 que cree el propio usuario, en 3D, con 2D donde convenga —iconos de bloques,
@@ -66,7 +72,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 
 | Nº | Paso | Se ve funcionar cuando… | Estado |
 | --- | --- | --- | --- |
-| **J1** | Esqueleto: el paquete, las dependencias y un componente que pinta una escena 3D vacía dentro de la aplicación | Aparece algo en 3D en una pantalla del panel | ⬜ |
+| **J1** | Esqueleto: las dos dependencias y un componente que pinta una escena 3D vacía dentro de la aplicación, cargado en diferido | Aparece algo en 3D en una pantalla del panel | ⬜ |
 | **J2** | La cuadrícula y el personaje, montados desde un objeto de configuración **escrito a mano en el código** | Se ve el tablero y el personaje se mueve llamando funciones desde la consola | ⬜ |
 | **J3** | **Fijar el formato** de `config` y de `program` | Está escrito en el contrato, no en la cabeza de nadie | ⬜ |
 | **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ⬜ |

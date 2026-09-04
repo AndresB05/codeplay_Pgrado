@@ -169,14 +169,26 @@ de integración. Ahorra tres cosas de golpe:
 
 Lo que **no** cambia: sigue siendo 3D y sigue teniendo que **cargar assets**.
 
-### Librerías recomendadas, pendientes de confirmar
+### Librerías — confirmadas el 4-sep-2026
 
-| Para | Recomendación | Por qué |
+| Para | Elección | Por qué |
 | --- | --- | --- |
 | 3D | **React Three Fiber** + `drei` | Es Three.js como componentes de React, así que el juego encaja dentro de la aplicación que ya existe. `drei` trae cámaras, controles y cargadores ya hechos |
 | Bloques | **Blockly** | Serializa el programa a **JSON de forma nativa**, que es justo lo que el contrato exige. Es lo que hay detrás de Code.org |
 | Assets | **glTF / GLB** | Formato estándar, con cargador incluido en Three. Ver abajo de dónde salen |
 | Animación | `@react-spring/three` | Para el movimiento del personaje. Nada más pesado hace falta |
+
+**Fijadas a React 18, y no por conservadurismo.** `@react-three/fiber` 9 —la
+versión viva— exige React ≥ 19 en sus `peerDependencies`, y este repositorio va
+con React 18.2. La combinación que funciona hoy sin tocar nada es
+**`@react-three/fiber` ^8.18 con `@react-three/drei` ^9.122**. Subir a React 19
+para poder usar fiber 9 arrastraría `react-dom`, los tipos, Testing Library y los
+109 tests: no está en ningún roadmap y nada de esto lo necesita.
+
+**Y entran escalonadas.** El J1 instala sólo `three` y `@react-three/fiber`;
+`drei` entra cuando haga falta una cámara o un cargador, Blockly en el J4 y
+`@react-spring/three` en el J5. Una dependencia que nadie importa es peso en el
+bundle sin evidencia de que se necesite —y §5 ya avisa de que el bundle va justo—.
 
 Descartadas: **Babylon.js** (integra peor con React y no hacen falta físicas: el
 personaje se mueve por casillas) y **Scratch Blocks** (más pesado y más opinado
@@ -207,12 +219,17 @@ acordarse. Los modelos cuentan aparte y conviene vigilarlos: es fácil meter un
 1. **¿Contra qué se compara para saber si un intento fue perfecto?** El número de
    pasos óptimo de cada nivel tiene que estar escrito en alguna parte —lo natural
    es junto a la definición del puzle— y definido a mano al diseñar el nivel.
-2. **¿Dónde vive el juego dentro del monorepo?** Ya no es un proyecto aparte.
-   `packages/game/` mantiene la frontera que el contrato describe;
-   `apps/web/src/game/` es más simple. Recomendado el primero: trabajando solo,
-   esa frontera es lo que impide que el juego acabe sabiendo de logros y
-   misiones.
-3. **Confirmar las librerías** de §5, que están recomendadas y no elegidas.
+**Cerradas el 4-sep-2026** por el usuario, y escritas arriba: **el juego vive en
+`apps/web/src/game/`** y **las librerías de §5 quedan confirmadas**.
+
+Dónde vive lo decidió un dato que no estaba escrito en ninguna parte: los tres
+scripts de la raíz —`lint`, `test:run` y `build`— proxean a `-w @codeplay/web` y
+nada más, y el CI corre esos tres. Un workspace en `packages/` habría quedado
+fuera de los tres, y del CI, desde el primer commit; además `apps/web/tsconfig.json`
+declara `include: ["src"]`, así que `tsc` tampoco lo habría mirado. La frontera
+que justificaba sacarlo ya se sostiene por convención en dos sitios de este
+repositorio —`components/decor/` y el store de salones—, sin ayuda del sistema de
+módulos.
 
 **Cerradas el 3-sep-2026**, y quedan escritas arriba: qué cuenta como un paso
 (§3), cómo se reparten los tramos de la barra de XP (§3), que los tres mundos

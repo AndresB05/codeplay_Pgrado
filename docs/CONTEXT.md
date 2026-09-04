@@ -174,16 +174,17 @@ mande. Al build se le pasan los valores de relleno de `apps/web/.env.example`:
 ```
 codeplayPGrado/
 ├── apps/
-│   ├── web/                  Front-end (@codeplay/web)
-│   └── game/                 NO EXISTE. Y ya no será Unity: el juego se hará
-│                             con librerías, dentro de la web o en packages/
+│   └── web/                  Front-end (@codeplay/web). El juego vive DENTRO,
+│                             en src/game/: decidido el 4-sep-2026, ver
+│                             DISENO-DEL-JUEGO.md §6. `apps/game/` no existe y
+│                             ya no existirá — no hay Unity
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
 │   └── migrations/           22 migraciones SQL (la siembra vive en la 0012,
 │                             no hay seed.sql suelto)
 ├── docs/                     CONTEXT.md (este), ESTADO-DEL-PROYECTO.md,
-│                             ROADMAP.md, CONTRATO-DE-INTEGRACION.md y
-│                             DISENO-DEL-JUEGO.md
+│                             ROADMAP.md, ROADMAP-JUEGO.md,
+│                             CONTRATO-DE-INTEGRACION.md y DISENO-DEL-JUEGO.md
 ├── .github/workflows/ci.yml  CI: lint, tests y build en push y pull request
 ├── .claude/launch.json       Config del preview: npm run dev, puerto 5173
 ├── package.json              Raíz del monorepo (workspaces + scripts proxy)
@@ -1793,11 +1794,16 @@ devuelve `/login` con la contraseña equivocada.
 `.eslintrc.cjs` usa la configuración heredada. Migrar a ESLint 9 con
 configuración plana es una tarea pendiente sin urgencia.
 
-### 4.8 Bundle de 596 kB
+### 4.8 Bundle de 623 kB
 
 `npm run build` avisa de que el chunk supera los 500 kB. Sin urgencia, pero
 cobrará importancia al embeber el juego. Se resuelve con `manualChunks` o
 importaciones dinámicas por ruta.
+
+**Medido el 4-sep-2026**, y es la línea de partida del juego: **un solo chunk de
+623,18 kB** (166,96 kB en gzip), 177 módulos. Decía 596 kB, que era la cifra del
+2-sep. Desde el J1 el juego se carga en diferido, así que ese número **no debe
+subir**: lo que crezca tiene que salir en un chunk aparte.
 
 ### 4.9 El nombre sólo lo valida el cliente
 
