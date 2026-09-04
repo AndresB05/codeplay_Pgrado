@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # `juego` entra el 4-sep-2026: el juego se construye ahí, y sin esta línea sus
+  # doce pasos se escribirían sin que lint, tests y build corrieran nunca aquí.
   push:
-    branches: [main]
+    branches: [main, juego]
   pull_request:
     branches: [main]
 

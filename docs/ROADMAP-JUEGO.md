@@ -150,12 +150,19 @@ del tablero contra un puzle que además importa es depurar dos cosas a la vez.
 El diseño de verdad hace falta en el **J6**, que es el primero que compara contra
 un número de pasos óptimo, y se siembra en el **J7.1**.
 
-**Lo que sí conviene fijar antes del J2** es mucho más pequeño que un puzle: si la
-rejilla **admite huecos y muros** o es siempre un rectángulo lleno. Cambia la
-forma del `config` y cómo se pinta. Recomendado que los admita desde el J2 —los
-niveles tipo Lightbot casi nunca son rectángulos, y el mundo 3 ya está señalado
-como candidato a «si hay pared, gira»—; meterlo después obliga a rehacer el
-pintado. El formato definitivo lo fija el J3 igualmente.
+**Lo que sí había que fijar antes del J2, y lo decidió el usuario el 4-sep-2026:
+la rejilla ADMITE huecos y muros.** No es siempre un rectángulo lleno. Los
+niveles tipo Lightbot casi nunca lo son, y el mundo 3 ya está señalado como
+candidato a «si hay pared, gira»; meterlo después obligaría a rehacer el pintado.
+
+Para el J2 basta un concepto: **cada casilla es transitable o no lo es**. Eso
+cubre las dos cosas —un hueco es una casilla que no existe, un muro es una que
+existe y no se pisa—, y distinguirlas es cuestión de cómo se pintan, no de la
+estructura. **Sin alturas**: el diseño no las menciona en ninguna parte y §3 dice
+que un paso es una casilla recorrida o un giro, no un escalón.
+
+El formato definitivo lo fija el J3 igualmente; el del J2 es provisional y a
+mano.
 
 **Cuidado con «Puente Condicional»**, el nivel 2 sembrado del mundo 1: pide una
 condición, y §3 del diseño avisa de que las condiciones que dependen del entorno
