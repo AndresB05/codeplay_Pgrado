@@ -51,4 +51,4 @@
 
 - [x] 8.1 `npm run lint` con 0 warnings, `npm run test:run` con **134 tests en 18 archivos** —los 121 de antes más 13 nuevos— y `npm run build` sin error. Los tres pasan.
   **Hallazgo aparte, y NO es del J4**: el suite falla de forma intermitente bajo carga (`ResetPassword`, `ChangeNamePanel`, `Signup`, `TeacherPanelModule`, `ClassroomsProvider`). Medido excluyendo los dos archivos de test nuevos: los 121 originales fallan igual, 5 y 3 veces en dos de tres pasadas. Es preexistente y puede poner el CI en rojo sin motivo
-- [ ] 8.2 Enumerar las rutas en `git add`, nunca `git add -A`: con varios cambios vivos el árbol casi nunca contiene sólo lo que se está commiteando
+- [x] 8.2 Enumerar las rutas en `git add`, nunca `git add -A`: con varios cambios vivos el árbol casi nunca contiene sólo lo que se está commiteando
