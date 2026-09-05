@@ -116,10 +116,13 @@ context: |
   reinstalando, NUNCA regenerandolo: regenerar el lockfile en Windows se lleva
   por delante los binarios opcionales de otras plataformas (@supabase/cli-linux-*)
   y el CI corre npm ci sobre ubuntu-latest.
-  El juego se carga en DIFERIDO desde el J1: src/game/GameScene.tsx es el unico
-  modulo que importa three o fiber, y src/game/GameSceneLoader.tsx es la frontera
-  (React.lazy + Suspense) y no importa ninguno de los dos. Juntarlos anula la
-  separacion.
+  El juego se carga en DIFERIDO desde el J1, y la regla es que NADA POR ENCIMA
+  DE LA FRONTERA importa three o fiber: src/game/GameSceneLoader.tsx es esa
+  frontera (React.lazy + Suspense) y no los importa, ni tampoco la pantalla del
+  laboratorio. Debajo, src/game/GameScene.tsx si. Juntarlos anula la separacion.
+  Desde el J2 hay ademas modulos PUROS en src/game/ —level.ts, debugLevel.ts y
+  movement.ts— que no arrastran three pero que solo se importan desde el lado
+  perezoso: importarlos desde arriba los mete en el trozo principal.
   ESLint 8.57 (config heredada) + Prettier 3.9. Node >= 18.18.
   Tests: Vitest 3.2 + jsdom + Testing Library. Los tests se colocan junto al
   archivo que prueban; src/test/ guarda el setup y el helper renderClassrooms.

@@ -1395,18 +1395,23 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
   propio hook, como `worlds.service.ts` + `useWorlds()`. La frontera de §4.3
   sigue en pie.
 
-### 2.9 `juego-3d` — El esqueleto del juego (J1)
+### 2.9 `juego-3d` — El esqueleto, la cuadrícula y el personaje (J1 y J2)
 
-**Aplicado con `esqueleto-del-juego`, el J1 de `ROADMAP-JUEGO.md`.** Lo que hay
-es el esqueleto y nada más: una escena 3D dentro del panel del niño, cargada en
-diferido. **Sin rejilla, sin personaje, sin bloques y sin backend** — la fase A
-no toca Supabase ni una vez, y eso es deliberado.
+**Aplicado con `esqueleto-del-juego` (J1) y `rejilla-y-personaje` (J2), los dos
+primeros pasos de `ROADMAP-JUEGO.md`.** Lo que hay es una escena 3D dentro del
+panel del niño, cargada en diferido, con **un tablero leído de una configuración
+escrita a mano y un personaje que se mueve por casillas**. **Sin bloques y sin
+backend** — la fase A no toca Supabase ni una vez, y eso es deliberado.
 
 | Archivo | Qué es |
 | --- | --- |
-| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>`, una luz y un cubo. **El único módulo del repositorio que importa `three` o `@react-three/fiber`** |
-| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida: `React.lazy` + `Suspense`. **No importa ninguno de los dos**, o la separación no existiría |
-| `apps/web/src/components/dashboard/student/StudentGameLabModule.tsx` | El banco de pruebas, con la escena en un contenedor de altura fija |
+| `apps/web/src/game/level.ts` | **Puro.** Los tipos del tablero —`TileKind`, `Direction`, `Cell`, `Pose`, `LevelConfig`— y `TILE_SIZE`. El formato es **provisional**: lo fija el J3 |
+| `apps/web/src/game/debugLevel.ts` | **Puro.** La rejilla de pega: 5×5, cuatro muros, un hueco, salida y meta. **No es un puzle diseñado** — los nueve los diseña el usuario y se siembran en el J7 |
+| `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Lo reutiliza el J5** para el intérprete |
+| `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
+| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>`, el tablero, el personaje y las órdenes de consola. Importa `three` y `@react-three/fiber` |
+| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida: `React.lazy` + `Suspense` |
+| `apps/web/src/components/dashboard/student/StudentGameLabModule.tsx` | El banco de pruebas, con la escena en un contenedor de altura fija y las órdenes documentadas en pantalla |
 | `apps/web/src/constants/routes.ts` | `GAME_LAB: '/dashboard/game'` |
 | `apps/web/src/router/AppRouter.tsx` | Registra esa ruta **sólo** bajo `import.meta.env.DEV` |
 | `apps/web/src/pages/Dashboard/Dashboard.tsx` | Un caso más en el `switch`, con la misma bandera |
@@ -1417,16 +1422,58 @@ lo que empiece por ese prefijo en `ROUTES.WORLDS` **antes** del `switch`, así q
 una pantalla nueva ahí debajo no llega a su caso: sale la de mundos, sin error
 que lo delate.
 
-**El banco de pruebas no es de usar y tirar.** El J2, el J4, el J5 y el J6 se ven
+**El banco de pruebas no es de usar y tirar.** El J4, el J5 y el J6 se ven
 funcionar ahí, porque la pantalla de nivel real no llega hasta el J8 (paso 20).
 Cuando exista, esta pantalla se revisa.
+
+**La frontera del bundle no es «quién importa `three`», es la línea.** Hasta el
+J2 se decía que `GameScene.tsx` era el único módulo que lo importaba, y con la
+carpeta a cinco archivos eso ya no describe nada útil. La regla que se sostiene,
+y la que importaba desde el principio: **nada por encima de la frontera diferida
+importa el motor 3D** — ni `GameSceneLoader.tsx`, ni la pantalla del laboratorio.
+**Y los módulos puros van con ella**: no arrastran `three`, pero importarlos
+desde encima de la línea los mete en el trozo principal, y con ellos la puerta
+abierta a que el J5 suba el intérprete detrás. Sólo `GameScene.tsx` y el test los
+importan.
+
+**Las reglas de movimiento viven sueltas del pintado a propósito.** El J5 las
+reutiliza para el intérprete; si nacieran enredadas con la escena, el J5 las
+reescribiría. Son puras, no mutan la pose que reciben —lo que permitirá ejecutar
+un programa plegando las órdenes sobre una pose inicial— y **no lanzan ni
+devuelven `{ data, error }`**: esa convención es de los servicios, y chocar con
+un muro no es un fallo, es una regla del juego.
+
+**El paso de la rejilla es `TILE_SIZE = 1` y no se deduce de ningún modelo.** Los
+bloques de Kenney miden 1,082 de ancho porque el labio de hierba se solapa a
+propósito; sacar el paso de ahí produce rendijas, y con los modelos entrando en
+el J7.4 el fallo aparecería con la mecánica ya escrita encima.
+
+**El suelo va en damero de dos verdes**, y no es adorno: con un solo verde las 25
+casillas se ven como un único plano y la rejilla deja de poder contarse, que es
+justo lo que el niño tiene que hacer para saber cuántos pasos da. Las losas
+siguen contiguas. Por lo mismo, **el personaje lleva una marca sobre la cabeza**
+en la cara que mira: un cubo simétrico girado 90° es el mismo cubo, y el giro no
+se vería. La marca va arriba y no en la cara porque, mirando en dirección
+contraria a la cámara, el propio cuerpo la taparía.
+
+**Las órdenes se dan desde la consola**, y sólo en desarrollo:
+`codeplayGame.forward()`, `.left()`, `.right()` y `.reset()`, registradas en
+`window` desde un `useEffect` gobernado por `import.meta.env.DEV` con acceso de
+miembro —nunca desestructurado—, como `context/guest.helpers.ts`. **Medido: en
+el build de producción la cadena `codeplayGame` aparece cero veces**, ni en el
+trozo principal ni en el del juego. Los bloques llegan en el J4.
+
+**`drei` sigue sin entrar.** El roadmap lo admite fijado a `^9.122` si
+`OrbitControls` hace falta; para un 5×5 en cámara fija no hace falta, y la
+dependencia trae `three` en sus `peerDependencies`, con la trampa de la copia
+doble de abajo. Si el J7.4 necesita orbitar para colocar modelos, entra ahí.
 
 **`three` está fijado a 0.170 por el runtime, no por gusto.** Con
 `@react-three/fiber` 8.18 —la rama que se queda en React 18— contra `three`
 0.185.1 el lienzo se crea, el contexto WebGL vive y **la escena sale vacía**; el
-único indicio es un aviso de `THREE.Clock` deprecado en consola. Con 0.170.0 el
-cubo se ve. **La salida NUNCA es subir fiber**: fiber 9 exige React ≥ 19 y
-arrastraría `react-dom`, los tipos, Testing Library y los 109 tests.
+único indicio es un aviso de `THREE.Clock` deprecado en consola. Con 0.170.0 se
+ve. **La salida NUNCA es subir fiber**: fiber 9 exige React ≥ 19 y arrastraría
+`react-dom`, los tipos, Testing Library y los tests.
 
 **Y `three` tiene que ser UNA sola copia.** Bajar la versión sólo en el workspace
 deja 0.185.1 izada en la raíz para fiber y 0.170.0 en `apps/web` para el código
@@ -1435,16 +1482,19 @@ propio, que es peor que cualquiera de las dos. Se arregla restaurando el
 en Windows se lleva por delante los binarios opcionales de otras plataformas
 —los `@supabase/cli-linux-*`— y el CI corre `npm ci` sobre ubuntu-latest.
 
-**Lo que la carga diferida consigue, medido:** el trozo principal pasa de
-623,18 kB a 624,57 kB (+1,39 kB, que es el ayudante de precarga que Vite añade al
-primer `import()` del proyecto y se paga una sola vez), y el motor 3D viaja
-entero en un trozo aparte de 823,50 kB. `WebGLRenderer` aparece 36 veces en ese
-trozo y **cero** en el principal, e `index.html` **no lo precarga**, así que quien
-no abra una pantalla con juego no lo descarga — tampoco en producción.
+**Lo que la carga diferida consigue, medido.** El J1 dejó el trozo principal en
+624,57 kB (167,68 gzip) y el motor 3D entero en un trozo aparte de 823,50 kB
+(221,63), 206 módulos. **El J2 no movió el principal ni un byte**: sigue en
+624,57 kB / 167,68 gzip, y lo que creció salió donde debía —el trozo del juego
+pasa a 825,19 kB (222,24) y los módulos a 209—. `WebGLRenderer` aparece en ese
+trozo y **cero** veces en el principal, e `index.html` **no lo precarga**, así
+que quien no abra una pantalla con juego no lo descarga — tampoco en producción.
 
-**Sin tests, a propósito.** jsdom no implementa WebGL: un test que monte
-`<Canvas>` no prueba la escena, prueba el simulacro. El criterio del J1 es ver el
-cubo en el navegador, y así se verificó.
+**Los tests llegaron con el J2, y sólo pueden ser de los módulos puros.** jsdom
+no implementa WebGL: un test que monte `<Canvas>` no prueba la escena, prueba el
+simulacro. Por eso el J1 no llevó ninguno y por eso las reglas de movimiento
+están fuera del componente. El criterio de los dos pasos es verlo en el
+navegador, y así se verificó.
 
 ---
 
@@ -1862,16 +1912,24 @@ devuelve `/login` con la contraseña equivocada.
 `.eslintrc.cjs` usa la configuración heredada. Migrar a ESLint 9 con
 configuración plana es una tarea pendiente sin urgencia.
 
-### 4.8 Bundle de 623 kB
+### 4.8 Bundle: 624 kB de aplicación y 825 kB de juego
 
-`npm run build` avisa de que el chunk supera los 500 kB. Sin urgencia, pero
-cobrará importancia al embeber el juego. Se resuelve con `manualChunks` o
-importaciones dinámicas por ruta.
+`npm run build` avisa de que los chunks superan los 500 kB. Sin urgencia, pero
+conviene no perderlo de vista ahora que el juego crece. Se resolvería con
+`manualChunks` o más importaciones dinámicas por ruta.
 
-**Medido el 4-sep-2026**, y es la línea de partida del juego: **un solo chunk de
-623,18 kB** (166,96 kB en gzip), 177 módulos. Decía 596 kB, que era la cifra del
-2-sep. Desde el J1 el juego se carga en diferido, así que ese número **no debe
-subir**: lo que crezca tiene que salir en un chunk aparte.
+**Medido el 4-sep-2026, después del J2**: trozo principal **624,57 kB**
+(167,68 gzip), trozo `GameScene` **825,19 kB** (222,24), **209 módulos**.
+
+**La línea de partida del juego era otra y conviene no confundirlas.** Antes del
+J1 había **un solo chunk de 623,18 kB** (166,96 gzip) y 177 módulos; el J1 lo
+partió en dos y dejó el principal en 624,57 kB —los +1,39 kB son el ayudante de
+precarga que Vite añade al primer `import()` del proyecto y se paga una sola
+vez—, con el motor 3D entero en 823,50 kB aparte.
+
+**La regla, desde el J1: el principal no debe subir.** Lo que crezca tiene que
+salir en el trozo del juego, y se comprueba en cada paso. El J2 no lo movió ni
+un byte.
 
 ### 4.9 El nombre sólo lo valida el cliente
 

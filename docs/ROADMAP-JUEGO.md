@@ -80,7 +80,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | Nº | Paso | Se ve funcionar cuando… | Estado |
 | --- | --- | --- | --- |
 | **J1** | Esqueleto: las dos dependencias y un componente que pinta una escena 3D vacía dentro de la aplicación, cargado en diferido | Aparece algo en 3D en una pantalla del panel | ✅ |
-| **J2** | La cuadrícula y el personaje, montados desde un objeto de configuración **escrito a mano en el código** | Se ve el tablero y el personaje se mueve llamando funciones desde la consola | ⬜ |
+| **J2** | La cuadrícula y el personaje, montados desde un objeto de configuración **escrito a mano en el código** | Se ve el tablero y el personaje se mueve llamando funciones desde la consola | ✅ |
 | **J3** | **Fijar el formato** de `config` y de `program` | Está escrito en el contrato, no en la cabeza de nadie | ⬜ |
 | **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ⬜ |
 | **J5** | El intérprete: ejecutar el programa, animar al personaje y detectar si llegó a la meta | **Un nivel se resuelve de principio a fin, sin backend** | ⬜ |
