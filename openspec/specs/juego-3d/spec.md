@@ -4,38 +4,50 @@
 
 El juego que el niño jugará: una escena 3D que corre **dentro** de la propia
 aplicación web, sin programa ni marco aparte. Esta capacidad cubre cómo se
-dibuja, cuándo llega su código al navegador y desde dónde se abre, y **qué se
-juega en ella**: el tablero, el personaje que lo recorre casilla a casilla, y
-**los bloques con los que se le escribe el programa**.
+dibuja, cuándo llega su código al navegador, desde dónde se abre, y **qué se
+juega en ella**: el tablero, el personaje que lo recorre casilla a casilla, los
+bloques con los que se le escribe el programa y **qué pasa cuando ese programa
+se ejecuta**.
 
-**Ya se puede escribir un programa, pero todavía no ejecutarlo.** Se ve un
-tablero descrito por una configuración —con casillas que no se pisan, unas
-porque son muro y otras porque son hueco—, un personaje que avanza, gira y no
-atraviesa nada, y un editor de bloques con las tres órdenes mínimas del que sale
-el programa en JSON. Lo que falta para que sea un juego es el eslabón entre los
-dos: **el programa no mueve a nadie**. Por eso las órdenes se siguen dando de
-una en una y a mano. Tampoco existen el recuento de pasos, la puntuación ni la
-detección de que se llegó a la meta, que entran en pasos posteriores.
+**Ya se juega un nivel entero.** Se ve un tablero descrito por una configuración
+—con casillas que no se pisan, unas porque son muro y otras porque son hueco—,
+un personaje que avanza, gira y no atraviesa nada, un editor de bloques con las
+tres órdenes mínimas del que sale el programa en JSON, y **el eslabón que faltaba
+entre los dos: el programa mueve al personaje**. Se ve el recorrido paso a paso,
+un choque no interrumpe lo que queda por ejecutar, y al terminar se sabe si se
+llegó a la meta. Lo que todavía no hay es **el recuento de pasos ni la pantalla
+de resultado**, que entran en el paso siguiente.
 
-Las **diez** garantías con las que la capacidad cuenta hasta aquí, y ninguna se
-decidió tarde. Seis venían de antes: que el juego se dibuje dentro de la
-aplicación, que su código no pese en la carga inicial, que el banco de pruebas no
-llegue a producción, que el tablero salga de una configuración y no del código
-que lo pinta, que el personaje se mueva por casillas sin salirse del tablero, y
-que **las órdenes sueltas tampoco lleguen a producción, sea cual sea la pantalla
-que monte la escena**. Esta última no es andamio de la tercera: lo temporal es el
-mecanismo —dar órdenes a mano mientras el programa no se ejecute—, y la garantía
-es que ese mecanismo no viaje, que deja de coincidir con la del banco de pruebas
-en cuanto exista la pantalla de nivel definitiva.
+Las **once** garantías con las que la capacidad cuenta hasta aquí. Cinco venían
+de antes: que el juego se dibuje dentro de la aplicación, que su código no pese
+en la carga inicial, que el banco de pruebas no llegue a producción, que el
+tablero salga de una configuración y no del código que lo pinta, y que el
+personaje se mueva por casillas sin salirse del tablero.
 
-Las otras cuatro llegan con los bloques: que el programa **se construya
-arrastrando** y no escribiendo, que el editor esté **entero en español** y no a
-medias, que el programa se pueda **leer como JSON con la versión del formato
-pegada** —porque lo leen tres sitios distintos y ninguno debe adivinar qué está
-leyendo—, y que un programa guardado **se vuelva a cargar igual**. Esta última
-parece obvia y no lo es: es la que sostiene que un nivel pueda entregar un
-programa de partida y que un intento guardado pueda volver a abrirse, y es la
-única que valida haber elegido el JSON nativo del editor en vez de uno propio.
+Cuatro llegaron con los bloques: que el programa **se construya arrastrando** y
+no escribiendo, que el editor esté **entero en español** y no a medias, que el
+programa se pueda **leer como JSON con la versión del formato pegada** —porque
+lo leen tres sitios distintos y ninguno debe adivinar qué está leyendo—, y que
+un programa guardado **se vuelva a cargar igual**. Esta última parece obvia y no
+lo es: es la que sostiene que un nivel pueda entregar un programa de partida y
+que un intento guardado pueda volver a abrirse, y es la única que valida haber
+elegido el JSON nativo del editor en vez de uno propio.
+
+Y **dos llegan con la ejecución**: que el programa de bloques **mueva al
+personaje**, viéndose paso a paso y sin que chocar interrumpa lo que queda por
+ejecutar, y que el juego **sepa si el programa llegó a la meta**. La primera
+carga con una regla que no es la evidente: **un avance imposible no detiene el
+programa**, porque los pasos que se cuentan son los ordenados y no los
+ejecutados, y un intérprete que se pare al chocar hace que el número que se le
+enseña al niño y el que el servidor calcula dejen de poder coincidir con lo que
+se vio en pantalla.
+
+**Y una se retiró con ellas**, que es la primera vez que esta capacidad pierde
+una garantía: que las órdenes sueltas dadas a mano no llegaran a producción. Su
+condición de existencia era «mientras el programa de bloques no exista», y el
+programa existe y además se ejecuta. No fue limpieza: las órdenes sueltas y la
+ejecución escribían **la misma posición del personaje**, y dos dueños de un
+mismo estado sólo se notan cuando fallan.
 
 Y la garantía de la carga inicial dejó de hablar de una sola descarga: **el motor
 3D y el editor de bloques viajan en descargas distintas**, cada una detrás de su
@@ -210,33 +222,6 @@ escena.
 - **WHEN** se ordena girar cuatro veces seguidas hacia el mismo lado
 - **THEN** el personaje acaba mirando hacia la dirección de partida, en la misma casilla
 
-### Requirement: Al personaje se le pueden dar órdenes sueltas en desarrollo
-
-Mientras el programa de bloques no exista, el sistema SHALL permitir dar al
-personaje las órdenes de avanzar y girar **una a una y a mano**, para poder ver
-el movimiento funcionando sin haberlo programado. Cada orden SHALL verse
-reflejada en la escena.
-
-Ese medio de dar órdenes sueltas SHALL existir **únicamente cuando la aplicación
-se ejecuta en modo desarrollo**, y esa garantía SHALL valer **sea cual sea la
-pantalla que monte la escena** — no depende de que la pantalla que la aloja hoy
-sea la del banco de pruebas.
-
-#### Scenario: Se ordena avanzar a mano
-
-- **WHEN** se ordena avanzar a mano y la casilla contigua se puede pisar
-- **THEN** el personaje se ve en la casilla siguiente
-
-#### Scenario: Se ordena girar a mano
-
-- **WHEN** se ordena girar a mano
-- **THEN** el personaje se ve mirando hacia la nueva dirección, en la misma casilla
-
-#### Scenario: La aplicación corre en producción
-
-- **WHEN** la aplicación se ejecuta en producción
-- **THEN** no hay forma de dar órdenes sueltas al personaje, sea cual sea la pantalla desde la que se monte la escena
-
 ### Requirement: El programa se construye arrastrando bloques
 
 El sistema SHALL ofrecer un **editor de bloques** en el que el niño construya el
@@ -359,3 +344,111 @@ medias: SHALL rechazarse entero.
 
 - **WHEN** se intenta cargar un programa cuya versión de formato no es la que el sistema entiende
 - **THEN** no se carga nada en el lienzo
+
+### Requirement: El programa de bloques mueve al personaje
+
+El sistema SHALL **ejecutar** el programa que el niño ha construido con los
+bloques, moviendo al personaje por el tablero, y SHALL hacerlo **sólo cuando se
+le pide**: mientras no se pida, los bloques se colocan sin que nadie se mueva.
+
+Las órdenes SHALL ejecutarse **en el orden en que quedan encadenadas**, y cada
+una SHALL producir en el personaje el mismo efecto que produciría dada a mano:
+avanzar lo lleva a la casilla contigua en la dirección a la que mira, y girar le
+cambia la orientación sin sacarlo de su casilla.
+
+**La ejecución SHALL verse paso a paso**: cada casilla recorrida y cada giro
+SHALL representarse por separado y con una duración perceptible, de modo que se
+pueda seguir el recorrido con la vista. Un `avanzar` de varias casillas SHALL
+verse como varios movimientos de una casilla, no como un salto.
+
+**Un avance imposible NO SHALL interrumpir la ejecución.** Cuando la casilla de
+destino sea un muro, un hueco o quede fuera del tablero, el personaje SHALL
+quedarse donde está, el intento SHALL **verse** —de modo que se entienda contra
+qué se ha topado— y el programa SHALL continuar con la orden siguiente. Esto vale
+también para las casillas que le queden a un `avanzar` de varias: las que no se
+pueden dar se intentan igual.
+
+Mientras una ejecución está en curso, el sistema NO SHALL empezar otra.
+
+El sistema SHALL ofrecer, además, **devolver al personaje a la casilla de salida**
+con su orientación de partida, tanto al terminar una ejecución como durante ella.
+
+Cuando el lienzo tenga **varias secuencias sueltas**, el sistema SHALL ejecutar
+**una sola**: la que empieza más arriba en el lienzo —y más a la izquierda, si
+dos empiezan a la misma altura—. Las demás NO SHALL ejecutarse.
+
+Si el programa no tiene ninguna orden, pedir la ejecución SHALL terminar sin
+mover a nadie y sin error.
+
+#### Scenario: Se ejecuta un programa que recorre el tablero
+
+- **WHEN** hay bloques encadenados en el lienzo y se pide ejecutar el programa
+- **THEN** el personaje recorre el tablero haciendo lo que dicen los bloques, en el orden en que están encadenados
+
+#### Scenario: Se ejecuta un avance de varias casillas
+
+- **WHEN** se ejecuta un bloque de avanzar con un número mayor que uno
+- **THEN** el personaje recorre esas casillas **de una en una**, y cada una se ve
+
+#### Scenario: El programa choca contra algo que no se puede pisar
+
+- **WHEN** durante la ejecución le toca avanzar hacia un muro, un hueco o fuera del tablero
+- **THEN** se ve que el personaje lo intenta y no puede, y se queda en su casilla mirando hacia donde miraba
+- **AND** la ejecución continúa con la orden siguiente en lugar de detenerse
+
+#### Scenario: Se pide ejecutar mientras se está ejecutando
+
+- **WHEN** se pide ejecutar el programa con una ejecución ya en curso
+- **THEN** no se lanza una segunda ejecución
+
+#### Scenario: Se devuelve al personaje a la salida
+
+- **WHEN** se pide devolver al personaje a la salida
+- **THEN** el personaje vuelve a la casilla de salida, mirando hacia la dirección de partida
+- **AND** si había una ejecución en curso, deja de haberla
+
+#### Scenario: El lienzo tiene dos secuencias sueltas
+
+- **WHEN** el lienzo tiene dos secuencias que no están encadenadas entre sí y se pide ejecutar el programa
+- **THEN** se ejecuta únicamente la que empieza más arriba en el lienzo
+
+#### Scenario: Se ejecuta un lienzo vacío
+
+- **WHEN** no hay ningún bloque en el lienzo y se pide ejecutar el programa
+- **THEN** la ejecución termina sin mover al personaje y sin dar error
+
+### Requirement: El juego sabe si el programa llegó a la meta
+
+Al terminar de ejecutar el programa, el sistema SHALL determinar si el personaje
+**pisó la casilla de meta**, y SHALL **mostrar el resultado** —se llegó o no se
+llegó— sin que haga falta interpretarlo mirando la escena.
+
+Pisar la meta **en cualquier momento** de la ejecución SHALL contar como haber
+llegado, aunque el programa continúe después y el personaje acabe en otra
+casilla. Pasarse de largo es ineficiencia, no fracaso: se paga en el recuento de
+pasos, que es lo que el juego puntúa.
+
+Llegar NO SHALL exigir ninguna orientación: la meta se pisa mirando adonde sea.
+
+El resultado SHALL calcularse **de lo que ocurrió al ejecutar**, y no de lo que
+el programa parece decir.
+
+#### Scenario: El programa termina sobre la meta
+
+- **WHEN** se ejecuta un programa que lleva al personaje hasta la casilla de meta y ahí acaba
+- **THEN** al terminar se indica que se llegó a la meta
+
+#### Scenario: El programa pisa la meta y sigue
+
+- **WHEN** se ejecuta un programa que pisa la casilla de meta y después se lleva al personaje a otra casilla
+- **THEN** al terminar se indica igualmente que se llegó a la meta
+
+#### Scenario: El programa no pasa por la meta
+
+- **WHEN** se ejecuta un programa que en ningún momento lleva al personaje a la casilla de meta
+- **THEN** al terminar se indica que no se llegó
+
+#### Scenario: Se llega a la meta mirando a cualquier lado
+
+- **WHEN** el personaje pisa la casilla de meta mirando hacia una dirección cualquiera
+- **THEN** se indica que se llegó, sea cual sea esa dirección
