@@ -1,4 +1,5 @@
 import * as Blockly from 'blockly/core';
+import { ADVANCE_BLOCK, STEPS_FIELD, TURN_LEFT_BLOCK, TURN_RIGHT_BLOCK } from './blockTypes';
 
 /*
  * Los bloques del juego y la caja de herramientas que los ofrece.
@@ -21,12 +22,12 @@ import * as Blockly from 'blockly/core';
 const ADVANCE_COLOR = '#3B9DF8'; // sky
 const TURN_COLOR = '#FF8A3D'; // papaya
 
-export const ADVANCE_BLOCK = 'codeplay_advance';
-export const TURN_LEFT_BLOCK = 'codeplay_turn_left';
-export const TURN_RIGHT_BLOCK = 'codeplay_turn_right';
-
-/** El campo con cuántas casillas avanzar. Lo lee el J5 y lo cuenta el J6. */
-export const STEPS_FIELD = 'STEPS';
+/*
+ * Los nombres de los tres bloques nacen en `blockTypes.ts`, sin Blockly, para
+ * que el intérprete pueda leerlos sin cruzar la frontera. Se reexportan aquí
+ * porque quien trabaja con los bloques los busca en este archivo.
+ */
+export { ADVANCE_BLOCK, STEPS_FIELD, TURN_LEFT_BLOCK, TURN_RIGHT_BLOCK };
 
 /*
  * El número va en un CAMPO del bloque, no en un hueco donde encaje otro bloque,

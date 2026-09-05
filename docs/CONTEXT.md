@@ -1404,31 +1404,36 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
   propio hook, como `worlds.service.ts` + `useWorlds()`. La frontera de §4.3
   sigue en pie.
 
-### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje y los bloques (J1 a J4)
+### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques y su ejecución (J1 a J5)
 
-**Aplicado con `esqueleto-del-juego` (J1), `rejilla-y-personaje` (J2) y
-`bloques-del-programa` (J4), más el J3, que sólo fijó el formato por escrito.**
-Lo que hay es una escena 3D dentro del panel del niño, cargada en diferido, con
-**un tablero leído de una configuración escrita a mano y un personaje que se
-mueve por casillas**, y al lado **un editor de bloques que produce el programa en
-JSON**. **Sin ejecutar el programa y sin backend** — mover al personaje con los
-bloques es el J5, y la fase A no toca Supabase ni una vez.
+**Aplicado con `esqueleto-del-juego` (J1), `rejilla-y-personaje` (J2),
+`bloques-del-programa` (J4) y `ejecutar-el-programa` (J5), más el J3, que sólo
+fijó el formato por escrito.** Lo que hay es una escena 3D dentro del panel del
+niño, cargada en diferido, con **un tablero leído de una configuración escrita a
+mano y un personaje que se mueve por casillas**, al lado **un editor de bloques
+que produce el programa en JSON**, y **el intérprete que ejecuta ese programa,
+anima el recorrido y dice si se llegó a la meta**. Con eso, **un nivel se
+resuelve de principio a fin**. **Sin backend**: la fase A no toca Supabase ni
+una vez, y el recuento de pasos y la pantalla de resultado son el J6.
 
 | Archivo | Qué es |
 | --- | --- |
 | `apps/web/src/game/level.ts` | **Puro.** Los tipos del tablero —`TileKind`, `Direction`, `Cell`, `Pose`, `LevelConfig`— y `TILE_SIZE`. El formato **ya no es provisional**: lo fijó el J3 en el contrato §4.2, y `LevelConfig` es ese mismo objeto |
 | `apps/web/src/game/debugLevel.ts` | **Puro.** La rejilla de pega: 5×5, cuatro muros, un hueco, salida y meta. **No es un puzle diseñado** — los nueve los diseña el usuario y se siembran en el J7 |
-| `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Lo reutiliza el J5** para el intérprete |
+| `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Los reutiliza el intérprete**: nació para eso |
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
-| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>`, el tablero, el personaje y las órdenes de consola. Importa `three` y `@react-three/fiber` |
-| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense` |
+| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero y el personaje, la barra con «Ejecutar» y «Reiniciar», y la animación del recorrido con `useFrame`. Importa `three` y `@react-three/fiber` |
+| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Recibe el programa y lo baja; **sólo el tipo** del sobre cruza |
 | `apps/web/src/game/program.ts` | **Puro.** El sobre del contrato §4.3: `Program`, `PROGRAM_FORMAT_VERSION` y las funciones `sealProgram` y `openProgram`. **Sin Blockly** — lo reutilizan el J8 al abrir el `starterProgram` y el J9 al mandar el intento |
 | `apps/web/src/game/program.test.ts` | El sobre: que se cierre con la versión del contrato y que una desconocida se rechace entera (§7) |
+| `apps/web/src/game/blockTypes.ts` | **Nuevo en el J5. Puro.** Cómo se llaman los tres bloques y su campo en el JSON. Vive aparte porque `blocks.ts` importa Blockly y **el intérprete no puede importarlo** |
+| `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` y devuelve órdenes —o `null` si no entiende algo—, y `runProgram` las pliega sobre la pose inicial con `turn` y `advance`. Sin Blockly y sin `three` |
+| `apps/web/src/game/interpreter.test.ts` | El recorrido y la meta, con el **PROGRAMA A del contrato §4.3 pegado tal cual** como entrada |
 | `apps/web/src/game/blocks.ts` | Los tres bloques —`avanzar N`, `girar a la izquierda`, `girar a la derecha`—, en español, y la caja de herramientas. Importa `blockly/core` |
 | `apps/web/src/game/blocks.test.ts` | El **viaje de ida y vuelta** contra un espacio de trabajo sin interfaz, que es lo único que valida la decisión del J3 |
 | `apps/web/src/game/BlockEditor.tsx` | El editor: inyecta Blockly, carga el español, publica el programa y se limpia al desmontarse |
 | `apps/web/src/game/BlockEditorLoader.tsx` | **La segunda frontera de carga diferida**, la de Blockly. Calcada de `GameSceneLoader` |
-| `apps/web/src/components/dashboard/student/StudentGameLabModule.tsx` | El banco de pruebas, con la escena en un contenedor de altura fija y las órdenes documentadas en pantalla |
+| `apps/web/src/components/dashboard/student/StudentGameLabModule.tsx` | El banco de pruebas, con la escena y el editor en contenedores de altura fija. **Baja el programa a la escena como dato** y enseña el sobre que producen los bloques |
 | `apps/web/src/constants/routes.ts` | `GAME_LAB: '/dashboard/game'` |
 | `apps/web/src/router/AppRouter.tsx` | Registra esa ruta **sólo** bajo `import.meta.env.DEV` |
 | `apps/web/src/pages/Dashboard/Dashboard.tsx` | Un caso más en el `switch`, con la misma bandera |
@@ -1463,9 +1468,9 @@ arrastra la biblioteca de bloques estándar —89 kB— y el generador de JavaSc
 y este juego define sus tres bloques y no genera código: el intérprete del J5
 recorre el JSON.
 
-**Las reglas de movimiento viven sueltas del pintado a propósito.** El J5 las
-reutiliza para el intérprete; si nacieran enredadas con la escena, el J5 las
-reescribiría. Son puras, no mutan la pose que reciben —lo que permitirá ejecutar
+**Las reglas de movimiento viven sueltas del pintado a propósito, y el J5 las
+reutilizó tal cual**: el intérprete no reimplementa ninguna: si hubieran nacido
+enredadas con la escena, habría habido que reescribirlas. Son puras, no mutan la pose que reciben —lo que permitirá ejecutar
 un programa plegando las órdenes sobre una pose inicial— y **no lanzan ni
 devuelven `{ data, error }`**: esa convención es de los servicios, y chocar con
 un muro no es un fallo, es una regla del juego.
@@ -1483,14 +1488,15 @@ en la cara que mira: un cubo simétrico girado 90° es el mismo cubo, y el giro 
 se vería. La marca va arriba y no en la cara porque, mirando en dirección
 contraria a la cámara, el propio cuerpo la taparía.
 
-**Las órdenes se dan desde la consola**, y sólo en desarrollo:
-`codeplayGame.forward()`, `.left()`, `.right()` y `.reset()`, registradas en
-`window` desde un `useEffect` gobernado por `import.meta.env.DEV` con acceso de
-miembro —nunca desestructurado—, como `context/guest.helpers.ts`. **Medido: en
-el build de producción la cadena `codeplayGame` aparece cero veces**, ni en el
-trozo principal ni en el del juego. **Y siguen aunque ya haya bloques**: el J4
-trajo el editor, pero ejecutar el programa es el J5, así que mover al personaje
-sigue siendo cosa de la consola.
+**Las órdenes de consola ya no existen.** El J2 registró
+`codeplayGame.forward()`, `.left()`, `.right()` y `.reset()` en `window` sólo en
+desarrollo, y el **J5 las retiró con su requisito** —el primer `REMOVED` del
+proyecto—. No fue higiene: la consola y la ejecución escribían **la misma pose**,
+así que un `forward()` a mitad de recorrido dejaba al personaje en una casilla
+que el recorrido no contemplaba. Dos dueños de un mismo estado. Lo que
+permitían ver se ve ahora ejecutando un programa y reiniciándolo, con botones y
+sin consola. La cadena `codeplayGame` no aparece en `apps/web/src`; sí en los
+cambios archivados, que son el registro de lo que pasó.
 
 **`drei` sigue sin entrar.** El roadmap lo admite fijado a `^9.122` si
 `OrbitControls` hace falta; para un 5×5 en cámara fija no hace falta, y la
@@ -1581,16 +1587,22 @@ que jsdom no estorba—. Ese test corre sobre `core-node.js`, que es un envoltor
 del **mismo** `blockly_compressed.js` que recibe el navegador, así que prueba la
 serialización de verdad; lo que no cubre es el editor montado.
 
-**Una ventana oculta o minimizada suspende los frames, y la página no puede
-enterarse.** Medido el 5-sep-2026 al verificar el J4, y anotado aquí porque **el
-J5 y el J6 se lo van a encontrar**: los dos animan al personaje y viven de
-`requestAnimationFrame`.
+**Si el panel de vista previa no está a la vista, los frames se suspenden, y la
+página no puede enterarse.** Medido el 5-sep-2026 al verificar el J4 y **afinado
+en el J5**, que es donde de verdad muerde: los dos pasos animan al personaje y
+viven de `requestAnimationFrame`.
 
-Con la ventana delante, `requestAnimationFrame` dispara con normalidad. Con la
-ventana oculta o minimizada deja de disparar —el compositor no dibuja— **y sin
-embargo `document.visibilityState` sigue diciendo `'visible'` y
-`document.hidden` sigue siendo `false`**. La Page Visibility API no cubre este
-caso, así que ningún código de la página puede distinguirlo.
+**El disparador es el panel, no la ventana**, y esa precisión cuesta una tarde:
+con la ventana **al frente y maximizada** pero el panel del navegador cerrado son
+**cero frames en 500 ms**, y traer la pestaña al frente con `tabs_select`
+tampoco basta. Con el panel abierto en pantalla, 73. En los dos casos
+`document.visibilityState` sigue diciendo `'visible'` y `document.hidden` sigue
+siendo `false`: la Page Visibility API no cubre este caso, así que ningún código
+de la página puede distinguirlo.
+
+**Y hay una forma barata de saber en cuál de los dos estás**: `tabs_context` lo
+dice en una línea —«The Browser pane is currently displayed» o «hidden»—. Es lo
+que separa «mi código no anima» de «aquí no se dibuja».
 
 Lo que eso provoca es engañoso: **Blockly 12 encola los redibujados en un frame
 de animación**, así que en cuanto uno queda encolado la tubería se atasca entera
@@ -1600,9 +1612,117 @@ es traer la ventana al frente antes de verificar nada que dependa de animación*
 perseguirlo como si fuera un defecto del producto cuesta una tarde.
 
 Consecuencia para el J4: **cambiar el número del bloque desde la interfaz quedó
-sin verificar en el navegador.** El valor del campo sí se actualiza —comprobado
-contra la API de Blockly en la propia página— y el camino modelo→JSON lo cubre
-`blocks.test.ts`.
+sin verificar en el navegador.** El valor del campo sí se actualizaba
+—comprobado contra la API de Blockly en la propia página— y el camino
+modelo→JSON lo cubre `blocks.test.ts`. **El J5 lo verificó ya en la interfaz**,
+con el panel delante.
+
+**Lo que el J5 añadió, y lo que dejó decidido.**
+
+**El intérprete es puro, y por eso está probado.** No importa Blockly ni `three`,
+así que sus 14 tests corren como los de `movement.ts`. La entrada de los tests es
+el **PROGRAMA A del contrato §4.3 pegado sin tocar una coma**: probar contra la
+salida real del editor, y no contra un JSON construido a mano, es lo que hace que
+prueben el formato del contrato y no la idea que el intérprete tiene de él.
+
+**La frontera con `program.ts` está escrita en el propio módulo.** Aquél abre el
+sobre y **se niega a propósito** a saber qué hay dentro; el intérprete lee la
+carta. Si la forma de Blockly viviera en `program.ts`, el J8 y el J9 —que sólo
+abren y cierran el sobre— cargarían con ella sin usarla.
+
+**Chocar NO detiene el programa, y está metido en la estructura.** El recorrido
+lleva **una entrada por paso ORDENADO**: `avanzar 4` contra un muro que está a
+dos casillas deja cuatro entradas, y las que sobran repiten la pose con su
+`blockedBy`. Es el contrato §4.4 —«se cuentan los pasos ordenados, no los
+ejecutados»— hecho estructura, y no es un capricho: lo natural al escribir un
+intérprete es pararse al chocar, y pararse hace que el número que el J6 enseñe y
+el que el servidor calcule dejen de poder coincidir con lo que el niño vio. Un
+test comprueba que los diez pasos que §4.4 cuenta para el PROGRAMA A son las diez
+entradas que produce la ejecución.
+
+**Dos decisiones que no estaban en ninguna parte, y ahora están en el contrato.**
+La primera, §4.4: **pisar la meta y seguir cuenta como haber llegado**, porque
+pasarse de largo es recorrido de más y el recorrido de más ya se paga contra
+`optimalSteps`. La segunda, §4.3: con **varios montones sueltos se ejecuta el que
+empieza más arriba** —`y` menor, y `x` menor a igualdad—, y no el primero del
+array, que es un orden de construcción y no de pantalla.
+
+**Encargo para el J8, y hoy no hay caso:** `readOrder` acepta cualquier entero
+mayor que cero en `STEPS`, mientras el campo del editor está acotado a **1–10**.
+Da igual mientras el único productor sea nuestro editor; el día que el programa
+llegue de la base o de un intento guardado, un `STEPS: 50` **se ejecutaría** con
+cincuenta pasos y el editor, al cargarlo, enseñaría diez. Quien valide en la
+frontera decide si acota o rechaza.
+
+**Encargo para el J6, que no se ve venir solo:** esa segunda regla **falla en
+silencio**. Un bloque suelto arriba se ejecuta en lugar del programa, el
+personaje da un giro y se para, y el niño **no puede distinguir «mi programa está
+mal» de «mi programa no se ejecutó»**. La pantalla de resultado es el sitio
+natural para «te sobraron bloques sueltos».
+
+**`@react-spring/three` no entró**, aunque el roadmap se la asignaba a este paso.
+Lo que hacía falta —posición entre dos casillas, ángulo **por el lado corto** y
+un topetazo contra lo que no se pisa— son tres interpolaciones sobre el `delta`
+de `useFrame`, que además es el reloj que decide cuándo termina un paso: traer un
+segundo planificador para animar habría sido tener dos relojes para una cosa.
+`ROADMAP-JUEGO.md` §2 dice que las librerías entran «en el paso que primero las
+importe», y se revisa en el **J7.4**, con el modelo de 25 clips delante.
+**Comprobado de paso lo que el J2 dejó escrito y nunca se había ejecutado:
+`npm ls three` da una sola copia, 0.170.0.**
+
+**El reloj de la animación vive en el bucle de frames, no en el estado.** React
+sólo se entera cuando un paso TERMINA —una vez cada tercio de segundo—, y el
+paso en curso se compara **dentro** de `useFrame` en vez de reiniciarse desde un
+efecto: un efecto y el bucle de frames no tienen orden garantizado entre sí. Y el
+arranque cuelga **del evento del botón, nunca de un efecto**, porque con
+`React.StrictMode` un efecto se dispara dos veces en desarrollo y eso sería el
+recorrido ejecutándose por duplicado.
+
+**El programa baja como dato y el intérprete no sube.** `StudentGameLabModule`
+pasa el sobre a `GameSceneLoader`, que sólo importa su **tipo**; quien lo abre y
+lo ejecuta es `GameScene.tsx`, bajo la frontera. **Medido: `readProgram`,
+`runProgram` y `blockedBy` aparecen cero veces en el trozo principal.**
+
+**Los nombres de los bloques tuvieron que salir de `blocks.ts`.** Ese archivo
+importa Blockly, así que el intérprete no puede importarlo sin arrastrar la
+librería entera al trozo de la escena. Viven en `blockTypes.ts`, puro, y
+`blocks.ts` los reexporta para quien los busque donde estaban. La alternativa era
+escribir los cuatro textos dos veces, y dos copias de un nombre no darían error:
+darían un programa que se construye y no se ejecuta.
+
+**Verificado en el navegador con el panel delante**, que es lo que el aviso de
+arriba exige:
+
+- El **PROGRAMA A** resuelve el tablero de pega de principio a fin: el personaje
+  recorre la fila sur y la columna este casilla a casilla y acaba sobre la meta,
+  con «¡Llegaste a la meta!» en la barra.
+- **Chocar no detiene el programa**, y se ve en el estado final: cuatro
+  `avanzar` contra el muro de la fila 3 dejan al personaje donde estaba, y el
+  giro y el `avanzar 3` que van detrás **sí se ejecutan** — termina en el
+  extremo este de la fila sur. El topetazo dura un tercio de segundo y no se
+  puede congelar en una captura; lo que sí se comprobó es que no atraviesa el
+  muro y que la ejecución continúa.
+- **«Reiniciar» a mitad del recorrido** devuelve al personaje a la salida y deja
+  la barra como al principio, y **«Ejecutar» está inhabilitado** mientras se
+  ejecuta.
+- **Pisar la meta y seguir**: un programa que llega y después baja tres casillas
+  acaba lejos de la meta y la barra dice **«¡Llegaste a la meta!»** — la decisión
+  del contrato §4.4, funcionando.
+- **Lienzo vacío**: no se mueve nadie, la barra dice que no se llegó y **la
+  consola no saca ningún error**.
+- Y de propina, **la regla del montón de más arriba**, con dos montones sueltos
+  en el lienzo: se ejecutó el de arriba y el otro se quedó quieto.
+
+**Además queda verificado lo que el J4 no pudo**: cambiar el número del bloque
+desde la interfaz. El campo se editó en el editor montado y el JSON de la
+pantalla pasó a decir 4.
+
+**Y cómo se verifica esto, que costó tiempo averiguarlo.** Los clics del panel de
+vista previa **no producen eventos de puntero**, y tanto la caja de herramientas
+de Blockly como su arrastre viven de ellos, así que colocar bloques desde la
+herramienta pide despacharlos a mano —`pointerdown`, `pointermove`, `pointerup`—.
+Los botones de HTML sí responden. Y `window.Blockly` existe en la página pero
+**sólo trae `Msg`**: no hay API por la que cargar un programa de un golpe.
 
 ---
 
@@ -2020,15 +2140,17 @@ devuelve `/login` con la contraseña equivocada.
 `.eslintrc.cjs` usa la configuración heredada. Migrar a ESLint 9 con
 configuración plana es una tarea pendiente sin urgencia.
 
-### 4.8 Bundle: 624 kB de aplicación, 644 kB de editor y 825 kB de escena
+### 4.8 Bundle: 625 kB de aplicación, 644 kB de editor y 829 kB de escena
 
 `npm run build` avisa de que los chunks superan los 500 kB. Sin urgencia, pero
 conviene no perderlo de vista ahora que el juego crece. Se resolvería con
 `manualChunks` o más importaciones dinámicas por ruta.
 
-**Medido el 5-sep-2026, después del J4**: trozo principal **624,78 kB**
-(167,77 gzip), trozo `BlockEditor` **644,50 kB** (172,77), trozo `GameScene`
-**825,21 kB** (222,25), **219 módulos**.
+**Medido el 5-sep-2026, después del J5**: trozo principal **625,00 kB**
+(167,90 gzip), trozo `BlockEditor` **644,43 kB** (172,75), trozo `GameScene`
+**829,26 kB** (223,90), trozo compartido `program` **0,35 kB** (0,24), **221
+módulos**. Antes del J5 eran 624,78 (167,77), 644,50 (172,77), 825,21 (222,25) y
+219 módulos, sin trozo compartido.
 
 **La línea de partida del juego era otra y conviene no confundirlas.** Antes del
 J1 había **un solo chunk de 623,18 kB** (166,96 gzip) y 177 módulos; el J1 lo
@@ -2041,6 +2163,16 @@ incorpore.** Lo que crezca tiene que salir en el trozo del juego, y se comprueba
 en cada paso. El J2 no lo movió ni un byte, y el J3 tampoco: los 0,02 kB de
 `optimalSteps` salieron donde debían —trozo del juego **825,21 kB** (222,25
 gzip)—, con los mismos **209 módulos**.
+
+**El J5 lo movió 0,22 kB, de 624,78 a 625,00, y es el caso que el propio
+requisito exime: «el coste fijo de tener esas descargas aparte».** Apareció un
+**cuarto trozo**, `program-*.js`, de 0,35 kB: el sobre y los nombres de los tres
+bloques, que desde el J5 usan **los dos** trozos perezosos —el editor para
+construir, la escena para ejecutar—, así que Vite los saca a un trozo compartido
+en vez de duplicarlos. Lo que crece en el principal es **la entrada de ese trozo
+en su mapa de precarga**, y se comprobó que es eso: la cadena `program-Ds42CEFO`
+aparece **una** vez en el principal, y `readProgram`, `runProgram` y `blockedBy`,
+**cero**. El intérprete entero cayó donde debía: `GameScene` sube 4,05 kB.
 
 **El J4 lo movió 0,21 kB, de 624,57 a 624,78, y conviene saber por qué.** No es
 Blockly: la librería cayó entera en su propio trozo, `BlockEditor-*.js`, y

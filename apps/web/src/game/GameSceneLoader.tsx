@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import type { Program } from './program';
 
 /*
  * La frontera del bundle, y el motivo de que este archivo exista aparte de la
@@ -7,6 +8,10 @@ import { lazy, Suspense } from 'react';
  * abra una pantalla con juego no lo descarga. Importar la escena de forma
  * estática desde aquí anula el cambio entero.
  *
+ * Tampoco se importa el intérprete: el programa cruza como DATO y quien lo
+ * ejecuta vive al otro lado. `program.ts` sí se importa —y sólo su tipo—: no
+ * arrastra nada, y el tipo desaparece al compilar.
+ *
  * El `.then` traduce la exportación con nombre a la exportación por defecto que
  * `lazy` exige, para no abrir la primera excepción a la convención del repo.
  */
@@ -14,7 +19,11 @@ const LazyGameScene = lazy(() =>
   import('./GameScene').then((module) => ({ default: module.GameScene })),
 );
 
-export const GameSceneLoader = () => (
+interface GameSceneLoaderProps {
+  program: Program | null;
+}
+
+export const GameSceneLoader = ({ program }: GameSceneLoaderProps) => (
   <Suspense
     fallback={
       <div className="flex h-full w-full items-center justify-center">
@@ -23,6 +32,6 @@ export const GameSceneLoader = () => (
       </div>
     }
   >
-    <LazyGameScene />
+    <LazyGameScene program={program} />
   </Suspense>
 );

@@ -26,6 +26,9 @@ const CubeIcon = () => (
  * El banco de pruebas de la fase A del juego, y NO es de usar y tirar: el J2, el
  * J4, el J5 y el J6 se ven funcionar aquí, porque la pantalla de nivel real no
  * llega hasta el J8. Cuando ésa exista, esta pantalla se revisa.
+ *
+ * El programa baja de aquí a la escena como DATO. Lo que no sube es el
+ * intérprete: vive bajo la frontera diferida, con la escena que lo usa.
  */
 export const StudentGameLabModule = () => {
   const [program, setProgram] = useState<Program | null>(null);
@@ -71,7 +74,7 @@ export const StudentGameLabModule = () => {
            * sospechoso.
            */}
           <div className="h-[420px] w-full bg-cream">
-            <GameSceneLoader />
+            <GameSceneLoader program={program} />
           </div>
         </div>
 
@@ -79,7 +82,7 @@ export const StudentGameLabModule = () => {
           <div className="flex flex-wrap items-center gap-3 border-b-[3px] border-ink bg-cream px-5 py-3">
             <MonsteraLeaf size={22} />
             <h2 className="font-display text-[19px] text-ink">Bloques</h2>
-            <span className="chip chip-grape ml-auto">Todavía no se ejecutan</span>
+            <span className="chip chip-grape ml-auto">Se ejecutan en la escena de arriba</span>
           </div>
 
           {/*
@@ -102,47 +105,9 @@ export const StudentGameLabModule = () => {
           </div>
         </div>
 
-        <div className="card mt-6 px-5 py-4">
-          <h3 className="font-display text-[17px] text-ink">Mover al personaje</h3>
-          <p className="mt-2 text-[15px] font-semibold leading-[1.6] text-ink-soft">
-            Los bloques ya se arrastran, pero todavía no mueven a nadie —ejecutarlos llega más
-            adelante—, así que las órdenes se siguen dando de una en una desde la consola del
-            navegador:
-          </p>
-          <ul className="mt-3 space-y-1.5 text-[15px] font-semibold leading-[1.6] text-ink-soft">
-            <li>
-              <code className="rounded-md bg-lavender px-2 py-0.5 text-ink">
-                codeplayGame.forward()
-              </code>{' '}
-              — avanza una casilla, si se puede pisar
-            </li>
-            <li>
-              <code className="rounded-md bg-lavender px-2 py-0.5 text-ink">
-                codeplayGame.left()
-              </code>{' '}
-              y{' '}
-              <code className="rounded-md bg-lavender px-2 py-0.5 text-ink">
-                codeplayGame.right()
-              </code>{' '}
-              — giran sin cambiar de casilla
-            </li>
-            <li>
-              <code className="rounded-md bg-lavender px-2 py-0.5 text-ink">
-                codeplayGame.reset()
-              </code>{' '}
-              — devuelve al personaje a la salida
-            </li>
-          </ul>
-          <p className="mt-3 text-[15px] font-semibold leading-[1.6] text-ink-soft">
-            El tablero no es un puzle: es una rejilla de prueba con un muro y un hueco, para poder
-            ver qué pasa al chocar contra cada cosa.
-          </p>
-        </div>
-
         <p className="mt-4 text-[15px] font-semibold leading-[1.6] text-ink-soft">
           Esta pantalla no forma parte del producto: existe únicamente cuando la aplicación se
           ejecuta en desarrollo, y en la compilación de producción no hay forma de llegar a ella.
-          Las órdenes de arriba tampoco existen fuera de desarrollo.
         </p>
       </section>
     </div>

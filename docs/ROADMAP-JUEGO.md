@@ -93,7 +93,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J2** | La cuadrícula y el personaje, montados desde un objeto de configuración **escrito a mano en el código** | Se ve el tablero y el personaje se mueve llamando funciones desde la consola | ✅ |
 | **J3** | **Fijar el formato** de `config` y de `program` | Está escrito en el contrato, no en la cabeza de nadie | ✅ |
 | **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ✅ |
-| **J5** | El intérprete: ejecutar el programa, animar al personaje y detectar si llegó a la meta | **Un nivel se resuelve de principio a fin, sin backend** | ⬜ |
+| **J5** | El intérprete: ejecutar el programa, animar al personaje y detectar si llegó a la meta | **Un nivel se resuelve de principio a fin, sin backend** | ✅ |
 | **J6** | Recuento de pasos y pantalla de resultado | Al terminar dice cuántos pasos usó y cuántos eran óptimos | ⬜ |
 | **J7** | **Sembrar el mundo 1** — partido en cuatro, uno por nivel más el aspecto | Los tres niveles se juegan leyendo su definición de la base, y el mundo se ve como debe verse | ⬜ |
 | J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra | Se juega el nivel 1 leyendo su fila, no el objeto escrito a mano del J2 | ⬜ |
@@ -136,9 +136,14 @@ entre casillas, y con los modelos entrando tarde el fallo aparecería con la
 mecánica ya escrita encima.
 
 **El personaje trae 25 animaciones con esqueleto** —`idle`, `walk`, `jump`,
-`emote-yes`, `emote-no`—, así que cuando llegue su pasada, el J5 no tiene que
-inventar el andar: `@react-spring/three` interpola la posición entre casillas y
-el clip mueve las piernas. Hasta entonces, un cuerpo de relleno.
+`emote-yes`, `emote-no`—, así que cuando llegue su pasada no habrá que inventar
+el andar: el clip mueve las piernas mientras algo interpola la posición entre
+casillas. **Eso lo hace hoy el propio J5 con `useFrame`, y `@react-spring/three`
+no llegó a entrar**: interpolar entre dos casillas no traía nada nuevo, y el
+reloj que anima es el mismo que decide cuándo termina un paso — dos
+planificadores para una cosa. La decisión se revisa en el J7.4, con el modelo
+delante, que es donde §2 dice que entran las librerías: en el paso que primero
+las importe.
 
 ### Los nueve puzles no existen, y los diseña el usuario
 

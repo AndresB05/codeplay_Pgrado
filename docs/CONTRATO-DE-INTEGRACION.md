@@ -405,6 +405,19 @@ Lo que hay que saber para recorrerlo:
 - **Un lienzo vacío da `"workspace": {}`**, y es un sobre válido: es lo que
   §7 llama «sin programa de partida».
 
+**Qué montón se ejecuta cuando hay varios, decidido el 5-sep-2026 por el J5**,
+que es el paso al que la primera viñeta dejaba esta decisión. Se ejecuta el
+montón cuyo bloque raíz tenga la **`y` menor** —y la `x` menor, si dos empiezan a
+la misma altura—: el que empieza más arriba en el lienzo. Los demás no se
+ejecutan.
+
+Lo natural sería coger el primero del array, y es justo lo que no vale: **ese
+orden es de construcción, no de pantalla**, así que dos lienzos idénticos a la
+vista ejecutarían montones distintos según en qué orden se armaron. La regla
+tiene que poder verse. Y no se rechaza el programa por tener bloques sueltos,
+aunque sería defendible: eso exige decírselo al niño, y castiga el bloque
+olvidado en una esquina, que es lo más frecuente en un lienzo de niño.
+
 **Lo que este ejemplo NO enseña, y en qué paso se registra.** Los tres bloques
 que hoy existen son **planos**: se encadenan uno detrás de otro y ninguno tiene
 cuerpo. Pero §4.1 exige que el formato deje ver «qué bloques hay, en qué orden
@@ -459,6 +472,28 @@ dos. Es deliberado —chocar es ineficiencia, y la eficiencia es lo que se punt�
 y es lo que permite contar leyendo. Lo que importa es que los dos lados cuenten
 **igual**: el número que el juego le enseña al niño y el que el servidor usa para
 puntuar salen de esta misma tabla.
+
+**Pisar la meta y seguir cuenta como haber llegado.** Decidido el 5-sep-2026 al
+escribir el intérprete (J5), porque hasta ese día no estaba en ninguna parte: §5
+define `success` como «si el niño resolvió el nivel», y el PROGRAMA B de arriba
+llega a la meta y luego gira **sin salir de la casilla**, así que ese ejemplo se
+resuelve igual con cualquier criterio. El caso de irse, no. El nivel se resuelve
+si el personaje pisa la meta **en algún momento** de la ejecución, aunque el
+programa continúe después y lo deje en otra casilla.
+
+Es la regla de arriba mirada desde el otro lado. Pasarse de largo es **recorrido
+de más**, y el recorrido de más ya se paga: son pasos que cuentan contra
+`optimalSteps` y bajan la puntuación. Cobrarlo dos veces —en la puntuación y
+además invalidando el nivel— castigaría dos veces el mismo error. La alternativa
+era exigir que el programa **acabara** sobre la meta; se descartó porque
+convierte un error de eficiencia en un fracaso, y porque deja un caso que no hay
+manera de explicarle a un niño: su programa hizo lo que había que hacer y la
+pantalla le dice que no.
+
+La consecuencia se acepta a sabiendas: **el personaje puede acabar lejos de la
+meta con el resultado diciendo que llegó.** No se esconde, se enseña — la
+ejecución se ve entera, así que el niño ve el momento en que la pisa y ve el
+paseo que dio después.
 
 **Y esta forma se deja ejecutar plegando.** Las tres órdenes son «avanza» y
 «gira» aplicadas en orden sobre una pose inicial, sin modificarla, quedándose con

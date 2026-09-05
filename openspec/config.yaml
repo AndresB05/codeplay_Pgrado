@@ -133,9 +133,14 @@ context: |
   importa lo que esa frontera aisla —ni los cargadores, ni la pantalla del
   laboratorio—. Debajo si: GameScene.tsx importa three, BlockEditor.tsx importa
   blockly. Juntarlos anula la separacion.
-  Hay ademas modulos PUROS en src/game/ —level.ts, debugLevel.ts, movement.ts y
-  program.ts— que no arrastran three ni blockly pero que solo se importan desde
-  el lado perezoso: importarlos desde arriba los mete en el trozo principal.
+  Hay ademas modulos PUROS en src/game/ —level.ts, debugLevel.ts, movement.ts,
+  program.ts, blockTypes.ts e interpreter.ts— que no arrastran three ni blockly
+  pero que solo se importan desde el lado perezoso: importarlos desde arriba los
+  mete en el trozo principal. El interprete (J5) es el que conoce la forma que
+  serializa Blockly; program.ts se niega a conocerla a proposito, y por eso los
+  nombres de los bloques viven en blockTypes.ts y no en blocks.ts, que importa
+  Blockly. Desde el J5 el sobre y esos nombres los usan los DOS trozos perezosos,
+  asi que Vite los saca a un cuarto trozo compartido.
   ESLint 8.57 (config heredada) + Prettier 3.9. Node >= 18.18.
   Tests: Vitest 3.2 + jsdom + Testing Library. Los tests se colocan junto al
   archivo que prueban; src/test/ guarda el setup y el helper renderClassrooms.
