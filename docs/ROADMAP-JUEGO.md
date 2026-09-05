@@ -81,7 +81,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | --- | --- | --- | --- |
 | **J1** | Esqueleto: las dos dependencias y un componente que pinta una escena 3D vacía dentro de la aplicación, cargado en diferido | Aparece algo en 3D en una pantalla del panel | ✅ |
 | **J2** | La cuadrícula y el personaje, montados desde un objeto de configuración **escrito a mano en el código** | Se ve el tablero y el personaje se mueve llamando funciones desde la consola | ✅ |
-| **J3** | **Fijar el formato** de `config` y de `program` | Está escrito en el contrato, no en la cabeza de nadie | ⬜ |
+| **J3** | **Fijar el formato** de `config` y de `program` | Está escrito en el contrato, no en la cabeza de nadie | ✅ |
 | **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ⬜ |
 | **J5** | El intérprete: ejecutar el programa, animar al personaje y detectar si llegó a la meta | **Un nivel se resuelve de principio a fin, sin backend** | ⬜ |
 | **J6** | Recuento de pasos y pantalla de resultado | Al terminar dice cuántos pasos usó y cuántos eran óptimos | ⬜ |
@@ -176,7 +176,7 @@ El formato del programa **lo leen tres sitios distintos**: el juego para
 ejecutarlo, el cliente para contar los pasos que enseña al niño, y el servidor
 para puntuar y conceder logros. Si se decide sobre la marcha, los tres divergen.
 
-Y arrastra una decisión que conviene tomar a sabiendas: **si se guarda el JSON
+Y arrastraba una decisión que convenía tomar a sabiendas: **si se guarda el JSON
 nativo de Blockly o uno propio más pequeño.**
 
 - El **nativo** no cuesta código: Blockly serializa y deserializa solo. A cambio,
@@ -185,15 +185,34 @@ nativo de Blockly o uno propio más pequeño.**
 - Uno **propio** obliga a escribir la traducción en los dos sentidos, pero deja
   un JSON pequeño, estable y fácil de recorrer desde SQL.
 
-Recomendado **el nativo de Blockly**, y por un motivo concreto: el contrato ya
-tiene el campo de versión del formato precisamente para sobrevivir a este tipo de
+**Cerrada el 4-sep-2026 a favor del nativo**, que era la recomendación: el
+contrato ya tiene el campo de versión precisamente para sobrevivir a este tipo de
 cambios, y escribir un traductor antes de que exista el primer nivel es trabajo
 sin evidencia. Si el JSON de Blockly resulta incómodo de recorrer desde SQL en el
 J10, ahí se cambia, y con casos reales delante.
 
+**Lo que el J3 dejó escrito**, todo en `CONTRATO-DE-INTEGRACION.md` §4:
+
+- **§4.2, `config`**: `tiles`, `start`, `goal` y **`optimalSteps`**, que es el
+  número de pasos de la mejor solución. Ese campo cierra además el único punto
+  que `DISENO-DEL-JUEGO.md` §6 dejaba abierto — no tenía sitio asignado.
+- **§4.3, el programa**: va dentro de un **sobre** `{ formatVersion, workspace }`,
+  y el nativo de Blockly va dentro del sobre. El sobre existe porque el intento
+  **no tiene ningún hueco propio** para la versión, y `metadata` es otra columna:
+  quien lea el programa solo se quedaría sin saber qué está leyendo. Valor único
+  hoy: `grid-blockly-1`.
+- **§4.4**, las reglas de recuento con un ejemplo resuelto sobre el tablero de
+  §4.2 — dos programas que lo resuelven, de 10 y 11 pasos, para que el J6 y el
+  J10 tengan contra qué comprobarse.
+
+**El interior del sobre lo registra el J4**, no el J3: Blockly no está instalado
+—lo instala ese paso, que es el primero que lo importa—, y transcribir de memoria
+la forma que serializa es transcribirla mal.
+
 **Lo que el formato tiene que garantizar sí o sí**, venga de donde venga: que las
 repeticiones sean **números presentes en el programa**. Es lo que permite contar
-los pasos sin simular el juego. Está explicado en el contrato §3.
+los pasos sin simular el juego. Está explicado en el contrato §3 y contado con un
+ejemplo en su §4.4.
 
 ### Las migraciones y sus paradas
 
@@ -211,6 +230,15 @@ nivel funcionando antes de diseñar el siguiente.
   `starter_code`, que hoy son de otro juego. La primera de las tres iguala además
   `xp_reward` a 100 en los nueve niveles, que hoy está sembrado con 100, 120,
   140, 180, 200, 240 y 260.
+
+  **Dos cosas del formato que muerden justo aquí**, las dos del contrato §4.2.
+  La primera: el `optimalSteps` de cada nivel **no lo comprueba nadie**, y la
+  puntuación se calcula contra él, así que uno escrito por debajo del óptimo real
+  deja el 100 fuera del alcance de cualquier niño **sin que salte ningún error**
+  — hay que resolver el puzle a mano antes de sembrarlo. La segunda: el tablero
+  es **rectangular**, y los huecos se escriben `'gap'`, nunca acortando una fila;
+  una fila corta se juega como borde del tablero y no como hueco, y al niño se le
+  dice otra cosa.
 - **J12** repite el patrón seis veces más, una por nivel de los mundos 2 y 3.
 - **J10** es la de fondo, y la que `ROADMAP.md` §3.2 ya describe: hoy
   `upsert_my_progress` concede el XP **una sola vez**, así que un segundo intento

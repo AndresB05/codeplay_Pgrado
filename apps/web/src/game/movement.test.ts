@@ -17,6 +17,10 @@ import { advance, turn } from './movement';
  *    │  .    .    ▓   │
  *  S │  .   hueco .   │
  *    └────────────────┘
+ *
+ * `optimalSteps` no lo mira ningún test —estas reglas no cuentan pasos—, pero el
+ * tipo lo exige desde el J3. El valor es el real: avanzar, girar a la derecha y
+ * avanzar.
  */
 const board: LevelConfig = {
   tiles: [
@@ -26,6 +30,7 @@ const board: LevelConfig = {
   ],
   start: { cell: { row: 1, column: 1 }, facing: 'north' },
   goal: { row: 0, column: 2 },
+  optimalSteps: 3,
 };
 
 const poseAt = (row: number, column: number, facing: Pose['facing']): Pose => ({

@@ -20,8 +20,9 @@ import type { LevelConfig } from './level';
  *    S │ SALIDA .     .     .     .        │
  *      └───────────────────────────────────┘
  *
- * Desde la salida se llega a la meta: norte cuatro veces hasta la esquina,
- * este dos, sur uno, este dos y norte uno.
+ * La mejor solución son diez pasos: girar a la derecha, avanzar cuatro por la
+ * fila sur, girar a la izquierda y avanzar cuatro por la columna este. Es el
+ * ejemplo resuelto del contrato §4.4, y de ahí sale `optimalSteps`.
  */
 export const debugLevel: LevelConfig = {
   tiles: [
@@ -33,4 +34,5 @@ export const debugLevel: LevelConfig = {
   ],
   start: { cell: { row: 4, column: 0 }, facing: 'north' },
   goal: { row: 0, column: 4 },
+  optimalSteps: 10,
 };

@@ -255,6 +255,15 @@ Esto no cambia nada de lo anterior: los adornos SVG de `components/decor/` se
 siguen escribiendo a mano (son geometría, no ilustración) y los huecos siguen
 vacíos hasta que haya imágenes reales.
 
+**El formato del juego lo fija el contrato, no el código.** `config` y el sobre
+del programa están escritos campo por campo en
+[`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md) §4, decididos en el
+J3. `game/level.ts` declara **ese mismo objeto sin traducirlo**: a diferencia de
+las filas de la base, que tienen `mapLevelRow` porque una fila y un tipo de
+dominio son cosas distintas, `config` viaja entero en un solo hueco `jsonb`. No
+inventar una segunda forma ni un traductor — lo que hace falta en la frontera es
+validar.
+
 **Store de salones.** Ninguna vista habla con Supabase ni con el almacenamiento
 del navegador: todo pasa por `useClassrooms()`. Esa frontera aguantó el cambio
 de origen —de `localStorage` a la base— sin tocar más que la espera en cuatro
@@ -1405,7 +1414,7 @@ backend** — la fase A no toca Supabase ni una vez, y eso es deliberado.
 
 | Archivo | Qué es |
 | --- | --- |
-| `apps/web/src/game/level.ts` | **Puro.** Los tipos del tablero —`TileKind`, `Direction`, `Cell`, `Pose`, `LevelConfig`— y `TILE_SIZE`. El formato es **provisional**: lo fija el J3 |
+| `apps/web/src/game/level.ts` | **Puro.** Los tipos del tablero —`TileKind`, `Direction`, `Cell`, `Pose`, `LevelConfig`— y `TILE_SIZE`. El formato **ya no es provisional**: lo fijó el J3 en el contrato §4.2, y `LevelConfig` es ese mismo objeto |
 | `apps/web/src/game/debugLevel.ts` | **Puro.** La rejilla de pega: 5×5, cuatro muros, un hueco, salida y meta. **No es un puzle diseñado** — los nueve los diseña el usuario y se siembran en el J7 |
 | `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Lo reutiliza el J5** para el intérprete |
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
@@ -1495,6 +1504,30 @@ no implementa WebGL: un test que monte `<Canvas>` no prueba la escena, prueba el
 simulacro. Por eso el J1 no llevó ninguno y por eso las reglas de movimiento
 están fuera del componente. El criterio de los dos pasos es verlo en el
 navegador, y así se verificó.
+
+**El J3 cerró el formato, y sólo tocó código para reconciliarlo.** Lo que decide
+vive en `CONTRATO-DE-INTEGRACION.md` §4 —`config` campo por campo, el sobre
+`{ formatVersion, workspace }` del programa y las reglas de recuento con un
+ejemplo resuelto—, y **no cambia nada de lo que la aplicación hace**: en
+`src/game/` sólo entró `optimalSteps` en `LevelConfig`, con su valor real en las
+dos rejillas que existen —10 en la de pega y 3 en la del test—. Ese campo cierra
+además el único punto que `DISENO-DEL-JUEGO.md` §6 dejaba abierto: el número de
+pasos óptimo no tenía sitio asignado en ninguna parte.
+
+**Lo que el J3 dejó anotado para los pasos que vienen**, medido contra el esquema
+y no razonado:
+
+- **La versión del formato viaja dentro del propio programa**, no en una columna:
+  `level_attempts` no tiene ninguna para ella y `create_level_attempt` no tiene
+  parámetro. De ahí el sobre, que no cuesta migración.
+- **`createAttempt` llama con cuatro de los seis parámetros de la RPC** —le
+  faltan `input_runtime_ms` e `input_metadata`—, así que el **J9** tiene que
+  ampliar esa llamada vaya donde vaya lo que se mande.
+- **Los valores por defecto de `starter_code`, `validation_rules` y
+  `programming_language` no son instancias válidas del formato** (`''`, `'{}'` y
+  `'javascript'`), y **las nueve filas sembradas tampoco lo cumplen**. Es lo
+  esperado: las reescribe el **J7**, una migración por nivel. El §7 del contrato
+  dice qué hace el juego mientras tanto, y no es reventar.
 
 ---
 
@@ -1929,7 +1962,8 @@ vez—, con el motor 3D entero en 823,50 kB aparte.
 
 **La regla, desde el J1: el principal no debe subir.** Lo que crezca tiene que
 salir en el trozo del juego, y se comprueba en cada paso. El J2 no lo movió ni
-un byte.
+un byte, y el J3 tampoco: los 0,02 kB de `optimalSteps` salieron donde debían
+—trozo del juego **825,21 kB** (222,25 gzip)—, con los mismos **209 módulos**.
 
 ### 4.9 El nombre sólo lo valida el cliente
 

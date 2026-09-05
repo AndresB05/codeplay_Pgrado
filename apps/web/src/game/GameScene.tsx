@@ -42,6 +42,9 @@ const FACING_ANGLE: Record<Direction, number> = {
 /*
  * La ÚNICA traducción de casilla a coordenadas del mundo. Centrar el tablero
  * alrededor del origen deja la cámara independiente del tamaño de la rejilla.
+ *
+ * El ancho sale de la fila 0 porque el tablero es rectangular por contrato
+ * (§4.2). Si alguna vez dejaran de serlo, esto descentraría sin dar error.
  */
 const useBoardPlacement = (config: LevelConfig) =>
   useMemo(() => {

@@ -166,6 +166,12 @@ context: |
   - Adornos SVG en components/decor/, con aria-hidden y sin capturar el puntero.
   - Los huecos de la mascota (.mascot-slot, ImagePlaceholder) se dejan VACÍOS a
     propósito hasta que existan las ilustraciones definitivas.
+  - El formato del juego lo fija el contrato, no el código: `config` y el sobre
+    `{ formatVersion, workspace }` del programa estan escritos campo por campo en
+    docs/CONTRATO-DE-INTEGRACION.md §4, decididos en el J3. game/level.ts declara
+    ESE MISMO OBJETO sin traducirlo —`config` viaja entero en un solo hueco jsonb,
+    a diferencia de las filas, que tienen mapLevelRow—. No inventar una segunda
+    forma ni un traductor; en la frontera lo que hace falta es validar.
   - Store de salones: ninguna vista habla con Supabase ni con el almacenamiento
     del navegador, todo pasa por useClassrooms(). ClassroomsProvider fue el
     único archivo que cambió de raíz al conectar la base. No romper esa

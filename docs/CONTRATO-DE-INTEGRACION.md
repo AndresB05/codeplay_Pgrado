@@ -102,13 +102,14 @@ El anfitrión entrega un objeto con esta forma:
 | --- | --- | --- |
 | `levelId` | texto (identificador único) | Lo que el juego devuelve al terminar. Opaco: no se interpreta |
 | `formatVersion` | texto | Versión del formato de bloques de este nivel. Ver §4 |
-| `config` | objeto JSON | La definición del puzle: rejilla, salida, meta, límites |
-| `starterProgram` | JSON | La disposición inicial de bloques, en el mismo formato que se envía al terminar |
+| `config` | objeto JSON | La definición del puzle: rejilla, salida, meta y pasos óptimos. Su forma exacta, en §4.2 |
+| `starterProgram` | JSON | La disposición inicial de bloques, en el mismo formato que se envía al terminar. Ver §4.3 |
 
-`config` es libre por diseño: su contenido depende del tipo de nivel, y los tipos
-futuros aún no están definidos. Para los niveles de rejilla del primer mundo
-lleva la cuadrícula, la casilla de salida, la meta y los límites —por ejemplo, un
-número máximo de pasos—.
+`config` **depende del tipo de nivel**, y hoy hay un tipo solo: los nueve niveles
+son de rejilla, porque los tres mundos comparten mecánica y cambian únicamente
+qué tiene que pensar el niño para resolverla. Su forma está fijada campo por
+campo en §4.2. Si algún día aparece un tipo distinto, lo que lo anuncia es
+`formatVersion` (§4.3), no una suposición del juego.
 
 **`config` es público.** Cualquiera puede leerlo sin haber iniciado sesión. Está
 medido, no supuesto. Para un puzle de ir de A a B eso es inofensivo —saber dónde
@@ -181,7 +182,16 @@ vez.
 
 ---
 
-## 4. La serialización de los bloques debe ser JSON
+## 4. El formato: qué forma tienen `config` y `program`
+
+Fijado el **4-sep-2026**. Hasta ese día este documento sólo exigía que el
+programa fuera JSON y dejaba su estructura —y la de `config`— sin escribir. Eso
+bastaba mientras no lo leyera nadie; lo leen **tres sitios** —el juego para
+ejecutar, el cliente para contarle los pasos al niño y el servidor para puntuar y
+conceder logros—, y tres lectores de un formato que vive en la cabeza de alguien
+acaban leyendo tres formatos distintos.
+
+### 4.1 La serialización de los bloques debe ser JSON
 
 **Ésta es la línea irreversible del documento.** Cuesta cero hoy y no se puede
 arreglar después sin volver a publicar el juego.
@@ -199,12 +209,196 @@ Consecuencia práctica: cualquier formato que el juego elija hoy queda grabado e
 los intentos ya guardados. Cambiarlo después obliga a publicar el juego de nuevo
 **y** a migrar lo guardado. Por eso existe `formatVersion`: acompaña a cada nivel
 y viaja con cada intento, para que el servidor sepa qué está leyendo cuando el
-formato evolucione. Póngale un valor desde el primer día, aunque sólo haya uno.
+formato evolucione. **Por dónde viaja con el intento está en §4.3**, y no era
+evidente: el intento no tiene ningún hueco propio para él.
 
 Advertencia medida: hoy el servidor **acepta cualquier texto** en `program`, sin
 comprobar que sea JSON. No lo interprete como permiso. Un programa que no sea
 JSON se guardará sin error y romperá silenciosamente todo lo de §5 el día que se
 intente leer.
+
+### 4.2 `config` — la definición del puzle
+
+Un nivel de rejilla se describe así, y esto es un ejemplo completo y válido:
+
+```json
+{
+  "tiles": [
+    ["floor", "floor", "floor", "wall",  "floor"],
+    ["floor", "wall",  "floor", "floor", "floor"],
+    ["floor", "floor", "gap",   "floor", "floor"],
+    ["floor", "wall",  "floor", "wall",  "floor"],
+    ["floor", "floor", "floor", "floor", "floor"]
+  ],
+  "start": { "cell": { "row": 4, "column": 0 }, "facing": "north" },
+  "goal": { "row": 0, "column": 4 },
+  "optimalSteps": 10
+}
+```
+
+| Campo | Tipo | Qué es |
+| --- | --- | --- |
+| `tiles` | matriz de textos | El tablero. Filas de **norte a sur**, columnas de **oeste a este**. Cada casilla es `floor`, `wall` o `gap` |
+| `start` | pose | Dónde empieza el personaje **y hacia dónde mira**: `north`, `east`, `south` o `west` |
+| `goal` | casilla | Dónde hay que llegar. `row` y `column`, sin orientación |
+| `optimalSteps` | entero > 0 | Los pasos de la mejor solución posible. Ver §4.4 |
+
+Escríbalas alineadas: así el JSON se lee como el tablero que describe, y ésa es
+la mitad de su valor.
+
+**Todas las filas miden lo mismo.** El tablero es **rectangular**, y un hueco se
+escribe siempre `'gap'`, nunca acortando una fila. No es una formalidad: son dos
+maneras de dibujar el mismo tablero que **no significan lo mismo al jugarlo**.
+Salirse por el borde y toparse con un hueco se pintan igual —en los dos casos no
+hay nada que dibujar—, pero son motivos de parada distintos, y el juego se los
+explica al niño con palabras distintas: «te saliste del tablero» no es «ahí no
+hay suelo». Con filas de largos desiguales, un mismo tablero le diría una cosa u
+otra según cómo lo hubiera escrito quien lo sembró. Es el mismo motivo por el que
+la casilla no lleva un campo aparte de «transitable»: dos maneras de decir lo
+mismo se contradicen en cuanto alguien edita una.
+
+**Tres clases de casilla, y qué hacer con una cuarta.** Un **hueco** es una
+casilla que no existe y un **muro** una que existe y no se pisa: para moverse son
+lo mismo, y la diferencia está sólo en cómo se pintan. Un valor que no sea uno de
+los tres **no se trata como suelo**: se rechaza el nivel entero, igual que una
+`formatVersion` desconocida (§7). Es la misma razón — un tablero cargado a medias
+se juega hasta el final y guarda un intento que nadie podrá volver a leer.
+
+**Una matriz, y no una lista de casillas.** «Transitable o no» es una propiedad
+de cada casilla, que es exactamente lo que una matriz es, y `tiles[row][column]`
+responde «¿se puede pisar aquí?» sin construir ningún índice antes.
+
+**`row` y `column`, nunca `x` e `y`.** En una escena 3D esos dos nombres son otra
+cosa, y mezclarlos es el error clásico del género.
+
+**La salida lleva orientación y la meta no.** Sin orientación de salida el primer
+«avanzar» es ambiguo, así que hace falta. La meta, en cambio, se pisa mirando
+adonde sea: exigir una orientación al llegar sería una regla de juego más, y
+ninguno de los nueve niveles la pide.
+
+**Sin alturas.** Un paso es una casilla recorrida o un giro, nunca un escalón
+(§3). Un tablero con pisos obligaría a revisar el recuento entero, y nada del
+diseño los pide.
+
+**`optimalSteps` va aquí, y lo decide este documento.** Hasta hoy el número de
+pasos de la mejor solución no tenía sitio asignado en ninguna parte. Va en
+`config` porque lo necesitan los dos lados: el cliente, para decirle al niño
+cuántos pasos eran los buenos, y el servidor, para convertir pasos en puntuación.
+Se define **a mano al diseñar el nivel**; no se calcula.
+
+**Y hay que acertarlo, porque nada lo comprueba.** La puntuación sale de comparar
+los pasos usados contra este número, así que uno escrito **por debajo** del
+óptimo real deja la marca perfecta fuera del alcance de cualquier niño — y no
+salta ningún error en ninguna parte: sólo queda un nivel que se siente injusto.
+Quien siembre un nivel resuelve antes su puzle a mano y comprueba que el número
+que escribe es el de su mejor solución.
+
+Y no rompe la regla de §2, aunque lo parezca: **un número no es una solución.**
+Decir que la mejor ruta son diez pasos no dice cuáles son esos diez. El niño lo
+ve en pantalla al terminar, así que tenerlo en un `config` público no revela nada
+que no se enseñe.
+
+**Este JSON es, campo por campo, el tipo del juego.** No hay traducción entre el
+cable y el código, y es una decisión tomada, no un descuido: `config` viaja
+entero, en un solo hueco, y lo que entra sale igual. Una segunda forma sería un
+traductor que mantener en dos sitios sin ganar información. Lo que sí hace falta
+en la frontera es **comprobar, no traducir**: el JSON llega sin tipo, y hay que
+validarlo antes de dárselo al juego — un `config` que no describa un tablero es
+el caso de §7.
+
+### 4.3 `program` y `starterProgram` — un sobre con la versión dentro
+
+El programa viaja **dentro de un sobre**, y el sobre lleva la versión:
+
+```json
+{
+  "formatVersion": "grid-blockly-1",
+  "workspace": { "…": "lo que serialicen los bloques" }
+}
+```
+
+Los dos campos del contrato usan este mismo sobre: el `starterProgram` que el
+juego recibe (§2) y el `program` que manda al terminar (§3). Un solo lector sirve
+para los dos.
+
+**Por qué un sobre y no el JSON de los bloques a secas.** Porque §4.1 promete que
+`formatVersion` «viaja con cada intento» y, medido, **el intento no tiene por
+dónde**: de un intento se guardan el programa, el éxito, la puntuación, la
+duración y unas observaciones libres, y ninguno de esos huecos es una versión.
+Quedaban dos salidas —meterla en las observaciones o meterla en el programa— y
+las observaciones son **otro campo**: quien lea el programa solo, que es
+justamente lo que hace el servidor al puntuar, se quedaría sin saber qué está
+leyendo. La versión tiene que ir pegada a los bytes que describe. El sobre lo
+consigue sin cambiar nada del servidor.
+
+**Dentro del sobre va el JSON nativo del editor de bloques, sin traducir.**
+Blockly —la librería elegida— serializa y deserializa solo, así que no cuesta
+código. El precio es que el formato es verboso y es suyo, y que una actualización
+puede cambiarlo; pero para eso existe `formatVersion`, y escribir un traductor
+propio antes de que exista el primer nivel es trabajo sin evidencia. Si recorrer
+ese JSON resulta incómodo desde el servidor, se cambia entonces, con casos reales
+delante.
+
+**Lo que queda aplazado, y a qué paso.** La forma exacta de `workspace` es «lo
+que serialice la versión del editor que se instale», y **el editor todavía no
+está instalado**: lo instala el paso que primero lo importa. Este documento **no
+transcribe un ejemplo de ese interior a propósito**, porque escribirlo de memoria
+es escribirlo mal, y un ejemplo que luego no cuadre es peor que no tener ninguno.
+Ese paso lo pega aquí copiado de una salida real. Hasta entonces lo fijo es el
+sobre — y una condición que no depende del editor: **las repeticiones tienen que
+ser números escritos en el programa** (§4.4).
+
+**`formatVersion` versiona las dos formas, no sólo los bloques.** El token nombra
+el par: `grid` por la forma de `config` de §4.2, `blockly` por el interior del
+sobre y `1` por la versión. Si cambia cualquiera de las dos, el juego desplegado
+no puede con ese nivel y la salida es la misma (§7), así que una segunda versión
+no compraría nada. **Valor actual, y único:** `grid-blockly-1`.
+
+### 4.4 Cómo se cuentan los pasos, con un ejemplo resuelto
+
+La regla es la de §3 —**un paso es una casilla recorrida o un giro**— traducida a
+las tres órdenes que existen:
+
+| Orden | Pasos |
+| --- | --- |
+| `avanzar N` | **N** |
+| `girar` a un lado o al otro | **1** |
+| `repetir N veces [cuerpo]` | **N × pasos(cuerpo)** |
+
+Recorrer y sumar. Sin tablero, sin saber dónde está el personaje y sin ejecutar
+nada.
+
+Sobre el tablero de §4.2 —salida en la fila 4, columna 0, mirando al norte; meta
+en la fila 0, columna 4— hay dos programas que lo resuelven:
+
+```
+  PROGRAMA A — cuatro bloques          PROGRAMA B — tres bloques
+
+  girar derecha              1         girar derecha              1
+  avanzar 4                  4         repetir 2 veces
+  girar izquierda            1           avanzar 4
+  avanzar 4                  4           girar izquierda   2 × 5 = 10
+                          ────                                 ────
+                            10                                   11
+```
+
+**B tiene menos bloques y da más pasos**, y ésa es toda la lección: lo que se
+puntúa son los pasos, no los bloques. El de más es el giro de la segunda vuelta
+del bucle, que se ejecuta cuando ya se ha llegado. Como `optimalSteps` de ese
+tablero es **10**, A es perfecto y B no.
+
+**Se cuentan los pasos ordenados, no los ejecutados**, y la diferencia se nota en
+un caso: `avanzar 4` contra un muro que está a dos casillas suma **cuatro**, no
+dos. Es deliberado —chocar es ineficiencia, y la eficiencia es lo que se puntúa—
+y es lo que permite contar leyendo. Lo que importa es que los dos lados cuenten
+**igual**: el número que el juego le enseña al niño y el que el servidor usa para
+puntuar salen de esta misma tabla.
+
+**Y esta forma se deja ejecutar plegando.** Las tres órdenes son «avanza» y
+«gira» aplicadas en orden sobre una pose inicial, sin modificarla, quedándose con
+las intermedias para animarlas. Recorrer el programa para **contar** y recorrerlo
+para **ejecutar** son la misma pasada con distinto acumulador — que es la
+propiedad que hace que el cliente y el servidor no puedan discrepar.
 
 ---
 
@@ -279,7 +473,7 @@ Todo esto está medido contra la base real, no razonado:
 ## 7. Errores que el juego debe saber encajar
 
 El juego no habla con el servidor, pero el anfitrión le devolverá el resultado, y
-hay cuatro casos que no debe tratar como catástrofes:
+hay seis casos que no debe tratar como catástrofes:
 
 | Situación | Qué hacer |
 | --- | --- |
@@ -287,6 +481,8 @@ hay cuatro casos que no debe tratar como catástrofes:
 | No hay sesión | La sesión caducó. El anfitrión se encarga; el juego sólo debe no perder la partida |
 | Fallo de red | Reintentar **no duplica experiencia** (§6), pero **sí deja otro intento registrado**. Ver abajo |
 | `formatVersion` que el juego no reconoce | No intente adivinar. Ver abajo |
+| `config` que no describe un tablero | Tampoco lo adivine: mismo camino que la versión desconocida. Ver abajo |
+| `starterProgram` vacío | **No es un error.** Ver abajo |
 
 **Reintentar es seguro para la experiencia, no gratis para el historial.** Por §6
 repetir el envío no vuelve a conceder experiencia ni baja la puntuación, así que
@@ -304,6 +500,19 @@ al anfitrión de que no puede con ese nivel y deje que él lo resuelva. Un nivel
 no se puede cargar es un contratiempo; un nivel cargado mal y jugado hasta el
 final guarda un intento con un programa que nadie podrá volver a leer.
 
+**Un nivel puede llegar en blanco, y no significa lo mismo en los dos campos.**
+El sitio donde la plataforma guarda `config`, `starterProgram` y `formatVersion`
+tiene un valor de partida para cada uno, y **ninguno de los tres es una instancia
+válida de §4**, así que un nivel publicado puede traerlos así. Lo que hay que
+hacer con cada uno es distinto:
+
+- **`starterProgram` vacío** significa **sin programa de partida**, y eso es un
+  nivel perfectamente normal: se empieza con el espacio de bloques vacío. No
+  avise de nada.
+- **`config` vacío** significa **que no hay puzle**, y ahí no hay nada que jugar.
+  Trátelo como una `formatVersion` desconocida: avise al anfitrión y no cargue el
+  nivel.
+
 **Nunca bloquee la partida esperando confirmación.** El niño debe poder seguir
 jugando aunque el guardado falle.
 
@@ -317,10 +526,12 @@ Escrito a propósito, para que nadie lo dé por resuelto:
   mensajes. Desde que el juego dejó de ser un programa aparte (§1) esto se
   simplificó mucho —comparten página, así que basta una llamada—, pero la forma
   exacta se fija al construirlo.
-- **Cuántos pasos se consideran «perfectos» en cada nivel**, que es lo que
-  convierte un programa en una puntuación. Sale del diseño de cada nivel.
-- **La estructura interna de `program` y de `config`.** Las fija quien diseñe los
-  bloques. Este documento sólo exige que sean JSON recorrible.
+- **Cuántos pasos son «perfectos» en cada nivel.** Dónde vive ese número ya está
+  fijado —`optimalSteps`, §4.2—, pero el valor de cada nivel sale del diseño de
+  su puzle, y los puzles están sin diseñar.
+- **El interior del sobre del programa** (§4.3): lo que serialice el editor de
+  bloques cuando se instale. El sobre, la versión y las reglas de recuento sí
+  están fijados.
 - **El catálogo de logros**: cuáles hay, qué condición cumple cada uno y cuánta
   experiencia da. Es diseño de producto y no afecta al juego, que no los nombra.
 - **Cómo se relacionan las misiones que un profesor asigna con los niveles del
@@ -339,9 +550,43 @@ Esta sección sí supone conocimiento del repositorio.
 | --- | --- |
 | `config` | `levels.validation_rules` (`jsonb`) |
 | `starterProgram` | `levels.starter_code` (`text`) |
-| `formatVersion` | `levels.programming_language`, reaprovechado. Hoy `'javascript'` en las nueve filas sembradas, sin `check` que lo ate |
+| `formatVersion` del nivel | `levels.programming_language`, reaprovechado. Hoy `'javascript'` en las nueve filas sembradas, sin `check` que lo ate |
+| `formatVersion` del intento | **Dentro** de `level_attempts.submitted_code`, en el sobre de §4.3. No tiene columna |
 | `program` | `level_attempts.submitted_code` (`text`, **sin `check`**) |
 | `metadata` | `level_attempts.metadata` (`jsonb`) |
+
+**Por qué el sobre y no `metadata`.** No es preferencia de diseño: `level_attempts`
+**no tiene columna** para la versión y `create_level_attempt` **no tiene
+parámetro** —sus seis son `input_level_id`, `input_submitted_code`,
+`input_is_success`, `input_score`, `input_runtime_ms` e `input_metadata`—, y la
+fase A del roadmap del juego no escribe migración. Quedaba `metadata`, que es
+`jsonb` libre, y se descartó por lo que dice §4.3: quien lea `submitted_code`
+solo —el J10, al puntuar— se queda sin saber qué formato está leyendo. El sobre
+no cuesta ni migración ni columna.
+
+**`createAttempt` llama con cuatro de los seis parámetros.** Hoy pasa
+`input_level_id`, `input_submitted_code`, `input_is_success` e `input_score`:
+**ni `input_runtime_ms` ni `input_metadata`**. Vaya donde vaya lo que haya que
+mandar además del programa, el J9 tiene que ampliar esa llamada.
+
+**Los valores por defecto de las tres columnas no son instancias válidas de §4**,
+y ninguno se arregla en la fase A, que no escribe migración:
+
+| Columna | Valor por defecto | Por qué no vale |
+| --- | --- | --- |
+| `starter_code` | `''` (`text not null`) | La cadena vacía no es JSON |
+| `validation_rules` | `'{}'::jsonb` | Es JSON, pero no describe un tablero |
+| `programming_language` | `'javascript'`, **sin `check`** | No es un valor de §4.3 |
+
+Una fila publicada puede llegar con las tres por defecto y **el juego no debe
+reventar**: §7 dice qué hacer con cada una.
+
+**Las nueve filas sembradas no cumplen §4, y eso es lo esperado.** Siguen con
+`programming_language = 'javascript'`, con `validation_rules` del juego anterior
+—`requiresAsyncAwait`, `requiresRecursion`, `requiresArray`, `requiresDebugging`—
+y con `starter_code` en texto JavaScript. **Las reescribe el J7**, una migración
+por nivel, y hasta entonces ningún nivel de la base se puede cargar en el juego.
+Por §7 eso es un nivel que no carga, no un fallo que perseguir.
 
 **Un mensaje del juego son dos llamadas.** El anfitrión traduce cada mensaje a
 `create_level_attempt` y, si procede, `upsert_my_progress`. Son independientes:

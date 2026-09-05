@@ -1,7 +1,12 @@
 /*
- * La forma de un nivel, y es PROVISIONAL: el formato definitivo lo fija el J3,
- * que es el paso que lo escribe en el contrato para que el juego, el cliente y
- * el servidor lo lean igual. Hasta entonces esto vive aquí, escrito a mano.
+ * La forma de un nivel. El J3 la fijó en CONTRATO-DE-INTEGRACION.md §4.2, que es
+ * donde está el porqué de cada campo; aquí sólo vive el tipo.
+ *
+ * Y es el MISMO objeto que viaja por el cable, sin traducción, a diferencia de
+ * las filas de la base —que tienen `mapLevelRow` porque una fila y un tipo de
+ * dominio son cosas distintas—. `config` viaja entero en un solo hueco, así que
+ * una segunda forma sería un traductor sin información nueva. Lo que sí hace
+ * falta en la frontera es validar, y eso llega con el consumidor (J8).
  *
  * No hay campo `walkable`: se deriva de la clase de casilla. Dos campos que
  * dicen lo mismo se contradicen en cuanto alguien edite uno.
@@ -32,10 +37,16 @@ export interface Pose {
 }
 
 export interface LevelConfig {
-  /** Filas de norte a sur, columnas de oeste a este. */
+  /**
+   * Filas de norte a sur, columnas de oeste a este. Rectangular: un hueco se
+   * escribe `'gap'` y nunca acortando una fila, o `advance` lo trata como borde.
+   */
   tiles: TileKind[][];
   start: Pose;
+  /** Se pisa mirando adonde sea: llegar no exige orientación. */
   goal: Cell;
+  /** Los pasos de la mejor solución. Se define a mano al diseñar el nivel. */
+  optimalSteps: number;
 }
 
 /*

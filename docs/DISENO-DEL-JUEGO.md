@@ -252,9 +252,14 @@ acordarse. Los modelos cuentan aparte y conviene vigilarlos: es fácil meter un
 
 ## 6. Lo que este diseño deja sin decidir
 
-1. **¿Contra qué se compara para saber si un intento fue perfecto?** El número de
-   pasos óptimo de cada nivel tiene que estar escrito en alguna parte —lo natural
-   es junto a la definición del puzle— y definido a mano al diseñar el nivel.
+**Ya no queda nada.** La última que había —**¿contra qué se compara para saber si
+un intento fue perfecto?**— la cerró el **J3 el 4-sep-2026**, y con lo que este
+documento apuntaba: el número de pasos óptimo va **junto a la definición del
+puzle**, en el campo `optimalSteps` de `config`, y se define a mano al diseñar el
+nivel. Está fijado en
+[`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md) §4.2, con el porqué —
+y en su §4.4 con un ejemplo resuelto de en qué se convierte al puntuar.
+
 **Cerradas el 4-sep-2026** por el usuario, y escritas arriba: **el juego vive en
 `apps/web/src/game/`** y **las librerías de §5 quedan confirmadas**.
 
