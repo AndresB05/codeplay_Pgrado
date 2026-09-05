@@ -339,14 +339,80 @@ propio antes de que exista el primer nivel es trabajo sin evidencia. Si recorrer
 ese JSON resulta incómodo desde el servidor, se cambia entonces, con casos reales
 delante.
 
-**Lo que queda aplazado, y a qué paso.** La forma exacta de `workspace` es «lo
-que serialice la versión del editor que se instale», y **el editor todavía no
-está instalado**: lo instala el paso que primero lo importa. Este documento **no
-transcribe un ejemplo de ese interior a propósito**, porque escribirlo de memoria
-es escribirlo mal, y un ejemplo que luego no cuadre es peor que no tener ninguno.
-Ese paso lo pega aquí copiado de una salida real. Hasta entonces lo fijo es el
-sobre — y una condición que no depende del editor: **las repeticiones tienen que
-ser números escritos en el programa** (§4.4).
+**El interior del sobre, registrado el 5-sep-2026 con Blockly `12.5.1`
+instalado.** Hasta ese día este documento no transcribía ningún ejemplo a
+propósito, porque el editor no estaba instalado y escribirlo de memoria es
+escribirlo mal. Éste es el **PROGRAMA A de §4.4** —girar derecha, avanzar 4,
+girar izquierda, avanzar 4— tal y como lo serializa el editor:
+
+```json
+{
+  "formatVersion": "grid-blockly-1",
+  "workspace": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "codeplay_turn_right",
+          "id": "q`?B*tqQ(NK]!y$45l:L",
+          "x": 0,
+          "y": 0,
+          "next": {
+            "block": {
+              "type": "codeplay_advance",
+              "id": "wzIPDa)Y5@bF]AG}yj2O",
+              "fields": { "STEPS": 4 },
+              "next": {
+                "block": {
+                  "type": "codeplay_turn_left",
+                  "id": "+{JkZ7]Vb}a_X5(SMDfi",
+                  "next": {
+                    "block": {
+                      "type": "codeplay_advance",
+                      "id": "y]7[v^m-bD:=:x()v3dL",
+                      "fields": { "STEPS": 4 }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+Lo que hay que saber para recorrerlo:
+
+- **La secuencia se anida, no se lista.** `workspace.blocks.blocks` sólo trae los
+  bloques **sueltos** del lienzo —los que no cuelgan de nadie—, y cada uno lleva
+  el siguiente colgado de `next.block`. Recorrer un programa es bajar por esa
+  cadena, no iterar un array. Un lienzo con dos montones sin conectar da dos
+  entradas en ese array; para el juego, **el programa es el montón que empieza
+  donde corresponda**, y qué hacer con los sueltos lo decide el paso que ejecute.
+- **`x` e `y` sólo aparecen en el bloque raíz**: son su sitio en el lienzo, no
+  del puzle, y no significan nada para el recuento. Aquí valen 0 porque el
+  programa se armó encajando bloques; arrastrándolos traen la posición real.
+- **Los números viajan en `fields`**, y siempre son números escritos: el bloque
+  de avanzar lleva su cantidad en un campo propio, no en un hueco donde encaje
+  otro bloque, así que **no hay forma de escribir ahí una expresión**. Es la
+  condición de §4.4 —las repeticiones tienen que ser números presentes en el
+  programa— garantizada por la forma del bloque y no por convenio.
+- **`languageVersion` es de Blockly, no nuestro.** No lo confunda con
+  `formatVersion`: la versión que este contrato gobierna es la del sobre.
+- **Un lienzo vacío da `"workspace": {}`**, y es un sobre válido: es lo que
+  §7 llama «sin programa de partida».
+
+**Lo que este ejemplo NO enseña, y en qué paso se registra.** Los tres bloques
+que hoy existen son **planos**: se encadenan uno detrás de otro y ninguno tiene
+cuerpo. Pero §4.1 exige que el formato deje ver «qué bloques hay, en qué orden
+**y anidados cómo**», y §4.4 ya define y usa `repetir N veces [cuerpo]`. **Ese
+bloque todavía no está construido**, así que la parte más interesante de la forma
+—cómo se serializa un cuerpo dentro de un bucle— sigue sin registrar aquí. La
+pega el paso que construya `repetir`. Hasta entonces, un `program` con bucles no
+existe y ningún lector debe suponer su forma.
 
 **`formatVersion` versiona las dos formas, no sólo los bloques.** El token nombra
 el par: `grid` por la forma de `config` de §4.2, `blockly` por el interior del
@@ -529,9 +595,10 @@ Escrito a propósito, para que nadie lo dé por resuelto:
 - **Cuántos pasos son «perfectos» en cada nivel.** Dónde vive ese número ya está
   fijado —`optimalSteps`, §4.2—, pero el valor de cada nivel sale del diseño de
   su puzle, y los puzles están sin diseñar.
-- **El interior del sobre del programa** (§4.3): lo que serialice el editor de
-  bloques cuando se instale. El sobre, la versión y las reglas de recuento sí
-  están fijados.
+- **Cómo se serializa un bloque con cuerpo** — el `repetir N veces [cuerpo]` que
+  §4.4 define y usa—. El interior del sobre ya está registrado en §4.3 con una
+  salida real, pero los tres bloques que existen hoy son planos, así que el
+  anidamiento sigue sin ejemplo. Lo pega el paso que construya ese bloque.
 - **El catálogo de logros**: cuáles hay, qué condición cumple cada uno y cuánta
   experiencia da. Es diseño de producto y no afecta al juego, que no los nombra.
 - **Cómo se relacionan las misiones que un profesor asigna con los niveles del

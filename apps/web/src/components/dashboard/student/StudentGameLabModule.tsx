@@ -1,4 +1,7 @@
+import { useCallback, useState } from 'react';
+import { BlockEditorLoader } from '../../../game/BlockEditorLoader';
 import { GameSceneLoader } from '../../../game/GameSceneLoader';
+import type { Program } from '../../../game/program';
 import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
 
 const CubeIcon = () => (
@@ -25,6 +28,9 @@ const CubeIcon = () => (
  * llega hasta el J8. Cuando ésa exista, esta pantalla se revisa.
  */
 export const StudentGameLabModule = () => {
+  const [program, setProgram] = useState<Program | null>(null);
+  const handleProgramChange = useCallback((next: Program) => setProgram(next), []);
+
   return (
     <div className="px-5 py-5">
       <section className="card relative overflow-hidden px-5 py-5">
@@ -69,11 +75,39 @@ export const StudentGameLabModule = () => {
           </div>
         </div>
 
+        <div className="card mt-6 overflow-hidden">
+          <div className="flex flex-wrap items-center gap-3 border-b-[3px] border-ink bg-cream px-5 py-3">
+            <MonsteraLeaf size={22} />
+            <h2 className="font-display text-[19px] text-ink">Bloques</h2>
+            <span className="chip chip-grape ml-auto">Todavía no se ejecutan</span>
+          </div>
+
+          {/*
+           * Altura fija por lo mismo que la escena: Blockly se inyecta en un
+           * `div` y un padre sin altura lo deja en cero.
+           */}
+          <div className="h-[420px] w-full">
+            <BlockEditorLoader onProgramChange={handleProgramChange} />
+          </div>
+
+          <div className="border-t-[3px] border-ink bg-lavender px-5 py-4">
+            <h3 className="font-display text-[17px] text-ink">El programa que producen</h3>
+            <p className="mt-2 text-[15px] font-semibold leading-[1.6] text-ink-soft">
+              Es el sobre del contrato: la versión del formato y, dentro, lo que serializa el
+              editor. Se manda tal cual cuando el niño termine un nivel, que es el J9.
+            </p>
+            <pre className="mt-3 max-h-[260px] overflow-auto rounded-[14px] border-[3px] border-ink bg-cream px-4 py-3 text-[13px] leading-[1.5] text-ink">
+              {program ? JSON.stringify(program, null, 2) : 'Cargando los bloques…'}
+            </pre>
+          </div>
+        </div>
+
         <div className="card mt-6 px-5 py-4">
           <h3 className="font-display text-[17px] text-ink">Mover al personaje</h3>
           <p className="mt-2 text-[15px] font-semibold leading-[1.6] text-ink-soft">
-            Todavía no hay bloques —llegan más adelante—, así que las órdenes se dan de una en una
-            desde la consola del navegador:
+            Los bloques ya se arrastran, pero todavía no mueven a nadie —ejecutarlos llega más
+            adelante—, así que las órdenes se siguen dando de una en una desde la consola del
+            navegador:
           </p>
           <ul className="mt-3 space-y-1.5 text-[15px] font-semibold leading-[1.6] text-ink-soft">
             <li>

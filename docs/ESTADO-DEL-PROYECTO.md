@@ -656,7 +656,7 @@ Lo que sigue pendiente:
 
 | Herramienta | Necesaria para | Situación |
 | --- | --- | --- |
-| **Librerías del juego** | El juego, que es la pieza que falta | **Ya no es Unity**: se descartó el 3-sep-2026 en favor de librerías de JavaScript, para que el juego sea un componente más de esta aplicación. Recomendadas y pendientes de confirmar: **React Three Fiber** para el 3D y **Blockly** para los bloques. Ver [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) §5 |
+| **Librerías del juego** | El juego, que es la pieza que falta | **Ya no es Unity**: se descartó el 3-sep-2026 en favor de librerías de JavaScript, para que el juego sea un componente más de esta aplicación. **Confirmadas el 4-sep-2026 y ya instaladas**: **React Three Fiber** para el 3D (`^8.18` con `three` `^0.170`, fijadas a React 18) y **Blockly** para los bloques (`^12.5.1`; la 13 no entra, ver [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md) §2). Ver [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) §5 |
 | **Servicio de correo** (Resend, SendGrid…) | Enviar la invitación en vez de que el tutor pase el enlace a mano | Sin elegir, y **hay que contratarlo**. No bloquea nada: el enlace ya funciona |
 | **Servidor de la universidad** | El despliegue definitivo; Supabase era para probar | Sin preguntar qué ofrece. Hace falta saber si dan Postgres y con qué versión, HTTPS, si dejan correr procesos y si hay algo equivalente a Realtime y a OAuth |
 

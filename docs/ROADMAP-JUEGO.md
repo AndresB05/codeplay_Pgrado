@@ -56,6 +56,16 @@ y §5; aquí sólo el resultado:
    `@react-three/fiber`**; `drei`, Blockly y `@react-spring/three` entran en el
    paso que primero los importe.
 
+   **Y Blockly queda fijado a ^12.5.1, medido en el J4 contra el instalador.**
+   La 13 declara `jsdom >=27.4.0 <30.0.0` como **peer dependency** —es la primera
+   versión que saca jsdom de sus dependencias normales— y el repositorio va con
+   `jsdom ^30.0.1` para Vitest, así que `npm install blockly` muere con
+   `ERESOLVE`. Quien piense en subirla tendrá que mover antes el entorno de los
+   tests, y eso es cambiar el banco de pruebas entero por una librería que en el
+   navegador no usa jsdom para nada. La 12 no declara ningún peer, aunque se
+   trae `jsdom@26.1.0` como dependencia suya: son 77 paquetes en `node_modules`
+   y **cero peso en el navegador**, medido.
+
    **Y `three` queda fijado a ^0.170, medido en el J1 contra el navegador.** Con
    fiber 8.18 contra `three` 0.185 el lienzo se crea y **la escena sale vacía**,
    con un solo aviso de `THREE.Clock` deprecado como indicio. Quien añada `drei`
@@ -82,7 +92,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J1** | Esqueleto: las dos dependencias y un componente que pinta una escena 3D vacía dentro de la aplicación, cargado en diferido | Aparece algo en 3D en una pantalla del panel | ✅ |
 | **J2** | La cuadrícula y el personaje, montados desde un objeto de configuración **escrito a mano en el código** | Se ve el tablero y el personaje se mueve llamando funciones desde la consola | ✅ |
 | **J3** | **Fijar el formato** de `config` y de `program` | Está escrito en el contrato, no en la cabeza de nadie | ✅ |
-| **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ⬜ |
+| **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ✅ |
 | **J5** | El intérprete: ejecutar el programa, animar al personaje y detectar si llegó a la meta | **Un nivel se resuelve de principio a fin, sin backend** | ⬜ |
 | **J6** | Recuento de pasos y pantalla de resultado | Al terminar dice cuántos pasos usó y cuántos eran óptimos | ⬜ |
 | **J7** | **Sembrar el mundo 1** — partido en cuatro, uno por nivel más el aspecto | Los tres niveles se juegan leyendo su definición de la base, y el mundo se ve como debe verse | ⬜ |
@@ -205,9 +215,12 @@ J10, ahí se cambia, y con casos reales delante.
   §4.2 — dos programas que lo resuelven, de 10 y 11 pasos, para que el J6 y el
   J10 tengan contra qué comprobarse.
 
-**El interior del sobre lo registra el J4**, no el J3: Blockly no está instalado
-—lo instala ese paso, que es el primero que lo importa—, y transcribir de memoria
-la forma que serializa es transcribirla mal.
+**El interior del sobre lo registró el J4**, no el J3: Blockly no estaba
+instalado —lo instaló ese paso, que es el primero que lo importa—, y transcribir
+de memoria la forma que serializa es transcribirla mal. Está en el contrato §4.3,
+copiado de una salida real, con el aviso de que **el anidamiento sigue sin
+ejemplo**: los tres bloques de hoy son planos y `repetir N veces [cuerpo]` no
+existe todavía.
 
 **Lo que el formato tiene que garantizar sí o sí**, venga de donde venga: que las
 repeticiones sean **números presentes en el programa**. Es lo que permite contar

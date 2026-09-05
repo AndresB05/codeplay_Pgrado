@@ -1404,13 +1404,15 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
   propio hook, como `worlds.service.ts` + `useWorlds()`. La frontera de §4.3
   sigue en pie.
 
-### 2.9 `juego-3d` — El esqueleto, la cuadrícula y el personaje (J1 y J2)
+### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje y los bloques (J1 a J4)
 
-**Aplicado con `esqueleto-del-juego` (J1) y `rejilla-y-personaje` (J2), los dos
-primeros pasos de `ROADMAP-JUEGO.md`.** Lo que hay es una escena 3D dentro del
-panel del niño, cargada en diferido, con **un tablero leído de una configuración
-escrita a mano y un personaje que se mueve por casillas**. **Sin bloques y sin
-backend** — la fase A no toca Supabase ni una vez, y eso es deliberado.
+**Aplicado con `esqueleto-del-juego` (J1), `rejilla-y-personaje` (J2) y
+`bloques-del-programa` (J4), más el J3, que sólo fijó el formato por escrito.**
+Lo que hay es una escena 3D dentro del panel del niño, cargada en diferido, con
+**un tablero leído de una configuración escrita a mano y un personaje que se
+mueve por casillas**, y al lado **un editor de bloques que produce el programa en
+JSON**. **Sin ejecutar el programa y sin backend** — mover al personaje con los
+bloques es el J5, y la fase A no toca Supabase ni una vez.
 
 | Archivo | Qué es |
 | --- | --- |
@@ -1419,7 +1421,13 @@ backend** — la fase A no toca Supabase ni una vez, y eso es deliberado.
 | `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Lo reutiliza el J5** para el intérprete |
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
 | `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>`, el tablero, el personaje y las órdenes de consola. Importa `three` y `@react-three/fiber` |
-| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida: `React.lazy` + `Suspense` |
+| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense` |
+| `apps/web/src/game/program.ts` | **Puro.** El sobre del contrato §4.3: `Program`, `PROGRAM_FORMAT_VERSION` y las funciones `sealProgram` y `openProgram`. **Sin Blockly** — lo reutilizan el J8 al abrir el `starterProgram` y el J9 al mandar el intento |
+| `apps/web/src/game/program.test.ts` | El sobre: que se cierre con la versión del contrato y que una desconocida se rechace entera (§7) |
+| `apps/web/src/game/blocks.ts` | Los tres bloques —`avanzar N`, `girar a la izquierda`, `girar a la derecha`—, en español, y la caja de herramientas. Importa `blockly/core` |
+| `apps/web/src/game/blocks.test.ts` | El **viaje de ida y vuelta** contra un espacio de trabajo sin interfaz, que es lo único que valida la decisión del J3 |
+| `apps/web/src/game/BlockEditor.tsx` | El editor: inyecta Blockly, carga el español, publica el programa y se limpia al desmontarse |
+| `apps/web/src/game/BlockEditorLoader.tsx` | **La segunda frontera de carga diferida**, la de Blockly. Calcada de `GameSceneLoader` |
 | `apps/web/src/components/dashboard/student/StudentGameLabModule.tsx` | El banco de pruebas, con la escena en un contenedor de altura fija y las órdenes documentadas en pantalla |
 | `apps/web/src/constants/routes.ts` | `GAME_LAB: '/dashboard/game'` |
 | `apps/web/src/router/AppRouter.tsx` | Registra esa ruta **sólo** bajo `import.meta.env.DEV` |
@@ -1435,15 +1443,25 @@ que lo delate.
 funcionar ahí, porque la pantalla de nivel real no llega hasta el J8 (paso 20).
 Cuando exista, esta pantalla se revisa.
 
-**La frontera del bundle no es «quién importa `three`», es la línea.** Hasta el
-J2 se decía que `GameScene.tsx` era el único módulo que lo importaba, y con la
-carpeta a cinco archivos eso ya no describe nada útil. La regla que se sostiene,
-y la que importaba desde el principio: **nada por encima de la frontera diferida
-importa el motor 3D** — ni `GameSceneLoader.tsx`, ni la pantalla del laboratorio.
-**Y los módulos puros van con ella**: no arrastran `three`, pero importarlos
-desde encima de la línea los mete en el trozo principal, y con ellos la puerta
-abierta a que el J5 suba el intérprete detrás. Sólo `GameScene.tsx` y el test los
-importan.
+**Las fronteras del bundle son DOS desde el J4, y la regla es una.** `Blockly no
+es 3D y no cuelga de la frontera del motor`: tiene la suya,
+`BlockEditorLoader.tsx`, calcada de `GameSceneLoader.tsx`. Colgarlo de la que ya
+existía habría metido un componente de DOM dentro de un árbol de
+`@react-three/fiber`, donde los elementos no son etiquetas de HTML sino objetos
+de `three`, y el J5 —que sí conecta las dos piezas— habría tenido que
+desenredarlas.
+
+La regla, que no cambia: **nada por encima de una frontera diferida importa lo
+que ésa aísla.** `GameSceneLoader.tsx` no importa `three`, `BlockEditorLoader.tsx`
+no importa `blockly`, y la pantalla del laboratorio no importa ninguno de los
+dos. **Y los módulos puros van con su frontera**: `movement.ts` y `program.ts` no
+arrastran nada, pero importarlos desde encima de la línea los mete en el trozo
+principal, y con ellos la puerta abierta a que el J5 suba el intérprete detrás.
+
+**Se importa `blockly/core`, no `blockly`.** El punto de entrada principal
+arrastra la biblioteca de bloques estándar —89 kB— y el generador de JavaScript,
+y este juego define sus tres bloques y no genera código: el intérprete del J5
+recorre el JSON.
 
 **Las reglas de movimiento viven sueltas del pintado a propósito.** El J5 las
 reutiliza para el intérprete; si nacieran enredadas con la escena, el J5 las
@@ -1470,7 +1488,9 @@ contraria a la cámara, el propio cuerpo la taparía.
 `window` desde un `useEffect` gobernado por `import.meta.env.DEV` con acceso de
 miembro —nunca desestructurado—, como `context/guest.helpers.ts`. **Medido: en
 el build de producción la cadena `codeplayGame` aparece cero veces**, ni en el
-trozo principal ni en el del juego. Los bloques llegan en el J4.
+trozo principal ni en el del juego. **Y siguen aunque ya haya bloques**: el J4
+trajo el editor, pero ejecutar el programa es el J5, así que mover al personaje
+sigue siendo cosa de la consola.
 
 **`drei` sigue sin entrar.** El roadmap lo admite fijado a `^9.122` si
 `OrbitControls` hace falta; para un 5×5 en cámara fija no hace falta, y la
@@ -1528,6 +1548,61 @@ y no razonado:
   `'javascript'`), y **las nueve filas sembradas tampoco lo cumplen**. Es lo
   esperado: las reescribe el **J7**, una migración por nivel. El §7 del contrato
   dice qué hace el juego mientras tanto, y no es reventar.
+
+**Lo que el J4 añadió, y lo que dejó medido.**
+
+**Blockly está fijado a `^12.5.1` por el instalador, no por gusto.** La 13 es la
+primera versión que saca `jsdom` de sus dependencias normales y lo declara
+**peer**, con el rango `>=27.4.0 <30.0.0`; este repositorio va con `jsdom ^30.0.1`
+para Vitest, así que `npm install blockly` muere con `ERESOLVE`. La 12 no declara
+ningún peer. Trae `jsdom@26.1.0` como dependencia suya —77 paquetes más en
+`node_modules`— y **no pesa un byte en el navegador**: medido, la única aparición
+de la cadena `jsdom` en el trozo del editor está dentro de un mensaje de error de
+Blockly. Y **trae sus propios tipos**, por el mapa de `exports`; `@types/blockly`
+no existe en el registro.
+
+**El número del bloque de avanzar va en un CAMPO, no en un hueco para otro
+bloque.** El contrato §4.4 exige que las repeticiones sean números presentes en
+el programa, porque es lo que permite contar los pasos leyendo sin simular el
+juego. Con un campo la garantía es estructural: no hay forma de escribir ahí una
+expresión.
+
+**El editor no lleva papelera, ni controles de zoom, ni sonidos**, y no es
+estética: son las tres cosas que piden ficheros sueltos de `media/`, que sin
+configurar su ruta dan 404 en silencio. Borrar un bloque sigue estando a mano por
+las dos vías de fábrica. **Y la rueda no mueve el lienzo**: el editor es una
+tarjeta de una pantalla larga, y quedarse la rueda atasca el desplazamiento de la
+página al pasar el ratón por encima.
+
+**El viaje de ida y vuelta está probado, y es lo único que valida la decisión del
+J3.** Guardar el espacio de trabajo y volver a cargarlo da el mismo programa:
+`blocks.test.ts` lo comprueba contra `new Blockly.Workspace()` —sin interfaz, así
+que jsdom no estorba—. Ese test corre sobre `core-node.js`, que es un envoltorio
+del **mismo** `blockly_compressed.js` que recibe el navegador, así que prueba la
+serialización de verdad; lo que no cubre es el editor montado.
+
+**Una ventana oculta o minimizada suspende los frames, y la página no puede
+enterarse.** Medido el 5-sep-2026 al verificar el J4, y anotado aquí porque **el
+J5 y el J6 se lo van a encontrar**: los dos animan al personaje y viven de
+`requestAnimationFrame`.
+
+Con la ventana delante, `requestAnimationFrame` dispara con normalidad. Con la
+ventana oculta o minimizada deja de disparar —el compositor no dibuja— **y sin
+embargo `document.visibilityState` sigue diciendo `'visible'` y
+`document.hidden` sigue siendo `false`**. La Page Visibility API no cubre este
+caso, así que ningún código de la página puede distinguirlo.
+
+Lo que eso provoca es engañoso: **Blockly 12 encola los redibujados en un frame
+de animación**, así que en cuanto uno queda encolado la tubería se atasca entera
+—el bloque no se repinta y su evento de cambio nunca llega al oyente—, y parece
+un fallo del editor. No lo es: el modelo se actualiza correctamente. **La salida
+es traer la ventana al frente antes de verificar nada que dependa de animación**;
+perseguirlo como si fuera un defecto del producto cuesta una tarde.
+
+Consecuencia para el J4: **cambiar el número del bloque desde la interfaz quedó
+sin verificar en el navegador.** El valor del campo sí se actualiza —comprobado
+contra la API de Blockly en la propia página— y el camino modelo→JSON lo cubre
+`blocks.test.ts`.
 
 ---
 
@@ -1945,14 +2020,15 @@ devuelve `/login` con la contraseña equivocada.
 `.eslintrc.cjs` usa la configuración heredada. Migrar a ESLint 9 con
 configuración plana es una tarea pendiente sin urgencia.
 
-### 4.8 Bundle: 624 kB de aplicación y 825 kB de juego
+### 4.8 Bundle: 624 kB de aplicación, 644 kB de editor y 825 kB de escena
 
 `npm run build` avisa de que los chunks superan los 500 kB. Sin urgencia, pero
 conviene no perderlo de vista ahora que el juego crece. Se resolvería con
 `manualChunks` o más importaciones dinámicas por ruta.
 
-**Medido el 4-sep-2026, después del J2**: trozo principal **624,57 kB**
-(167,68 gzip), trozo `GameScene` **825,19 kB** (222,24), **209 módulos**.
+**Medido el 5-sep-2026, después del J4**: trozo principal **624,78 kB**
+(167,77 gzip), trozo `BlockEditor` **644,50 kB** (172,77), trozo `GameScene`
+**825,21 kB** (222,25), **219 módulos**.
 
 **La línea de partida del juego era otra y conviene no confundirlas.** Antes del
 J1 había **un solo chunk de 623,18 kB** (166,96 gzip) y 177 módulos; el J1 lo
@@ -1960,10 +2036,20 @@ partió en dos y dejó el principal en 624,57 kB —los +1,39 kB son el ayudante
 precarga que Vite añade al primer `import()` del proyecto y se paga una sola
 vez—, con el motor 3D entero en 823,50 kB aparte.
 
-**La regla, desde el J1: el principal no debe subir.** Lo que crezca tiene que
-salir en el trozo del juego, y se comprueba en cada paso. El J2 no lo movió ni
-un byte, y el J3 tampoco: los 0,02 kB de `optimalSteps` salieron donde debían
-—trozo del juego **825,21 kB** (222,25 gzip)—, con los mismos **209 módulos**.
+**La regla, desde el J1: el principal no debe subir por lo que el juego
+incorpore.** Lo que crezca tiene que salir en el trozo del juego, y se comprueba
+en cada paso. El J2 no lo movió ni un byte, y el J3 tampoco: los 0,02 kB de
+`optimalSteps` salieron donde debían —trozo del juego **825,21 kB** (222,25
+gzip)—, con los mismos **209 módulos**.
+
+**El J4 lo movió 0,21 kB, de 624,57 a 624,78, y conviene saber por qué.** No es
+Blockly: la librería cayó entera en su propio trozo, `BlockEditor-*.js`, y
+**ninguna marca suya aparece en el principal** —`blocklySvg`, `blocklyWidgetDiv`,
+`blocklyDraggable` y `codeplay_advance`, cero veces cada una, contadas con
+`grep -o … | wc -l`—. Los 0,21 kB son **el cargador nuevo y la tarjeta del
+laboratorio**, que por diseño viven por encima de la frontera: algo tiene que
+disparar el `import()`. `GameScene` no se movió ni un byte, e `index.html` sigue
+precargando **sólo** el trozo principal: ni el editor ni la escena.
 
 ### 4.9 El nombre sólo lo valida el cliente
 

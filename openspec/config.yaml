@@ -116,13 +116,26 @@ context: |
   reinstalando, NUNCA regenerandolo: regenerar el lockfile en Windows se lleva
   por delante los binarios opcionales de otras plataformas (@supabase/cli-linux-*)
   y el CI corre npm ci sobre ubuntu-latest.
-  El juego se carga en DIFERIDO desde el J1, y la regla es que NADA POR ENCIMA
-  DE LA FRONTERA importa three o fiber: src/game/GameSceneLoader.tsx es esa
-  frontera (React.lazy + Suspense) y no los importa, ni tampoco la pantalla del
-  laboratorio. Debajo, src/game/GameScene.tsx si. Juntarlos anula la separacion.
-  Desde el J2 hay ademas modulos PUROS en src/game/ —level.ts, debugLevel.ts y
-  movement.ts— que no arrastran three pero que solo se importan desde el lado
-  perezoso: importarlos desde arriba los mete en el trozo principal.
+  Bloques: blockly 12.5.1, y se importa blockly/core y NO blockly (el entry
+  principal arrastra la biblioteca de bloques estandar y el generador de
+  JavaScript, y aqui no se usa ninguno). Blockly trae sus propios tipos por el
+  mapa de exports, asi que NO hace falta @types/blockly, que ademas no existe.
+  Esta FIJADO a la rama 12 por el instalador: la 13 declara jsdom >=27.4.0
+  <30.0.0 como peer dependency y el repo va con jsdom 30.0.1 para Vitest, asi
+  que npm install blockly muere con ERESOLVE. Subirlo obliga a mover antes el
+  entorno de los tests. La 12 se trae jsdom 26.1.0 como dependencia suya: son 77
+  paquetes en node_modules y cero peso en el navegador, medido.
+  El juego se carga en DIFERIDO desde el J1, y hay DOS fronteras desde el J4:
+  src/game/GameSceneLoader.tsx aisla el motor 3D y src/game/BlockEditorLoader.tsx
+  aisla Blockly (las dos son React.lazy + Suspense). Blockly NO cuelga de la
+  frontera del motor porque no es 3D: colgarlo meteria un componente de DOM
+  dentro de un arbol de fiber. La regla es una: NADA POR ENCIMA DE UNA FRONTERA
+  importa lo que esa frontera aisla —ni los cargadores, ni la pantalla del
+  laboratorio—. Debajo si: GameScene.tsx importa three, BlockEditor.tsx importa
+  blockly. Juntarlos anula la separacion.
+  Hay ademas modulos PUROS en src/game/ —level.ts, debugLevel.ts, movement.ts y
+  program.ts— que no arrastran three ni blockly pero que solo se importan desde
+  el lado perezoso: importarlos desde arriba los mete en el trozo principal.
   ESLint 8.57 (config heredada) + Prettier 3.9. Node >= 18.18.
   Tests: Vitest 3.2 + jsdom + Testing Library. Los tests se colocan junto al
   archivo que prueban; src/test/ guarda el setup y el helper renderClassrooms.
