@@ -1820,8 +1820,9 @@ renombrar. Es el mismo género de trampa que `grep -c` frente a `grep -o`.
   pulsable. Es el mismo camino que el lienzo vacío —`{}`— y queda **sin observar
   por separado**.
 
-**Y cómo se verifica esto, corregido dos veces respecto de lo que el J5 dejó
-escrito arriba. Las dos correcciones ahorran una tarde:**
+**Y cómo se verifica esto, corregido TRES veces respecto de lo que el J5 dejó
+escrito arriba. Las tres corrigen algo que aquel paso dio por cerrado, y las tres
+ahorran una tarde:**
 
 1. **Un panel oculto ya no obliga a traerlo al frente: basta emular un viewport
    con `resize_window`.** Ésa es la salida, y hay que contar aparte cómo NO se
