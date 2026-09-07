@@ -2,7 +2,14 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { Group } from 'three';
 import { debugLevel } from './debugLevel';
-import { countSteps, readProgram, runProgram, type Run, type RunStep } from './interpreter';
+import {
+  countSteps,
+  programCost,
+  readProgram,
+  runProgram,
+  type Run,
+  type RunStep,
+} from './interpreter';
 import { TILE_SIZE, type Direction, type LevelConfig, type Pose } from './level';
 import { openProgram, type Program } from './program';
 
@@ -267,10 +274,35 @@ const stepsLabel = (count: number): string => (count === 1 ? '1 paso' : `${count
 
 const OUTCOME_MESSAGES = {
   idle: 'Coloca bloques y pulsa «Ejecutar» para ver al personaje moverse.',
-  running: 'Ejecutando el programa…',
   empty: 'No hay bloques que ejecutar. Arrastra alguno al lienzo.',
   unreadable: 'Ese programa no se puede leer.',
 };
+
+/*
+ * El paso en curso sale del intento CONGELADO —su recuento y el índice que la
+ * escena ya lleva—, nunca del programa que llega por propiedades: mover un
+ * bloque a mitad de recorrido cambiaría el contador que el niño está viendo
+ * correr, que es el mismo fallo que el J5 evitó sacando el programa del estado.
+ */
+const runningLine = (step: number, total: number): string =>
+  `Ejecutando el programa… paso ${step} de ${total}.`;
+
+/*
+ * Y esto es la otra mitad, la del lienzo: sale de las propiedades en el pintado,
+ * y son DOS NÚMEROS DE DOS FUENTES DISTINTAS que no se mezclan. Es además la
+ * pieza retirable —enseñar el coste antes de ejecutar es una elección
+ * pedagógica que puede cambiar—, así que vive suelta a propósito: se borra ella,
+ * sus dos textos y el `useMemo`, y el contador de arriba no se entera.
+ */
+const canvasCostLine = (steps: number, optimalSteps: number): string =>
+  `Tu programa cuesta ${stepsLabel(steps)}. La mejor solución cuesta ${stepsLabel(optimalSteps)}.`;
+
+/*
+ * En PRESENTE, y por eso no reutiliza el aviso de abajo: aquí no se ha ejecutado
+ * nada todavía. Sin él, el coste que se enseña sería el de un montón y no el del
+ * lienzo, y el niño no tendría cómo saber por qué el número no le cuadra.
+ */
+const LOOSE_BLOCKS_NOTICE = 'Tienes bloques sueltos: sólo se ejecutará el montón de más arriba.';
 
 /*
  * El montón de más arriba SÍ se ejecutó y su resultado es real, así que el aviso
@@ -324,7 +356,17 @@ export const GameScene = ({ program }: GameSceneProps) => {
   const latest = useRef(program);
   latest.current = program;
 
-  const run = attempt !== null && attempt.kind === 'run' ? attempt.run : null;
+  /*
+   * Y esto se lee de las PROPIEDADES, no de esa referencia, y no la contradice:
+   * la referencia existe para que `start()` lea el valor fresco sin arrastrar
+   * closures, no para prohibir pintar lo que ya llega. Lo que aquélla protege es
+   * que la EJECUCIÓN no dependa de lo que el niño toque mientras corre.
+   */
+  const canvasCost = useMemo(() => programCost(program), [program]);
+
+  // El intento entero y no sólo su recorrido: el contador necesita su recuento.
+  const active = attempt !== null && attempt.kind === 'run' ? attempt : null;
+  const run = active === null ? null : active.run;
   const step = run !== null && index < run.steps.length ? run.steps[index] : null;
   const pose = run === null || index === 0 ? config.start : run.steps[index - 1].pose;
   const isRunning = step !== null;
@@ -380,21 +422,38 @@ export const GameScene = ({ program }: GameSceneProps) => {
   }, []);
 
   let outcome = OUTCOME_MESSAGES.idle;
-  if (isRunning) {
-    outcome = OUTCOME_MESSAGES.running;
+  if (active !== null && isRunning) {
+    outcome = runningLine(index + 1, active.steps);
   } else if (attempt !== null && attempt.kind === 'unreadable') {
     outcome = OUTCOME_MESSAGES.unreadable;
   } else if (attempt !== null && attempt.kind === 'empty') {
     outcome = OUTCOME_MESSAGES.empty;
-  } else if (attempt !== null && attempt.kind === 'run') {
-    outcome = outcomeOf(attempt.run, attempt.steps, config.optimalSteps);
+  } else if (active !== null) {
+    outcome = outcomeOf(active.run, active.steps, config.optimalSteps);
   }
 
   // El aviso es del recorrido terminado: durante la ejecución todavía no toca.
   const warning =
-    !isRunning && attempt !== null && attempt.kind === 'run' && attempt.rootCount > 1
-      ? LOOSE_BLOCKS_WARNING
-      : null;
+    !isRunning && active !== null && active.rootCount > 1 ? LOOSE_BLOCKS_WARNING : null;
+
+  /*
+   * Mientras corre el recorrido, el coste del lienzo se calla: el niño no está
+   * construyendo, y un número del lienzo puesto al lado de un recorrido que no
+   * gobierna cambiaría si tocara un bloque, contradiciendo en pantalla al que sí
+   * lo cuenta.
+   */
+  const visibleCost = isRunning ? null : canvasCost;
+
+  /*
+   * Y el aviso del lienzo CEDE cuando el del resultado está en pantalla: los dos
+   * dicen lo mismo —uno en presente, el otro en pasado— y un niño que deje un
+   * bloque suelto y ejecute se comía la misma frase dos veces seguidas. Manda el
+   * del resultado, que habla de lo que ya ocurrió.
+   *
+   * La dependencia va en la dirección buena: la pieza retirable mira a la que se
+   * queda, nunca al revés. Borrar esto no toca `warning`.
+   */
+  const noticeLooseBlocks = warning === null && visibleCost !== null && visibleCost.rootCount > 1;
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -428,6 +487,18 @@ export const GameScene = ({ program }: GameSceneProps) => {
         </button>
         <div className="min-w-0">
           <p className="text-[15px] font-semibold leading-[1.5] text-ink-soft">{outcome}</p>
+
+          {visibleCost !== null && (
+            <p className="text-[15px] font-bold leading-[1.5] text-ink">
+              {canvasCostLine(visibleCost.steps, config.optimalSteps)}
+            </p>
+          )}
+
+          {noticeLooseBlocks && (
+            <p className="text-[15px] font-bold leading-[1.5] text-coral-dark">
+              {LOOSE_BLOCKS_NOTICE}
+            </p>
+          )}
 
           {warning !== null && (
             <p className="text-[15px] font-bold leading-[1.5] text-coral-dark">{warning}</p>

@@ -95,7 +95,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ✅ |
 | **J5** | El intérprete: ejecutar el programa, animar al personaje y detectar si llegó a la meta | **Un nivel se resuelve de principio a fin, sin backend** | ✅ |
 | **J6** | Recuento de pasos y pantalla de resultado | Al terminar dice cuántos pasos usó y cuántos eran óptimos | ✅ |
-| J6.1 | **El contador, en vivo**: mientras construye y mientras se ejecuta | El niño ve lo que cuesta su programa sin contar los pasos a ojo | ⬜ |
+| J6.1 | **El contador, en vivo**: mientras construye y mientras se ejecuta | El niño ve lo que cuesta su programa sin contar los pasos a ojo | ✅ |
 | **J7** | **Sembrar el mundo 1** — partido en cuatro, uno por nivel más el aspecto | Los tres niveles se juegan leyendo su definición de la base, y el mundo se ve como debe verse | ⬜ |
 | J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra | Se juega el nivel 1 leyendo su fila, no el objeto escrito a mano del J2 | ⬜ |
 | J7.2 | Nivel 2, igual | Se juega el nivel 2 desde la base | ⬜ |

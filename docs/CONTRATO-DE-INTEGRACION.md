@@ -305,8 +305,11 @@ J6, que es el primero que tiene que decidir qué pinta la pantalla en ese caso.
 
 Y no rompe la regla de §2, aunque lo parezca: **un número no es una solución.**
 Decir que la mejor ruta son diez pasos no dice cuáles son esos diez. El niño lo
-ve en pantalla al terminar, así que tenerlo en un `config` público no revela nada
-que no se enseñe.
+ve en pantalla, así que tenerlo en un `config` público no revela nada que no se
+enseñe. **Y desde el J6.1 lo ve antes de ejecutar**, mientras construye su
+programa, y no sólo al terminar: es lo que le permite medir lo que lleva puesto
+contra lo que costaba lo bueno sin tener que jugar la partida. El argumento de
+arriba es el que lo autoriza y no cambia — lo que cambia es el cuándo.
 
 **Este JSON es, campo por campo, el tipo del juego.** No hay traducción entre el
 cable y el código, y es una decisión tomada, no un descuido: `config` viaja

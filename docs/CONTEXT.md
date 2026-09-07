@@ -1404,18 +1404,20 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
   propio hook, como `worlds.service.ts` + `useWorlds()`. La frontera de §4.3
   sigue en pie.
 
-### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques, su ejecución y el resultado (J1 a J6)
+### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques, su ejecución y el resultado (J1 a J6.1)
 
 **Aplicado con `esqueleto-del-juego` (J1), `rejilla-y-personaje` (J2),
-`bloques-del-programa` (J4), `ejecutar-el-programa` (J5) y
-`recuento-y-resultado` (J6), más el J3, que sólo fijó el formato por escrito.**
+`bloques-del-programa` (J4), `ejecutar-el-programa` (J5), `recuento-y-resultado`
+(J6) y `contador-en-vivo` (J6.1), más el J3, que sólo fijó el formato por
+escrito.**
 Lo que hay es una escena 3D dentro del panel del niño, cargada en diferido, con
 **un tablero leído de una configuración escrita a mano y un personaje que se
 mueve por casillas**, al lado **un editor de bloques que produce el programa en
 JSON**, **el intérprete que ejecuta ese programa, anima el recorrido y dice si se
-llegó a la meta**, y **una barra que al terminar dice cuántos pasos costó y
-cuántos cuesta la mejor solución**. Con eso, **un nivel se juega y se puntúa a la
-vista**. **Sin backend**: la fase A no toca Supabase ni una vez, y quien convierta
+llegó a la meta**, y **una barra que dice lo que cuesta el programa mientras se
+construye, por qué paso va mientras se ejecuta, y cuántos pasos costó contra los
+de la mejor solución al terminar**. Con eso, **un nivel se juega y se puntúa a la
+vista, sin contar los pasos a ojo en ningún momento**. **Sin backend**: la fase A no toca Supabase ni una vez, y quien convierta
 esos pasos en XP es el servidor, en el J10.
 
 | Archivo | Qué es |
@@ -1424,12 +1426,12 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/game/debugLevel.ts` | **Puro.** La rejilla de pega: 5×5, cuatro muros, un hueco, salida y meta. **No es un puzle diseñado** — los nueve los diseña el usuario y se siembran en el J7 |
 | `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Los reutiliza el intérprete**: nació para eso |
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
-| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero y el personaje, la animación del recorrido con `useFrame`, y la barra con «Ejecutar», «Reiniciar» y **el resultado con el recuento contra `optimalSteps`**. Importa `three` y `@react-three/fiber` |
+| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero y el personaje, la animación del recorrido con `useFrame`, y la barra con «Ejecutar», «Reiniciar», **el coste del lienzo mientras se construye, el paso en curso mientras se ejecuta** y **el resultado con el recuento contra `optimalSteps`**. Importa `three` y `@react-three/fiber` |
 | `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Recibe el programa y lo baja; **sólo el tipo** del sobre cruza |
 | `apps/web/src/game/program.ts` | **Puro.** El sobre del contrato §4.3: `Program`, `PROGRAM_FORMAT_VERSION` y las funciones `sealProgram` y `openProgram`. **Sin Blockly** — lo reutilizan el J8 al abrir el `starterProgram` y el J9 al mandar el intento |
 | `apps/web/src/game/program.test.ts` | El sobre: que se cierre con la versión del contrato y que una desconocida se rechace entera (§7) |
 | `apps/web/src/game/blockTypes.ts` | **Nuevo en el J5. Puro.** Cómo se llaman los tres bloques y su campo en el JSON. Vive aparte porque `blocks.ts` importa Blockly y **el intérprete no puede importarlo** |
-| `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` y devuelve `{ orders, rootCount }` —o `null` si no entiende algo—, `countSteps` suma los pasos **leyendo** las órdenes (§4.4) y `runProgram` las pliega sobre la pose inicial con `turn` y `advance`. Sin Blockly y sin `three` |
+| `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` y devuelve `{ orders, rootCount }` —o `null` si no entiende algo—, `countSteps` suma los pasos **leyendo** las órdenes (§4.4), `runProgram` las pliega sobre la pose inicial con `turn` y `advance`, y `programCost` encadena las tres cosas desde el sobre para el contador del J6.1. Sin Blockly y sin `three` |
 | `apps/web/src/game/interpreter.test.ts` | El recorrido y la meta, con el **PROGRAMA A del contrato §4.3 pegado tal cual** como entrada |
 | `apps/web/src/game/blocks.ts` | Los tres bloques —`avanzar N`, `girar a la izquierda`, `girar a la derecha`—, en español, y la caja de herramientas. Importa `blockly/core` |
 | `apps/web/src/game/blocks.test.ts` | El **viaje de ida y vuelta** contra un espacio de trabajo sin interfaz, que es lo único que valida la decisión del J3 |
@@ -1448,9 +1450,10 @@ que lo delate.
 
 **El banco de pruebas no es de usar y tirar.** El J4, el J5 y el J6 se vieron
 funcionar ahí, porque la pantalla de nivel real no llega hasta el J8 (paso 20).
-Cuando exista, esta pantalla se revisa. **El J6 no tuvo que tocarla**, y era la
-comprobación de que la barra está en el sitio bueno: el resultado vive dentro del
-juego, bajo la frontera diferida, para que el J8 lo herede en vez de reescribirlo.
+Cuando exista, esta pantalla se revisa. **Ni el J6 ni el J6.1 tuvieron que
+tocarla**, y era la comprobación de que la barra está en el sitio bueno: el
+resultado y los dos contadores viven dentro del juego, bajo la frontera diferida,
+para que el J8 los herede en vez de reescribirlos.
 
 **Las fronteras del bundle son DOS desde el J4, y la regla es una.** `Blockly no
 es 3D y no cuelga de la frontera del motor`: tiene la suya,
@@ -1865,6 +1868,128 @@ ahorran una tarde:**
    `getMainWorkspace()` y `serialization.workspaces.load`. Cargar así **dispara
    el escuchador del editor**, y el sobre de la pantalla se actualiza solo. Es lo
    que hizo innecesario despachar arrastres a mano en todo el J6.
+
+   **Y NO SE FÍE NADIE DE QUE LOS BLOQUES APAREZCAN: eso no prueba que hayan
+   llegado.** Añadido en el J6.1, donde la sesión que revisó no consiguió
+   reproducirlo — cinco bloques pintados en el SVG del editor y el sobre de la
+   pantalla en `"workspace": {}`, con cero eventos en su propio escuchador—.
+   **La comprobación que sí vale es el `<pre>` del laboratorio**: si después de
+   cargar no contiene `codeplay_advance`, el programa **no ha llegado a la
+   aplicación** y lo que se verifique encima no vale nada. En la sesión que
+   implementó funcionó desde una pestaña recargada de cero, con el sobre lleno y
+   dos eventos en el escuchador, así que el camino existe; lo que no está
+   averiguado es por qué falla a veces.
+
+   **La causa está SIN ENCONTRAR, y no hay sospechoso vigente.** Lo que se
+   descartó midiendo, en la propia pestaña que falla: el espacio de trabajo **no
+   es uno desechado** por el doble montaje de `React.StrictMode`
+   —`getInjectionDiv().isConnected` da **`true`**—, el espacio tiene **cuatro
+   escuchadores vivos** y `Events.isEnabled()` es **`true`**, así que el canal
+   tampoco está apagado. Los bloques se pintan y el sobre se queda vacío, y nadie
+   sabe por qué.
+
+   **Y por eso la comprobación es el `<pre>` y ninguna otra**: `isConnected` sale
+   **bien en el caso que falla**, así que quien lo use como señal concluirá que su
+   carga llegó y verificará encima de nada. Es la misma trampa que contar frames
+   en el J6, con otro disfraz.
+
+**Lo que el J6.1 añadió: el contador en vivo, y por qué son dos piezas.**
+
+**El J6 enseñaba el recuento sólo AL TERMINAR, y eso lo decidió su propuesta sin
+preguntar.** Su `design.md` puso «ningún recuento en vivo» entre los Non-Goals
+con un argumento propio —«el criterio del roadmap es al terminar»—. El usuario lo
+vio terminado y pidió lo contrario el 7-sep-2026: el niño tiene que ver lo que
+cuesta su programa **sin contar los pasos a ojo**. La decisión está en
+`ROADMAP-JUEGO.md` §3.
+
+**Son DOS NÚMEROS DE DOS FUENTES DISTINTAS, y no se mezclan nunca.** Es lo único
+que hay que saber para tocar esta barra:
+
+- El **coste del lienzo** sale de la **propiedad `program` en el pintado**, con
+  `useMemo`.
+- El **paso en curso** sale del **intento congelado** —`attempt.steps` y el
+  `index` que la escena ya llevaba—, **jamás de la propiedad**.
+
+Si el segundo saliera de la propiedad, mover un bloque a mitad de recorrido
+cambiaría el contador que el niño está viendo correr, **que es el fallo exacto
+que el J5 evitó** sacando el programa del estado de React. Ese `useRef` de
+`latest` sigue intacto y no lo contradice pintar desde la propiedad: existe para
+que `start()` lea el valor fresco sin arrastrar closures, no para prohibir
+pintar. **Comprobado en el navegador**: con un recorrido de 13 pasos en marcha se
+cargó otro programa de 1 paso, y el contador siguió diciendo «de 13» hasta
+terminar.
+
+**La pieza de construcción es RETIRABLE, y eso es requisito del usuario, no un
+consejo.** Enseñar el coste antes de ejecutar es una elección pedagógica y puede
+cambiar si la profesora lo dicta; en ese caso se queda sólo el contador de la
+ejecución. Por eso son **dos requisitos** en el spec y no uno, y por eso lo que
+hay que borrar es una lista corta: el requisito, `programCost` con sus tests, y
+en `GameScene.tsx` el `useMemo`, la línea del coste y sus dos textos. **Se
+comprobó borrándolo de verdad**: la escena compila, pasa el lint y el contador de
+la ejecución no se entera. Después se deshizo.
+
+**`programCost` existe por lo que COLAPSA, no por ahorrar tres líneas.** Devuelve
+`null` en los tres casos en que no se pinta nada —sin programa, ilegible y sin
+órdenes—, mientras que `start()` tiene que distinguirlos porque cada uno lleva su
+texto al terminar. Y está en el módulo puro porque **dentro del componente esos
+casos no se pueden probar**: jsdom no implementa WebGL. Son 7 tests nuevos.
+`interpreter.ts` pasó a importar de `program.ts` un **valor** donde sólo importaba
+un tipo; medido en §4.8, no movió nada de trozo.
+
+**Con montones sueltos se avisa YA AL CONSTRUIR, en presente y con texto propio.**
+El número que se enseña es el del montón que se ejecutaría, no la suma, y
+enseñarlo callando **reabriría mientras se construye** el fallo silencioso que el
+J6 cerró al terminar. No reutiliza el aviso del J6, que habla en pasado de una
+ejecución que aún no ha ocurrido. **El parpadeo que se temía no ocurre**: en
+Blockly 12 el arrastre es un evento de INTERFAZ —`isUiEvent` es `true`, medido en
+la página—, y el editor no publica por ellos, así que el aviso sólo cambia al
+soltar. Un bloque sacado de la cadena **es** un montón suelto, y el aviso dice
+justo eso mientras lo esté.
+
+**Y ese aviso CEDE cuando el del resultado está en pantalla**, que es un cruce
+que se vio revisando el código y no diseñándolo. Al terminar una ejecución con
+montones sueltos vuelven a la vez el aviso del lienzo y el del J6, y el niño leía
+la misma frase dos veces y en dos tiempos —«sólo se ejecutará» y «sólo se
+ejecutó»—, las dos en coral. Manda el del resultado. Que la pieza retirable mire
+a la que se queda **no rompe la separabilidad**: la dependencia va en esa
+dirección y nunca al revés.
+
+**Mientras corre el recorrido, el coste del lienzo se calla.** El niño no está
+construyendo, y un número del lienzo que cambia bajo una ejecución que no
+gobierna se lee en pantalla como un fallo. Al terminar vuelve, aunque repita el
+número del resultado: esconderlo cuando coincide obligaría a **comparar las dos
+fuentes para decidir qué se pinta**, que es justo lo que esta barra no hace. Los
+separan el tiempo verbal y el sujeto —«Usaste 10 pasos» contra «Tu programa
+cuesta 10 pasos»—, y en cuanto el niño toca un bloque dejan de decir lo mismo.
+
+**Verificado en el navegador, con el viewport emulado:**
+
+- **El coste sube y baja al construir**: el PROGRAMA A dice «Tu programa cuesta
+  10 pasos. La mejor solución cuesta 10 pasos.» **sin haber ejecutado nada**;
+  encadenar un giro lo pone en 11 y quitarlo lo devuelve a 10.
+- **Dos montones sueltos**: cuesta **«1 paso»** —el de arriba, no la suma de 5— y
+  sale «Tienes bloques sueltos: sólo se ejecutará el montón de más arriba.» Al
+  **terminar** la ejecución de ese mismo lienzo queda **un solo aviso**, el del
+  resultado, y «Reiniciar» devuelve el del lienzo.
+- **Lienzo vacío**: **ninguna línea de coste**, ni «0 pasos», y la consola sin un
+  solo error.
+- **Durante la ejecución**: «Ejecutando el programa… paso 2 de 10», subiendo
+  hasta «paso 10 de 10», **sin la línea del coste**, y al terminar el resultado
+  con el mismo número.
+- **«Reiniciar» a mitad**: el contador desaparece y el coste del lienzo vuelve.
+- **Con el resultado en pantalla**, quitar un bloque deja «¡Perfecto! …con 10
+  pasos» junto a «Tu programa cuesta 6 pasos», que es la divergencia útil: lo que
+  usó contra lo que tiene puesto ahora.
+- **Lo que NO se pudo provocar**: el **programa ilegible**. El editor sólo produce
+  los tres bloques conocidos y su campo de pasos es numérico y acotado, así que
+  `readProgram` no tiene por dónde devolver `null`. El camino lo cubre un test de
+  `programCost` y **queda sin observar en pantalla**, como el «antes de que el
+  editor publique» del J6.
+
+**Y una frase del contrato §4.2 murió con este paso**: decía que el niño ve
+`optimalSteps` «en pantalla al terminar». Ahora lo ve también mientras construye.
+El argumento que autoriza tenerlo en un `config` público no cambia —**un número
+no es una solución**—; lo que cambió es el cuándo, y está corregido allí.
 
 ---
 
@@ -2288,12 +2413,12 @@ configuración plana es una tarea pendiente sin urgencia.
 conviene no perderlo de vista ahora que el juego crece. Se resolvería con
 `manualChunks` o más importaciones dinámicas por ruta.
 
-**Medido el 7-sep-2026, después del J6**: trozo principal **625,00 kB**
+**Medido el 7-sep-2026, después del J6.1**: trozo principal **625,00 kB**
 (167,90 gzip), trozo `BlockEditor` **644,43 kB** (172,75), trozo `GameScene`
-**830,27 kB** (224,28), trozo compartido `program` **0,35 kB** (0,24), **221
-módulos**. Antes del J6 eran los mismos salvo `GameScene`, que estaba en 829,26
-(223,90); y antes del J5, 624,78 (167,77), 644,50 (172,77), 825,21 (222,25) y
-219 módulos, sin trozo compartido.
+**830,87 kB** (224,43), trozo compartido `program` **0,35 kB** (0,24), **221
+módulos**. Antes del J6.1 eran los mismos salvo `GameScene`, en 830,27 (224,28);
+antes del J6, 829,26 (223,90); y antes del J5, 624,78 (167,77), 644,50 (172,77),
+825,21 (222,25) y 219 módulos, sin trozo compartido.
 
 **El J6 no movió el principal ni un byte, ni los módulos.** Los +1,01 kB del
 recuento y de la barra de resultado salieron enteros en `GameScene`, que es donde
@@ -2301,6 +2426,17 @@ debían. Se comprobó además con marcas que **sobreviven a la minificación** �
 §2.9: `countSteps` no vale, porque el minificador la renombra y da cero en los
 dos trozos—: `rootCount` sale **4** veces en `GameScene` y **0** en el principal,
 y los dos textos nuevos de la barra, **1** y **0**.
+
+**El J6.1 tampoco, y traía un motivo real para sospechar.** Sus +0,60 kB salieron
+en `GameScene`, con los mismos 221 módulos, **y eso pese a que `interpreter.ts`
+pasó a importar de `program.ts` un valor donde antes sólo importaba un tipo**
+—`openProgram`—. La importación no movió nada de trozo porque los dos módulos ya
+estaban del lado perezoso y `GameScene` importaba los dos; la dirección además es
+la buena, el que conoce la carta importando al que sólo conoce el sobre. Marcas:
+`rootCount` **7** en `GameScene` y **0** en el principal, y los tres textos
+nuevos —«Tu programa cuesta», «Tienes bloques sueltos», «Ejecutando el
+programa»—, **1** y **0**. **`programCost` da cero en los dos trozos**, que es la
+misma trampa que `countSteps` y por el mismo motivo.
 
 **La línea de partida del juego era otra y conviene no confundirlas.** Antes del
 J1 había **un solo chunk de 623,18 kB** (166,96 gzip) y 177 módulos; el J1 lo
