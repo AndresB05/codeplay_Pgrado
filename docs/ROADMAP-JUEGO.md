@@ -162,8 +162,17 @@ configuración escrito a mano», y para eso vale una rejilla de pega —5×5, sa
 en una esquina y meta en otra—. De hecho conviene que lo sea: depurar el pintado
 del tablero contra un puzle que además importa es depurar dos cosas a la vez.
 
-El diseño de verdad hace falta en el **J6**, que es el primero que compara contra
-un número de pasos óptimo, y se siembra en el **J7.1**.
+**El J6 tampoco lo necesita, corregido el 5-sep-2026 por el usuario.** Decía
+aquí que el diseño de verdad hacía falta en el J6 por ser el primero que compara
+contra un número de pasos óptimo, y no se sigue: comparar contra un número no
+exige que ese número sea el de un puzle bueno. El J6 se construye contra
+`debugLevel` y su `optimalSteps` de 10 —que es el ejemplo resuelto del contrato
+§4.4, y trae de regalo dos programas contados a mano contra los que comprobar el
+recuento—. Vale el mismo argumento del párrafo de arriba: verificar el recuento y
+la pantalla contra un puzle que además importa es verificar dos cosas a la vez.
+
+El diseño de verdad hace falta en el **J7.1**, que es el primero que lo escribe
+en una migración, y no antes.
 
 **Lo que sí había que fijar antes del J2, y lo decidió el usuario el 4-sep-2026:
 la rejilla ADMITE huecos y muros.** No es siempre un rectángulo lleno. Los
@@ -231,6 +240,27 @@ existe todavía.
 repeticiones sean **números presentes en el programa**. Es lo que permite contar
 los pasos sin simular el juego. Está explicado en el contrato §3 y contado con un
 ejemplo en su §4.4.
+
+### El editor va al lado del juego, y eso es del J8
+
+**Decidido por el usuario el 5-sep-2026, y hasta hoy no estaba escrito en
+ninguna parte.** Cuando exista la pantalla de nivel real, **el editor de bloques
+va en el mismo cuadro que el juego, a la derecha** — no en tarjetas apiladas,
+que es como están hoy en el laboratorio.
+
+Hoy la escena y el editor son dos `card` una debajo de otra en
+`StudentGameLabModule.tsx`, cada una de 420 px de alto. Eso está bien para un
+banco de pruebas —donde además hay que ver el JSON que sale—, y está mal para
+jugar: el niño arrastra un bloque arriba y el resultado ocurre fuera de la
+pantalla, así que no puede ver lo que su programa hace mientras lo escribe.
+
+**Va en el J8** (paso 20 del roadmap principal), que es el que monta esa
+pantalla, y **no en el J6**: el J6 se sigue viendo funcionar en el laboratorio,
+con las tarjetas como están. Mover la maquetación antes de que exista la
+pantalla que la necesita es rehacerla dos veces.
+
+La barra de controles no se reescribe: vive dentro de `GameScene.tsx` a
+propósito, debajo del `<Canvas>`, para que la pantalla del J8 la herede.
 
 ### Las migraciones y sus paradas
 
