@@ -7,7 +7,8 @@ aplicación web, sin programa ni marco aparte. Esta capacidad cubre cómo se
 dibuja, cuándo llega su código al navegador, desde dónde se abre, y **qué se
 juega en ella**: el tablero, el personaje que lo recorre casilla a casilla, los
 bloques con los que se le escribe el programa, **qué pasa cuando ese programa
-se ejecuta** y **qué se le dice al niño al terminar**.
+se ejecuta**, **qué se le va diciendo mientras tanto** y **qué se le dice al
+terminar**.
 
 **Ya se juega un nivel entero.** Se ve un tablero descrito por una configuración
 —con casillas que no se pisan, unas porque son muro y otras porque son hueco—,
@@ -19,7 +20,12 @@ llegó a la meta. Y al terminar se ve **cuántos pasos ha costado y cuántos cue
 la mejor solución**, que es la magnitud que el juego puntúa: con eso el nivel no
 sólo se juega, se juega **contra un número**.
 
-Las **trece** garantías con las que la capacidad cuenta hasta aquí. Cinco venían
+**Y ese número no espera al final.** Se ve lo que cuesta el programa **mientras
+se construye**, contra el de la mejor solución, y **por qué paso va el recorrido**
+mientras corre: en ningún momento hay que contar los pasos a ojo, que es
+exactamente lo que un juego sobre eficiencia no puede pedirle a un niño.
+
+Las **quince** garantías con las que la capacidad cuenta hasta aquí. Cinco venían
 de antes: que el juego se dibuje dentro de la aplicación, que su código no pese
 en la carga inicial, que el banco de pruebas no llegue a producción, que el
 tablero salga de una configuración y no del código que lo pinta, y que el
@@ -52,6 +58,17 @@ de programa, y un lienzo con **bloques sueltos**, donde el olvidado más arriba 
 ejecuta en lugar del programa — sin avisar, el niño no puede distinguir «mi
 programa está mal» de «mi programa no se ejecutó».
 
+Y **dos llegan con el contador en vivo**: que **lo que cuesta el programa se vea
+mientras se construye** —contra lo que cuesta la mejor solución, y sin ejecutar
+nada— y que **el paso en curso se vea mientras se ejecuta**. Cargan con una regla
+que no se ve venir: son **dos números de dos fuentes distintas y no se mezclan
+nunca**, el del lienzo salido de lo que hay puesto y el del recorrido salido del
+programa que se está ejecutando. Un contador que cambiara al mover un bloque a
+mitad de camino le enseñaría al niño un recorrido que no es el que está viendo.
+Y la primera es **retirable a propósito**: enseñar el coste antes de ejecutar es
+una elección pedagógica que puede cambiar, así que vive en un requisito propio
+para poder borrarse sin tocar el otro.
+
 **Y una se retiró con ellas**, que es la primera vez que esta capacidad pierde
 una garantía: que las órdenes sueltas dadas a mano no llegaran a producción. Su
 condición de existencia era «mientras el programa de bloques no exista», y el
@@ -69,6 +86,11 @@ fallido — no hubo intento. Dice además, desde el otro lado, la distinción qu
 recuento necesitaba: **la llegada se calcula ejecutando** porque depende del
 tablero, **el recuento se calcula leyendo** porque no depende de él, y ninguna de
 las dos se calcula como la otra.
+
+Y la del resultado **se acotó al llegar el contador**: lo que prohíbe mientras el
+recorrido corre es el **resultado** —si se llegó y lo que ha costado—, no todo
+número. El paso en curso sí se ve, y son dos cosas distintas dichas en dos
+momentos distintos.
 
 ## Requirements
 
@@ -566,8 +588,11 @@ correspondía sí se ha ejecutado. Sin ese aviso, un bloque olvidado por encima 
 programa se ejecuta en su lugar y el niño no puede distinguir «mi programa está
 mal» de «mi programa no se ha ejecutado».
 
-Mientras la ejecución está en curso NO SHALL mostrarse todavía el resultado, y al
-devolver al personaje a la salida el resultado SHALL desaparecer.
+**Mientras la ejecución está en curso NO SHALL mostrarse todavía el resultado**
+—ni si se llegó, ni lo que ha costado—, y al devolver al personaje a la salida el
+resultado SHALL desaparecer. Lo que sí se ve durante el recorrido es **por dónde
+va**, y eso lo gobierna su propio requisito: el resultado se sabe al terminar, el
+paso en curso mientras se ejecuta, y no son el mismo dato dicho dos veces.
 
 #### Scenario: El programa llega a la meta gastando de más
 
@@ -601,9 +626,132 @@ devolver al personaje a la salida el resultado SHALL desaparecer.
 #### Scenario: La ejecución está en curso
 
 - **WHEN** el personaje todavía está recorriendo el programa
-- **THEN** no se muestra ningún resultado ni recuento final
+- **THEN** no se muestra ningún resultado ni el recuento de lo que ha costado
+- **AND** se ve por qué paso del recorrido va
 
 #### Scenario: Se devuelve al personaje a la salida
 
 - **WHEN** se pide devolver al personaje a la salida después de una ejecución terminada
 - **THEN** el resultado y el recuento dejan de mostrarse
+
+### Requirement: El coste del programa se ve mientras se construye
+
+Mientras el niño construye el programa, el sistema SHALL mostrar **cuántos pasos
+cuesta el programa que hay en el lienzo** y **cuántos cuesta la mejor solución
+del nivel**, sin que haga falta contar los bloques a ojo y **sin ejecutar nada**.
+
+Ese número SHALL salir de **leer** el programa, con las mismas reglas con las que
+se cuenta al terminar, y SHALL cambiar cuando cambie el programa del lienzo:
+encadenar un bloque, quitarlo o cambiar cuántas casillas avanza.
+
+**Cuando no haya programa que contar, NO SHALL mostrarse número alguno**: ni con
+el lienzo vacío ni con un programa que no se puede leer. Cero pasos contra los
+del nivel le diría al niño que su programa es malo cuando lo que ocurre es que no
+hay programa, que es la misma razón por la que el resultado tampoco lo muestra.
+
+Cuando el lienzo tenga **varias secuencias sueltas**, el número mostrado SHALL ser
+el de la secuencia **que se ejecutaría**, nunca la suma de todas, y el sistema
+SHALL advertirlo **ya al construir**. Sin ese aviso el niño ve un número que no
+es el de lo que tiene delante, y no puede saber por qué.
+
+Ese aviso NO SHALL mostrarse cuando ya se esté mostrando el del **resultado** de
+una ejecución terminada: los dos dicen lo mismo, uno de lo que va a pasar y otro
+de lo que pasó, y repetirlo en dos líneas no le añade nada al niño.
+
+**Mientras una ejecución esté en curso, este número NO SHALL mostrarse.** Durante
+el recorrido el niño no construye, y un número del lienzo que puede cambiar bajo
+una ejecución que no gobierna se contradice a sí mismo en pantalla.
+
+**Este requisito es independiente del que enseña el paso en curso.** Enseñar lo
+que cuesta el programa **antes** de ejecutarlo es una elección pedagógica que
+puede cambiar; retirarla NO SHALL alterar lo que se ve durante la ejecución.
+
+#### Scenario: Se encadena un bloque más al programa
+
+- **WHEN** el niño encadena un bloque al programa que ya tiene en el lienzo
+- **THEN** el coste que se muestra pasa a ser el del programa nuevo, sin ejecutar nada
+- **AND** se sigue viendo cuántos pasos cuesta la mejor solución del nivel
+
+#### Scenario: Se quita un bloque del programa
+
+- **WHEN** el niño quita del lienzo un bloque que formaba parte del programa
+- **THEN** el coste que se muestra pasa a ser el del programa que queda
+
+#### Scenario: El lienzo está vacío
+
+- **WHEN** no hay ningún bloque en el lienzo
+- **THEN** no se muestra ningún coste
+
+#### Scenario: El programa del lienzo no se puede leer
+
+- **WHEN** el lienzo tiene algo que el sistema no sabe leer como programa
+- **THEN** no se muestra ningún coste
+
+#### Scenario: El lienzo tiene varias secuencias sueltas
+
+- **WHEN** el lienzo tiene más de una secuencia suelta
+- **THEN** el coste que se muestra es el de la secuencia que se ejecutaría
+- **AND** se avisa de que hay bloques sueltos y de que sólo se ejecutará una
+
+#### Scenario: Hay una ejecución en curso
+
+- **WHEN** el personaje está recorriendo el programa
+- **THEN** no se muestra el coste del lienzo
+
+#### Scenario: Termina una ejecución con el lienzo lleno de secuencias sueltas
+
+- **WHEN** termina la ejecución de un lienzo que tiene más de una secuencia suelta
+- **THEN** el coste del lienzo se ve otra vez
+- **AND** el aviso de los bloques sueltos aparece una sola vez, el del resultado
+
+### Requirement: El paso en curso se ve mientras se ejecuta
+
+Mientras una ejecución está en curso, el sistema SHALL mostrar **por qué paso va
+el recorrido** y **de cuántos consta**, de modo que se sepa cuánto lleva y cuánto
+le queda sin contar los movimientos a ojo. Ese número SHALL avanzar con el
+personaje, paso a paso.
+
+Los dos números SHALL salir **del programa que se está ejecutando** —el que se
+leyó al pedir la ejecución—, y NO SHALL salir de lo que haya en el lienzo en ese
+momento: **modificar el lienzo con el recorrido en marcha NO SHALL cambiar el
+contador**. Lo que se está ejecutando no cambia a mitad de camino, y un contador
+que sí cambiara le enseñaría al niño un recorrido que no es el que está viendo.
+
+El total SHALL ser **el mismo recuento** que se le enseña al terminar, contado de
+la misma manera: los pasos **ordenados**, y no los que la ejecución consiguió dar.
+
+Al terminar el recorrido, este contador SHALL dejar de mostrarse, y su sitio lo
+ocupa el resultado. Al devolver al personaje a la salida durante una ejecución,
+SHALL dejar de mostrarse también.
+
+#### Scenario: Se ejecuta un programa de varios pasos
+
+- **WHEN** el personaje está recorriendo un programa
+- **THEN** se ve por qué paso del recorrido va y de cuántos consta
+- **AND** ese número avanza con el personaje, paso a paso
+
+#### Scenario: Se mueve un bloque con el recorrido en marcha
+
+- **WHEN** el niño cambia los bloques del lienzo mientras el personaje recorre el programa
+- **THEN** el contador del recorrido sigue diciendo lo mismo que decía
+
+#### Scenario: Un avance imposible también cuenta
+
+- **WHEN** durante la ejecución le toca avanzar hacia un muro, un hueco o fuera del tablero
+- **THEN** el contador avanza igualmente, porque los pasos que cuenta son los ordenados
+
+#### Scenario: Termina el recorrido
+
+- **WHEN** el personaje termina de recorrer el programa
+- **THEN** deja de verse el contador del recorrido
+- **AND** se ve el resultado con lo que costó y lo que costaba la mejor solución
+
+#### Scenario: Se devuelve al personaje a la salida a mitad del recorrido
+
+- **WHEN** se pide devolver al personaje a la salida con una ejecución en curso
+- **THEN** deja de verse el contador del recorrido
+
+#### Scenario: El total del contador y el recuento del resultado dicen lo mismo
+
+- **WHEN** se ejecuta un programa y se compara el total que el contador anunciaba con el recuento que se muestra al terminar
+- **THEN** los dos números coinciden
