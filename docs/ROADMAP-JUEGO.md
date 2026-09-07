@@ -95,6 +95,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ✅ |
 | **J5** | El intérprete: ejecutar el programa, animar al personaje y detectar si llegó a la meta | **Un nivel se resuelve de principio a fin, sin backend** | ✅ |
 | **J6** | Recuento de pasos y pantalla de resultado | Al terminar dice cuántos pasos usó y cuántos eran óptimos | ✅ |
+| J6.1 | **El contador, en vivo**: mientras construye y mientras se ejecuta | El niño ve lo que cuesta su programa sin contar los pasos a ojo | ⬜ |
 | **J7** | **Sembrar el mundo 1** — partido en cuatro, uno por nivel más el aspecto | Los tres niveles se juegan leyendo su definición de la base, y el mundo se ve como debe verse | ⬜ |
 | J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra | Se juega el nivel 1 leyendo su fila, no el objeto escrito a mano del J2 | ⬜ |
 | J7.2 | Nivel 2, igual | Se juega el nivel 2 desde la base | ⬜ |
@@ -240,6 +241,33 @@ existe todavía.
 repeticiones sean **números presentes en el programa**. Es lo que permite contar
 los pasos sin simular el juego. Está explicado en el contrato §3 y contado con un
 ejemplo en su §4.4.
+
+### El recuento se ve mientras se juega, no sólo al final
+
+**Decidido por el usuario el 7-sep-2026, al ver el J6 terminado.** El J6 enseña
+el recuento **al terminar**, y su propuesta dejó fuera el recuento en vivo sin
+consultarlo. El criterio del usuario: el niño tiene que poder ver sus pasos **sin
+contarlos a mano**, y esperar al final de la animación para saber el número no es
+directo. De ahí el **J6.1**.
+
+Son **dos piezas, y se piden las dos**:
+
+- **Mientras construye**: lo que cuesta el programa que hay en el lienzo, contra
+  el óptimo del nivel, actualizándose al arrastrar. Sale de `countSteps`, que ya
+  existe y no ejecuta nada. Es la lección de eficiencia sin tener que ejecutar.
+- **Mientras se ejecuta**: por qué paso va el recorrido, subiendo con el
+  personaje. Sale del índice que la escena ya lleva.
+
+**Y la primera tiene que poder retirarse sin tocar la segunda.** Lo pidió el
+usuario en la misma decisión: enseñar el coste **antes** de ejecutar es una
+elección pedagógica, y **puede cambiar si la profesora lo dicta** — en ese caso
+se queda sólo el contador de la ejecución. Así que las dos piezas se montan
+independientes: quitar la de construcción tiene que ser borrar una pieza, no
+rehacer la barra. Si al implementarlas se enredan, está mal montado.
+
+**Lo que NO se contempla** es la tercera combinación —el coste al construir sin
+contador durante la ejecución—: el usuario la descartó por poco práctica. No se
+recupera sin volver a preguntárselo.
 
 ### El editor va al lado del juego, y eso es del J8
 
