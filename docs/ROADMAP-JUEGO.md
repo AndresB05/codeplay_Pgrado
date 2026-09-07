@@ -95,7 +95,8 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ✅ |
 | **J5** | El intérprete: ejecutar el programa, animar al personaje y detectar si llegó a la meta | **Un nivel se resuelve de principio a fin, sin backend** | ✅ |
 | **J6** | Recuento de pasos y pantalla de resultado | Al terminar dice cuántos pasos usó y cuántos eran óptimos | ✅ |
-| J6.1 | **El contador, en vivo**: mientras construye y mientras se ejecuta | El niño ve lo que cuesta su programa sin contar los pasos a ojo | ✅ |
+| J6.1 | **El contador, en vivo**: mientras construye y mientras se ejecuta | ~~El niño ve lo que cuesta su programa sin contar los pasos a ojo~~ — **revertido a medias por el J6.2** | ✅ |
+| J6.2 | **Quitar el coste al construir** y llevar el contador a la pantalla del juego | El niño ve subir sus pasos en la esquina, y nada le presiona antes de jugar | ⬜ |
 | **J7** | **Sembrar el mundo 1** — partido en cuatro, uno por nivel más el aspecto | Los tres niveles se juegan leyendo su definición de la base, y el mundo se ve como debe verse | ⬜ |
 | J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra | Se juega el nivel 1 leyendo su fila, no el objeto escrito a mano del J2 | ⬜ |
 | J7.2 | Nivel 2, igual | Se juega el nivel 2 desde la base | ⬜ |
@@ -268,6 +269,41 @@ rehacer la barra. Si al implementarlas se enredan, está mal montado.
 **Lo que NO se contempla** es la tercera combinación —el coste al construir sin
 contador durante la ejecución—: el usuario la descartó por poco práctica. No se
 recupera sin volver a preguntárselo.
+
+### Y el coste al construir se retira: el J6.2
+
+**Decidido por el usuario el 7-sep-2026, con el J6.1 ya terminado y delante.**
+La pieza de «mientras construye» **se quita**, y con ella el óptimo del nivel
+antes de jugar. Su motivo, y manda sobre todo lo de arriba:
+
+> el niño se va a matar la cabeza pensando cómo llegar al final con sólo 10
+> pasos en vez de llegar al final
+
+Es un juicio de producto, no de implementación: enseñar el número a batir
+**antes** de haber resuelto nada convierte el nivel en un problema de
+optimización cuando todavía es un problema de llegar. La eficiencia se aprende
+**después** —el resultado del J6 la enseña al terminar, y ahí no presiona—, y la
+XP ya premia mejorar en un segundo intento.
+
+**Lo que se va, y es exactamente lo que `design.md` del J6.1 §4 dejó listado**
+—la pieza se montó separada para esto—: el requisito del coste al construir,
+`programCost` con su bloque de tests, y en `GameScene.tsx` el `useMemo`, la línea
+del coste y el aviso de sueltos **en presente**. No se toca nada de lo que se
+queda.
+
+**Lo que se queda y cambia de sitio: el contador de la ejecución.** No va en la
+barra de texto sino **dentro de la pantalla del juego, arriba a la derecha**,
+subiendo un número con cada paso que da el personaje. Y va **solo, sin el
+óptimo al lado**: enseñar «7 de 10» mientras corre es la misma presión que se
+acaba de retirar, con otra letra.
+
+**Ojo al montarlo**: ese contador NO puede vivir dentro del `<Canvas>`, donde los
+elementos son objetos de `three` y no etiquetas de HTML. Va superpuesto sobre el
+lienzo, que es un detalle de maquetación y no de escena.
+
+**Lo que NO cambia**: el resultado del J6 al terminar, con los pasos usados
+contra los de la mejor solución. Ahí el número es una lección y no una
+exigencia, y el usuario no lo ha discutido.
 
 ### El editor va al lado del juego, y eso es del J8
 
