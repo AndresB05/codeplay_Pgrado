@@ -293,6 +293,16 @@ salta ningún error en ninguna parte: sólo queda un nivel que se siente injusto
 Quien siembre un nivel resuelve antes su puzle a mano y comprueba que el número
 que escribe es el de su mejor solución.
 
+**Y el fallo de enfrente se ve jugando: si un niño lo bate, está mal sembrado.**
+Un número escrito **por encima** del óptimo real no deja a nadie fuera de nada
+—el 100 se alcanza de sobra—, así que no se siente injusto y por eso pasa
+desapercibido. La señal es que alguien resuelva el nivel con menos pasos de los
+apuntados: eso no puede ocurrir con un número correcto. **El juego no lo trata
+como un error ni se lo dice al niño** —su solución es buena y no tiene la culpa
+del número—, así que la única forma de cazarlo sigue siendo la del párrafo de
+arriba, resolviendo el puzle antes de sembrarlo. Anotado el 7-sep-2026 por el
+J6, que es el primero que tiene que decidir qué pinta la pantalla en ese caso.
+
 Y no rompe la regla de §2, aunque lo parezca: **un número no es una solución.**
 Decir que la mejor ruta son diez pasos no dice cuáles son esos diez. El niño lo
 ve en pantalla al terminar, así que tenerlo en un `config` público no revela nada

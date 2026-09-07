@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readProgram, runProgram, type Order } from './interpreter';
+import { countSteps, readProgram, runProgram, type Order } from './interpreter';
 import type { LevelConfig } from './level';
 
 /*
@@ -73,20 +73,37 @@ const PROGRAM_A = {
   },
 };
 
+/*
+ * Un paso al este desde la salida deja el muro de la fila 3 justo delante, así
+ * que el `avanzar 4` no da ninguna de sus cuatro casillas. Ocho pasos ordenados
+ * y sólo cuatro conseguidos: es el programa con el que se ve que las dos cuentas
+ * hablan de lo ordenado.
+ */
+const BLOCKED_PROGRAM: Order[] = [
+  { kind: 'turn', side: 'right' },
+  { kind: 'advance', steps: 1 },
+  { kind: 'turn', side: 'left' },
+  { kind: 'advance', steps: 4 },
+  { kind: 'turn', side: 'right' },
+];
+
 const stack = (type: string, y: number, x = 0) => ({ type, x, y });
 
 describe('readProgram', () => {
   it('lee el PROGRAMA A del contrato bajando por la cadena de bloques', () => {
-    expect(readProgram(PROGRAM_A)).toEqual([
-      { kind: 'turn', side: 'right' },
-      { kind: 'advance', steps: 4 },
-      { kind: 'turn', side: 'left' },
-      { kind: 'advance', steps: 4 },
-    ]);
+    expect(readProgram(PROGRAM_A)).toEqual({
+      orders: [
+        { kind: 'turn', side: 'right' },
+        { kind: 'advance', steps: 4 },
+        { kind: 'turn', side: 'left' },
+        { kind: 'advance', steps: 4 },
+      ],
+      rootCount: 1,
+    });
   });
 
   it('un lienzo vacío es un programa sin órdenes, no un programa roto', () => {
-    expect(readProgram({})).toEqual([]);
+    expect(readProgram({})).toEqual({ orders: [], rootCount: 0 });
   });
 
   it('con varios montones sueltos ejecuta el que empieza más arriba', () => {
@@ -97,7 +114,10 @@ describe('readProgram', () => {
       },
     };
 
-    expect(readProgram(workspace)).toEqual([{ kind: 'turn', side: 'left' }]);
+    expect(readProgram(workspace)).toEqual({
+      orders: [{ kind: 'turn', side: 'left' }],
+      rootCount: 2,
+    });
   });
 
   it('a la misma altura ejecuta el de más a la izquierda', () => {
@@ -108,7 +128,30 @@ describe('readProgram', () => {
       },
     };
 
-    expect(readProgram(workspace)).toEqual([{ kind: 'turn', side: 'left' }]);
+    expect(readProgram(workspace)).toEqual({
+      orders: [{ kind: 'turn', side: 'left' }],
+      rootCount: 2,
+    });
+  });
+
+  /*
+   * El montón que NO se ejecuta se cuenta igual, y ése es el punto: la escena no
+   * puede avisar de que sobraron bloques con un número que sólo mira lo que sí
+   * se ejecutó.
+   */
+  it('cuenta los montones que no ejecuta, que es de lo que hay que avisar', () => {
+    const workspace = {
+      blocks: {
+        languageVersion: 0,
+        blocks: [
+          stack('codeplay_turn_left', 10),
+          stack('codeplay_turn_right', 80),
+          stack('codeplay_turn_right', 150),
+        ],
+      },
+    };
+
+    expect(readProgram(workspace)?.rootCount).toBe(3);
   });
 
   it('rechaza el programa entero si encuentra un bloque que no entiende', () => {
@@ -141,8 +184,7 @@ describe('readProgram', () => {
 
 describe('runProgram', () => {
   it('resuelve el tablero del contrato con el PROGRAMA A', () => {
-    const orders = readProgram(PROGRAM_A);
-    const run = runProgram(board, orders!);
+    const run = runProgram(board, readProgram(PROGRAM_A)!.orders);
 
     expect(run.success).toBe(true);
     expect(run.steps[run.steps.length - 1].pose.cell).toEqual({ row: 0, column: 4 });
@@ -150,28 +192,19 @@ describe('runProgram', () => {
   });
 
   /*
-   * La comprobación de que la forma del recorrido no rompe el recuento que el J6
-   * hará LEYENDO el programa: los diez pasos que el contrato §4.4 cuenta para el
-   * PROGRAMA A son las diez entradas que la ejecución produce. Contar aquí sería
-   * escribir el J6; comprobar que los dos números pueden coincidir, no.
+   * La forma del recorrido no rompe el recuento que se hace LEYENDO: los diez
+   * pasos que el contrato §4.4 cuenta para el PROGRAMA A son las diez entradas
+   * que la ejecución produce, y son además los `optimalSteps` del tablero. Que
+   * los dos números coincidan de verdad lo fija `countSteps`, más abajo.
    */
   it('produce tantas entradas como pasos cuenta el contrato', () => {
-    const run = runProgram(board, readProgram(PROGRAM_A)!);
+    const run = runProgram(board, readProgram(PROGRAM_A)!.orders);
 
     expect(run.steps).toHaveLength(board.optimalSteps);
   });
 
   it('cuenta las casillas que no pudo dar y sigue con la orden siguiente', () => {
-    // Un paso al este desde la salida deja el muro de la fila 3 justo delante.
-    const orders: Order[] = [
-      { kind: 'turn', side: 'right' },
-      { kind: 'advance', steps: 1 },
-      { kind: 'turn', side: 'left' },
-      { kind: 'advance', steps: 4 },
-      { kind: 'turn', side: 'right' },
-    ];
-
-    const run = runProgram(board, orders);
+    const run = runProgram(board, BLOCKED_PROGRAM);
 
     expect(run.steps).toHaveLength(8);
     expect(run.steps.slice(3, 7).map((step) => step.blockedBy)).toEqual([
@@ -194,7 +227,7 @@ describe('runProgram', () => {
 
   it('pisar la meta cuenta aunque el programa siga y acabe en otra casilla', () => {
     const orders: Order[] = [
-      ...readProgram(PROGRAM_A)!,
+      ...readProgram(PROGRAM_A)!.orders,
       { kind: 'turn', side: 'right' },
       { kind: 'turn', side: 'right' },
       { kind: 'advance', steps: 1 },
@@ -224,5 +257,58 @@ describe('runProgram', () => {
 
     expect(run.steps[1].blockedBy).toBe('edge');
     expect(run.steps[1].pose.cell).toEqual(board.start.cell);
+  });
+});
+
+describe('countSteps', () => {
+  it('cuenta el PROGRAMA A del contrato en diez pasos', () => {
+    expect(countSteps(readProgram(PROGRAM_A)!.orders)).toBe(10);
+  });
+
+  it('un giro cuesta un paso', () => {
+    expect(countSteps([{ kind: 'turn', side: 'left' }])).toBe(1);
+  });
+
+  it('avanzar N cuesta N pasos', () => {
+    expect(countSteps([{ kind: 'advance', steps: 4 }])).toBe(4);
+  });
+
+  it('un programa sin órdenes cuesta cero pasos', () => {
+    expect(countSteps([])).toBe(0);
+  });
+
+  it('cuenta sin tablero: el mismo programa cuesta lo mismo lo pise donde lo pise', () => {
+    const otherBoard: LevelConfig = {
+      tiles: [['floor', 'floor']],
+      start: { cell: { row: 0, column: 0 }, facing: 'east' },
+      goal: { row: 0, column: 1 },
+      optimalSteps: 1,
+    };
+
+    const orders = readProgram(PROGRAM_A)!.orders;
+
+    expect(countSteps(orders)).toBe(10);
+    expect(runProgram(otherBoard, orders).steps).toHaveLength(10);
+  });
+
+  /*
+   * LOS DOS TESTS DE ABAJO NO PUEDEN FALLAR HOY, y por eso están.
+   *
+   * `runProgram` empuja una entrada por giro y N por `avanzar N`, que es la
+   * misma tabla que suma `countSteps`, así que las dos cuentas coinciden por
+   * construcción. Lo que fijan es esa construcción: se rompen el día que alguien
+   * haga que chocar DETENGA el programa —que es lo natural al escribir un
+   * intérprete, y por eso el módulo ya lleva un comentario avisando—. Sin ellos,
+   * el síntoma aparecería en el J10 como un número distinto en la pantalla del
+   * niño y en la puntuación del servidor, sin nada que apunte a la causa.
+   */
+  it('cuenta lo mismo que pasos recorre la ejecución del PROGRAMA A', () => {
+    const orders = readProgram(PROGRAM_A)!.orders;
+
+    expect(countSteps(orders)).toBe(runProgram(board, orders).steps.length);
+  });
+
+  it('cuenta lo mismo que la ejecución aunque el programa choque', () => {
+    expect(countSteps(BLOCKED_PROGRAM)).toBe(runProgram(board, BLOCKED_PROGRAM).steps.length);
   });
 });

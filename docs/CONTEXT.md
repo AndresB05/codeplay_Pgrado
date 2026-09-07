@@ -1404,17 +1404,19 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
   propio hook, como `worlds.service.ts` + `useWorlds()`. La frontera de §4.3
   sigue en pie.
 
-### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques y su ejecución (J1 a J5)
+### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques, su ejecución y el resultado (J1 a J6)
 
 **Aplicado con `esqueleto-del-juego` (J1), `rejilla-y-personaje` (J2),
-`bloques-del-programa` (J4) y `ejecutar-el-programa` (J5), más el J3, que sólo
-fijó el formato por escrito.** Lo que hay es una escena 3D dentro del panel del
-niño, cargada en diferido, con **un tablero leído de una configuración escrita a
-mano y un personaje que se mueve por casillas**, al lado **un editor de bloques
-que produce el programa en JSON**, y **el intérprete que ejecuta ese programa,
-anima el recorrido y dice si se llegó a la meta**. Con eso, **un nivel se
-resuelve de principio a fin**. **Sin backend**: la fase A no toca Supabase ni
-una vez, y el recuento de pasos y la pantalla de resultado son el J6.
+`bloques-del-programa` (J4), `ejecutar-el-programa` (J5) y
+`recuento-y-resultado` (J6), más el J3, que sólo fijó el formato por escrito.**
+Lo que hay es una escena 3D dentro del panel del niño, cargada en diferido, con
+**un tablero leído de una configuración escrita a mano y un personaje que se
+mueve por casillas**, al lado **un editor de bloques que produce el programa en
+JSON**, **el intérprete que ejecuta ese programa, anima el recorrido y dice si se
+llegó a la meta**, y **una barra que al terminar dice cuántos pasos costó y
+cuántos cuesta la mejor solución**. Con eso, **un nivel se juega y se puntúa a la
+vista**. **Sin backend**: la fase A no toca Supabase ni una vez, y quien convierta
+esos pasos en XP es el servidor, en el J10.
 
 | Archivo | Qué es |
 | --- | --- |
@@ -1422,12 +1424,12 @@ una vez, y el recuento de pasos y la pantalla de resultado son el J6.
 | `apps/web/src/game/debugLevel.ts` | **Puro.** La rejilla de pega: 5×5, cuatro muros, un hueco, salida y meta. **No es un puzle diseñado** — los nueve los diseña el usuario y se siembran en el J7 |
 | `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Los reutiliza el intérprete**: nació para eso |
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
-| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero y el personaje, la barra con «Ejecutar» y «Reiniciar», y la animación del recorrido con `useFrame`. Importa `three` y `@react-three/fiber` |
+| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero y el personaje, la animación del recorrido con `useFrame`, y la barra con «Ejecutar», «Reiniciar» y **el resultado con el recuento contra `optimalSteps`**. Importa `three` y `@react-three/fiber` |
 | `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Recibe el programa y lo baja; **sólo el tipo** del sobre cruza |
 | `apps/web/src/game/program.ts` | **Puro.** El sobre del contrato §4.3: `Program`, `PROGRAM_FORMAT_VERSION` y las funciones `sealProgram` y `openProgram`. **Sin Blockly** — lo reutilizan el J8 al abrir el `starterProgram` y el J9 al mandar el intento |
 | `apps/web/src/game/program.test.ts` | El sobre: que se cierre con la versión del contrato y que una desconocida se rechace entera (§7) |
 | `apps/web/src/game/blockTypes.ts` | **Nuevo en el J5. Puro.** Cómo se llaman los tres bloques y su campo en el JSON. Vive aparte porque `blocks.ts` importa Blockly y **el intérprete no puede importarlo** |
-| `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` y devuelve órdenes —o `null` si no entiende algo—, y `runProgram` las pliega sobre la pose inicial con `turn` y `advance`. Sin Blockly y sin `three` |
+| `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` y devuelve `{ orders, rootCount }` —o `null` si no entiende algo—, `countSteps` suma los pasos **leyendo** las órdenes (§4.4) y `runProgram` las pliega sobre la pose inicial con `turn` y `advance`. Sin Blockly y sin `three` |
 | `apps/web/src/game/interpreter.test.ts` | El recorrido y la meta, con el **PROGRAMA A del contrato §4.3 pegado tal cual** como entrada |
 | `apps/web/src/game/blocks.ts` | Los tres bloques —`avanzar N`, `girar a la izquierda`, `girar a la derecha`—, en español, y la caja de herramientas. Importa `blockly/core` |
 | `apps/web/src/game/blocks.test.ts` | El **viaje de ida y vuelta** contra un espacio de trabajo sin interfaz, que es lo único que valida la decisión del J3 |
@@ -1444,9 +1446,11 @@ lo que empiece por ese prefijo en `ROUTES.WORLDS` **antes** del `switch`, así q
 una pantalla nueva ahí debajo no llega a su caso: sale la de mundos, sin error
 que lo delate.
 
-**El banco de pruebas no es de usar y tirar.** El J4, el J5 y el J6 se ven
+**El banco de pruebas no es de usar y tirar.** El J4, el J5 y el J6 se vieron
 funcionar ahí, porque la pantalla de nivel real no llega hasta el J8 (paso 20).
-Cuando exista, esta pantalla se revisa.
+Cuando exista, esta pantalla se revisa. **El J6 no tuvo que tocarla**, y era la
+comprobación de que la barra está en el sitio bueno: el resultado vive dentro del
+juego, bajo la frontera diferida, para que el J8 lo herede en vez de reescribirlo.
 
 **Las fronteras del bundle son DOS desde el J4, y la regla es una.** `Blockly no
 es 3D y no cuelga de la frontera del motor`: tiene la suya,
@@ -1654,11 +1658,12 @@ llegue de la base o de un intento guardado, un `STEPS: 50` **se ejecutaría** co
 cincuenta pasos y el editor, al cargarlo, enseñaría diez. Quien valide en la
 frontera decide si acota o rechaza.
 
-**Encargo para el J6, que no se ve venir solo:** esa segunda regla **falla en
-silencio**. Un bloque suelto arriba se ejecuta en lugar del programa, el
-personaje da un giro y se para, y el niño **no puede distinguir «mi programa está
-mal» de «mi programa no se ejecutó»**. La pantalla de resultado es el sitio
-natural para «te sobraron bloques sueltos».
+**El encargo que el J5 dejó para el J6 está CERRADO**, y es el primero de §2.9
+que se cierra. Decía que esa segunda regla **falla en silencio**: un bloque
+suelto arriba se ejecuta en lugar del programa, el personaje da un giro y se
+para, y el niño no puede distinguir «mi programa está mal» de «mi programa no se
+ejecutó». Lo cerró el J6 sacando el número de montones por `readProgram` y
+avisando en la barra; el detalle está más abajo.
 
 **`@react-spring/three` no entró**, aunque el roadmap se la asignaba a este paso.
 Lo que hacía falta —posición entre dos casillas, ángulo **por el lado corto** y
@@ -1723,6 +1728,142 @@ de Blockly como su arrastre viven de ellos, así que colocar bloques desde la
 herramienta pide despacharlos a mano —`pointerdown`, `pointermove`, `pointerup`—.
 Los botones de HTML sí responden. Y `window.Blockly` existe en la página pero
 **sólo trae `Msg`**: no hay API por la que cargar un programa de un golpe.
+
+**Las tres últimas frases son de fiar a medias, y el J6 las midió de nuevo.** Ver
+el bloque de verificación del J6, abajo: los botones de HTML **no** respondieron
+al clic del panel, y sí hay forma de cargar un programa de un golpe.
+
+**Lo que el J6 añadió: el recuento y la pantalla de resultado.**
+
+**El recuento es una función pura sobre las órdenes, y no la longitud del
+recorrido.** `countSteps(orders)` suma `avanzar N` como N y `girar` como 1, sin
+tablero y sin ejecutar nada, que es como el contrato §4.4 define el recuento. La
+alternativa —`run.steps.length`, que ya estaba ahí y da el mismo número— se
+descartó a propósito: **el servidor puntuará leyendo el programa (J10)**, no
+ejecutándolo, así que sacar de la ejecución el número que se le enseña al niño lo
+ataría a un motor que el servidor no corre. La pantalla enseña la misma cuenta
+que puntúa, no una paralela que se le parece.
+
+**Y hay dos tests que hoy NO PUEDEN FALLAR, y por eso están**, en el bloque
+`countSteps` de `interpreter.test.ts`: `countSteps(orders)` y
+`runProgram(...).steps.length` coinciden por construcción. Lo que fijan es esa
+construcción — **se rompen el día que alguien haga que chocar detenga el
+programa**, que es lo natural al escribir un intérprete. Comprobado rompiéndolo,
+no supuesto: metiendo un `return` al chocar caen tres tests, dos de ellos los del
+recuento. El del PROGRAMA A no cae, porque ese programa nunca choca; el que tiene
+dientes de verdad es el del muro.
+
+**`readProgram` devuelve `{ orders, rootCount }`, y ahí murió el fallo
+silencioso.** El número de montones **ya estaba** en `readRoots` y lo tiraba la
+firma; sacarlo es lo que permite avisar de los bloques sueltos. Contarlos fuera
+habría obligado a repetir `readRoots`, que además de contar valida la forma.
+
+**El estado de la escena es un valor discriminado, no tres banderas.** Un intento
+es «ilegible», «vacío» o «ejecutado» —con su recorrido, su recuento y sus
+montones—, y son excluyentes. Con banderas paralelas la barra se derivaría de
+combinaciones que nadie ha comprobado que no ocurran.
+
+**El lienzo vacío se distingue por las ÓRDENES, no por los pasos.** Hoy los dos
+criterios coinciden —toda orden cuesta al menos un paso—, pero eso es una
+invariante de `runProgram` que nada declara. Antes del J6, un lienzo sin bloques
+llegaba a `runProgram(config, [])`, salía con `success: false` y la barra decía
+«No llegaste a la meta»: al niño se le contaba que su programa era malo cuando lo
+que pasaba es que no había programa.
+
+**«Perfecto» es llegar sin gastar de más, y gastar de MENOS también lo es.** La
+condición es `pasos <= optimalSteps`, no `===`. Batir el número significa que el
+nivel está **mal sembrado** —el contrato §4.2 ya avisa de que no lo comprueba
+nadie, y el J6 le añadió el caso de enfrente—, y eso lo caza quien siembra el
+nivel resolviendo su puzle, no el niño que lo juega. Lleva texto propio porque el
+de los pasos justos afirma una igualdad que ahí sería falsa. **Ese texto no se ha
+visto nunca**: `debugLevel.optimalSteps` vale 10 y 10 es el óptimo real de ese
+tablero, así que en el laboratorio no hay forma de llegar con menos.
+
+**El aviso de los sueltos acompaña al resultado y no lo sustituye.** El montón de
+arriba sí se ejecutó y su resultado es real; §4.3 ya se negó a rechazar el
+programa por tener bloques sueltos para no castigar el olvido en una esquina. Y
+avisa por número de **montones**, no de bloques: recorrer lo que no se ejecuta
+para poder decir un número más grande no compra nada.
+
+**El principal no se movió ni un byte** —625,00 kB, los mismos 221 módulos—, y lo
+que creció salió en `GameScene`: 829,26 → **830,27 kB**. Medidas en §4.8.
+
+**Cuidado con la marca que se elige para probar la frontera: `countSteps` no
+sirve.** Sale **cero** en el trozo principal y también en el de `GameScene`,
+porque el minificador renombra los nombres locales, así que un cero ahí no prueba
+nada. Las marcas que sobreviven son `rootCount` —es propiedad de un objeto: 4 en
+`GameScene`, 0 en el principal— y los textos de la barra, que no se pueden
+renombrar. Es el mismo género de trampa que `grep -c` frente a `grep -o`.
+
+**Verificado en el navegador, con el detalle de qué no se pudo ver:**
+
+- **PROGRAMA A**: «¡Perfecto! Llegaste a la meta con 10 pasos, justo lo que cuesta
+  la mejor solución.»
+- **Llegar gastando de más**: el programa que pisa la meta y se va —13 pasos—
+  dice «¡Llegaste a la meta! Usaste 13 pasos y la mejor solución cuesta 10
+  pasos.» La regla de §4.4 sigue en pie con el recuento delante.
+- **No llegar**: `avanzar 2` dice «No llegaste a la meta. Usaste 2 pasos y la
+  mejor solución cuesta 10 pasos.»
+- **Lienzo vacío**: «No hay bloques que ejecutar. Arrastra alguno al lienzo.», sin
+  recuento y sin un solo error en consola.
+- **Dos montones sueltos**, que es el encargo del J5: un giro olvidado arriba y el
+  PROGRAMA A debajo dan «No llegaste a la meta. Usaste **1 paso**...» **más** el
+  aviso «Te sobraron bloques sueltos: sólo se ejecutó el montón de más arriba.»
+  De propina, el singular: las dos cantidades pasan por un ayudante que escribe
+  «1 paso» y no «1 pasos».
+- **Durante la ejecución** sólo se ve «Ejecutando el programa…», sin resultado ni
+  recuento, y «Ejecutar» está inhabilitado. **«Reiniciar»** devuelve la barra al
+  texto inicial.
+- **Lo que NO se pudo provocar**: el caso de pulsar «Ejecutar» **antes de que el
+  editor publique** su primer programa. Intentado dos veces con sondeo cada 5 ms
+  tras recargar; en desarrollo el editor publica antes de que el botón sea
+  pulsable. Es el mismo camino que el lienzo vacío —`{}`— y queda **sin observar
+  por separado**.
+
+**Y cómo se verifica esto, corregido dos veces respecto de lo que el J5 dejó
+escrito arriba. Las dos correcciones ahorran una tarde:**
+
+1. **Un panel oculto ya no obliga a traerlo al frente: basta emular un viewport
+   con `resize_window`.** Ésa es la salida, y hay que contar aparte cómo NO se
+   diagnostica, porque el camino equivocado cuesta la tarde que esta nota quiere
+   ahorrar.
+
+   **Contar frames con `requestAnimationFrame` NO sirve para saber si la escena
+   avanza.** Con el panel oculto y sin emular nada, la página da **60 fps
+   sostenidos** —31 frames en 500 ms, 181 en 3 segundos— y `document.hidden`
+   sigue en **`false`**, y **la escena está congelada igualmente**: un PROGRAMA A
+   de 3,4 segundos dejado correr 8,6 seguía diciendo «Ejecutando el programa…».
+   Lo que el panel oculto suspende **no es el `requestAnimationFrame` de la
+   página**, que corre, sino **el bucle de render de `@react-three/fiber`**, que
+   es el que mueve `useFrame` y por tanto el recorrido. Quien mida frames verá
+   sesenta, concluirá que hay animación y se pondrá a buscar el fallo en su
+   código con la escena parada.
+
+   **La señal fiable es que el recorrido progrese** —que la barra deje de decir
+   «Ejecutando»—, o `tabs_context`, que dice en una línea si el panel está a la
+   vista. Y el remedio es `resize_window` con un tamaño concreto sobre esa
+   pestaña: en cuanto se llama, el recorrido termina y sale el resultado, con el
+   panel igual de oculto.
+
+   **Una medición discrepante, para que no se lea como el comportamiento.** En la
+   máquina del J6, sobre la pantalla de login y antes de emular el viewport,
+   salieron **0 frames en 500 ms** con `document.hidden` en **`true`**; en la de
+   la sesión que revisó, sobre el laboratorio, 60 fps con `hidden` en `false`.
+   Vale lo segundo como comportamiento —es además lo que el J5 midió, y el motivo
+   por el que la página no puede enterarse sola—; lo primero queda anotado como
+   lo que es, una lectura que no se ha vuelto a reproducir.
+2. **Los botones de HTML NO respondieron al clic del panel, y sí a un `.click()`
+   de JavaScript.** El párrafo de arriba dice lo contrario. Medido: el clic del
+   panel sobre «Ejecutar» —un `<button>` con `onClick` de React— no disparó nada
+   dos veces seguidas, y el mismo botón con `.click()` desde `javascript_tool`
+   funcionó a la primera. Lo mismo con el botón «Niño» de «Sin login».
+3. **Y sí hay forma de cargar un programa de un golpe**, aunque `window.Blockly`
+   sólo traiga `Msg`: en desarrollo se puede importar desde la página el mismo
+   módulo que importó la aplicación —`/node_modules/.vite/deps/blockly_core.js`,
+   con su `?v=`, que Vite deduplica por URL— y desde ahí salen
+   `getMainWorkspace()` y `serialization.workspaces.load`. Cargar así **dispara
+   el escuchador del editor**, y el sobre de la pantalla se actualiza solo. Es lo
+   que hizo innecesario despachar arrastres a mano en todo el J6.
 
 ---
 
@@ -2140,17 +2281,25 @@ devuelve `/login` con la contraseña equivocada.
 `.eslintrc.cjs` usa la configuración heredada. Migrar a ESLint 9 con
 configuración plana es una tarea pendiente sin urgencia.
 
-### 4.8 Bundle: 625 kB de aplicación, 644 kB de editor y 829 kB de escena
+### 4.8 Bundle: 625 kB de aplicación, 644 kB de editor y 830 kB de escena
 
 `npm run build` avisa de que los chunks superan los 500 kB. Sin urgencia, pero
 conviene no perderlo de vista ahora que el juego crece. Se resolvería con
 `manualChunks` o más importaciones dinámicas por ruta.
 
-**Medido el 5-sep-2026, después del J5**: trozo principal **625,00 kB**
+**Medido el 7-sep-2026, después del J6**: trozo principal **625,00 kB**
 (167,90 gzip), trozo `BlockEditor` **644,43 kB** (172,75), trozo `GameScene`
-**829,26 kB** (223,90), trozo compartido `program` **0,35 kB** (0,24), **221
-módulos**. Antes del J5 eran 624,78 (167,77), 644,50 (172,77), 825,21 (222,25) y
+**830,27 kB** (224,28), trozo compartido `program` **0,35 kB** (0,24), **221
+módulos**. Antes del J6 eran los mismos salvo `GameScene`, que estaba en 829,26
+(223,90); y antes del J5, 624,78 (167,77), 644,50 (172,77), 825,21 (222,25) y
 219 módulos, sin trozo compartido.
+
+**El J6 no movió el principal ni un byte, ni los módulos.** Los +1,01 kB del
+recuento y de la barra de resultado salieron enteros en `GameScene`, que es donde
+debían. Se comprobó además con marcas que **sobreviven a la minificación** —ver
+§2.9: `countSteps` no vale, porque el minificador la renombra y da cero en los
+dos trozos—: `rootCount` sale **4** veces en `GameScene` y **0** en el principal,
+y los dos textos nuevos de la barra, **1** y **0**.
 
 **La línea de partida del juego era otra y conviene no confundirlas.** Antes del
 J1 había **un solo chunk de 623,18 kB** (166,96 gzip) y 177 módulos; el J1 lo

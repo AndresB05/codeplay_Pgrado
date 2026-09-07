@@ -2,7 +2,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { Group } from 'three';
 import { debugLevel } from './debugLevel';
-import { readProgram, runProgram, type Run, type RunStep } from './interpreter';
+import { countSteps, readProgram, runProgram, type Run, type RunStep } from './interpreter';
 import { TILE_SIZE, type Direction, type LevelConfig, type Pose } from './level';
 import { openProgram, type Program } from './program';
 
@@ -250,21 +250,70 @@ interface GameSceneProps {
   program: Program | null;
 }
 
-/** Lo que se enseña del resultado, y nada más: el recuento es del J6. */
+/*
+ * Lo que ocurrió al pulsar «Ejecutar». Un solo valor y no tres banderas sueltas:
+ * «ilegible», «vacío» y «se ejecutó» se excluyen entre sí, y con banderas
+ * paralelas la barra tendría que derivarse de combinaciones que nadie ha
+ * comprobado que no ocurran.
+ *
+ * `steps` es el recuento LEÍDO del programa (§4.4), no la longitud del recorrido.
+ */
+type Attempt =
+  | { kind: 'unreadable' }
+  | { kind: 'empty' }
+  | { kind: 'run'; run: Run; steps: number; rootCount: number };
+
+const stepsLabel = (count: number): string => (count === 1 ? '1 paso' : `${count} pasos`);
+
 const OUTCOME_MESSAGES = {
   idle: 'Coloca bloques y pulsa «Ejecutar» para ver al personaje moverse.',
   running: 'Ejecutando el programa…',
-  reached: '¡Llegaste a la meta!',
-  missed: 'No llegaste a la meta.',
+  empty: 'No hay bloques que ejecutar. Arrastra alguno al lienzo.',
   unreadable: 'Ese programa no se puede leer.',
+};
+
+/*
+ * El montón de más arriba SÍ se ejecutó y su resultado es real, así que el aviso
+ * ACOMPAÑA al resultado en vez de sustituirlo: §4.3 se negó a rechazar el
+ * programa por tener bloques sueltos para no castigar el olvido en una esquina,
+ * que es lo más frecuente en un lienzo de niño. Sin el aviso, en cambio, la
+ * regla falla en silencio y el niño no distingue «mi programa está mal» de «mi
+ * programa no se ejecutó».
+ */
+const LOOSE_BLOCKS_WARNING =
+  'Te sobraron bloques sueltos: sólo se ejecutó el montón de más arriba.';
+
+/*
+ * Gastar MENOS pasos que `optimalSteps` también es perfecto, y lleva texto
+ * propio. Significa que el número del nivel está sembrado por encima del óptimo
+ * real —el contrato §4.2 avisa de que no lo comprueba nadie—, y eso lo caza
+ * quien siembra el nivel resolviendo su puzle, no el niño que lo juega: no se le
+ * acusa de nada. El texto de los pasos justos es el que no sirve aquí, porque
+ * afirma una igualdad que en ese caso sería falsa.
+ */
+const outcomeOf = (run: Run, steps: number, optimalSteps: number): string => {
+  const best = `la mejor solución cuesta ${stepsLabel(optimalSteps)}`;
+
+  if (!run.success) {
+    return `No llegaste a la meta. Usaste ${stepsLabel(steps)} y ${best}.`;
+  }
+
+  if (steps > optimalSteps) {
+    return `¡Llegaste a la meta! Usaste ${stepsLabel(steps)} y ${best}.`;
+  }
+
+  if (steps < optimalSteps) {
+    return `¡Perfecto! Llegaste a la meta con ${stepsLabel(steps)}, menos todavía de lo que cuesta la mejor solución que teníamos apuntada.`;
+  }
+
+  return `¡Perfecto! Llegaste a la meta con ${stepsLabel(steps)}, justo lo que cuesta la mejor solución.`;
 };
 
 export const GameScene = ({ program }: GameSceneProps) => {
   const config = debugLevel;
 
-  const [run, setRun] = useState<Run | null>(null);
+  const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [index, setIndex] = useState(0);
-  const [unreadable, setUnreadable] = useState(false);
 
   /*
    * El programa se lee al pulsar, no al recibirlo: si viajara en el estado, mover
@@ -275,6 +324,7 @@ export const GameScene = ({ program }: GameSceneProps) => {
   const latest = useRef(program);
   latest.current = program;
 
+  const run = attempt !== null && attempt.kind === 'run' ? attempt.run : null;
   const step = run !== null && index < run.steps.length ? run.steps[index] : null;
   const pose = run === null || index === 0 ? config.start : run.steps[index - 1].pose;
   const isRunning = step !== null;
@@ -287,17 +337,41 @@ export const GameScene = ({ program }: GameSceneProps) => {
   const start = useCallback(() => {
     // Sin editor todavía montado no hay programa, y eso es un lienzo vacío (§4.3).
     const workspace = latest.current === null ? {} : openProgram(latest.current);
-    const orders = workspace === null ? null : readProgram(workspace);
+    const reading = workspace === null ? null : readProgram(workspace);
 
-    setUnreadable(orders === null);
     setIndex(0);
-    setRun(orders === null ? null : runProgram(config, orders));
+
+    if (reading === null) {
+      setAttempt({ kind: 'unreadable' });
+
+      return;
+    }
+
+    /*
+     * Sin ÓRDENES no hubo intento, y se mira eso y no los pasos que produjo la
+     * ejecución. Hoy los dos criterios coinciden —toda orden produce al menos
+     * un paso—, pero eso es una invariante de `runProgram` que nada declara: el
+     * día que exista un bloque que no cueste paso, un lienzo vacío volvería a
+     * confundirse con un programa que no hace nada, y eso es lo que hasta hoy
+     * pintaba «No llegaste a la meta» cuando no había nada que ejecutar.
+     */
+    if (reading.orders.length === 0) {
+      setAttempt({ kind: 'empty' });
+
+      return;
+    }
+
+    setAttempt({
+      kind: 'run',
+      run: runProgram(config, reading.orders),
+      steps: countSteps(reading.orders),
+      rootCount: reading.rootCount,
+    });
   }, [config]);
 
   const reset = useCallback(() => {
-    setRun(null);
+    setAttempt(null);
     setIndex(0);
-    setUnreadable(false);
   }, []);
 
   const advanceStep = useCallback((finished: number) => {
@@ -306,13 +380,21 @@ export const GameScene = ({ program }: GameSceneProps) => {
   }, []);
 
   let outcome = OUTCOME_MESSAGES.idle;
-  if (unreadable) {
-    outcome = OUTCOME_MESSAGES.unreadable;
-  } else if (isRunning) {
+  if (isRunning) {
     outcome = OUTCOME_MESSAGES.running;
-  } else if (run !== null) {
-    outcome = run.success ? OUTCOME_MESSAGES.reached : OUTCOME_MESSAGES.missed;
+  } else if (attempt !== null && attempt.kind === 'unreadable') {
+    outcome = OUTCOME_MESSAGES.unreadable;
+  } else if (attempt !== null && attempt.kind === 'empty') {
+    outcome = OUTCOME_MESSAGES.empty;
+  } else if (attempt !== null && attempt.kind === 'run') {
+    outcome = outcomeOf(attempt.run, attempt.steps, config.optimalSteps);
   }
+
+  // El aviso es del recorrido terminado: durante la ejecución todavía no toca.
+  const warning =
+    !isRunning && attempt !== null && attempt.kind === 'run' && attempt.rootCount > 1
+      ? LOOSE_BLOCKS_WARNING
+      : null;
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -344,7 +426,13 @@ export const GameScene = ({ program }: GameSceneProps) => {
         <button type="button" className="btn btn-sm btn-ghost" onClick={reset}>
           Reiniciar
         </button>
-        <p className="text-[15px] font-semibold leading-[1.5] text-ink-soft">{outcome}</p>
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold leading-[1.5] text-ink-soft">{outcome}</p>
+
+          {warning !== null && (
+            <p className="text-[15px] font-bold leading-[1.5] text-coral-dark">{warning}</p>
+          )}
+        </div>
       </div>
     </div>
   );

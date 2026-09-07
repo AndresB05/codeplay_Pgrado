@@ -20,6 +20,17 @@ import type { WorkspaceState } from './program';
 
 export type Order = { kind: 'advance'; steps: number } | { kind: 'turn'; side: TurnSide };
 
+export interface ProgramReading {
+  orders: Order[];
+  /*
+   * Cuántos montones sueltos traía el lienzo. Sólo se ejecuta uno (§4.3), y sin
+   * este número la regla FALLA EN SILENCIO: un bloque olvidado más arriba se
+   * ejecuta en lugar del programa y el niño no puede distinguir «mi programa
+   * está mal» de «mi programa no se ejecutó».
+   */
+  rootCount: number;
+}
+
 export interface RunStep {
   pose: Pose;
   blockedBy: Blocker | null;
@@ -134,8 +145,13 @@ const readOrder = (block: SerializedBlock): Order | null => {
  *
  * Hoy el único productor es nuestro editor. El día que el programa venga de la
  * base (J8) o de un intento guardado, este camino deja de ser teórico.
+ *
+ * Devuelve además CUÁNTOS montones había, que es información que `readRoots` ya
+ * tiene y que `firstOnCanvas` descarta al elegir uno. Sacarla por aquí es lo que
+ * permite avisar de los bloques sueltos: contarlos fuera obligaría a repetir
+ * `readRoots`, que además de contar valida la forma.
  */
-export const readProgram = (workspace: WorkspaceState): Order[] | null => {
+export const readProgram = (workspace: WorkspaceState): ProgramReading | null => {
   const roots = readRoots(workspace);
 
   if (roots === null) {
@@ -156,8 +172,21 @@ export const readProgram = (workspace: WorkspaceState): Order[] | null => {
     block = block.next?.block;
   }
 
-  return orders;
+  return { orders, rootCount: roots.length };
 };
+
+/*
+ * El recuento del contrato §4.4: `avanzar N` son N pasos y `girar` es uno.
+ *
+ * Existe pudiendo usarse `runProgram(...).steps.length`, que da el mismo número,
+ * porque §4.4 define el recuento como una LECTURA del programa —sin tablero,
+ * sin pose y sin ejecutar nada—, y eso es lo que el servidor tendrá que hacer
+ * para puntuar (J10). Sacar de la ejecución el número que se le enseña al niño
+ * lo ataría a un motor que el servidor no corre, y entonces los dos lados sólo
+ * coincidirían por suerte.
+ */
+export const countSteps = (orders: Order[]): number =>
+  orders.reduce((total, order) => total + (order.kind === 'advance' ? order.steps : 1), 0);
 
 const isGoal = (goal: Cell, cell: Cell): boolean =>
   goal.row === cell.row && goal.column === cell.column;
