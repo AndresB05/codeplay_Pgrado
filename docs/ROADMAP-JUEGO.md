@@ -97,6 +97,8 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J6** | Recuento de pasos y pantalla de resultado | Al terminar dice cuántos pasos usó y cuántos eran óptimos | ✅ |
 | J6.1 | **El contador, en vivo**: mientras construye y mientras se ejecuta | ~~El niño ve lo que cuesta su programa sin contar los pasos a ojo~~ — **revertido a medias por el J6.2** | ✅ |
 | J6.2 | **Quitar el coste al construir** y llevar el contador a la pantalla del juego | El niño ve subir sus pasos en la esquina, y nada le presiona antes de jugar | ✅ |
+| J6.3 | **El ensayo general**: el laboratorio compuesto como estará el nivel, y la cámara movible | Se ve dónde va cada cosa y el mapa se gira y se acerca con el ratón | ⬜ |
+| J6.4 | **Assets de tanteo** en el laboratorio, para ver por dónde puede ir | Los cubos dejan paso a modelos y se juzga el aspecto con algo delante | ⬜ |
 | **J7** | **Sembrar el mundo 1** — partido en cuatro, uno por nivel más el aspecto | Los tres niveles se juegan leyendo su definición de la base, y el mundo se ve como debe verse | ⬜ |
 | J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra | Se juega el nivel 1 leyendo su fila, no el objeto escrito a mano del J2 | ⬜ |
 | J7.2 | Nivel 2, igual | Se juega el nivel 2 desde la base | ⬜ |
@@ -325,6 +327,59 @@ pantalla que la necesita es rehacerla dos veces.
 
 La barra de controles no se reescribe: vive dentro de `GameScene.tsx` a
 propósito, debajo del `<Canvas>`, para que la pantalla del J8 la herede.
+
+### El ensayo general antes de sembrar: J6.3 y J6.4
+
+**Pedidos por el usuario el 7-sep-2026, con la fase A terminada.** Van **antes
+del J7** y con un boceto suyo delante. El motivo es el orden de los errores:
+sembrar tres niveles y descubrir **después** que la pantalla se compone de otra
+manera obliga a rehacer lo que ya está en la base.
+
+**El número dice cuándo, no de qué son.** Cuelgan del J6 porque van detrás de él
+y antes del J7, y meter números nuevos entre los dos obligaría a renumerar — que
+es lo único que este roadmap no hace, porque los números se citan desde
+`CONTEXT.md` y desde los cambios archivados.
+
+**J6.3 — la composición, no el aspecto.** Se reordena el laboratorio para que
+quede como estará la pantalla de nivel: el juego arriba a la izquierda con el
+contador de pasos en su esquina, debajo el lienzo donde se encadenan los bloques,
+y a la derecha la caja de bloques, los tres botones —**ejecutar, detener y
+reiniciar**— y un panel de instrucciones. **Sin assets**: siguen los cubos.
+
+**Y el mapa se mueve con el ratón**: girar y acercar. Es lo único del paso que no
+es maquetación.
+
+**J6.4 — assets de tanteo.** Meter modelos de `apps/web/public/models/` en el
+laboratorio **para ver por dónde puede ir**, no para dejarlo hecho. El apartado
+gráfico de verdad sigue siendo el J7.4, mundo por mundo, con la regla de arriba:
+primero el nivel, después el personaje.
+
+**Cuatro cosas que este par se encuentra, y ninguna estaba escrita:**
+
+1. **Entra `drei`, y es el paso que primero lo importa** — justo como §2 lo dejó
+   previsto: `^9.122`, y sólo si `OrbitControls` hacía falta. Hace falta. Va con
+   sus dos trampas ya medidas: **una sola copia de `three`** en 0.170, o los
+   `instanceof` de fiber dejan de cuadrar; y **el lockfile se restaura, nunca se
+   regenera** — regenerarlo en Windows se lleva los binarios de
+   `@supabase/cli-linux-*` y el CI corre `npm ci` sobre ubuntu.
+2. **La caja de bloques y el lienzo son la MISMA inyección de Blockly.** Hoy
+   `TOOLBOX` es un `categoryToolbox` de una categoría, y el desplegable pertenece
+   al espacio inyectado: ponerlos en dos zonas distintas de la pantalla **no es
+   CSS**, es cambiar cómo se monta el editor. Es el riesgo del J6.3 y conviene
+   medirlo antes de prometer la maqueta entera.
+3. **El contador se ve SIEMPRE, no sólo mientras corre**, confirmado por el
+   usuario el 7-sep-2026: sin ejecución en marcha dice **«Pasos: 0»**, y ahí se
+   queda hasta que se pulse «Ejecutar». Hoy el chip aparece y desaparece con
+   `isRunning`, así que esto cambia su condición y su texto —el sitio, arriba a la
+   derecha del juego, ya es el bueno—. **No choca con el J6.2**: lo que aquél
+   retiró fue el **número a batir** antes de jugar, y un cero no lo es; al revés,
+   un marcador que ya está puesto explica de qué van a ser los números que suban.
+4. **«Detener» no existe.** Hoy hay «Ejecutar» y «Reiniciar»; parar a mitad de un
+   recorrido es comportamiento nuevo, no un botón más.
+
+**Y el panel de instrucciones es de relleno aquí.** En el nivel real ese texto
+sale de la narrativa de la fila (J8); en el laboratorio se escribe a mano y no se
+inventa contenido de producto.
 
 ### Las migraciones y sus paradas
 
