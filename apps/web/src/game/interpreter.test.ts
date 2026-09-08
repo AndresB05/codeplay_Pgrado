@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countSteps, programCost, readProgram, runProgram, type Order } from './interpreter';
+import { countSteps, hasLooseStacks, readProgram, runProgram, type Order } from './interpreter';
 import type { LevelConfig } from './level';
 import { sealProgram } from './program';
 
@@ -315,46 +315,36 @@ describe('countSteps', () => {
 });
 
 /*
- * Los cuatro casos que muerden al enseñar el coste mientras se construye. Están
- * aquí y no en la escena porque en la escena no se pueden probar —jsdom no
- * implementa WebGL—, que es justo el motivo de que esta función exista.
+ * Lo único que se le pregunta al lienzo mientras el niño construye, y los tres
+ * casos en que la respuesta es «nada que señalar». Están aquí y no en la escena
+ * porque ahí no se pueden probar: jsdom no implementa WebGL.
  */
-describe('programCost', () => {
-  it('sin programa todavía no hay coste que enseñar', () => {
-    expect(programCost(null)).toBeNull();
+describe('hasLooseStacks', () => {
+  it('sin programa todavía no hay nada que señalar', () => {
+    expect(hasLooseStacks(null)).toBe(false);
   });
 
-  it('un sobre con una versión de formato desconocida no da coste', () => {
-    expect(programCost({ formatVersion: 'grid-blockly-99', workspace: PROGRAM_A })).toBeNull();
+  it('un sobre con una versión de formato desconocida no señala nada', () => {
+    expect(hasLooseStacks({ formatVersion: 'grid-blockly-99', workspace: PROGRAM_A })).toBe(false);
   });
 
-  it('un programa que no se entiende no da coste', () => {
+  it('un programa que no se entiende no señala nada', () => {
     const workspace = {
       blocks: { languageVersion: 0, blocks: [stack('bloque_de_otro_juego', 0)] },
     };
 
-    expect(programCost(sealProgram(workspace))).toBeNull();
+    expect(hasLooseStacks(sealProgram(workspace))).toBe(false);
   });
 
-  /*
-   * Y este `null` NO es «cero pasos». Enseñar «0 pasos» contra los del nivel le
-   * diría al niño que su programa es malo cuando lo que pasa es que no hay
-   * programa, que es la misma distinción que el J6 hizo en el resultado.
-   */
-  it('un lienzo vacío no da coste, y no da cero', () => {
-    expect(programCost(sealProgram({}))).toBeNull();
+  it('un lienzo vacío no tiene bloques de sobra', () => {
+    expect(hasLooseStacks(sealProgram({}))).toBe(false);
   });
 
-  it('cuenta el PROGRAMA A en diez pasos, sin ejecutar nada', () => {
-    expect(programCost(sealProgram(PROGRAM_A))).toEqual({ steps: 10, rootCount: 1 });
+  it('una sola secuencia no tiene bloques de sobra', () => {
+    expect(hasLooseStacks(sealProgram(PROGRAM_A))).toBe(false);
   });
 
-  /*
-   * El coste es el del montón QUE SE EJECUTARÍA, nunca la suma: el de arriba
-   * cuesta un paso y el otro cuatro. Sin el `rootCount` que sale con él, la
-   * barra enseñaría ese 1 sin poder decir por qué no es 5.
-   */
-  it('con montones sueltos cuesta el de más arriba, y dice que hay más de uno', () => {
+  it('dos montones sueltos sí, que es de lo que hay que avisar', () => {
     const workspace = {
       blocks: {
         languageVersion: 0,
@@ -365,21 +355,6 @@ describe('programCost', () => {
       },
     };
 
-    expect(programCost(sealProgram(workspace))).toEqual({ steps: 1, rootCount: 2 });
-  });
-
-  /*
-   * ESTE TEST NO PUEDE FALLAR HOY, y por eso está, igual que los dos de arriba.
-   *
-   * `programCost` y el arranque de la escena hacen la MISMA composición por
-   * caminos separados: los dos abren el sobre, leen el programa y cuentan. Lo
-   * que fija es esa igualdad. Se rompe el día que alguien toque una de las dos
-   * cadenas sin la otra, y el síntoma sería que el número que se enseña mientras
-   * se construye y el que se enseña al terminar dejan de coincidir.
-   */
-  it('cuesta lo mismo que contar el programa leído a mano', () => {
-    expect(programCost(sealProgram(PROGRAM_A))?.steps).toBe(
-      countSteps(readProgram(PROGRAM_A)!.orders)
-    );
+    expect(hasLooseStacks(sealProgram(workspace))).toBe(true);
   });
 });

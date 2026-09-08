@@ -189,30 +189,24 @@ export const countSteps = (orders: Order[]): number =>
   orders.reduce((total, order) => total + (order.kind === 'advance' ? order.steps : 1), 0);
 
 /*
- * Lo que cuesta el programa que hay en el lienzo, del sobre al número. Es la
- * misma cadena que `start()` recorre a mano, y existe aparte por lo que
- * COLAPSA: devuelve `null` en los tres casos en que no hay nada que contar —sin
- * programa, ilegible y sin órdenes—, mientras que aquélla tiene que
- * distinguirlos porque cada uno lleva su propio texto al terminar. Enseñar el
- * coste mientras se construye no distingue: en los tres no se pinta nada, y
- * «0 pasos» contra los del nivel le diría al niño que su programa es malo
- * cuando lo que pasa es que no hay programa.
+ * Si el lienzo trae bloques de sobra, que es lo ÚNICO que hay que preguntarle
+ * mientras el niño construye: el J6.2 retiró enseñarle lo que cuesta su programa
+ * antes de jugar, y sin eso no queda ningún número que contar aquí.
  *
- * Y está aquí, y no dentro de la escena, porque los cuatro casos que decide
- * —esos tres más el de los montones sueltos— son los que muerden, y dentro del
- * componente no habría forma de probarlos: jsdom no implementa WebGL.
+ * Devuelve un booleano y no el número de montones a propósito. Ese número no lo
+ * enseña nadie —el aviso dice que sobró algo, no cuánto (§4.3)—, y devolverlo
+ * sería dejar puesta la cifra que este paso vino a quitar. Por lo mismo colapsa
+ * en `false` los tres casos en que no hay nada que señalar: sin programa,
+ * ilegible y lienzo vacío.
+ *
+ * Y vive aquí y no en la escena porque esos tres casos son los que muerden, y
+ * dentro del componente no habría forma de probarlos: jsdom no implementa WebGL.
  */
-export const programCost = (
-  program: Program | null
-): { steps: number; rootCount: number } | null => {
+export const hasLooseStacks = (program: Program | null): boolean => {
   const workspace = program === null ? null : openProgram(program);
   const reading = workspace === null ? null : readProgram(workspace);
 
-  if (reading === null || reading.orders.length === 0) {
-    return null;
-  }
-
-  return { steps: countSteps(reading.orders), rootCount: reading.rootCount };
+  return reading !== null && reading.rootCount > 1;
 };
 
 const isGoal = (goal: Cell, cell: Cell): boolean =>
