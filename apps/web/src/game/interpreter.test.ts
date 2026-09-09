@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { countSteps, hasLooseStacks, readProgram, runProgram, type Order } from './interpreter';
+import {
+  countSteps,
+  hasLooseStacks,
+  readProgram,
+  runProgram,
+  stepsTaken,
+  type Order,
+} from './interpreter';
 import type { LevelConfig } from './level';
 import { sealProgram } from './program';
 
@@ -105,6 +112,36 @@ describe('readProgram', () => {
 
   it('un lienzo vacío es un programa sin órdenes, no un programa roto', () => {
     expect(readProgram({})).toEqual({ orders: [], rootCount: 0 });
+  });
+
+  /*
+   * El caso REAL que dejaba la pantalla en blanco, y por eso el test lleva el
+   * `null` literal: mientras se arrastra el bloque de abajo para separarlo,
+   * Blockly serializa el `next` del de arriba con `block: null`, el editor
+   * publica ese estado intermedio, y `hasLooseStacks` —que corre en el pintado
+   * de la escena— reventaba leyéndole el tipo a `null`.
+   */
+  it('un `next` con el bloque a null acaba la cadena, y no revienta', () => {
+    const workspace = {
+      blocks: {
+        languageVersion: 0,
+        blocks: [
+          {
+            type: 'codeplay_advance',
+            id: 'AAA',
+            x: 20,
+            y: 20,
+            fields: { STEPS: 2 },
+            next: { block: null },
+          },
+        ],
+      },
+    };
+
+    expect(readProgram(workspace)).toEqual({
+      orders: [{ kind: 'advance', steps: 2 }],
+      rootCount: 1,
+    });
   });
 
   it('con varios montones sueltos ejecuta el que empieza más arriba', () => {
@@ -311,6 +348,48 @@ describe('countSteps', () => {
 
   it('cuenta lo mismo que la ejecución aunque el programa choque', () => {
     expect(countSteps(BLOCKED_PROGRAM)).toBe(runProgram(board, BLOCKED_PROGRAM).steps.length);
+  });
+});
+
+/*
+ * El contador de la pantalla, que es lo único que este módulo sabe de ella. Los
+ * cinco estados en los que puede pillarle el niño, y el borde que este paso vino
+ * a evitar: al terminar, el índice de la escena vale `steps.length`, así que la
+ * cuenta de «mientras corre» daría un paso de más.
+ */
+describe('stepsTaken', () => {
+  const orders = readProgram(PROGRAM_A)!.orders;
+  const run = runProgram(board, orders);
+
+  it('sin recorrido dice cero, que es lo que enseña en reposo', () => {
+    expect(stepsTaken(null, 0, false)).toBe(0);
+  });
+
+  it('el primer paso es uno y no cero', () => {
+    expect(stepsTaken(run, 0, true)).toBe(1);
+  });
+
+  it('a mitad cuenta el paso en curso', () => {
+    expect(stepsTaken(run, 4, true)).toBe(5);
+  });
+
+  it('detenido se queda en los pasos dados hasta ahí', () => {
+    expect(stepsTaken(run, 5, false)).toBe(5);
+  });
+
+  it('terminado se queda en lo que costó, y NO en un paso más', () => {
+    expect(stepsTaken(run, run.steps.length, false)).toBe(10);
+  });
+
+  /*
+   * ESTE TEST NO PUEDE FALLAR HOY, y por eso está, igual que los dos de
+   * `countSteps`: el número en el que el contador se queda y el que el resultado
+   * enseña son la misma magnitud, y el spec lo promete. Se rompe el día que
+   * alguien haga que el contador salga del recorrido en vez de las órdenes, que
+   * es el atajo que este proyecto lleva evitando desde el J6.
+   */
+  it('el número en el que se queda es el recuento que enseña el resultado', () => {
+    expect(stepsTaken(run, run.steps.length, false)).toBe(countSteps(orders));
   });
 });
 

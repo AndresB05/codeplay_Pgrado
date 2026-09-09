@@ -153,7 +153,7 @@ Entorno de referencia: **Node.js 22.17.1**, **npm 10.9.2** (`engines` exige `>=1
 | Tipado | `typescript` | 5.9.3 (modo estricto) |
 | Build | `vite` + `@vitejs/plugin-react` | 5.4.21 / 4.7.0 |
 | Estilos | `tailwindcss` + `postcss` + `autoprefixer` | 3.4.19 |
-| Juego 3D | `three` + `@react-three/fiber` | 0.170.0 / 8.18.0 |
+| Juego 3D | `three` + `@react-three/fiber` + `@react-three/drei` | 0.170.0 / 8.18.0 / 9.122.0 |
 | Backend | `@supabase/supabase-js` | 2.112.3 |
 | Validación | `zod` | 3.25.76 |
 | Calidad | `eslint` 8.57.1 (config heredada) + `prettier` 3.9.6 | — |
@@ -1404,12 +1404,13 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
   propio hook, como `worlds.service.ts` + `useWorlds()`. La frontera de §4.3
   sigue en pie.
 
-### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques, su ejecución y el resultado (J1 a J6.2)
+### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques, su ejecución y el resultado (J1 a J6.3)
 
 **Aplicado con `esqueleto-del-juego` (J1), `rejilla-y-personaje` (J2),
 `bloques-del-programa` (J4), `ejecutar-el-programa` (J5), `recuento-y-resultado`
-(J6), `contador-en-vivo` (J6.1) y `contador-sobre-el-lienzo` (J6.2), más el J3,
-que sólo fijó el formato por escrito.**
+(J6), `contador-en-vivo` (J6.1), `contador-sobre-el-lienzo` (J6.2) y
+`pantalla-compuesta-y-camara` (J6.3), más el J3, que sólo fijó el formato por
+escrito.**
 Lo que hay es una escena 3D dentro del panel del niño, cargada en diferido, con
 **un tablero leído de una configuración escrita a mano y un personaje que se
 mueve por casillas**, al lado **un editor de bloques que produce el programa en
@@ -1427,18 +1428,19 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/game/debugLevel.ts` | **Puro.** La rejilla de pega: 5×5, cuatro muros, un hueco, salida y meta. **No es un puzle diseñado** — los nueve los diseña el usuario y se siembran en el J7 |
 | `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Los reutiliza el intérprete**: nació para eso |
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
-| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero y el personaje, la animación del recorrido con `useFrame`, **el contador de pasos superpuesto al lienzo** y la barra con «Ejecutar», «Reiniciar» y **el resultado con el recuento contra `optimalSteps`**. Importa `three` y `@react-three/fiber` |
-| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Recibe el programa y lo baja; **sólo el tipo** del sobre cruza |
+| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero, el personaje, la animación con `useFrame` y **la cámara movible acotada** (`OrbitControls` de `drei`); **el contador de pasos, siempre visible**; **la superposición que dice todo lo demás** —reposo, ejecución, resultado y avisos—; y los tres botones —**«Ejecutar», «Detener» y «Reiniciar»**—, pintados **con un portal** en el hueco que baja la composición. Importa `three`, `@react-three/fiber` y `@react-three/drei` |
+| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Baja el programa y **el hueco de los botones**; **sólo el tipo** del sobre cruza |
 | `apps/web/src/game/program.ts` | **Puro.** El sobre del contrato §4.3: `Program`, `PROGRAM_FORMAT_VERSION` y las funciones `sealProgram` y `openProgram`. **Sin Blockly** — lo reutilizan el J8 al abrir el `starterProgram` y el J9 al mandar el intento |
 | `apps/web/src/game/program.test.ts` | El sobre: que se cierre con la versión del contrato y que una desconocida se rechace entera (§7) |
 | `apps/web/src/game/blockTypes.ts` | **Nuevo en el J5. Puro.** Cómo se llaman los tres bloques y su campo en el JSON. Vive aparte porque `blocks.ts` importa Blockly y **el intérprete no puede importarlo** |
-| `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` y devuelve `{ orders, rootCount }` —o `null` si no entiende algo—, `countSteps` suma los pasos **leyendo** las órdenes (§4.4) y `runProgram` las pliega sobre la pose inicial con `turn` y `advance`. Sin Blockly y sin `three` |
+| `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` y devuelve `{ orders, rootCount }` —o `null` si no entiende algo—, `countSteps` suma los pasos **leyendo** las órdenes (§4.4), `runProgram` las pliega sobre la pose inicial con `turn` y `advance`, `hasLooseStacks` responde por los bloques de sobra y **`stepsTaken` da los pasos dados que enseña el contador**. Sin Blockly y sin `three` |
 | `apps/web/src/game/interpreter.test.ts` | El recorrido y la meta, con el **PROGRAMA A del contrato §4.3 pegado tal cual** como entrada |
-| `apps/web/src/game/blocks.ts` | Los tres bloques —`avanzar N`, `girar a la izquierda`, `girar a la derecha`—, en español, y la caja de herramientas. Importa `blockly/core` |
+| `apps/web/src/game/blocks.ts` | Los tres bloques —`avanzar N`, `girar a la izquierda`, `girar a la derecha`—, en español, y **la lista que enseña la caja** (`FLYOUT_BLOCKS`, sin categoría desde el J6.3). Importa `blockly/core` |
 | `apps/web/src/game/blocks.test.ts` | El **viaje de ida y vuelta** contra un espacio de trabajo sin interfaz, que es lo único que valida la decisión del J3 |
-| `apps/web/src/game/BlockEditor.tsx` | El editor: inyecta Blockly, carga el español, publica el programa y se limpia al desmontarse |
-| `apps/web/src/game/BlockEditorLoader.tsx` | **La segunda frontera de carga diferida**, la de Blockly. Calcada de `GameSceneLoader` |
-| `apps/web/src/components/dashboard/student/StudentGameLabModule.tsx` | El banco de pruebas, con la escena y el editor en contenedores de altura fija. **Baja el programa a la escena como dato** y enseña el sobre que producen los bloques |
+| `apps/web/src/game/BlockEditor.tsx` | El editor: inyecta el **lienzo** —sin caja—, carga el español, publica el programa y se limpia al desmontarse. Y crea **la caja aparte**: un `VerticalFlyout` suelto en el hueco que le baja la composición, con sus tres correcciones medidas |
+| `apps/web/src/game/BlockEditorLoader.tsx` | **La segunda frontera de carga diferida**, la de Blockly. Calcada de `GameSceneLoader`; baja además **el hueco de la caja** |
+| `apps/web/src/components/dashboard/student/StudentGameLabModule.tsx` | El banco de pruebas, **compuesto como estará la pantalla de nivel** desde el J6.3: el juego en una zona alta con el lienzo superpuesto abajo, y a la derecha caja de bloques, botones e instrucciones, en paneles flotantes. **Posee la maqueta y crea los tres huecos** —caja, botones y mensaje— que bajan a las piezas diferidas. Enseña el sobre en el `<pre>`, fuera de la maqueta |
+| `apps/web/src/main.css` | Además del tema: la regla que **apaga los recortes mientras se arrastra un bloque** y la que deja **transparente el fondo del lienzo** de Blockly, las dos con su porqué |
 | `apps/web/src/constants/routes.ts` | `GAME_LAB: '/dashboard/game'` |
 | `apps/web/src/router/AppRouter.tsx` | Registra esa ruta **sólo** bajo `import.meta.env.DEV` |
 | `apps/web/src/pages/Dashboard/Dashboard.tsx` | Un caso más en el `switch`, con la misma bandera |
@@ -2068,6 +2070,532 @@ quedado fijo en «off» y ya no hubo forma de meterle un programa a la aplicaci�
 Lo que decide el aviso lo cubren los **seis tests** de `hasLooseStacks`; **el
 cableado quedó sin ver**, y se dice en vez de darlo por bueno.
 
+**Lo que el J6.3 recompuso: la pantalla, y el mapa que se mueve.**
+
+**Pedido por el usuario el 7-sep-2026 con un boceto delante**, y va **antes del
+J7** por el orden de los errores: sembrar tres niveles y descubrir después que la
+pantalla se compone de otra manera obliga a rehacer lo que ya está en la base.
+Desde aquí, **el laboratorio ES la maqueta de la pantalla de nivel** y el J8 la
+hereda.
+
+**LA MAQUETA SON PANELES FLOTANDO SOBRE EL JUEGO, y la forma tardó TRES vueltas
+en fijarse.** El usuario vio el paso implementado el 8-sep-2026 y devolvió **seis
+defectos**; lo que sigue describe la pantalla **después** de corregirlos.
+
+**Las tres formas, porque la segunda parecía la buena:**
+
+1. **Tres tarjetas apiladas** —lo primero que se implementó—: devuelto.
+2. **Un único rectángulo con líneas finas dentro**, que es lo que el usuario pidió
+   al devolver la primera. Implementado y medido.
+3. **Paneles flotantes**, que es lo que hay hoy: el 3D llena su zona de borde a
+   borde y encima van, superpuestos, la bandeja del lienzo abajo y los dos
+   paneles de la derecha. Sin bordes gruesos: esquinas muy redondeadas, sombra
+   suave y blanco sobre el fondo del tema. Lo fijó el usuario con **una imagen**
+   el 9-sep-2026.
+
+**Lo que NO cambió en ninguna de las tres es el reparto de zonas**, que viene del
+boceto y es lo que hereda el J8:
+
+- **la caja de bloques y los controles y las instrucciones van PEGADOS**, en un
+  solo panel partido por una línea clara: eran dos paneles con un hueco entre
+  medias y se leían como dos sitios distintos de la pantalla, siendo dos
+  apartados del mismo sitio. El recuadro de las instrucciones **crece con lo que
+  sobre**, porque el texto del nivel real no tiene una longitud fija y un panel
+  cortado a la medida del de ejemplo deja media zona en blanco;
+- **el juego, en UNA zona alta** —todo el alto de la columna derecha—, con el
+  contador de pasos arriba a la derecha y «Vista inicial» arriba a la izquierda;
+- **el lienzo DENTRO de esa zona**, superpuesto al 3D por su parte baja como una
+  bandeja, con su etiqueta y el mensaje en la misma franja de título;
+- **a la derecha**: la caja de bloques, los tres botones **en fila** y las
+  instrucciones.
+
+**La franja de controles desapareció**, y con ella la banda que la primera
+versión puso sobre el juego.
+
+**Detalles del aspecto que la imagen fijó y que el J8 hereda:** «Vista inicial» y
+«Pasos: N» son **píldoras oscuras** superpuestas al juego, con icono; los tres
+botones van en fila —«Ejecutar» ancho con el icono al lado, los otros dos
+estrechos con el icono encima— y **«Detener» es GRIS y no coral**, porque parar
+no es un error y el coral en este tema dice que algo ha ido mal; los rótulos
+«Lienzo», «Bloques» e «Instrucciones» llevan icono; y **los dos giros pasan a
+tener colores distintos** —naranja y morado—, que es lo único de esto que no es
+maquetación: son el único par de bloques cuyo texto se diferencia en la última
+palabra, y en la caja el niño los busca por el color antes de leerlos.
+
+**LOS BLOQUES LOS DIBUJA OTRO RENDERIZADOR, y eso no es CSS.** Blockly calcula
+cada bloque como un `<path>`, así que redondearlos o engordarlos no se hace con
+hojas de estilo: se hace eligiendo renderizador. Se pasa a **`zelos`** —el de
+Scratch, que viene dentro de `blockly/core` y no cuesta dependencia—: bordes
+redondos, campos en píldora y texto blanco en negrita. Con él van un **tema**
+propio que les pone la tipografía del proyecto y **un icono por bloque** —flecha
+arriba y las dos de giro—.
+
+**Los iconos van EN LÍNEA, como `data:`, y no como ficheros.** Un `field_image`
+pide una URL, y un fichero suelto es exactamente la trampa que el J4 evitó al
+quitar papelera, zoom y sonidos: sin configurar la ruta de `media/` dan 404 en
+silencio. **Y no tocan el contrato**: `field_image` no guarda estado, así que el
+JSON sigue siendo `fields: { STEPS: n }` y nada más — comprobado, el viaje de ida
+y vuelta de `blocks.test.ts` pasa sin cambiarle una coma.
+
+**Y ahí se cobró la deuda que el J6.3 dejó anotada: LA CAJA YA NO HEREDA LA
+ALTURA DEL LIENZO.** Era cosmético mientras el hueco la recortaba y la caja podía
+desplazarse; desde que no se desplaza, lo que no cabe no se alcanza, y con los
+bloques de `zelos` —56 px cada uno contra 32— el tercero se quedaba cortado. Se
+sobrescribe `getHeight()` para que devuelva la altura de su hueco. El fondo se
+sigue dibujando con la del lienzo y da igual, porque es transparente.
+
+**Y LA CAJA TIENE QUE LLEVAR LAS CLASES DEL RENDERIZADOR Y DEL TEMA**, o sus
+bloques se pintan a medias. Blockly no da esos estilos sueltos: los inyecta con
+ámbito —`.zelos-renderer.codeplay-theme …`— y pone las dos clases **en el
+`injectionDiv`**, que un flyout suelto no tiene. Sin ellas la caja se queda sin
+el `fill: #fff` del texto, sin los colores de los campos y sin las reglas de
+pasar el ratón por encima; **el síntoma es que el texto de los bloques desaparece
+al pasarles el cursor**, y perseguirlo como un problema de CSS propio no lleva a
+ningún sitio. Se le añaden al hueco al montar y se le quitan al desmontar.
+
+**TRES FONDOS DE BLOCKLY SE APAGAN EN `main.css`, y hacen falta los tres**: el
+blanco del `<svg>` del lienzo, el rectángulo que dibuja bajo los bloques y **el
+del flyout** —un gris que ni llegaba al borde de su hueco ni era el fondo que la
+maqueta le pone a esa zona, así que se leía como un recuadro suelto detrás de los
+bloques—. Con uno solo, el siguiente lo tapa igual: comprobado quitando el
+rectángulo primero y no viéndose nada.
+
+**Y LA ESCALA DE LA PANTALLA ES FRÍA, con cinco nombres nuevos del tema**
+—`sky-high`, `sky-mist`, `mist`, `mist-soft` y `mist-line`—: blancos y grises con una gota
+de azul, apenas perceptible, para que los paneles no compitan con el cielo del
+tablero. **El fondo del juego es ese cielo**: un degradado de tres paradas —azul claro
+arriba, más suave en medio y casi blanco abajo—, puesto en la zona y no en la
+escena, porque el `<canvas>` se dibuja transparente y deja ver lo que hay detrás.
+Cuesta cero de 3D.
+
+**Los cinco van en `main.css` Y en `tailwind.config.js`**, que es la
+duplicación deliberada del proyecto, **y además como utilidades escritas a mano**
+—igual que los alias `primary`/`secondary` que ya estaban—: un color nuevo en la
+configuración de Tailwind **no aparece hasta reiniciar el servidor de
+desarrollo**, y eso costó una vuelta entera creyendo que las clases estaban mal
+puestas. Escritas a mano, el nombre existe desde que se guarda la hoja.
+
+**El lienzo se queda con UNA barra, la vertical, y fuera del cuadro.** La
+horizontal cruzaba la zona de edición por debajo y no llevaba a ninguna parte
+—los bloques se encadenan hacia abajo—; se apaga con
+`scrollbars: { horizontal: false, vertical: true }`, que además no reactiva la
+rueda porque `wheel: false` va explícito. **Y el lienzo empieza arriba**, no por
+donde Blockly lo deje: de fábrica centra la vista en el contenido, y con el
+lienzo vacío eso deja la barra a media altura y sitio por encima de donde va a
+caer el primer bloque. Y el cuadro discontinuo **se dibuja
+aparte y acaba antes** que el hueco del editor, de modo que la barra —que Blockly
+pinta pegada al borde derecho del suyo— queda fuera de él.
+
+**Y AQUÍ MURIÓ UN FALLO QUE DEJABA LA PANTALLA EN BLANCO, con su test.**
+
+Separar dos bloques pegados tumbaba el laboratorio entero. La traza, que es lo
+que lo cerró en un minuto después de dos tardes sin reproducirlo:
+
+```
+Uncaught TypeError: Cannot read properties of null (reading 'type')
+  at readOrder (interpreter.ts)  at readProgram  at hasLooseStacks
+  at GameScene
+```
+
+**Blockly serializa `next: { block: null }` mientras se arrastra el bloque de
+abajo**, y el editor publica ese estado intermedio. En `readProgram`, la línea
+`block = block.next?.block` devolvía ese `null` tal cual y el bucle seguía
+—porque `null !== undefined`—, así que `readOrder` recibía `null` y reventaba
+leyéndole el tipo.
+
+**Y reventar ahí no se queda ahí**: `hasLooseStacks` corre en el **pintado** de
+la escena, así que la excepción se lleva por delante el árbol de React y la
+pantalla se queda en blanco. Es la única función pura del intérprete que corre en
+render, y por eso es la única que puede hacer esto: `readProgram` está escrita
+para **no lanzar nunca** —devuelve `null` ante lo que no entiende— y este camino
+era el que incumplía su propio contrato.
+
+Ahora la cadena se acaba en cuanto lo que sigue no es un bloque, y **se para en
+vez de rechazar el programa entero** porque eso es lo que se ve en pantalla: el
+bloque de abajo está en el aire y la cadena que queda termina donde termina.
+**El test lleva el `null` literal** y se comprobó que muerde: con la línea vieja
+falla con ese mismo `TypeError`.
+
+**La lección, que es la de siempre en esta sección**: el fallo era de una función
+declarada pura y probada, y ninguno de sus 34 tests lo cazaba porque **la forma
+que lo dispara sólo la produce Blockly a mitad de un arrastre**. Nadie la habría
+escrito a mano.
+
+**EL LIENZO SE PLIEGA Y SE ESTIRA**, porque tapa el juego justo cuando hay algo
+que mirar: el niño construye, ejecuta, y entonces la bandeja le estorba. Un botón
+en su franja la pliega hasta dejar sólo el título, y un tirador en su borde de
+arriba —el que se mueve, porque está anclada abajo y crece contra el juego— la
+estira entre 90 y 380 px.
+
+**Plegar NO desmonta el editor**, y ésa es la única decisión que hay aquí: el
+espacio de trabajo de Blockly vive dentro de ese componente, así que desmontarlo
+se llevaría por delante los bloques que el niño lleve puestos. Se le deja el
+hueco en **cero** y el editor sigue montado. Verificado: con dos bloques puestos,
+plegar deja la bandeja en 68 px con los dos bloques vivos, y al abrir vuelven a
+190 px **y los dos se ven dentro del lienzo**.
+
+**Y sin animar la altura.** Animarla obliga a Blockly a recomponerse en cada
+frame —el `ResizeObserver` del editor mira ese mismo hueco— y, además, **una
+transición no avanza si la página está estrangulada**: medido, el pliegue se
+quedaba a medias con `document.hidden` en `false` y el `style` ya puesto en
+`height: 0`. Es el mismo estrangulamiento de §4.10, con otro disfraz.
+
+**Y el lienzo vacío dice para qué es**: un marco discontinuo con el texto «Aquí
+verás la secuencia de bloques que crees.» dentro, pintado **debajo** del editor.
+Para que se vea a través hay que quitarle a Blockly **DOS fondos y no uno**, los
+dos en `main.css`: el blanco del `<svg>` y el rectángulo que dibuja bajo los
+bloques. Con uno solo, el otro lo tapa igual — comprobado quitando primero el
+rectángulo y no viéndose nada. Debajo y no encima, porque encima taparía el bloque que el niño
+arrastra, que es justo lo que el defecto 1 vino a arreglar. **El hueco de la
+ilustración se deja vacío**, como manda el repo hasta que existan las
+definitivas: la imagen del usuario lleva ahí una mascota.
+
+**LA CAJA DE BLOQUES VIVE SEPARADA DEL LIENZO, Y ESO NO ERA CSS.** Es lo que
+había que medir antes de prometer la maqueta, y lo que el J8 va a repetir tal
+cual. `TOOLBOX` era un `categoryToolbox` de una categoría y el desplegable
+pertenecía al espacio que inyecta `Blockly.inject`; el hueco de una inyección es
+un **rectángulo**, y la maqueta pide dos esquinas opuestas de la pantalla.
+
+**La salida es un `VerticalFlyout` suelto**, creado a mano y colgado de
+**cualquier** nodo del DOM. Es API pública y está documentada en `createDom`: el
+flyout «puede existir como su propio SVG». `VerticalFlyout`, `Options` y
+`utils.Svg` se exportan desde `blockly/core`, que es lo que ya se importaba.
+Medido con las dos piezas a **887 px** y en tarjetas distintas: el arrastre
+cruza, el bloque se crea en el espacio principal y **el `<pre>` pasó a contener
+`codeplay_advance`**.
+
+**Y LLEVA TRES CORRECCIONES, las tres medidas y las tres necesarias:**
+
+1. **El bloque no cae donde se suelta.** Blockly resta los orígenes de los dos
+   espacios midiendo cada uno **relativo a su propio `injectionDiv`**, y un
+   flyout suelto no tiene ninguno: las dos cifras salen en marcos distintos y la
+   resta no significa nada. Soltando en (650,1300) el bloque aparecía en el
+   origen del lienzo. Se sobrescribe `getOriginOffsetInPixels` en el espacio del
+   flyout para devolver su origen **en el marco del lienzo**; con el parche,
+   soltando en (650,1300) con el bloque agarrado por (20,16) cayó en
+   **(630,1284)**: exacto, no aproximado.
+2. **LA ZONA DE BORRADO NO SIRVE, Y SE RETIRA ENTERA.** La de un flyout vertical
+   es un **semiplano sin límite vertical**: con el valor de fábrica —la caja a la
+   izquierda— se traga todo lo que se suelte a su izquierda, **y eso es el lienzo
+   entero**. Medido en la página y confirmado en el compilado: a la izquierda da
+   `Rect(-1e9, 1e9, -1e9, borde)` y a la derecha `Rect(-1e9, 1e9, borde, 1e9)`.
+   La primera versión del J6.3 lo resolvió declarándole el lado derecho, y
+   **estaba mal**: salvaba el lienzo, que era lo que se estaba mirando, y dejaba
+   media pantalla borrando en silencio. Lo que la maqueta necesita es «todo menos
+   el lienzo», que **no es un rectángulo** y por tanto ningún `getClientRect`
+   puede describir. Hoy `getClientRect()` devuelve `null` —la caja desaparece de
+   la lista de destinos de arrastre— y quien decide es la regla del retorno, más
+   abajo.
+3. **Y el lado, además, lo COLOCA.** Declararle el lado lo sitúa contra el borde
+   derecho **del lienzo** —donde estaría si fuera suyo—: se fue a 1375 px en una
+   ventana de 1280 y la caja salió vacía. `getX()` y `getY()` a cero lo devuelven
+   a su hueco. **Este tercero no estaba previsto en la propuesta**: apareció al
+   maquetar. `toolboxPosition` sigue puesto a la derecha, pero ya sólo gobierna
+   **por qué lado se redondea el fondo de la caja**; el sentido del arrastre
+   nunca lo gobernó —`isDragTowardWorkspace` de un flyout vertical acepta los dos
+   lados por igual, comprobado en el fuente—.
+4. **Y NO LLEVA BARRA DE DESPLAZAMIENTO.** Blockly se la pone a todo flyout,
+   quepa o no su contenido, y la coloca en el borde del SVG del flyout —que no es
+   el borde del hueco que se ve—, así que salía flotando en medio de la caja y
+   estrechando los bloques. Se destruye `flyoutWorkspace.scrollbar` después de
+   `init`. Con los tres bloques de hoy sobra sitio —**152 px de contenido en una
+   caja de 200**, medido—; el día que el J7 traiga más habrá que decidir cómo se
+   llega a los que no quepan, y entonces **la altura heredada del lienzo deja de
+   ser cosmética**: sin barra, lo que no cabe no se alcanza.
+
+**La caja hereda además la ALTURA del lienzo** —`position()` lee las métricas de
+vista del espacio destino—, así que su hueco la recorta y los dos miden 200 px.
+**Y la categoría «Movimiento» desapareció**: la caja enseña los tres bloques,
+siempre abiertos. Era un clic entre el niño y sus bloques.
+
+**EL BLOQUE QUE SE ARRASTRA SE VE TODO EL RATO, Y ESO TAMPOCO ERA GRATIS.** El
+bloque agarrado se dibuja dentro del SVG del lienzo, y ese SVG —como el hueco de
+la inyección, la bandeja y el marco— recorta lo que se sale. Con la caja arriba a
+la derecha y el lienzo abajo a la izquierda **el trayecto entero pasa por fuera**:
+en la primera versión el niño sacaba un bloque de la caja y lo perdía de vista
+hasta que entraba en el lienzo, cruzando a ciegas por encima del juego.
+
+Se apagan los cuatro recortes **sólo mientras dura el arrastre** —y el vuelo de
+vuelta—, con una clase en la raíz del documento que enciende `BlockEditor` al
+recibir el evento de arrastre de Blockly. La regla vive en `main.css`, junto a
+las zonas que recorta, y de paso le sube la bandeja por encima de la columna
+derecha. **Sólo mientras dura**: apagados en reposo, un bloque colocado lejos del
+centro del lienzo se saldría de la bandeja y se dibujaría sobre el juego.
+
+**SOLTAR FUERA DEL LIENZO DEVUELVE EL BLOQUE A LA CAJA, Y SE LE VE VOLVER.** Es
+la otra mitad de lo mismo: si el bloque cruza a la vista pero desaparece al
+soltarlo, el niño sigue sin saber a dónde ha ido. La caja es de donde salen los
+bloques y donde siempre están los tres, así que devolverlo ahí es la única
+respuesta que el niño puede leer sin que nadie se la explique.
+
+**El vuelo se pinta moviendo el propio bloque, no una copia**: una copia perdería
+los filtros que Blockly define dentro de su SVG y saldría en negro o no saldría.
+
+**Y el punto donde se soltó se apunta ANTES que Blockly**, en un oyente de
+`pointerup` en fase de captura. Esto es lo que costó y lo que hay que saber:
+medir dónde quedó el bloque **cuando llega el evento de movimiento no vale**,
+porque Blockly reparte sus eventos en un `requestAnimationFrame` y para entonces
+**ya ha desplazado el lienzo hasta el bloque**. Medido: un bloque soltado 257 px
+por encima del lienzo aparece pegado a su borde superior, con el espacio
+desplazado a `y = −522,6`, y quien lo mida ahí concluirá que se soltó dentro. Es
+la misma trampa que el `<pre>` de §4.10 y que contar frames en el J6: **una señal
+leída tarde ya no dice lo que pasó**. Por lo mismo el vuelo arranca en el punto
+apuntado y no donde Blockly haya dejado el bloque, o se le vería entrar de un
+salto en el lienzo antes de salir volando.
+
+**Se descartó registrar dos componentes en el `ComponentManager`** —uno con el
+rectángulo del lienzo y otro, más pesado, con la pantalla entera—: funciona igual
+de bien, pero Blockly pinta el bloque como «a punto de borrarse» en toda la zona
+de borrado, y eso sería el trayecto entero.
+
+**LOS BOTONES SE VEN ARRIBA Y VIVEN ABAJO, y ése es el otro patrón que hereda el
+J8.** La composición crea **tres nodos vacíos** —el de la caja, el de los botones
+y el del mensaje— y los baja **como dato** por los dos cargadores, que siguen sin
+importar ni `blockly` ni `three`. `BlockEditor` cuelga su flyout del primero;
+`GameScene` pinta sus tres botones en el segundo y su mensaje en el tercero, los
+dos con `createPortal`. Así **el estado del intento y `start()` no salen de
+debajo de la frontera diferida**, que es lo que arrastraría el intérprete al
+trozo principal. Los huecos van en **estado y no en `ref`**: un `ref` no provoca
+repintado y las piezas se montarían contra `null`.
+
+Subir el estado a `StudentGameLabModule` era la alternativa evidente y es
+justamente la prohibida. La otra —un `ref` imperativo con `start`/`stop`/`reset`—
+obliga además a subir `isRunning` para inhabilitar «Ejecutar» y reparte los
+controles entre dos archivos.
+
+**DETENER ES ADELANTAR EL ÍNDICE Y MARCAR EL INTENTO COMO CONGELADO**, y de ahí
+salen tres cosas de una: la pose pasa a ser la del paso en curso —la casilla y la
+orientación que el usuario pidió—, el paso a animar se vuelve `null` y el bucle
+de frames se planta, y el contador se queda en ese paso. **El personaje aterriza
+en la casilla en vez de congelarse entre dos**: un cubo parado a medio camino se
+lee como un fallo de dibujo. **Un recorrido detenido no se reanuda**: «Ejecutar»
+vuelve a leer el lienzo y empieza desde la salida —verificado, el contador vuelve
+a **1**—.
+
+**Y detener NO produce resultado.** No es sólo que un recorrido congelado no haya
+terminado: el resultado diría «No llegaste a la meta», y eso es **acusar al niño
+de un fallo que no ha cometido** —paró él—. Es el mismo error que el J6 corrigió
+con el lienzo vacío. En su sitio va una frase sin números ni juicio.
+
+**EL CONTADOR SE VE SIEMPRE, y la cuenta hubo que REHACERLA, no destaparla.**
+Dice «Pasos: 0» en reposo, sube con el personaje, y al terminar o al detener se
+queda en lo que costó. Quitarle el `isRunning` habría dado **un paso de más**:
+pintaba `index + 1` y al terminar `index` vale `steps.length`, así que un
+recorrido de diez habría dicho **once**. La cuenta vive fuera del componente
+—`stepsTaken` en `interpreter.ts`, junto a `countSteps`— porque dentro no se
+puede probar, y lleva sus seis tests: los cinco estados más el que ata el número
+final al recuento del resultado, que hoy **no puede fallar** y por eso está.
+
+**No choca con el J6.2**: aquél retiró el número **a batir** antes de jugar, y un
+cero no lo es. **Y `stepsLabel` no se tocó**: lo comparten las cuatro frases del
+resultado, y el «Pasos: N» del contador es suyo.
+
+**EL MENSAJE DICE TODO LO QUE SE LE CUENTA AL NIÑO** —reposo, ejecución,
+resultado y los dos avisos de bloques sueltos— **y vive en la franja del título
+del lienzo**, a la derecha de la etiqueta «Lienzo» y en su misma línea. La
+etiqueta se queda como rótulo fijo, para que la zona siga diciendo qué es cuando
+no hay nada que contar. El usuario pidió mover **el resultado**; que los avisos
+fueran con él es derivado, y la razón es que al irse la franja se quedaban sin
+sitio. **Es mover, no rediseñar**: ni un texto cambió y la regla de cuál manda
+sigue igual —verificado: al construir sale el aviso en presente, al terminar sólo
+el del resultado—.
+
+**La primera versión lo puso en una banda SOBRE EL JUEGO, y el usuario la
+devolvió**: ocupaba la parte baja del juego, que es justo donde ahora está la
+bandeja del lienzo, y estorbaba delante del tablero. **El contador no se movió**:
+sigue superpuesto al juego, arriba a la derecha, porque cuenta lo que el niño
+está mirando.
+
+**LA CÁMARA VA ACOTADA POR LOS CUATRO LADOS, y ninguno es estética.** Por abajo
+no pasa de la horizontal: por debajo se ve el envés de las losas. Por arriba no
+llega al cenit: desde ahí el personaje es una silueta y **la marca que lleva
+sobre la cabeza deja de distinguirse**, así que girar dejaría de verse —que es lo
+que esa marca existe para enseñar, desde el J2—. El acercamiento tiene mínimo y
+máximo, y **el desplazamiento está desactivado**: mover el centro es la única
+forma de perder el tablero, y un niño que lo pierda no sabe volver. Encima del
+juego hay un botón que devuelve **la vista de partida**, que guardan los propios
+controles.
+
+**Y por eso entró `drei`**, `^9.122`, sólo por `OrbitControls`, tal como el
+roadmap §2 lo dejó previsto. `npm ls three` sigue dando **una sola copia en
+0.170.0** y el lockfile creció de forma incremental —los `@supabase/cli-linux-*`
+siguen ahí, comprobado en el diff—.
+
+**Y HAY UNA SALVEDAD MEDIDA EN «VISTA INICIAL», que no es de este paso pero
+conviene no volver a perseguirla.** Devuelve exactamente a (5,3 / 7,5 / 7,5) **si
+la inercia de los controles ha parado**; pulsada a los 500 ms de soltar un giro
+largo, la amortiguación de `drei` sigue corriendo **después** del reinicio y deja
+el azimut en 45,4° en vez de 35,2°. Es cómo `OrbitControls` combina `reset()` con
+`enableDamping`, que este repositorio no configura ni toca. Se anota, no se
+arregla aquí.
+
+**EL LIENZO ES UNA BANDEJA DENTRO DEL JUEGO, Y ESO OBLIGÓ A REENCUADRAR EL
+TABLERO.** El juego pasó a ser una zona de todo el alto y el lienzo se metió
+dentro, superpuesto al 3D por su parte baja. Con el hueco del juego pasando de
+340 px a 635, el tablero —que se dibuja centrado y crece con el alto del hueco—
+metió su fila sur debajo de la bandeja: **medido, la esquina sureste caía 154 px
+por debajo del borde de la bandeja**, y ahí están la casilla de salida y todo el
+camino que recorre el PROGRAMA A.
+
+**No se arregla con la maqueta, y la cuenta lo dice.** Al encuadre de partida el
+tablero ocupa el **84 %** del alto del hueco; para que quepa encima de una
+bandeja de 245 px haría falta un hueco de **más de 1.600**. Se corrige por los
+dos lados, con dos constantes en `GameScene.tsx`:
+
+- **`CAMERA_START`** aleja la cámara hasta que el tablero cabe en la franja libre
+  —de 8,53 a **11,86** de distancia, dentro del tope de acercamiento de 14 que ya
+  había, así que los topes no se tocaron—;
+- **`BOARD_LIFT`** levanta el tablero **2,4** sobre el centro de la órbita, hasta
+  el centro de esa franja.
+
+**Los dos hacen falta.** Alejar sin levantar no basta —la perspectiva deja la
+esquina cercana abajo por mucho que se aleje: medido hasta distancia 14,5, seguía
+92 px por debajo del borde—; levantar sin alejar saca el borde norte por arriba.
+
+**Se levanta EL TABLERO y no el punto al que mira la cámara**, aunque
+geométricamente sea lo mismo: los controles guardan su vista de partida al
+construirse, con el punto en el origen, y moverlo dejaría «Vista inicial»
+devolviendo a otro sitio. El personaje va dentro del mismo grupo, así que **su
+casilla se sigue calculando igual** —`col = x + 2`, `fila = z + 2` sobre la
+posición local del grupo—, que es la forma de mirar el tablero descrita más
+abajo.
+
+**Y a ventanas estrechas el tablero no cabe de ancho.** A 1024 px se sale **31 px
+por la izquierda y 16 por la derecha** del hueco del juego; a 1280 cabe entero.
+Es el mismo apartado que §4.4 —el panel no es responsive— agravado por un hueco
+alto y estrecho, y el niño puede alejar la vista con la rueda. Se anota en vez de
+arreglarlo aquí.
+
+**ENCARGO PARA EL J7.4, encontrado al verificar el J6.3 y que NO es de este
+paso.** Al relanzar un recorrido, **el primer giro no se anima**: el personaje
+aparece en la salida pero **ya mirando hacia donde iría**, en vez de girar desde su
+orientación de partida. La causa es que el ángulo dibujado vive en un `useRef` del
+bucle de frames y **conserva el del recorrido anterior**, así que la
+interpolación arranca del ángulo viejo y no del de la salida. La **posición
+siempre es correcta**; lo que se pierde es un tercio de segundo de giro.
+
+**Y viene del J5/J6, no de «Detener»** —que es lo que lo hace un encargo y no un
+fallo de este paso—. Aislado midiendo, **sin tocar «Detener» ni una vez**: con un
+programa que termina mirando al este, pulsar «Ejecutar» por segunda vez deja al
+personaje en la salida con `rotY −1,5708` a los 40 ms. Lo único que añade
+«Detener» es otra forma de llegar a ese estado. Se arregla donde se toque la
+animación —el **J7.4**, con el personaje de verdad y sus clips delante—, y no
+antes: aquí sería código nuevo encima de un paso ya verificado.
+
+**Y LA REGLA QUE SALE DE VERIFICARLO, que vale para el J7 y para todo lo que
+venga: una pantalla que dice de sí misma que hizo algo NO es la prueba de que lo
+hizo.** En este juego la prueba es **dónde está el personaje**. Cuatro
+comprobaciones de este paso se dieron por buenas leyendo un texto —el contador, la
+banda, el estado de un botón— y hubo que rehacerlas mirando el tablero; que las
+cuatro tuvieran la misma forma dice que no fueron cuatro descuidos sino **un
+criterio equivocado aplicado cuatro veces**. Es la misma trampa que contar frames
+en el J6 y que el `isConnected` del J6.1, con otro disfraz.
+
+**Y hay forma de mirar el tablero, que es lo que faltaba**: `_roots` está
+exportado en el módulo de fiber, así que
+`_roots.get(canvas).store.getState().scene` da la escena; el personaje se
+localiza por el color de su material —`7b3fe4`— y su casilla sale de la posición
+del grupo con `col = x + 2`, `fila = z + 2`. Contra qué compararla: importando
+`/src/game/interpreter.ts` y `/src/game/debugLevel.ts` **en la propia página** se
+calcula la pose que el intérprete espera, y entonces la comprobación es el cubo
+contra el intérprete, no el cubo contra una captura.
+
+**Verificado en el navegador, con `document.hidden` en `false` y el `<pre>`
+comprobado antes de nada:**
+
+- **Reposo**: «Pasos: 0» y el texto de siempre, con el PROGRAMA A puesto en el
+  lienzo y sin ejecutar.
+- **PROGRAMA A entero**: el contador sube 2 → 10 y **se queda en 10**, con
+  «¡Perfecto! Llegaste a la meta con 10 pasos, justo lo que cuesta la mejor
+  solución.» en la banda. **Diez y no once.**
+- **Detener a mitad**: contador congelado en 5, **sin resultado**, «Detener» se
+  inhabilita y «Ejecutar» vuelve; un segundo después sigue igual. Y **«Ejecutar»
+  después empieza por 1** y termina en 10.
+- **Reiniciar**: «Pasos: 0» y la banda al texto de reposo.
+- **La caja separada**: arrastre real con eventos de puntero, el bloque cae bajo
+  el cursor y **el `<pre>` recoge el programa**. Soltado en el lienzo **no se
+  borra**; arrastrado a la caja **sí se tira**.
+- **Los dos avisos**: al construir con dos montones, el de presente; al ejecutar,
+  sólo el del resultado, con «Usaste 1 paso».
+- **La cámara**: girando se llega a los dos topes —casi cenital por arriba, casi
+  horizontal por abajo, **nunca por debajo del tablero**—, la rueda topa por los
+  dos lados, y «Vista inicial» devuelve exactamente la vista de partida.
+- **Una carga limpia no saca ni un error en consola**, y hay **una sola** caja y
+  **un solo** lienzo.
+
+**Y verificado otra vez CONTRA EL TABLERO al corregir los seis defectos**, que es
+la regla que este paso dejó escrita —una pantalla que dice de sí misma que hizo
+algo no es la prueba de que lo hizo—:
+
+- **El bloque cruzando el juego**: soltándolo a mitad de camino, está dibujado en
+  (670, 407) —el lienzo empieza en y 657— y `elementFromPoint` en su centro
+  devuelve **el propio bloque**, no el `<canvas>`. Los cuatro recortes en
+  `visible` durante el arrastre, leídos del estilo calculado.
+- **La vuelta a la caja, viéndola**: seis muestras del vuelo, de (622, 417) a
+  (978, 330), camino de la caja en (1084, 279); después el `<pre>` vuelve a
+  `"workspace": {}`. Soltado sobre el juego y sobre el panel de instrucciones,
+  vuelve en los dos; soltado **dentro** del lienzo se queda —movido dos veces
+  dentro—; arrastrado **a la caja**, se tira.
+- **El recorrido, casilla a casilla**: PROGRAMA A de col 0/fila 4 a col 4/fila 0,
+  contador de 1 a 10 y «¡Perfecto! …con 10 pasos». «Detener» a mitad de un paso
+  —el personaje iba por col 3,29— deja col 4/fila 4 mirando al este con «Pasos:
+  5» y sin resultado, igual un segundo después; «Ejecutar» después arranca en col
+  0/fila 4 con el contador en 1; «Reiniciar» devuelve a col 0/fila 4 mirando al
+  norte.
+- **El personaje no queda tapado**: sobre la meta proyecta en (883, 402), la
+  bandeja empieza en 614, y `elementFromPoint` ahí devuelve el `<canvas>`.
+- **La cámara**: acercamiento 4 y 14 **exactos**, giro 25,71° y 83,12° **exactos**
+  —nunca por debajo del tablero—, azimut libre, y «Vista inicial» a
+  (5,3 / 7,5 / 7,5).
+- **La caja sin barra**: cero elementos `.blocklyFlyoutScrollbar`, y los tres
+  bloques de y 97 a y 241 en una caja de 200 px.
+
+**Y LO QUE NO SE PUDO VOLVER A VERIFICAR, que se dice en vez de darlo por
+bueno.** Todo lo de arriba se midió con la maqueta en su **segunda** forma —el
+rectángulo único—. Al cambiarla a la tercera —los paneles flotantes— la página
+entró en el estado de §4.10 y ahí se quedó: **cero frames de
+`requestAnimationFrame` en 700 ms**, **cero eventos** al crear un bloque, y el
+`<pre>` en `{}` con cuatro bloques pintados en el lienzo. En ese estado no
+publica el editor, no llegan los eventos de arrastre y la escena no avanza, así
+que **nada medido encima vale** — y el arrastre, en concreto, sale mal por eso y
+no por el código.
+
+**Lo que sí quedó comprobado de la forma nueva**: la maqueta medida zona a zona,
+y que la regla que apaga los recortes **sigue nombrando los elementos correctos**
+—encendiendo la clase a mano, los cinco pasan a `overflow: visible` y la bandeja a
+`z-index: 30`; apagada, la zona del juego, el hueco de la inyección y el SVG
+recortan—. Lo que **falta** es volver a ver un arrastre real de punta a punta con
+la forma nueva, y hay que hacerlo en otra sesión.
+
+**Y la columna derecha DA UN SALTO mientras la escena carga.** Los botones son un
+portal desde debajo de la frontera diferida, así que no existen hasta que resuelve
+el `Suspense`: su tarjeta mide **29 px vacía** y **165 px con los tres botones**,
+de modo que la de instrucciones está 136 px más arriba de donde acabará y todo
+baja de golpe. Medido: con el trozo en caché, ese estado dura de los **~314 ms a
+los ~930 ms** —unos 600—, y en frío más, porque la escena son 847 kB.
+
+**Se deja así a propósito, y no es deuda del producto**: es la consecuencia
+conocida de la carga diferida en una pantalla que **sólo existe en desarrollo**.
+Poner un alto mínimo en el hueco lo taparía, pero metiendo en la composición un
+número que es de los botones —justo la frontera que este paso construyó—. **La
+salida buena, para cuando el J8 tenga que decidir cómo se ve cargando la pantalla
+de nivel de verdad: que el `fallback` del cargador rellene también ese hueco.**
+`GameSceneLoader` ya recibe el hueco, así que puede portalar ahí un marcador de la
+misma altura, y el número vive donde vive lo que ocupa. Queda medido para no tener
+que volver a medirlo.
+
+**Lo que NO se consiguió, y se dice en vez de darlo por bueno: el laboratorio
+entero no cabe en una ventana normal.** La maqueta sola sí: con la zona del juego
+a **640 px** de alto fijo, acaba a **877 px** del principio del documento a 1440
+de ancho y a **920** a 1024 —eran 916 y 959 en la primera forma—. Lo que no cabe
+es el laboratorio: el documento mide **1244 px** a 1440 y **1312** a 1024, porque
+debajo van el `<pre>` y su tarjeta.
+
+Así que **la maqueta pide 880 px de alto de ventana a 1440 y 920 a 1024**, y ver
+además el `<pre>` pide 1250. Lo que sobra es del propio laboratorio y no de la
+maqueta que hereda el J8: su tarjeta de cabecera se lleva unos 150 px y el `<pre>`
+va debajo de todo.
+
 #### EL EDITOR DEJA DE PUBLICAR, Y NO ES UN PROBLEMA DE LA VERIFICACIÓN
 
 **Esto empezó pareciendo «el truco de cargar programas falla a veces» y no lo
@@ -2097,7 +2625,59 @@ ruta del laboratorio no existe fuera de desarrollo, por diseño. No hay ninguna
 pantalla de producto con editor hasta que el J8 monte la de nivel, así que **si
 esto ocurre también ahí, no hay forma de saberlo todavía**.
 
-**La causa sigue sin encontrarse, y no hay sospechoso vigente.** Va descartado
+**LA CAUSA APARECIÓ EN EL J6.3, y está en el fuente de Blockly.** Lo que sigue
+debajo —todo lo descartado— se conserva como registro, pero ya no hace falta
+seguir buscando:
+
+**El reparto de eventos de Blockly 12 cuelga de un `requestAnimationFrame`.**
+`fireInternal`, en `blockly_compressed.js:86`:
+
+```js
+if(!FIRE_QUEUE.length)try{requestAnimationFrame(()=>{setTimeout(fireNow,0)})}catch(b){setTimeout(fireNow,0)}
+```
+
+**Sin `rAF` no se llama `fireNow`, la cola no se vacía y ningún escuchador recibe
+nada** —mientras crear el bloque y serializarlo siguen funcionando, porque son
+síncronos—. Que es exactamente el síntoma. Y **el `rAF` sólo se programa con la
+cola vacía**, así que una vez cargada ningún evento nuevo programa otro: el
+reparto se reanuda cuando corre el `rAF` aplazado, no antes.
+
+**Medido en la página, y con el control que lo separa de nuestro código:** con
+la página estrangulada —`document.hidden` en `true` y **cero** frames en 500 ms—
+no llega **ni un** evento, y **un espacio de trabajo recién inyectado de fábrica
+en esa misma página falla igual**. No es el espacio de la aplicación, ni
+`StrictMode`, ni nuestro cableado: es la página. En cuanto `document.hidden` pasó
+a `false` y volvió el `rAF`, el mismo `load` disparó `create` y `finished_loading`
+y el `<pre>` se llenó.
+
+**Explica el perfil entero**: intermitente, pegajoso, y sobrevive a recargar, a
+abrir pestaña y a reiniciar el servidor —porque un panel estrangulado sobrevive a
+las tres—. **Con dos avisos**: el bloque del J6.1 midió 60 fps con el panel oculto
+y `hidden` en `false`, y en la máquina del J6.3 salió `hidden: true` y cero
+frames, así que **el estrangulamiento no es el mismo en las dos máquinas**; y esto
+**no demuestra** que en producción no ocurra, porque hasta el J8 no hay pantalla
+de producto con editor. **No se ataca aquí**: qué hacer con §4.10 lo decide el
+usuario, y ahora lo decide con la causa delante.
+
+**Y AQUÍ HAY DOS FALLOS DISTINTOS CON DOS SEÑALES DISTINTAS, y confundirlos
+cuesta la tarde que estas notas quieren ahorrar.** Uno es éste, el de Blockly;
+el otro es el de la escena, medido en el J6 y descrito más arriba. Se separan
+así:
+
+- **Cero frames de `requestAnimationFrame`** ⇒ **Blockly no reparte** —la cola de
+  `fireInternal` no se vacía— **y la escena tampoco avanza**. Es lo que midió la
+  sesión que revisó el J6.3, y lo midió con `document.hidden` en **`false`**.
+- **Frames que corren** ⇒ **Blockly reparte**, pero **la escena puede seguir
+  congelada**: lo que el panel oculto suspende ahí no es el `rAF` de la página
+  —que da sesenta— sino el bucle de render de fiber. La señal entonces es que **el
+  recorrido progrese**, y el remedio, `resize_window`.
+
+Dicho corto: **contar un frame DESCARTA el fallo de Blockly y NO descarta el de
+la escena**, y `document.hidden` no detecta ninguno de los dos —sale `false` en
+los dos casos—.
+
+**Lo que se había descartado antes de encontrarla**, que sigue siendo válido y
+explica por qué costó tanto: va descartado
 midiendo, todo en la página que falla:
 
 - **No es `React.StrictMode`**: desactivado en `main.tsx`, recargado y repetido el
@@ -2546,6 +3126,42 @@ configuración plana es una tarea pendiente sin urgencia.
 conviene no perderlo de vista ahora que el juego crece. Se resolvería con
 `manualChunks` o más importaciones dinámicas por ruta.
 
+**Medido el 9-sep-2026, con los seis defectos del J6.3 corregidos**: trozo
+principal **625,00 kB** (167,90 gzip), trozo `BlockEditor` **647,94 kB** (174,54),
+trozo `GameScene` **849,48 kB** (229,79), trozo compartido `program` **0,35 kB**
+(0,24), hoja de estilos **53,25 kB** (10,09), **786 módulos**.
+
+**El principal no se movió NI UN BYTE en las correcciones**, que era el número en
+juego: el retorno del bloque a la caja, la clase que apaga los recortes, el tema
+y los iconos de los bloques viven en `BlockEditor` —**+3,09 kB**—, y los iconos
+de los controles y el mensaje portalado en `GameScene` —**+1,96 kB**—.
+**`zelos` no costó nada**: viene dentro de `blockly/core`, así que ya estaba en
+ese trozo antes de usarlo. Los módulos, los mismos 786. Marcas que sobreviven a la
+minificación: `rootCount` sale **5** veces en `GameScene` y **0** en el principal;
+`blockedBy`, **7** y **0**; `OrbitControls`, **3** y **0**; los textos
+—«Ejecutando el programa», «Pasos: », «Te sobraron bloques», «Has detenido el
+recorrido»—, **1** y **0** cada uno; `blocklySvg`, **3** en `BlockEditor` y **0**
+en el principal; y `arrastrando-bloque`, **1** en `BlockEditor` y **5** en la hoja
+de estilos, **0** en el principal. **`readProgram` y `runProgram` dan cero en los
+tres trozos** y por eso no valen como marca: el minificador los renombra, que es
+la trampa de `countSteps`.
+
+**Medido el 8-sep-2026, después del J6.3**: trozo principal **625,00 kB**
+(167,90 gzip), trozo `BlockEditor` **644,86 kB** (172,98), trozo `GameScene`
+**847,49 kB** (229,23), trozo compartido `program` **0,35 kB** (0,24), **786
+módulos**.
+
+**El J6.3 dejó el principal EXACTAMENTE igual —ni un byte— pese a meter una
+dependencia nueva.** `drei` salió entero donde debía: `GameScene` sube **16,74
+kB** (+4,80 gzip) y `BlockEditor` **0,43 kB** —la caja suelta—. **Los módulos
+saltan de 221 a 786**, y eso sí asusta a primera vista: son los archivos que
+`drei` hace recorrer, no peso. Lo que cuenta es el trozo, y son 16,74 kB por un
+`OrbitControls`. Marcas que sobreviven a la minificación: `OrbitControls` sale
+**3** veces en `GameScene` y **0** en el principal; `rootCount`, **5** y **0**; y
+los textos —«Ejecutando el programa», «Pasos: », «Te sobraron bloques»—, **1** y
+**0** cada uno. **El intérprete no subió con los botones**, que era el riesgo de
+sacarlos a la columna derecha con un portal.
+
 **Medido el 7-sep-2026, después del J6.2**: trozo principal **625,00 kB**
 (167,90 gzip), trozo `BlockEditor` **644,43 kB** (172,75), trozo `GameScene`
 **830,75 kB** (224,43), trozo compartido `program` **0,35 kB** (0,24), **221
@@ -2632,7 +3248,7 @@ mañana. Cerrarlo de verdad es censar antes lo que hay.
 
 ### 4.10 El editor deja de publicar, y en ese estado el juego no se puede jugar
 
-**La más seria de esta lista, y la única sin causa conocida.** El detalle, las
+**La más seria de esta lista, y desde el J6.3 CON CAUSA.** El detalle, las
 mediciones y todo lo descartado están en §2.9, en «El editor deja de publicar»;
 aquí sólo lo que hay que saber para no tropezar con ella:
 
@@ -2648,10 +3264,26 @@ ningún paso del J6. Hoy sólo lo tapa que el editor viva en una ruta de
 desarrollo, y **no hay forma de comprobar si ocurre en producción hasta el J8**,
 porque hasta entonces no existe ninguna pantalla de producto con editor.
 
-**Descartado midiendo**: `React.StrictMode`, el espacio de trabajo desechado, los
-eventos deshabilitados, la copia doble del módulo y la caché de dependencias de
-Vite. Sin errores en consola. **Está subido al usuario**: es suyo decidir si se
-ataca antes del J8 o se deja anotado.
+**La causa, encontrada en el J6.3 y en el fuente**: el reparto de eventos de
+Blockly 12 cuelga de un `requestAnimationFrame` —`fireInternal`,
+`blockly_compressed.js:86`—, así que **en una página estrangulada la cola no se
+vacía nunca** y ningún escuchador recibe nada, mientras crear el bloque y
+serializarlo siguen funcionando porque son síncronos. El control que lo cierra:
+**un espacio de trabajo recién inyectado de fábrica en esa misma página falla
+igual**, y en cuanto vuelve el `rAF` publica. Antes de eso se habían descartado
+midiendo `React.StrictMode`, el espacio desechado, los eventos deshabilitados, la
+copia doble del módulo y la caché de Vite, y no hay errores en consola.
+
+**Sigue subido al usuario**, y ahora con la causa delante: es suyo decidir si se
+ataca antes del J8 o se deja anotado. Lo que **no** cierra es si ocurre en
+producción, porque hasta el J8 no hay pantalla de producto con editor.
+
+**Y para verificar cualquier pantalla con editor, dos señales y no una**, porque
+son dos fallos distintos: **cero frames de `requestAnimationFrame`** significa que
+Blockly no reparte **y** que la escena no avanza; **frames que corren** descartan
+lo primero pero **no** lo segundo —la escena puede seguir congelada con sesenta
+fps, y ahí la señal es que el recorrido progrese y el remedio `resize_window`—.
+**`document.hidden` no detecta ninguno de los dos**: sale `false` en ambos.
 
 ---
 

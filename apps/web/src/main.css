@@ -58,6 +58,17 @@
   --lavender: #f4eeff;
   --line: #e3d9f7;
 
+  /*
+   * La escala fría de la pantalla del juego. Son blancos y grises con una gota
+   * de azul —apenas perceptible— para que los paneles no compitan con el cielo
+   * del tablero, que es lo único con color de esa zona.
+   */
+  --sky-high: #cfe6fb;
+  --sky-mist: #edf5fd;
+  --mist: #f8fbfe;
+  --mist-soft: #eff4fa;
+  --mist-line: #dfe8f2;
+
   /* Compatibilidad con las utilidades previas */
   --primary: var(--grape);
   --primary-dark: var(--grape-dark);
@@ -191,6 +202,12 @@ a {
   .btn-leaf {
     background-color: var(--jungle);
     border-bottom-color: var(--jungle-dark);
+  }
+
+  /* Apagado a propósito: detener no es un error, así que no va en coral. */
+  .btn-slate {
+    background-color: var(--ink-faint);
+    border-bottom-color: var(--ink-soft);
   }
 
   .btn-papaya {
@@ -389,4 +406,91 @@ a {
   .hover\:text-primary-dark:hover {
     color: var(--primary-dark);
   }
+
+  /*
+   * La escala fría, escrita a mano por lo mismo que los alias de arriba: así el
+   * nombre existe aunque nadie haya recargado la configuración de Tailwind.
+   */
+  .bg-mist {
+    background-color: var(--mist);
+  }
+
+  .bg-mist-soft {
+    background-color: var(--mist-soft);
+  }
+
+  .border-mist-line {
+    border-color: var(--mist-line);
+  }
+}
+
+/*
+ * MIENTRAS SE ARRASTRA UN BLOQUE, NADA LO RECORTA.
+ *
+ * El bloque que el niño lleva agarrado se dibuja dentro del SVG del lienzo, y
+ * ese SVG —como el hueco donde se inyecta y como la bandeja y el marco que lo
+ * contienen— recorta lo que se sale. Con la caja de bloques en la columna
+ * derecha y el lienzo en la bandeja de abajo a la izquierda, el trayecto entre
+ * las dos cruza por encima del juego: sin apagar esos recortes el bloque
+ * desaparece a mitad de camino y el niño no sabe qué está haciendo.
+ *
+ * Se apaga SÓLO mientras dura el arrastre —y el vuelo de vuelta a la caja—,
+ * porque con los recortes apagados un bloque colocado lejos del centro del
+ * lienzo también se saldría de la bandeja.
+ *
+ * La clase la enciende `BlockEditor.tsx`, que es quien se entera del arrastre.
+ * La regla vive aquí, fuera de las capas, porque tiene que ganarle a las clases
+ * de Tailwind que ponen esos recortes.
+ */
+/*
+ * EL CIELO DEL JUEGO. El `<canvas>` se dibuja transparente, así que el fondo de
+ * la escena lo pone su zona: un azul muy suave arriba que se abre a blanco
+ * abajo, para que el tablero se recorte contra el cielo y la bandeja del lienzo
+ * —que va justo debajo— no tenga que separarse del fondo con un borde grueso.
+ */
+.zona-del-juego {
+  background-image: linear-gradient(
+    to bottom,
+    var(--sky-high) 0%,
+    var(--sky-mist) 42%,
+    var(--mist) 88%
+  );
+}
+
+.arrastrando-bloque .zona-del-juego,
+.arrastrando-bloque .bandeja-del-lienzo,
+.arrastrando-bloque .marco-del-lienzo,
+.arrastrando-bloque .injectionDiv,
+.arrastrando-bloque .blocklySvg {
+  overflow: visible;
+}
+
+/* Y por encima de la columna derecha, que es de donde viene el bloque. */
+.arrastrando-bloque .bandeja-del-lienzo {
+  z-index: 30;
+}
+
+/*
+ * EL LIENZO NO PINTA SU PROPIO FONDO, y son DOS capas: Blockly pinta un blanco
+ * en el `<svg>` y encima un rectángulo bajo los bloques. Aquí el fondo lo pone
+ * la bandeja —el marco discontinuo y el texto que dice qué va a aparecer ahí—,
+ * así que las dos tienen que quitarse: con una sola, la otra lo tapa igual.
+ */
+.blocklySvg {
+  background-color: transparent;
+}
+
+/*
+ * Y LA CAJA TAMPOCO PINTA EL SUYO. El flyout dibuja un rectángulo bajo sus
+ * bloques —gris, del tema de Blockly— que no es el fondo que la maqueta le pone
+ * a esa zona, y encima no llega hasta el borde de su hueco: se veía como un
+ * recuadro suelto detrás de los tres bloques.
+ */
+.blocklyFlyoutBackground {
+  fill: transparent;
+}
+
+.blocklyMainBackground {
+  fill: transparent !important;
+  stroke: none;
 }

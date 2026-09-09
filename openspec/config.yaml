@@ -105,7 +105,8 @@ context: |
   STACK
   React 18.3 + TypeScript 5.9 (estricto) + Vite 5.4 + Tailwind 3.4.
   react-router-dom 6.30, @supabase/supabase-js 2.112, zod 3.25.
-  Juego 3D: three 0.170 + @react-three/fiber 8.18, con @types/three 0.170
+  Juego 3D: three 0.170 + @react-three/fiber 8.18 + @react-three/drei 9.122,
+  con @types/three 0.170
   (three no publica tipos propios y sin ellos el tsc del build falla). Fiber se
   queda en la rama 8 porque la 9 exige React >= 19. Y three esta FIJADO a 0.170
   por el runtime, no por gusto: con fiber 8.18 contra three 0.185 el lienzo se
@@ -115,7 +116,9 @@ context: |
   de fiber dejan de cuadrar. Se arregla restaurando package-lock.json y
   reinstalando, NUNCA regenerandolo: regenerar el lockfile en Windows se lleva
   por delante los binarios opcionales de otras plataformas (@supabase/cli-linux-*)
-  y el CI corre npm ci sobre ubuntu-latest.
+  y el CI corre npm ci sobre ubuntu-latest. drei entro en el J6.3 y SOLO por
+  OrbitControls (girar y acercar el mapa); su rama 9 es la que acompana a fiber
+  8. Sumo 16,74 kB al trozo de la escena y cero al principal.
   Bloques: blockly 12.5.1, y se importa blockly/core y NO blockly (el entry
   principal arrastra la biblioteca de bloques estandar y el generador de
   JavaScript, y aqui no se usa ninguno). Blockly trae sus propios tipos por el

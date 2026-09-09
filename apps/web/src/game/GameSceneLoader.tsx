@@ -21,9 +21,13 @@ const LazyGameScene = lazy(() =>
 
 interface GameSceneLoaderProps {
   program: Program | null;
+  /* El hueco de los tres botones. Cruza como dato, igual que el programa. */
+  controlsHost: HTMLElement | null;
+  /* Y el del mensaje, en la franja del lienzo. Cruza igual. */
+  messageHost: HTMLElement | null;
 }
 
-export const GameSceneLoader = ({ program }: GameSceneLoaderProps) => (
+export const GameSceneLoader = ({ program, controlsHost, messageHost }: GameSceneLoaderProps) => (
   <Suspense
     fallback={
       <div className="flex h-full w-full items-center justify-center">
@@ -32,6 +36,6 @@ export const GameSceneLoader = ({ program }: GameSceneLoaderProps) => (
       </div>
     }
   >
-    <LazyGameScene program={program} />
+    <LazyGameScene program={program} controlsHost={controlsHost} messageHost={messageHost} />
   </Suspense>
 );

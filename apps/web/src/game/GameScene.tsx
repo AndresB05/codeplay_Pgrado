@@ -1,5 +1,7 @@
+import { OrbitControls } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, type ElementRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { Group } from 'three';
 import { debugLevel } from './debugLevel';
 import {
@@ -7,6 +9,7 @@ import {
   hasLooseStacks,
   readProgram,
   runProgram,
+  stepsTaken,
   type Run,
   type RunStep,
 } from './interpreter';
@@ -71,6 +74,95 @@ const STEP_SECONDS = 0.34;
 const BUMP_DISTANCE = 0.22;
 
 const TWO_PI = Math.PI * 2;
+
+/*
+ * Los topes de la cámara, y ninguno es estético.
+ *
+ * Por ABAJO no se puede pasar de la horizontal: por debajo del tablero se ve el
+ * envés de las losas, que no está dibujado para verse. Por ARRIBA no se llega al
+ * cenit: desde ahí el personaje es una silueta y la marca que lleva sobre la
+ * cabeza —la que dice hacia dónde mira— deja de distinguirse, así que girar
+ * dejaría de verse, que es justo lo que esa marca existe para enseñar.
+ *
+ * Y el acercamiento se acota por los dos lados para que el tablero ni llene la
+ * pantalla ni se quede lejos. Desplazar el centro está desactivado: es la única
+ * forma de perder el tablero de vista, y un niño que lo pierda no sabe volver.
+ */
+const MIN_POLAR_ANGLE = Math.PI / 7;
+const MAX_POLAR_ANGLE = Math.PI / 2 - 0.12;
+const MIN_DISTANCE = 4;
+const MAX_DISTANCE = 14;
+
+/*
+ * EL ENCUADRE DE PARTIDA LO MANDA LA BANDEJA, y por eso son dos números y no
+ * uno. Desde que el lienzo va superpuesto al juego, la mitad de abajo del hueco
+ * está tapada por él: un tablero centrado y a la distancia de antes metía su
+ * fila sur —la de la salida— justo debajo de la bandeja. Medido: la esquina
+ * sureste caía 154 px por debajo del borde de la bandeja.
+ *
+ * Se corrige por los dos lados. `CAMERA_START` aleja la cámara hasta que el
+ * tablero cabe en la franja libre, y `BOARD_LIFT` lo sube hasta el centro de
+ * esa franja. Alejar sin subir no basta —la perspectiva deja la esquina
+ * cercana abajo por mucho que se aleje—, y subir sin alejar saca el borde
+ * norte por arriba.
+ *
+ * Se levanta EL TABLERO y no el punto al que mira la cámara porque mover ése
+ * rompería «Vista inicial»: los controles guardan su vista de partida al
+ * construirse, con el punto en el origen, y volver a ella lo devolvería ahí. El
+ * personaje va dentro del mismo grupo, así que su casilla se sigue calculando
+ * igual: cambia dónde se pinta el tablero, no dónde está.
+ */
+const CAMERA_START: [number, number, number] = [5.3, 7.5, 7.5];
+const BOARD_LIFT = 2.4;
+
+/*
+ * Los iconos de la superposición y de los botones. Van aquí y no en
+ * `components/decor/` porque no son adornos: nombran lo que hace cada control, y
+ * viven pegados a él.
+ */
+const BackIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const ViewCubeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z" fill="currentColor" opacity="0.35" />
+    <path d="M4 7.5L12 12l8-4.5M12 12v9" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+  </svg>
+);
+
+const StepsIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <ellipse cx="8" cy="8.5" rx="3.2" ry="4.6" fill="currentColor" />
+    <ellipse cx="15.5" cy="15" rx="3.2" ry="4.6" fill="currentColor" opacity="0.6" />
+  </svg>
+);
+
+const PlayIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M7 4.5l12 7.5-12 7.5V4.5Z" fill="currentColor" />
+  </svg>
+);
+
+const StopIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect x="5" y="5" width="14" height="14" rx="3" fill="currentColor" />
+  </svg>
+);
+
+const ReloadIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M20 12a8 8 0 1 1-2.6-5.9M20 3.5V9h-5.5"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 /** El ángulo equivalente más corto: girar de norte a oeste es un cuarto, no tres. */
 const shortestTurn = (from: number, to: number): number => {
@@ -255,6 +347,21 @@ const Character = ({ config, pose, step, stepIndex, onStepDone }: CharacterProps
 
 interface GameSceneProps {
   program: Program | null;
+  /*
+   * El hueco donde van los tres botones, que desde el J6.3 viven en la columna
+   * derecha de la pantalla y no en una franja bajo el juego. Baja como dato
+   * desde la composición y los botones se pintan ahí con un portal: así cambian
+   * de zona SIN que el estado del intento ni el intérprete suban por encima de
+   * la frontera diferida, que es lo que el J5 dejó medido a cero en el trozo
+   * principal.
+   */
+  controlsHost: HTMLElement | null;
+  /*
+   * El hueco del mensaje, en la franja del título del lienzo. Baja como dato
+   * por el mismo motivo que el de los botones: lo que se le dice al niño sale
+   * del intento, y el intento no sube.
+   */
+  messageHost: HTMLElement | null;
 }
 
 /*
@@ -275,6 +382,7 @@ const stepsLabel = (count: number): string => (count === 1 ? '1 paso' : `${count
 const OUTCOME_MESSAGES = {
   idle: 'Coloca bloques y pulsa «Ejecutar» para ver al personaje moverse.',
   running: 'Ejecutando el programa…',
+  stopped: 'Has detenido el recorrido. Pulsa «Ejecutar» para empezar otra vez.',
   empty: 'No hay bloques que ejecutar. Arrastra alguno al lienzo.',
   unreadable: 'Ese programa no se puede leer.',
 };
@@ -324,11 +432,20 @@ const outcomeOf = (run: Run, steps: number, optimalSteps: number): string => {
   return `¡Perfecto! Llegaste a la meta con ${stepsLabel(steps)}, justo lo que cuesta la mejor solución.`;
 };
 
-export const GameScene = ({ program }: GameSceneProps) => {
+export const GameScene = ({ program, controlsHost, messageHost }: GameSceneProps) => {
   const config = debugLevel;
 
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [index, setIndex] = useState(0);
+
+  /*
+   * Un recorrido CONGELADO no es uno terminado, y por eso hace falta esta marca:
+   * los dos se ven igual desde el índice —nadie avanza— y sin embargo uno lleva
+   * resultado y el otro no.
+   */
+  const [halted, setHalted] = useState(false);
+
+  const controls = useRef<ElementRef<typeof OrbitControls>>(null);
 
   /*
    * El programa se lee al pulsar, no al recibirlo: si viajara en el estado, mover
@@ -351,9 +468,12 @@ export const GameScene = ({ program }: GameSceneProps) => {
   // El intento entero y no sólo su recorrido: el contador necesita su recuento.
   const active = attempt !== null && attempt.kind === 'run' ? attempt : null;
   const run = active === null ? null : active.run;
-  const step = run !== null && index < run.steps.length ? run.steps[index] : null;
+  const step = run !== null && !halted && index < run.steps.length ? run.steps[index] : null;
   const pose = run === null || index === 0 ? config.start : run.steps[index - 1].pose;
   const isRunning = step !== null;
+
+  // Los pasos DADOS, que es lo único que el contador dice. La cuenta vive fuera.
+  const steps = stepsTaken(run, index, isRunning);
 
   /*
    * El arranque cuelga del evento del botón y NUNCA de un efecto: con
@@ -366,6 +486,7 @@ export const GameScene = ({ program }: GameSceneProps) => {
     const reading = workspace === null ? null : readProgram(workspace);
 
     setIndex(0);
+    setHalted(false);
 
     if (reading === null) {
       setAttempt({ kind: 'unreadable' });
@@ -395,19 +516,48 @@ export const GameScene = ({ program }: GameSceneProps) => {
     });
   }, [config]);
 
+  /*
+   * Detener es ADELANTAR EL ÍNDICE y marcar el intento como congelado, y con eso
+   * salen tres cosas de una: la pose pasa a ser la del paso en curso —que es
+   * donde el usuario quiere que se quede el personaje, en su casilla y con su
+   * orientación—, el paso a animar se vuelve `null` y el bucle de frames se
+   * planta, y el contador se queda en el paso que se estaba dando.
+   *
+   * El personaje ATERRIZA en esa casilla en vez de congelarse entre dos: un cubo
+   * parado a medio camino se lee como un fallo de dibujo, y lo que se recorre de
+   * más dura un tercio de segundo.
+   */
+  const stop = useCallback(() => {
+    setIndex((current) => current + 1);
+    setHalted(true);
+  }, []);
+
   const reset = useCallback(() => {
     setAttempt(null);
     setIndex(0);
+    setHalted(false);
   }, []);
+
+  // La vista de partida la guardan los propios controles al montarse.
+  const resetView = useCallback(() => controls.current?.reset(), []);
 
   const advanceStep = useCallback((finished: number) => {
     // Un frame puede llegar con el paso ya terminado antes de que React repinte.
     setIndex((current) => (current === finished ? current + 1 : current));
   }, []);
 
+  /*
+   * DETENER NO PRODUCE RESULTADO, y no es sólo que un recorrido congelado no haya
+   * terminado: el resultado diría «No llegaste a la meta», y eso es acusar al
+   * niño de un fallo que no ha cometido —paró él—. Es el mismo error que el J6
+   * corrigió con el lienzo vacío, donde se le contaba que su programa era malo
+   * cuando lo que pasaba es que no había programa.
+   */
   let outcome = OUTCOME_MESSAGES.idle;
   if (isRunning) {
     outcome = OUTCOME_MESSAGES.running;
+  } else if (halted) {
+    outcome = OUTCOME_MESSAGES.stopped;
   } else if (attempt !== null && attempt.kind === 'unreadable') {
     outcome = OUTCOME_MESSAGES.unreadable;
   } else if (attempt !== null && attempt.kind === 'empty') {
@@ -416,9 +566,9 @@ export const GameScene = ({ program }: GameSceneProps) => {
     outcome = outcomeOf(active.run, active.steps, config.optimalSteps);
   }
 
-  // El aviso es del recorrido terminado: durante la ejecución todavía no toca.
+  // El aviso es del recorrido TERMINADO: ni durante la ejecución ni al congelarla.
   const warning =
-    !isRunning && active !== null && active.rootCount > 1 ? LOOSE_BLOCKS_WARNING : null;
+    !isRunning && !halted && active !== null && active.rootCount > 1 ? LOOSE_BLOCKS_WARNING : null;
 
   /*
    * Y el del lienzo CEDE cuando el del resultado está en pantalla: los dos dicen
@@ -428,12 +578,12 @@ export const GameScene = ({ program }: GameSceneProps) => {
   const notice = !isRunning && warning === null && looseStacks;
 
   return (
-    <div className="flex h-full w-full flex-col">
-      <div className="relative min-h-0 flex-1">
-        <Canvas camera={{ position: [3.8, 5.4, 5.4], fov: 45 }}>
-          <ambientLight intensity={1.4} />
-          <directionalLight position={[4, 6, 3]} intensity={2.2} />
+    <div className="relative h-full w-full">
+      <Canvas camera={{ position: CAMERA_START, fov: 45 }}>
+        <ambientLight intensity={1.4} />
+        <directionalLight position={[4, 6, 3]} intensity={2.2} />
 
+        <group position={[0, BOARD_LIFT, 0]}>
           <Board config={config} />
           <Character
             config={config}
@@ -442,53 +592,123 @@ export const GameScene = ({ program }: GameSceneProps) => {
             stepIndex={index}
             onStepDone={advanceStep}
           />
-        </Canvas>
+        </group>
 
         {/*
-         * El contador va SUPERPUESTO al lienzo y no dentro del `<Canvas>`: ahí
-         * dentro los elementos son objetos de three y no etiquetas de HTML. Y va
-         * sobre el juego y no en la barra de abajo porque el niño está mirando
-         * al personaje, que es donde tiene que ver subir sus pasos.
-         *
-         * Dice lo que LLEVA y nunca lo que falta. Enseñar el número a batir
-         * mientras se juega convierte el nivel en un problema de optimización
-         * cuando todavía es un problema de llegar; lo que costó y lo que costaba
-         * lo bueno se dicen al terminar, y ahí es una lección y no una
-         * exigencia.
+         * Girar y acercar, acotados. `enablePan` desactivado porque desplazar el
+         * centro es la única forma de dejar el tablero fuera de la pantalla, y en
+         * la pantalla de nivel no habrá nadie al lado para devolverlo.
          */}
-        {isRunning && (
-          <p className="pointer-events-none absolute right-4 top-4 rounded-[16px] border-[3px] border-ink bg-cream px-3 py-1.5 font-display text-[18px] text-ink">
-            {stepsLabel(index + 1)}
-          </p>
-        )}
-      </div>
+        <OrbitControls
+          ref={controls}
+          enablePan={false}
+          minPolarAngle={MIN_POLAR_ANGLE}
+          maxPolarAngle={MAX_POLAR_ANGLE}
+          minDistance={MIN_DISTANCE}
+          maxDistance={MAX_DISTANCE}
+        />
+      </Canvas>
 
       {/*
-       * La barra va FUERA del `<Canvas>` —dentro los elementos son objetos de
-       * three, no etiquetas de HTML— y DENTRO de este archivo: la pantalla de
-       * nivel del J8 tiene que heredar los controles, no volver a escribirlos.
+       * TODO LO QUE SE LE DICE AL NIÑO VA SUPERPUESTO AL JUEGO, y no dentro del
+       * `<Canvas>`: ahí dentro los elementos son objetos de three y no etiquetas
+       * de HTML. Está aquí porque el niño está mirando al personaje, y porque la
+       * franja que había bajo el juego se fue con los botones a la columna
+       * derecha.
        */}
-      <div className="flex flex-wrap items-center gap-3 border-t-[3px] border-ink bg-cream px-4 py-3">
-        <button type="button" className="btn btn-sm btn-leaf" onClick={start} disabled={isRunning}>
-          Ejecutar
-        </button>
-        <button type="button" className="btn btn-sm btn-ghost" onClick={reset}>
-          Reiniciar
-        </button>
-        <div className="min-w-0">
-          <p className="text-[15px] font-semibold leading-[1.5] text-ink-soft">{outcome}</p>
+      <button
+        type="button"
+        className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-ink py-2 pl-2.5 pr-4 font-display text-[15px] text-white shadow-[0_6px_18px_rgba(42,27,69,0.28)] transition-transform hover:-translate-y-[1px]"
+        onClick={resetView}
+      >
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15">
+          <BackIcon />
+        </span>
+        <ViewCubeIcon />
+        Vista inicial
+      </button>
 
-          {warning !== null && (
-            <p className="text-[15px] font-bold leading-[1.5] text-coral-dark">{warning}</p>
-          )}
+      {/*
+       * El contador dice lo que LLEVA y nunca lo que falta. Enseñar el número a
+       * batir mientras se juega convierte el nivel en un problema de optimización
+       * cuando todavía es un problema de llegar; lo que costó y lo que costaba lo
+       * bueno se dicen al terminar, y ahí es una lección y no una exigencia.
+       *
+       * Y se ve SIEMPRE, con un cero en reposo: un marcador ya puesto explica de
+       * qué van a ser los números que suban, y un cero no es un número a batir.
+       * No usa el texto del resultado a propósito —aquí la etiqueta es la que
+       * nombra la magnitud, y allí la frase ya la nombra—.
+       */}
+      <p className="pointer-events-none absolute right-4 top-4 flex items-center gap-2.5 rounded-full bg-ink px-4 py-2 font-display text-[17px] text-white shadow-[0_6px_18px_rgba(42,27,69,0.28)]">
+        <StepsIcon />
+        Pasos: {steps}
+      </p>
 
-          {notice && (
-            <p className="text-[15px] font-bold leading-[1.5] text-coral-dark">
-              {LOOSE_BLOCKS_NOTICE}
-            </p>
-          )}
-        </div>
-      </div>
+      {/*
+       * LO QUE SE LE DICE AL NIÑO VA EN LA FRANJA DEL TÍTULO DEL LIENZO, a la
+       * derecha de la etiqueta, y viaja hasta allí por un portal por lo mismo
+       * que los botones: el intento y quien lo lee se quedan bajo la frontera
+       * diferida. Antes era una banda sobre el juego, y estorbaba justo donde
+       * hay que mirar — que es el tablero.
+       *
+       * Los tres textos van en una línea y no apilados: la franja es una franja.
+       */}
+      {messageHost !== null &&
+        createPortal(
+          <div className="flex flex-wrap items-baseline gap-x-3">
+            <p className="text-[14px] font-semibold leading-[1.5] text-ink-soft">{outcome}</p>
+
+            {warning !== null && (
+              <p className="text-[14px] font-bold leading-[1.5] text-coral-dark">{warning}</p>
+            )}
+
+            {notice && (
+              <p className="text-[14px] font-bold leading-[1.5] text-coral-dark">
+                {LOOSE_BLOCKS_NOTICE}
+              </p>
+            )}
+          </div>,
+          messageHost,
+        )}
+
+      {/*
+       * LOS BOTONES SE VEN ARRIBA Y VIVEN AQUÍ. El portal los pinta en el hueco
+       * que baja la composición, así que cambian de zona de la pantalla sin que
+       * el estado del intento ni `start()` salgan de debajo de la frontera
+       * diferida —que es lo que arrastraría el intérprete al trozo principal—.
+       */}
+      {controlsHost !== null &&
+        createPortal(
+          <div className="flex items-stretch gap-2">
+            <button
+              type="button"
+              className="btn btn-sm btn-leaf flex-1 gap-2 px-3"
+              onClick={start}
+              disabled={isRunning}
+            >
+              <PlayIcon />
+              Ejecutar
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-slate flex-col gap-0.5 px-3 leading-none"
+              onClick={stop}
+              disabled={!isRunning}
+            >
+              <StopIcon />
+              Detener
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost flex-col gap-0.5 px-3 leading-none"
+              onClick={reset}
+            >
+              <ReloadIcon />
+              Reiniciar
+            </button>
+          </div>,
+          controlsHost,
+        )}
     </div>
   );
 };

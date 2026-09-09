@@ -48,7 +48,12 @@ export interface Run {
 interface SerializedBlock {
   type?: unknown;
   fields?: unknown;
-  next?: { block?: SerializedBlock };
+  /*
+   * `block` puede faltar Y puede venir a `null`, que no es lo mismo para el
+   * `?.` de abajo: Blockly escribe el `null` mientras se arrastra el bloque
+   * siguiente para separarlo de la cadena.
+   */
+  next?: { block?: SerializedBlock | null };
   x?: unknown;
   y?: unknown;
 }
@@ -169,7 +174,26 @@ export const readProgram = (workspace: WorkspaceState): ProgramReading | null =>
     }
 
     orders.push(order);
-    block = block.next?.block;
+
+    /*
+     * LA CADENA SE ACABA EN CUANTO LO QUE SIGUE NO ES UN BLOQUE, y esto no es
+     * una precaución: `block.next?.block` devolvía `null` tal cual y el bucle
+     * seguía, porque `null !== undefined`, así que `readOrder` recibía `null` y
+     * reventaba leyéndole el tipo.
+     *
+     * Y reventar aquí NO se queda aquí: `hasLooseStacks` corre en el pintado de
+     * la escena, así que la excepción se lleva por delante el árbol de React y
+     * **la pantalla se queda en blanco**. Es lo que pasaba al separar dos
+     * bloques pegados: mientras dura el arrastre, Blockly serializa el `next`
+     * del de arriba con `block: null`, y el editor publica ese estado
+     * intermedio.
+     *
+     * Se para en vez de rechazar el programa entero porque eso es lo que se ve
+     * en pantalla: el bloque de abajo está en el aire, y la cadena que queda
+     * termina donde termina.
+     */
+    const next = block.next?.block;
+    block = isObject(next) ? (next as SerializedBlock) : undefined;
   }
 
   return { orders, rootCount: roots.length };
@@ -187,6 +211,20 @@ export const readProgram = (workspace: WorkspaceState): ProgramReading | null =>
  */
 export const countSteps = (orders: Order[]): number =>
   orders.reduce((total, order) => total + (order.kind === 'advance' ? order.steps : 1), 0);
+
+/*
+ * Los pasos que el personaje LLEVA DADOS, que es lo que el contador enseña: cero
+ * mientras no haya recorrido, el paso en curso mientras corre, y lo que costó
+ * cuando terminó o cuando se detuvo.
+ *
+ * Está aquí y no dentro de la escena por lo mismo que `countSteps`: dentro del
+ * componente no se puede probar —jsdom no implementa WebGL—, y esta cuenta tiene
+ * un borde afilado. El índice que la escena lleva vale `steps.length` al terminar,
+ * así que pintar `index + 1` sin mirar si el recorrido sigue vivo enseñaría ONCE
+ * pasos en un recorrido de diez. El `min` es ese borde, no una precaución.
+ */
+export const stepsTaken = (run: Run | null, index: number, running: boolean): number =>
+  run === null ? 0 : Math.min(running ? index + 1 : index, run.steps.length);
 
 /*
  * Si el lienzo trae bloques de sobra, que es lo ÚNICO que hay que preguntarle

@@ -17,9 +17,11 @@ const LazyBlockEditor = lazy(() =>
 
 interface BlockEditorLoaderProps {
   onProgramChange: (program: Program) => void;
+  /* El hueco de la caja de bloques. Cruza la frontera como dato, igual que el programa. */
+  flyoutHost: HTMLElement;
 }
 
-export const BlockEditorLoader = ({ onProgramChange }: BlockEditorLoaderProps) => (
+export const BlockEditorLoader = ({ onProgramChange, flyoutHost }: BlockEditorLoaderProps) => (
   <Suspense
     fallback={
       <div className="flex h-full w-full items-center justify-center">
@@ -28,6 +30,6 @@ export const BlockEditorLoader = ({ onProgramChange }: BlockEditorLoaderProps) =
       </div>
     }
   >
-    <LazyBlockEditor onProgramChange={onProgramChange} />
+    <LazyBlockEditor onProgramChange={onProgramChange} flyoutHost={flyoutHost} />
   </Suspense>
 );

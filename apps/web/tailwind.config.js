@@ -64,6 +64,15 @@ export default {
         lavender: '#F4EEFF',
         line: '#E3D9F7',
 
+        // La escala fría de la pantalla del juego. Duplicada a mano en main.css.
+        'sky-high': '#CFE6FB',
+        'sky-mist': '#EDF5FD',
+        mist: {
+          DEFAULT: '#F8FBFE',
+          soft: '#EFF4FA',
+          line: '#DFE8F2',
+        },
+
         // Se conservan los nombres anteriores para no romper pantallas antiguas.
         primary: {
           DEFAULT: '#7B3FE4',
@@ -97,3 +106,4 @@ export default {
   },
   plugins: [],
 };
+
