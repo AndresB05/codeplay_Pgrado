@@ -91,7 +91,7 @@ const TWO_PI = Math.PI * 2;
 const MIN_POLAR_ANGLE = Math.PI / 7;
 const MAX_POLAR_ANGLE = Math.PI / 2 - 0.12;
 const MIN_DISTANCE = 4;
-const MAX_DISTANCE = 14;
+const MAX_DISTANCE = 18;
 
 /*
  * EL ENCUADRE DE PARTIDA LO MANDA LA BANDEJA, y por eso son dos números y no
@@ -106,14 +106,33 @@ const MAX_DISTANCE = 14;
  * cercana abajo por mucho que se aleje—, y subir sin alejar saca el borde
  * norte por arriba.
  *
+ * La cámara ARRANCA MÁS LEJOS de lo que el tablero de hoy pide, y es a
+ * propósito: las cinco por cinco casillas son cubos de colores, y las
+ * ilustraciones del mundo ocuparán bastante más alto que una losa de 0,2. Un
+ * encuadre ajustado a los cubos se queda corto el día que lleguen, y acercarse
+ * está a una rueda de ratón —volver a encuadrar un tablero que ya no cabe, no—.
+ * Por eso sube también `MAX_DISTANCE`: el tope de antes queda por debajo del
+ * arranque de ahora, y los controles lo recortarían en el primer frame.
+ *
+ * El ÁNGULO es el mismo de antes —los tres números crecen a la vez, así que la
+ * vista no gira—, y la subida se vuelve a medir porque la franja libre ha
+ * cambiado: la bandeja abre más plegada.
+ *
+ * Y el tablero NO se centra en esa franja, que era lo primero que se probó: se
+ * queda entre su centro y el del hueco entero, porque centrado en la franja se
+ * lee alto —lo que el ojo toma por «el juego» es el hueco, y la bandeja va
+ * ENCIMA de él, no al lado—. Lo que manda por abajo es no llegar a tocar la
+ * bandeja. Con estos números el tablero cae en 345-623 y la bandeja empieza en
+ * 653: 30 px de aire, justo el borde de su sombra.
+ *
  * Se levanta EL TABLERO y no el punto al que mira la cámara porque mover ése
  * rompería «Vista inicial»: los controles guardan su vista de partida al
  * construirse, con el punto en el origen, y volver a ella lo devolvería ahí. El
  * personaje va dentro del mismo grupo, así que su casilla se sigue calculando
  * igual: cambia dónde se pinta el tablero, no dónde está.
  */
-const CAMERA_START: [number, number, number] = [5.3, 7.5, 7.5];
-const BOARD_LIFT = 2.4;
+const CAMERA_START: [number, number, number] = [6.7, 9.5, 9.5];
+const BOARD_LIFT = 1.8;
 
 /*
  * Los iconos de la superposición y de los botones. Van aquí y no en

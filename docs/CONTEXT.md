@@ -2163,10 +2163,12 @@ rectángulo primero y no viéndose nada.
 **Y LA ESCALA DE LA PANTALLA ES FRÍA, con cinco nombres nuevos del tema**
 —`sky-high`, `sky-mist`, `mist`, `mist-soft` y `mist-line`—: blancos y grises con una gota
 de azul, apenas perceptible, para que los paneles no compitan con el cielo del
-tablero. **El fondo del juego es ese cielo**: un degradado de tres paradas —azul claro
-arriba, más suave en medio y casi blanco abajo—, puesto en la zona y no en la
-escena, porque el `<canvas>` se dibuja transparente y deja ver lo que hay detrás.
-Cuesta cero de 3D.
+tablero. **El fondo del juego es ese cielo**: un degradado de cuatro paradas
+—azul claro sostenido el primer cuarto, más suave en medio y casi blanco al
+borde de abajo—, puesto en la zona y no en la escena, porque el `<canvas>` se
+dibuja transparente y deja ver lo que hay detrás. Cuesta cero de 3D. El reparto
+de las paradas se reajustó después del J6.3; el porqué, al final de este
+apartado.
 
 **Los cinco van en `main.css` Y en `tailwind.config.js`**, que es la
 duplicación deliberada del proyecto, **y además como utilidades escritas a mano**
@@ -2230,9 +2232,10 @@ estira entre 90 y 380 px.
 **Plegar NO desmonta el editor**, y ésa es la única decisión que hay aquí: el
 espacio de trabajo de Blockly vive dentro de ese componente, así que desmontarlo
 se llevaría por delante los bloques que el niño lleve puestos. Se le deja el
-hueco en **cero** y el editor sigue montado. Verificado: con dos bloques puestos,
-plegar deja la bandeja en 68 px con los dos bloques vivos, y al abrir vuelven a
-190 px **y los dos se ven dentro del lienzo**.
+hueco en **cero** y el editor sigue montado. Verificado con la altura de partida
+de hoy: con dos bloques puestos, plegar deja la bandeja en 120 px con los dos
+bloques vivos, y al abrir el lienzo vuelve a **130 px** **y los dos se ven
+dentro**.
 
 **Y sin animar la altura.** Animarla obliga a Blockly a recomponerse en cada
 frame —el `ResizeObserver` del editor mira ese mismo hueco— y, además, **una
@@ -2447,6 +2450,9 @@ dos lados, con dos constantes en `GameScene.tsx`:
   había, así que los topes no se tocaron—;
 - **`BOARD_LIFT`** levanta el tablero **2,4** sobre el centro de la órbita, hasta
   el centro de esa franja.
+
+Las dos se volvieron a medir después del J6.3 —**15,01** y **1,8**, con el tope
+de acercamiento subido a 18—; el porqué, al final de este apartado.
 
 **Los dos hacen falta.** Alejar sin levantar no basta —la perspectiva deja la
 esquina cercana abajo por mucho que se aleje: medido hasta distancia 14,5, seguía
@@ -2703,6 +2709,76 @@ decida si se ataca antes del J8 o se queda anotado.
 
 **Mientras tanto, la comprobación del `<pre>` sigue siendo la única que vale**, y
 ahora se sabe que si falla no hay parche: hay que verificar en otra sesión.
+
+#### Cuatro ajustes de encuadre sobre el J6.3, pedidos por el usuario
+
+Son cuatro medidas de la maqueta, no capacidades nuevas: lo que hace la pantalla
+es lo mismo. Se anotan porque cada una tenía su número escrito más arriba.
+
+**EL LIENZO ABRE EN 130 PX Y NO EN 190.** Sólo baja la altura de PARTIDA: el
+tirador y el pliegue siguen yendo de 90 a 380. Quien entra por primera vez viene
+a mirar el tablero, no a construir, y la bandeja tapa la mitad de abajo del
+juego; los bloques caben en cuanto tira del asa, y el tablero no se recupera si
+empieza escondido. Verificado arriba, en el apartado del pliegue.
+
+**Y EL TABLERO ARRANCA MÁS LEJOS Y CENTRADO EN LA FRANJA QUE LE QUEDA.**
+`CAMERA_START` pasa de 11,86 a **15,01** de distancia —los tres números crecen a
+la vez, así que el ángulo no cambia— y `BOARD_LIFT` de 2,4 a **1,8**. La
+distancia va por delante del tablero de hoy a propósito: las 5 × 5 casillas son
+cubos, y las ilustraciones del P6 ocuparán bastante más alto que una losa de 0,2;
+acercarse está a una rueda de ratón, volver a encuadrar un tablero que ya no cabe
+no. **Eso obligó a subir `MAX_DISTANCE` de 14 a 18**: el tope viejo queda por
+debajo del arranque nuevo y los controles lo habrían recortado en el primer
+frame.
+
+**Y el tablero NO se centra en la franja libre, aunque fue lo primero que se
+probó.** Centrado en ella —`BOARD_LIFT` a 2,6, tablero en 307-582— el usuario lo
+vio **alto**, y tiene razón por dónde está la bandeja: lo que el ojo toma por «el
+juego» es el hueco entero, y la bandeja va ENCIMA de él, no al lado. Se baja
+hasta quedar entre el centro de la franja y el del hueco, y lo que manda por
+abajo es no llegar a tocar la bandeja. Medido a 1280 px: el tablero cae en
+**345-623** y la bandeja empieza en 653, o sea **30 px** de aire —justo el borde
+de su sombra—.
+
+**LOS BLOQUES DE LA CAJA SE PINTAN AL 0,72 Y SE COLOCAN EN REJILLA DE 3 × 2.**
+Los mundos siguientes traen más bloques, y una caja que sólo enseña lo que ya
+tiene dentro se ve estrecha el día que llegan. Dos cosas hacen falta y ninguna
+sobra:
+
+- **la escala**, por `getFlyoutScale()` —Blockly documenta ese método como el
+  punto donde separar la escala de la caja de la del lienzo—. Sale de una medida:
+  el bloque más ancho mide **169 px** a tamaño del lienzo y la columna da para
+  146. Encogerlos por el tema —letra y iconos más pequeños— no llega: los bloques
+  de `zelos` tienen alto y relleno mínimos, y se quedaban en 145. Al 0,72 los
+  tres miden 92, 121 y 116;
+- **la rejilla**, sustituyendo `layout_`, que de fábrica apila hacia abajo. Como
+  esta caja no lleva barra —punto 4 de más arriba—, el cuarto bloque se saldría
+  del hueco sin forma de llegar a él. Los separadores que Blockly intercala son
+  huecos de una columna: en rejilla no separan nada y se recogen en el origen.
+
+Y **`getWidth()` también se sustituye**, por el mismo motivo que `getHeight()` en
+el J6.3: el SVG de la caja recorta lo que se sale, y de fábrica su ancho es el
+del bloque más ancho. Con una columna sobraba; con dos, la de la derecha caía
+fuera y no se dibujaba.
+
+**La consecuencia medida, que se dice en vez de darla por buena:** al sacar un
+bloque de la caja **crece de golpe** de 0,72 a 1, y Blockly conserva el
+desplazamiento en PÍXELES del punto por donde se agarró —`positionNewBlock`
+convierte entre las dos escalas, así que el bloque cae bajo el cursor, pero
+descolocado hacia la derecha y abajo—. Medido: agarrado a 58 px de su borde
+izquierdo, el bloque de 161 px queda sujeto al 36 % de su ancho en vez de al
+50 %. Es lo mismo que hace un bloque sacado de una caja con el lienzo acercado.
+Verificado además que **soltar fuera del lienzo sigue devolviendo el bloque a la
+caja** —dos bloques puestos, uno soltado sobre el juego, queda uno— y que la
+clase que apaga los recortes se retira.
+
+**Y EL CIELO REPARTE DISTINTO SUS PARADAS.** Los tonos son los mismos tres
+—`sky-high`, `sky-mist`, `mist`—: lo que cambia es dónde se cruzan. El azul se
+sostiene hasta el 25 % en vez de empezar a irse desde el píxel uno, y el blanco
+se retira al último tramo, que es justo el que tapa la bandeja. Así lo que se ve
+del cielo es azul en su mayor parte y no blanco, sin subir el tono de ninguno de
+los tres, y sigue llegando a blanco antes del borde de abajo —que es de lo que
+vivía la bandeja sin borde—.
 
 ---
 

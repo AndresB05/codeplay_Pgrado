@@ -447,13 +447,21 @@ a {
  * la escena lo pone su zona: un azul muy suave arriba que se abre a blanco
  * abajo, para que el tablero se recorte contra el cielo y la bandeja del lienzo
  * —que va justo debajo— no tenga que separarse del fondo con un borde grueso.
+ *
+ * Son los MISMOS tres tonos de siempre y lo que cambia es dónde se cruzan: el
+ * azul se sostiene el primer cuarto en vez de empezar a irse desde el píxel
+ * uno, y el blanco se retira al último tramo —el que la bandeja tapa—. Así lo
+ * que se ve del cielo es azul en su mayor parte y no blanco, sin subir el tono
+ * de ninguno de los tres. Sigue llegando a blanco antes del borde de abajo, que
+ * es de lo que vivía la bandeja sin borde.
  */
 .zona-del-juego {
   background-image: linear-gradient(
     to bottom,
     var(--sky-high) 0%,
-    var(--sky-mist) 42%,
-    var(--mist) 88%
+    var(--sky-high) 25%,
+    var(--sky-mist) 80%,
+    var(--mist) 100%
   );
 }
 

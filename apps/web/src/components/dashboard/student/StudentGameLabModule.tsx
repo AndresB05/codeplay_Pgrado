@@ -72,8 +72,16 @@ const BulbIcon = () => (
   </svg>
 );
 
-/** Lo que mide el lienzo al abrir la pantalla, y hasta dónde se le deja llegar. */
-const CANVAS_HEIGHT = 190;
+/*
+ * Lo que mide el lienzo al abrir la pantalla, y hasta dónde se le deja llegar.
+ *
+ * ABRE BAJO, y es la altura de partida lo único que baja: el tirador y el
+ * pliegue siguen llegando a los mismos topes. La bandeja tapa la mitad de abajo
+ * del juego, y quien entra por primera vez viene a mirar el tablero, no a
+ * construir; los bloques caben en cuanto tira del asa, y el tablero no se
+ * recupera si empieza escondido.
+ */
+const CANVAS_HEIGHT = 130;
 const CANVAS_MIN = 90;
 const CANVAS_MAX = 380;
 

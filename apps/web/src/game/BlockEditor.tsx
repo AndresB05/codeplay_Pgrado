@@ -42,8 +42,26 @@ const DRAGGING_CLASS = 'arrastrando-bloque';
 /** Lo que tarda el bloque en volver a la caja. Lo bastante para verlo irse. */
 const RETURN_MS = 320;
 
-/** Dónde aterriza el bloque que vuelve, medido desde la esquina de la caja. */
-const BOX_INSET = 20;
+/**
+ * El margen de la caja: por dónde empieza cada columna de bloques y, con él,
+ * dónde aterriza el bloque que vuelve. Medido desde la esquina de la caja.
+ */
+const BOX_INSET = 14;
+
+/*
+ * LA REJILLA DE LA CAJA. Tres bloques por columna y dos columnas, o sea seis
+ * huecos para los tres bloques de hoy: los mundos que vienen traen más, y una
+ * caja que sólo enseña lo que ya tiene dentro se ve estrecha el día que llegan.
+ *
+ * `BOX_SCALE` es lo que se encoge un bloque de la caja respecto al que se suelta
+ * en el lienzo, y sale de una medida, no del gusto: el más ancho de los tres
+ * mide 169 px a tamaño del lienzo y la columna da para 146, margen incluido.
+ * Encogerlos por el tema —letra y iconos más pequeños— no llega: los bloques de
+ * `zelos` tienen alto y relleno mínimos, y se quedaban en 145.
+ */
+const BOX_COLUMNS = 2;
+const BOX_ROWS = 3;
+const BOX_SCALE = 0.72;
 
 /*
  * EL ASPECTO DE LOS BLOQUES SALE DEL RENDERIZADOR, no de CSS. Blockly dibuja
@@ -183,6 +201,66 @@ export const BlockEditor = ({ onProgramChange, flyoutHost }: BlockEditorProps) =
     flyout.getHeight = () => flyoutHost.clientHeight;
 
     /*
+     * Y EL ANCHO IGUAL, por un motivo nuevo: el SVG de la caja recorta lo que se
+     * sale, y de fábrica su ancho es el del bloque más ancho más un margen. Con
+     * una sola columna sobraba; con dos, la de la derecha caía fuera y no se
+     * dibujaba.
+     */
+    flyout.getWidth = () => flyoutHost.clientWidth;
+
+    /*
+     * LOS BLOQUES DE LA CAJA SE PINTAN MÁS PEQUEÑOS QUE LOS DEL LIENZO. No es un
+     * ajuste de tamaño: es lo que hace que quepan las dos columnas.
+     *
+     * Blockly documenta `getFlyoutScale` como el punto donde separar la escala de
+     * la caja de la del lienzo, y `positionNewBlock` convierte entre las dos, así
+     * que el bloque sigue cayendo donde el niño lo suelta. Crece al agarrarlo,
+     * que es lo mismo que hace un bloque sacado de una caja con el lienzo
+     * acercado.
+     */
+    flyout.getFlyoutScale = () => BOX_SCALE;
+
+    /*
+     * LA CAJA COLOCA EN REJILLA Y NO EN UNA COLUMNA. De fábrica apila hacia
+     * abajo, y como este flyout no se desplaza —ver más abajo—, el cuarto bloque
+     * se saldría del hueco sin forma de llegar a él.
+     *
+     * Los separadores que Blockly intercala entre bloques son huecos de una
+     * columna, y en una rejilla no separan nada: se recogen en el origen para
+     * que no estiren el contenido a lo alto.
+     */
+    const layoutBox = (contents: Blockly.FlyoutItem[]) => {
+      flyoutWorkspace.scale = BOX_SCALE;
+
+      // El hueco se mide en píxeles; la rejilla coloca en unidades del espacio.
+      const cellWidth = flyoutHost.clientWidth / BOX_COLUMNS / BOX_SCALE;
+      const cellHeight = flyoutHost.clientHeight / BOX_ROWS / BOX_SCALE;
+      const inset = BOX_INSET / BOX_SCALE;
+      let placed = 0;
+
+      for (const item of contents) {
+        const element = item.getElement();
+        const at = element.getBoundingRectangle();
+
+        if (item.getType() !== 'block') {
+          element.moveBy(-at.left, -at.top);
+          continue;
+        }
+
+        const column = Math.floor(placed / BOX_ROWS);
+        const row = placed % BOX_ROWS;
+
+        element.moveBy(
+          column * cellWidth + inset - at.left,
+          row * cellHeight + (cellHeight - at.getHeight()) / 2 - at.top,
+        );
+        placed += 1;
+      }
+    };
+
+    (flyout as unknown as { layout_: typeof layoutBox }).layout_ = layoutBox;
+
+    /*
      * El bloque tiene que caer DONDE SE SUELTA, y de fábrica cae en el origen
      * del lienzo. Blockly resta los orígenes de los dos espacios y mide cada uno
      * relativo a SU PROPIO `injectionDiv`; un flyout suelto no tiene ninguno, así
@@ -223,9 +301,10 @@ export const BlockEditor = ({ onProgramChange, flyoutHost }: BlockEditorProps) =
 
     /*
      * LA CAJA NO SE DESPLAZA. Blockly le pone barra siempre, la coloque o no
-     * donde se ve la caja, y con tres bloques que caben de sobra lo único que
-     * hace es estrecharlos. Cuando el J7 traiga más bloques habrá que decidir
-     * cómo se llega a ellos; hoy no hay a dónde desplazarse.
+     * donde se ve la caja, y con los bloques colocados en rejilla lo único que
+     * hace es estrecharlos. Los seis huecos de la rejilla se ven todos a la vez,
+     * así que no hay a dónde desplazarse; del séptimo bloque en adelante habrá
+     * que decidir cómo se llega a él.
      */
     flyoutWorkspace.scrollbar?.dispose();
     flyoutWorkspace.scrollbar = null;
@@ -411,8 +490,9 @@ export const BlockEditor = ({ onProgramChange, flyoutHost }: BlockEditorProps) =
       Blockly.svgResize(workspace);
       scrollToTop();
 
-      // La caja se recoloca con el lienzo, aunque ya no herede su alto.
+      // La caja se recoloca con el lienzo, aunque ya no herede ni alto ni ancho.
       flyout.position();
+      layoutBox(flyout.getContents());
     });
     observer.observe(container.current);
 
