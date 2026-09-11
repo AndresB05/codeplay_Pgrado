@@ -1,7 +1,9 @@
-import { OrbitControls } from '@react-three/drei';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Clone, OrbitControls } from '@react-three/drei';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useCallback, useMemo, useRef, useState, type ElementRef } from 'react';
 import { createPortal } from 'react-dom';
+import { BufferGeometry, Float32BufferAttribute } from 'three';
 import type { Group } from 'three';
 import { debugLevel } from './debugLevel';
 import {
@@ -22,22 +24,89 @@ import { openProgram, type Program } from './program';
  * nombres del tema duplicados a mano desde tailwind.config.js.
  */
 /*
- * El suelo va a dos tonos en damero, y no es adorno: con un solo verde las 25
- * casillas se ven como un único plano y la rejilla deja de poder contarse, que
- * es justo lo que el niño tiene que hacer para saber cuántos pasos da. Las
- * losas siguen contiguas —el damero no abre rendijas—, así que el paso de 1,0
- * se conserva.
+ * LOS TRES COLORES DEL SUELO NO SON DEL TEMA: SON DEL KIT, y por eso están aquí
+ * en vez de en `tailwind.config.js`. El tablero lo dibuja el juego, pero encima
+ * se posan piezas de Kenney, y un verde parecido se ve como un remiendo.
+ *
+ * `Textures/colormap.png` del platformer no es un dibujo: es una paleta de 16 ×
+ * 16 celdas, y cada modelo apunta con sus UV a la suya. Los tres de abajo salen
+ * medidos de ahí, con las UV leídas del propio `block-grass.glb`: la cara de
+ * arriba usa (0,9688 · 0,5312) y las de abajo (0,4688 · 0,5312). El verde
+ * oscuro del damero es la celda de debajo de la hierba, (0,9688 · 0,5938).
+ *
+ * Es el COLOR DEL CENTRO de cada celda, que no es lo mismo que el color de la
+ * celda: llevan 27, 27 y 31 tonos distintos —un degradado mínimo de la
+ * compresión— que en pantalla no se ven.
  */
-const FLOOR_COLOR = '#4ECB85'; // jungle-light
-const FLOOR_ALT_COLOR = '#1F9D5B'; // jungle
-const WALL_COLOR = '#5A5170'; // ink-soft
-const WALL_BASE_COLOR = '#8B82A6'; // ink-faint
-const START_COLOR = '#3B9DF8'; // sky
-const GOAL_COLOR = '#FFC93C'; // sun
+const GRASS_LIGHT = '#57C186';
+const GRASS_DARK = '#45AF7E';
+const SOIL = '#E89066';
+
 const CHARACTER_COLOR = '#7B3FE4'; // grape
 const SNOUT_COLOR = '#FFF9EF'; // cream
 
-const SLAB_HEIGHT = 0.2;
+/*
+ * LOS MODELOS SE PIDEN POR URL, no se importan: viven en `public/`, que Vite
+ * sirve tal cual y sin renombrar, así que no entran al grafo del bundle —lo que
+ * entra es el cargador—. `useLoader` los cachea por URL, así que pedir el mismo
+ * archivo dos veces no lo descarga dos veces.
+ *
+ * Y va con el `GLTFLoader` de `three`, no con `useGLTF` de drei: aquél arrastra
+ * al trozo los decodificadores de Draco y de Meshopt —26 kB medidos— que ningún
+ * modelo de estos kits usa, y de fábrica engancha el de Draco contra un CDN
+ * ajeno.
+ *
+ * Ninguno de los 233 modelos lleva su textura dentro: los dos kits apuntan por
+ * ruta relativa a su `Textures/colormap.png`, que tiene que seguir siendo
+ * hermano de los `.glb` de su carpeta o salen en blanco SIN error en consola.
+ */
+const PLATFORM_MODEL = '/models/platformer/platform.glb';
+const GOAL_MODEL = '/models/platformer/flag.glb';
+const ROCK_MODEL = '/models/survival/rock-b.glb';
+const STUMP_MODEL = '/models/survival/tree-trunk.glb';
+
+const PLATFORM_LARGE_MODEL = '/models/platformer/block-grass-large.glb';
+const PLATFORM_TALL_MODEL = '/models/platformer/block-grass-large-tall.glb';
+const TREE_MODEL = '/models/platformer/tree.glb';
+const PINE_MODEL = '/models/platformer/tree-pine.glb';
+const FENCE_MODEL = '/models/platformer/fence-straight.glb';
+const FLAT_ROCK_MODEL = '/models/survival/rock-flat.glb';
+
+const BOARD_MODELS = [PLATFORM_MODEL, GOAL_MODEL, ROCK_MODEL, STUMP_MODEL];
+const SCENERY_MODELS = [
+  PLATFORM_LARGE_MODEL,
+  PLATFORM_TALL_MODEL,
+  TREE_MODEL,
+  PINE_MODEL,
+  FENCE_MODEL,
+  FLAT_ROCK_MODEL,
+  PLATFORM_MODEL,
+];
+
+useLoader.preload(GLTFLoader, [...BOARD_MODELS, ...SCENERY_MODELS]);
+
+/** Lo que baja el canto de tierra, y cuánto sobresale la hierba por encima. */
+const GROUND_DEPTH = 0.6;
+const GRASS_LIP = 0.04;
+
+/*
+ * CÓMO SE LEE LA CASILLA DEL PERSONAJE DESDE FUERA, y por qué son dos nombres.
+ *
+ * Comprobar este juego es comparar DÓNDE ESTÁ EL PERSONAJE contra lo que el
+ * intérprete dice —una pantalla que dice de sí misma que hizo algo no es la
+ * prueba de que lo hizo—, y hasta ahora eso se hacía buscando en la escena el
+ * material morado del cubo. Eso ata la comprobación al aspecto: el día que el
+ * cubo deje paso a un modelo, la única verificación que vale se va con él.
+ *
+ * Con nombre, `scene.getObjectByName` da el grupo del personaje sea cual sea su
+ * aspecto, y su posición LOCAL —dentro del grupo del tablero— da la casilla:
+ * `col = x + 2`, `fila = z + 2`. Por eso el tablero también lleva nombre: es el
+ * marco en el que esa cuenta significa algo. Comprobado contra la vía vieja: las
+ * dos dan la misma lectura en las 32 muestras de un PROGRAMA A entero.
+ */
+const BOARD_NODE = 'board';
+const SCENERY_NODE = 'scenery';
+const CHARACTER_NODE = 'character';
 
 /*
  * Norte es −z, que es lo que hace que avanzar mirando al norte reste una fila.
@@ -208,48 +277,295 @@ const useBoardPlacement = (config: LevelConfig) =>
     ];
   }, [config]);
 
-const Board = ({ config }: { config: LevelConfig }) => {
+/*
+ * EL SUELO ES UNA SOLA PIEZA, y ésa es la decisión de la que cuelga todo lo
+ * demás. Un bloque del kit por casilla —que fue el primer intento— no se lee
+ * como un suelo: se ven veinticinco piezas puestas una al lado de otra. Aquí el
+ * tablero es UNA geometría con tres grupos de material: los dos verdes del
+ * damero arriba y la tierra en el canto.
+ *
+ * La cuadrícula se ve SÓLO por el color. Las casillas comparten arista, así que
+ * no hay junta ni rendija que dibujar, y lo único que distingue una de la
+ * siguiente es el tono. Es la única razón por la que la cuadrícula se ve: el
+ * niño cuenta casillas para saber cuántos pasos da.
+ *
+ * El canto se dibuja SÓLO en el contorno —el de fuera y el del hueco—, porque
+ * por dentro no se ve nada, y va metido `GRASS_LIP` hacia dentro para que la
+ * hierba sobresalga: es el labio que tienen las piezas del kit, y sin él la
+ * arista entre hierba y tierra queda viva y no se parece a lo que va al lado.
+ *
+ * La forma la manda `LevelConfig`, así que un tablero sin huecos —los niveles de
+ * verdad no los llevan— sale de aquí sin tocar nada.
+ */
+const useBoardGeometry = (config: LevelConfig) =>
+  useMemo(() => {
+    const rows = config.tiles.length;
+    const columns = config.tiles[0]?.length ?? 0;
+    const drawn = (row: number, column: number) =>
+      row >= 0 &&
+      row < rows &&
+      column >= 0 &&
+      column < columns &&
+      config.tiles[row][column] !== 'gap';
+
+    const light: number[] = [];
+    const dark: number[] = [];
+    const soil: number[] = [];
+
+    const quad = (
+      into: number[],
+      a: [number, number, number],
+      b: [number, number, number],
+      c: [number, number, number],
+      d: [number, number, number],
+    ) => {
+      into.push(...a, ...b, ...c, ...a, ...c, ...d);
+    };
+
+    for (let row = 0; row < rows; row += 1) {
+      for (let column = 0; column < columns; column += 1) {
+        if (!drawn(row, column)) {
+          continue;
+        }
+
+        const x0 = (column - (columns - 1) / 2) * TILE_SIZE - TILE_SIZE / 2;
+        const x1 = x0 + TILE_SIZE;
+        const z0 = (row - (rows - 1) / 2) * TILE_SIZE - TILE_SIZE / 2;
+        const z1 = z0 + TILE_SIZE;
+
+        quad(
+          (row + column) % 2 === 0 ? light : dark,
+          [x0, 0, z1],
+          [x1, 0, z1],
+          [x1, 0, z0],
+          [x0, 0, z0],
+        );
+
+        const inX0 = x0 + GRASS_LIP;
+        const inX1 = x1 - GRASS_LIP;
+        const inZ0 = z0 + GRASS_LIP;
+        const inZ1 = z1 - GRASS_LIP;
+        const bottom = -GROUND_DEPTH;
+
+        /*
+         * EL LABIO SE METE SÓLO HACIA DENTRO DE SU CARA, nunca a lo largo de
+         * ella. Metiéndolo por los cuatro costados —que es como estaba— dos
+         * casillas vecinas del contorno dejaban 0,08 de aire entre sus faldones
+         * y por ahí se veía el fondo: una rendija blanca en el canto, que es
+         * justo lo que este paso vino a quitar. A lo largo de la cara el panel
+         * va de borde a borde, y en las esquinas los dos paneles se cruzan un
+         * poco: un solape que no se ve es mejor que una rendija que sí.
+         */
+        if (!drawn(row - 1, column)) {
+          quad(soil, [x0, 0, inZ0], [x1, 0, inZ0], [x1, bottom, inZ0], [x0, bottom, inZ0]);
+        }
+
+        if (!drawn(row + 1, column)) {
+          quad(soil, [x1, 0, inZ1], [x0, 0, inZ1], [x0, bottom, inZ1], [x1, bottom, inZ1]);
+        }
+
+        if (!drawn(row, column - 1)) {
+          quad(soil, [inX0, 0, z1], [inX0, 0, z0], [inX0, bottom, z0], [inX0, bottom, z1]);
+        }
+
+        if (!drawn(row, column + 1)) {
+          quad(soil, [inX1, 0, z0], [inX1, 0, z1], [inX1, bottom, z1], [inX1, bottom, z0]);
+        }
+      }
+    }
+
+    const geometry = new BufferGeometry();
+
+    geometry.setAttribute(
+      'position',
+      new Float32BufferAttribute([...light, ...dark, ...soil], 3),
+    );
+    geometry.addGroup(0, light.length / 3, 0);
+    geometry.addGroup(light.length / 3, dark.length / 3, 1);
+    geometry.addGroup((light.length + dark.length) / 3, soil.length / 3, 2);
+    geometry.computeVertexNormals();
+
+    return geometry;
+  }, [config]);
+
+/*
+ * EL ESCENARIO DE FUERA, y la regla que lo gobierna entero: LAS PIEZAS SE
+ * FUSIONAN. Nada se posa entero y despegado al lado de otra cosa —cada
+ * plataforma se solapa con el tablero o con su vecina, cada árbol se hunde en la
+ * plataforma que lo sostiene y la pasarela sale del canto en vez de flotar entre
+ * dos—. Lo apoyado y separado es justo lo que el usuario devolvió del primer
+ * intento.
+ *
+ * Va DENTRO del grupo del tablero para que lo levante el mismo `BOARD_LIFT` y
+ * la cuenta de la casilla siga significando lo mismo. Y va fuera de la rejilla:
+ * el tablero llega a ±2,5, así que todo lo de aquí empieza más allá y sólo
+ * muerde lo justo para fundirse.
+ *
+ * Las alturas son la cara de arriba de cada plataforma; los modelos crecen
+ * desde su base, así que la `y` de cada pieza es esa cara menos lo que mide.
+ * Ninguna de estas cifras es requisito de nada: el J7.4 rehará el escenario
+ * mundo por mundo.
+ */
+const SCENERY: {
+  model: string;
+  position: [number, number, number];
+  scale?: number;
+  turn?: number;
+}[] = [
+  /*
+   * LA LÍNEA QUE NO SE CRUZA ES LA HUELLA DEL TABLERO: nada que asome por
+   * encima de la hierba entra en x ni en z entre −2,5 y 2,5. Fundir es que las
+   * piezas no se lean despegadas, y para eso basta con que **se toquen** y con
+   * que las plataformas se muerdan **entre ellas**, que es donde el solape no le
+   * quita nada a nadie. Metidas en el tablero, en cambio, se comen la casilla
+   * —y las dos que más importan son la salida y la meta—.
+   *
+   * `block-grass-large` mide 2,0821 de lado, así que su borde queda pegado al
+   * del tablero con el centro en ±3,541. Ésa es la cifra de la que salen las
+   * columnas de la izquierda y de la derecha, y la fila del sur.
+   *
+   * Y LAS PLATAFORMAS NO SE GIRAN: girar un bloque cuadrado no cambia nada a la
+   * vista y le engorda la caja alineada en `|cos t| + |sin t| − 1`, que es un
+   * 25 % a 0,3 rad y un 18 % a 0,2 —hasta el 41 % a 45°—. Con eso, dos de ellas
+   * se metían **0,26 y 0,19** dentro del tablero sólo por el giro. Lo que se
+   * gira son las piezas de encima, que es donde se nota y donde no hay huella
+   * que respetar.
+   */
+  { model: PLATFORM_TALL_MODEL, position: [-3.541, -1, -3] },
+  { model: PLATFORM_TALL_MODEL, position: [3.541, -1.2, -2.8] },
+  { model: PLATFORM_LARGE_MODEL, position: [-3.541, -0.7, -1] },
+  { model: PLATFORM_LARGE_MODEL, position: [3.541, -0.8, -0.9] },
+  { model: PLATFORM_LARGE_MODEL, position: [-2, -0.9, 3.541] },
+
+  // Los árboles, hundidos en la plataforma que los sostiene y a escalas distintas.
+  { model: TREE_MODEL, position: [-3.9, 0.85, -3.2], scale: 0.9, turn: 0.5 },
+  { model: PINE_MODEL, position: [-3.25, 0.85, -3.6], scale: 1.15, turn: -1.2 },
+  { model: PINE_MODEL, position: [3.8, 0.65, -3.1], scale: 0.85, turn: 2 },
+  { model: TREE_MODEL, position: [3.25, 0.65, -2.6], scale: 0.7, turn: -0.6 },
+
+  // La piedra plana, tumbada sobre la plataforma baja de la derecha.
+  { model: FLAT_ROCK_MODEL, position: [3.6, 0.14, -0.9], scale: 0.8, turn: 0.4 },
+
+  // La valla, en su plataforma propia detrás del personaje y sin tocar el tablero.
+  { model: FENCE_MODEL, position: [-2.5, 0.05, 3.3], scale: 1 },
+  { model: FENCE_MODEL, position: [-1.5, 0.05, 3.3], scale: 1 },
+
+  // El trozo de pasarela: sale del canto de la plataforma, no flota entre dos.
+  { model: PLATFORM_MODEL, position: [-3.05, 0.22, -1], turn: 0.1 },
+];
+
+const Scenery = () => {
+  const models = useLoader(GLTFLoader, SCENERY_MODELS);
+  const scenes: Record<string, Group> = {};
+
+  SCENERY_MODELS.forEach((url, index) => {
+    scenes[url] = models[index].scene;
+  });
+
+  return (
+    <group name={SCENERY_NODE}>
+      {SCENERY.map((piece, index) => (
+        <Clone
+          key={`${piece.model}-${index}`}
+          object={scenes[piece.model]}
+          position={piece.position}
+          rotation={[0, piece.turn ?? 0, 0]}
+          scale={piece.scale ?? 1}
+        />
+      ))}
+    </group>
+  );
+};
+
+/*
+ * LO QUE OCUPA CADA CASILLA QUE NO SE PISA, y por qué son piezas distintas: un
+ * tablero con cuatro veces el mismo cubo no dice nada; con una plataforma de
+ * madera, dos rocas y un tocón, cada casilla cuenta algo. La repartición la
+ * decidió el usuario sobre su boceto.
+ *
+ * `sink` es lo que se HUNDE la pieza por debajo del plano de pisar, y no es un
+ * ajuste fino: una roca apoyada encima parece puesta ahí y una hundida parece
+ * que está. Es la regla que gobierna este paso entero — las piezas se funden,
+ * no se posan.
+ *
+ * Y `scale` las lleva a pasar de su casilla, que es lo que las hace leerse como
+ * obstáculo: los adornos del tramo siguiente miden la mitad, y ésa es toda la
+ * diferencia que el niño necesita ver.
+ */
+const OBSTACLES: Record<string, { model: string; scale: number; sink: number; turn: number }> = {
+  '0-3': { model: PLATFORM_MODEL, scale: 1, sink: 0.05, turn: 0 },
+  '1-1': { model: ROCK_MODEL, scale: 1.6, sink: 0.16, turn: 0.6 },
+  '3-3': { model: ROCK_MODEL, scale: 1.45, sink: 0.12, turn: -2.1 },
+  '3-1': { model: STUMP_MODEL, scale: 4, sink: 0.16, turn: 0.9 },
+};
+
+const Obstacles = ({ config }: { config: LevelConfig }) => {
   const place = useBoardPlacement(config);
+  const [platform, flag, rock, stump] = useLoader(GLTFLoader, BOARD_MODELS);
+  const scenes: Record<string, Group> = {
+    [PLATFORM_MODEL]: platform.scene,
+    [ROCK_MODEL]: rock.scene,
+    [STUMP_MODEL]: stump.scene,
+  };
+
+  const [goalX, goalZ] = place(config.goal.row, config.goal.column);
 
   return (
     <>
       {config.tiles.map((tileRow, row) =>
         tileRow.map((kind, column) => {
-          // Un hueco no se dibuja: por él se ve el fondo, y eso es el vacío.
-          if (kind === 'gap') {
+          if (kind !== 'wall') {
+            return null;
+          }
+
+          const spot = OBSTACLES[`${row}-${column}`];
+
+          if (spot === undefined) {
             return null;
           }
 
           const [x, z] = place(row, column);
-          const isStart = config.start.cell.row === row && config.start.cell.column === column;
-          const isGoal = config.goal.row === row && config.goal.column === column;
-
-          let slabColor = (row + column) % 2 === 0 ? FLOOR_COLOR : FLOOR_ALT_COLOR;
-          if (kind === 'wall') {
-            slabColor = WALL_BASE_COLOR;
-          } else if (isGoal) {
-            slabColor = GOAL_COLOR;
-          } else if (isStart) {
-            slabColor = START_COLOR;
-          }
 
           return (
-            <group key={`${row}-${column}`} position={[x, 0, z]}>
-              <mesh position={[0, -SLAB_HEIGHT / 2, 0]}>
-                <boxGeometry args={[TILE_SIZE, SLAB_HEIGHT, TILE_SIZE]} />
-                <meshStandardMaterial color={slabColor} />
-              </mesh>
-
-              {kind === 'wall' && (
-                <mesh position={[0, TILE_SIZE / 2, 0]}>
-                  <boxGeometry args={[TILE_SIZE, TILE_SIZE, TILE_SIZE]} />
-                  <meshStandardMaterial color={WALL_COLOR} />
-                </mesh>
-              )}
-            </group>
+            <Clone
+              key={`${row}-${column}`}
+              object={scenes[spot.model]}
+              position={[x, -spot.sink, z]}
+              rotation={[0, spot.turn, 0]}
+              scale={spot.scale}
+            />
           );
         }),
       )}
+
+      {/*
+       * La meta la dice la bandera y nada más: la salida NO se marca, porque
+       * basta con que el personaje esté ahí. Los dos tintes de antes —azul en la
+       * salida, amarillo en la meta— se fueron con la losa por casilla.
+       */}
+      <Clone object={flag.scene} position={[goalX - 0.15, -0.05, goalZ]} rotation={[0, -0.4, 0]} />
+    </>
+  );
+};
+
+const Board = ({ config }: { config: LevelConfig }) => {
+  const geometry = useBoardGeometry(config);
+
+  return (
+    <>
+      {/*
+       * `metalness` a cero y la rugosidad por defecto, que es lo que declaran los
+       * materiales del kit: así el suelo que dibujamos y las piezas que se posan
+       * encima se iluminan igual y el canto de tierra es el mismo color a la
+       * vista, no un color parecido.
+       */}
+      <mesh geometry={geometry}>
+        <meshStandardMaterial attach="material-0" color={GRASS_LIGHT} metalness={0} />
+        <meshStandardMaterial attach="material-1" color={GRASS_DARK} metalness={0} />
+        <meshStandardMaterial attach="material-2" color={SOIL} metalness={0} />
+      </mesh>
+
+      <Obstacles config={config} />
     </>
   );
 };
@@ -344,7 +660,12 @@ const Character = ({ config, pose, step, stepIndex, onStepDone }: CharacterProps
   });
 
   return (
-    <group ref={group} position={[x, 0, z]} rotation={[0, FACING_ANGLE[pose.facing], 0]}>
+    <group
+      ref={group}
+      name={CHARACTER_NODE}
+      position={[x, 0, z]}
+      rotation={[0, FACING_ANGLE[pose.facing], 0]}
+    >
       <mesh position={[0, 0.35, 0]}>
         <boxGeometry args={[0.5, 0.7, 0.5]} />
         <meshStandardMaterial color={CHARACTER_COLOR} />
@@ -602,7 +923,8 @@ export const GameScene = ({ program, controlsHost, messageHost }: GameSceneProps
         <ambientLight intensity={1.4} />
         <directionalLight position={[4, 6, 3]} intensity={2.2} />
 
-        <group position={[0, BOARD_LIFT, 0]}>
+        <group name={BOARD_NODE} position={[0, BOARD_LIFT, 0]}>
+          <Scenery />
           <Board config={config} />
           <Character
             config={config}

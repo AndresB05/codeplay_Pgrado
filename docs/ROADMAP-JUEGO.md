@@ -98,23 +98,21 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | J6.1 | **El contador, en vivo**: mientras construye y mientras se ejecuta | ~~El niño ve lo que cuesta su programa sin contar los pasos a ojo~~ — **revertido a medias por el J6.2** | ✅ |
 | J6.2 | **Quitar el coste al construir** y llevar el contador a la pantalla del juego | El niño ve subir sus pasos en la esquina, y nada le presiona antes de jugar | ✅ |
 | J6.3 | **El ensayo general**: el laboratorio compuesto como estará el nivel, y la cámara movible | Se ve dónde va cada cosa y el mapa se gira y se acerca con el ratón | ✅ |
-| J6.4 | **Assets de tanteo** en el laboratorio, para ver por dónde puede ir | Los cubos dejan paso a modelos y se juzga el aspecto con algo delante | ⬜ |
-| **J7** | **Sembrar el mundo 1** — partido en cuatro, uno por nivel más el aspecto | Los tres niveles se juegan leyendo su definición de la base, y el mundo se ve como debe verse | ⬜ |
+| J6.4 | **Assets de tanteo** en el laboratorio, para ver por dónde puede ir | Se vio por dónde puede ir, y **no era por ahí**: hecho, no satisfactorio. De él sale mover el apartado gráfico entero al **J13** | ✅ |
+| **J7** | **Sembrar el mundo 1** — partido en tres, uno por nivel | Los tres niveles se juegan leyendo su definición de la base | ⬜ |
 | J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra | Se juega el nivel 1 leyendo su fila, no el objeto escrito a mano del J2 | ⬜ |
 | J7.2 | Nivel 2, igual | Se juega el nivel 2 desde la base | ⬜ |
 | J7.3 | Nivel 3, igual | Se juega el nivel 3 desde la base | ⬜ |
-| J7.4 | **Assets y diseño del mundo 1** | Los tres niveles dejan los cubos: bloques de rejilla, decorado, cámara y luz, y por último el personaje | ⬜ |
 | **J8** | Conectar la pantalla de nivel al backend y montar el juego dentro | Se elige un nivel en la web y arranca el que se eligió | ⬜ |
 | **J9** | Mandar el intento al servidor con el programa | La partida aparece guardada en la base | ⬜ |
 | **J10** | La migración del XP: contar pasos y conceder por marca de agua | El XP sube 80, y 20 al mejorar. Nunca más de 100 | ⬜ |
 | **J11** | La barra de XP por tramos de 300 | El niño sube de nivel al terminar un mundo | ⬜ |
-| **J12** | **Mundos 2 y 3** — partido en ocho, con el mismo patrón que el J7 | Hay nueve niveles jugables y los tres mundos vestidos | ⬜ |
+| **J12** | **Mundos 2 y 3** — partido en seis, con el mismo patrón que el J7 | Hay nueve niveles jugables | ⬜ |
 | J12.1 · .2 · .3 | Los tres niveles del mundo 2, uno por punto | Cada nivel se juega desde la base en cuanto se cierra su punto | ⬜ |
-| J12.4 | Assets y diseño del mundo 2 | El mundo 2 se ve como debe verse | ⬜ |
 | J12.5 · .6 · .7 | Los tres niveles del mundo 3, uno por punto | Igual que arriba | ⬜ |
-| J12.8 | Assets y diseño del mundo 3 | El mundo 3 se ve como debe verse | ⬜ |
+| **J13** | **Assets y diseño de los tres mundos**, en una sola pasada y con los nueve puzles jugándose | Los nueve niveles dejan los cubos: suelo, decorado, cámara y luz, y por último el personaje | ⬜ |
 
-### El apartado gráfico va por mundo, y detrás de lo funcional
+### El apartado gráfico va al final, en una sola pasada
 
 Decidido por el usuario el 4-sep-2026, porque **no era de nadie**: los doce pasos
 de arriba no tenían ninguno que fuera la cámara, la luz, los modelos o el encaje
@@ -126,10 +124,17 @@ vital —moverse por la rejilla, ejecutar el programa, terminar el nivel—; ves
 es una pasada aparte con los modelos de `apps/web/public/models/`. Y dentro de
 esa pasada, **primero los assets del nivel y después el del personaje**.
 
-**Y ya tiene número**, decidido el mismo día al partir los pasos de niveles:
-**J7.4** para el mundo 1, **J12.4** para el mundo 2 y **J12.8** para el mundo 3.
-Cada uno va detrás de los tres niveles de su mundo, que es la regla de arriba
-puesta en la secuencia en vez de dejada al criterio de quien llegue.
+**Y ya tiene número: el J13**, uno solo y detrás de los nueve puzles. Lo decidió
+el usuario el 11-sep-2026, al ver lo que dio el J6.4. Antes iba repartido en tres
+—uno por mundo, detrás de los niveles de cada uno—, y se juntó por lo que enseñó
+ese paso: **el aspecto no se acierta contra un tablero de pega**. Vestir el mundo
+1 sin tener delante los otros dos lleva a decidir tres veces lo mismo y a
+descubrir a la tercera que la primera estaba mal. Con los nueve niveles
+jugándose, la pasada gráfica ve de una vez todo lo que tiene que vestir.
+
+**La regla de arriba no cambia, sólo se aplica una vez**: primero funciona, luego
+se viste; y dentro de la pasada, primero los assets del nivel y después el del
+personaje.
 
 **Lo que sí hay que respetar desde el J2**, y es la única atadura que deja esta
 decisión: **el paso de la rejilla es la constante 1,0 y no se deduce de ningún
@@ -145,7 +150,7 @@ el andar: el clip mueve las piernas mientras algo interpola la posición entre
 casillas. **Eso lo hace hoy el propio J5 con `useFrame`, y `@react-spring/three`
 no llegó a entrar**: interpolar entre dos casillas no traía nada nuevo, y el
 reloj que anima es el mismo que decide cuándo termina un paso — dos
-planificadores para una cosa. La decisión se revisa en el J7.4, con el modelo
+planificadores para una cosa. La decisión se revisa en el J13, con el modelo
 delante, que es donde §2 dice que entran las librerías: en el paso que primero
 las importe.
 
@@ -351,8 +356,21 @@ es maquetación.
 
 **J6.4 — assets de tanteo.** Meter modelos de `apps/web/public/models/` en el
 laboratorio **para ver por dónde puede ir**, no para dejarlo hecho. El apartado
-gráfico de verdad sigue siendo el J7.4, mundo por mundo, con la regla de arriba:
-primero el nivel, después el personaje.
+gráfico de verdad es el **J13**, con la regla de arriba: primero el nivel,
+después el personaje.
+
+**Y lo que salió, que es por lo que el J13 existe.** El paso está **hecho y no
+satisfactorio**, dicho por el usuario el 11-sep-2026: se cambiaron los kits
+—fuera el Nature, dentro el Survival—, el suelo pasó a ser una sola pieza con su
+damero y su canto de tierra, y entraron los obstáculos y el escenario de fuera;
+pero **el resultado no es el que se buscaba**, y se paró ahí, sin la decoración
+ni el personaje. De ese hallazgo sale mover el apartado gráfico entero detrás de
+los nueve puzles: **el aspecto no se acierta contra un tablero de pega**, y lo
+que se tantea sobre la rejilla de prueba no se parece a lo que hay que vestir.
+Lo que sí sobrevive del paso son las piezas que no son estética —los modelos
+pedidos por URL sin entrar al empaquetado, el límite de error que evita que un
+modelo que no llega se lleve la aplicación, y las medidas del kit— y están en
+`CONTEXT.md` §2.9.
 
 **Cuatro cosas que este par se encuentra, y ninguna estaba escrita:**
 

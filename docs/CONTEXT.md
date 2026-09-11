@@ -1404,13 +1404,13 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
   propio hook, como `worlds.service.ts` + `useWorlds()`. La frontera de §4.3
   sigue en pie.
 
-### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques, su ejecución y el resultado (J1 a J6.3)
+### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques, su ejecución y el resultado (J1 a J6.4)
 
 **Aplicado con `esqueleto-del-juego` (J1), `rejilla-y-personaje` (J2),
 `bloques-del-programa` (J4), `ejecutar-el-programa` (J5), `recuento-y-resultado`
-(J6), `contador-en-vivo` (J6.1), `contador-sobre-el-lienzo` (J6.2) y
-`pantalla-compuesta-y-camara` (J6.3), más el J3, que sólo fijó el formato por
-escrito.**
+(J6), `contador-en-vivo` (J6.1), `contador-sobre-el-lienzo` (J6.2),
+`pantalla-compuesta-y-camara` (J6.3) y `assets-de-tanteo` (J6.4), más el J3, que
+sólo fijó el formato por escrito.**
 Lo que hay es una escena 3D dentro del panel del niño, cargada en diferido, con
 **un tablero leído de una configuración escrita a mano y un personaje que se
 mueve por casillas**, al lado **un editor de bloques que produce el programa en
@@ -1428,8 +1428,8 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/game/debugLevel.ts` | **Puro.** La rejilla de pega: 5×5, cuatro muros, un hueco, salida y meta. **No es un puzle diseñado** — los nueve los diseña el usuario y se siembran en el J7 |
 | `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Los reutiliza el intérprete**: nació para eso |
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
-| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero, el personaje, la animación con `useFrame` y **la cámara movible acotada** (`OrbitControls` de `drei`); **el contador de pasos, siempre visible**; **la superposición que dice todo lo demás** —reposo, ejecución, resultado y avisos—; y los tres botones —**«Ejecutar», «Detener» y «Reiniciar»**—, pintados **con un portal** en el hueco que baja la composición. Importa `three`, `@react-three/fiber` y `@react-three/drei` |
-| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Baja el programa y **el hueco de los botones**; **sólo el tipo** del sobre cruza |
+| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero, el personaje, la animación con `useFrame` y **la cámara movible acotada** (`OrbitControls` de `drei`); **el contador de pasos, siempre visible**; **la superposición que dice todo lo demás** —reposo, ejecución, resultado y avisos—; y los tres botones —**«Ejecutar», «Detener» y «Reiniciar»**—, pintados **con un portal** en el hueco que baja la composición. Desde el J6.4, **el tablero es geometría generada de una pieza** —dos verdes y tierra, con los colores medidos del `colormap` del kit— y los obstáculos, la meta y el escenario de fuera son **modelos de `public/models/` pedidos por URL**. El personaje sigue siendo el cubo. Importa `three`, `@react-three/fiber` y `@react-three/drei` |
+| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Baja el programa y **el hueco de los botones**; **sólo el tipo** del sobre cruza. Desde el J6.4 lleva además el **límite de error de la escena**, que va aquí porque el `<Canvas>` vuelve a lanzar en su propio render |
 | `apps/web/src/game/program.ts` | **Puro.** El sobre del contrato §4.3: `Program`, `PROGRAM_FORMAT_VERSION` y las funciones `sealProgram` y `openProgram`. **Sin Blockly** — lo reutilizan el J8 al abrir el `starterProgram` y el J9 al mandar el intento |
 | `apps/web/src/game/program.test.ts` | El sobre: que se cierre con la versión del contrato y que una desconocida se rechace entera (§7) |
 | `apps/web/src/game/blockTypes.ts` | **Nuevo en el J5. Puro.** Cómo se llaman los tres bloques y su campo en el JSON. Vive aparte porque `blocks.ts` importa Blockly y **el intérprete no puede importarlo** |
@@ -1488,7 +1488,7 @@ un muro no es un fallo, es una regla del juego.
 **El paso de la rejilla es `TILE_SIZE = 1` y no se deduce de ningún modelo.** Los
 bloques de Kenney miden 1,082 de ancho porque el labio de hierba se solapa a
 propósito; sacar el paso de ahí produce rendijas, y con los modelos entrando en
-el J7.4 el fallo aparecería con la mecánica ya escrita encima.
+el J13 el fallo aparecería con la mecánica ya escrita encima.
 
 **El suelo va en damero de dos verdes**, y no es adorno: con un solo verde las 25
 casillas se ven como un único plano y la rejilla deja de poder contarse, que es
@@ -1511,7 +1511,7 @@ cambios archivados, que son el registro de lo que pasó.
 **`drei` sigue sin entrar.** El roadmap lo admite fijado a `^9.122` si
 `OrbitControls` hace falta; para un 5×5 en cámara fija no hace falta, y la
 dependencia trae `three` en sus `peerDependencies`, con la trampa de la copia
-doble de abajo. Si el J7.4 necesita orbitar para colocar modelos, entra ahí.
+doble de abajo. Si el J13 necesita orbitar para colocar modelos, entra ahí.
 
 **`three` está fijado a 0.170 por el runtime, no por gusto.** Con
 `@react-three/fiber` 8.18 —la rama que se queda en React 18— contra `three`
@@ -1677,7 +1677,7 @@ un topetazo contra lo que no se pisa— son tres interpolaciones sobre el `delta
 de `useFrame`, que además es el reloj que decide cuándo termina un paso: traer un
 segundo planificador para animar habría sido tener dos relojes para una cosa.
 `ROADMAP-JUEGO.md` §2 dice que las librerías entran «en el paso que primero las
-importe», y se revisa en el **J7.4**, con el modelo de 25 clips delante.
+importe», y se revisa en el **J13**, con el modelo de 25 clips delante.
 **Comprobado de paso lo que el J2 dejó escrito y nunca se había ejecutado:
 `npm ls three` da una sola copia, 0.170.0.**
 
@@ -2472,7 +2472,7 @@ Es el mismo apartado que §4.4 —el panel no es responsive— agravado por un h
 alto y estrecho, y el niño puede alejar la vista con la rueda. Se anota en vez de
 arreglarlo aquí.
 
-**ENCARGO PARA EL J7.4, encontrado al verificar el J6.3 y que NO es de este
+**ENCARGO PARA EL J13, encontrado al verificar el J6.3 y que NO es de este
 paso.** Al relanzar un recorrido, **el primer giro no se anima**: el personaje
 aparece en la salida pero **ya mirando hacia donde iría**, en vez de girar desde su
 orientación de partida. La causa es que el ángulo dibujado vive en un `useRef` del
@@ -2485,7 +2485,7 @@ fallo de este paso—. Aislado midiendo, **sin tocar «Detener» ni una vez**: c
 programa que termina mirando al este, pulsar «Ejecutar» por segunda vez deja al
 personaje en la salida con `rotY −1,5708` a los 40 ms. Lo único que añade
 «Detener» es otra forma de llegar a ese estado. Se arregla donde se toque la
-animación —el **J7.4**, con el personaje de verdad y sus clips delante—, y no
+animación —el **J13**, con el personaje de verdad y sus clips delante—, y no
 antes: aquí sería código nuevo encima de un paso ya verificado.
 
 **Y LA REGLA QUE SALE DE VERIFICARLO, que vale para el J7 y para todo lo que
@@ -2779,6 +2779,182 @@ se retira al último tramo, que es justo el que tapa la bandeja. Así lo que se 
 del cielo es azul en su mayor parte y no blanco, sin subir el tono de ninguno de
 los tres, y sigue llegando a blanco antes del borde de abajo —que es de lo que
 vivía la bandeja sin borde—.
+
+
+#### Lo que el J6.4 dejó: los modelos entraron, y el aspecto se va al J13
+
+**EL PASO SE CIERRA HECHO Y NO SATISFACTORIO, y eso lo decidió el usuario el
+10-sep-2026 mirándolo.** La práctica de assets salió mejor que el primer intento
+y aun así **no es el resultado que buscaba**, así que el aspecto deja de colgar de
+aquí: los puntos gráficos —el J7.4 y los dos del J12— se retiran y se juntan en un
+**J13** propio, después de los puzles. Lo que sigue es lo que quedó en el árbol,
+lo que no se llegó a hacer, y las medidas que el J13 no debería volver a pagar.
+
+**Y hubo DOS intentos.** El primero pintaba cada casilla con un bloque del kit y
+llevaba decorado del Nature Kit alrededor; el usuario lo devolvió el 9-sep-2026
+**por el aspecto**: veinticinco bloques sueltos no se leen como un suelo, y las
+piezas posadas y separadas se ven mal. De aquél sobrevivieron dos cosas que no
+eran aspecto —el límite de error de la escena y leer la casilla del personaje por
+nombre— y el resto se revirtió a `HEAD` antes de empezar el segundo.
+
+**LOS KITS CAMBIARON.** `nature/` se borró entera —330 archivos, 3,7 MB— y entró
+el **Survival Kit 2.0** completo: 80 GLB (1,24 MB), su `Textures/colormap.png` y
+su licencia. Quedan **233 modelos y 4,30 MB** entre los dos kits, y el README de
+`public/models/` se rehízo con eso. **Comprobado uno a uno en los 233**: ninguno
+lleva imagen dentro y todos apuntan a `Textures/colormap.png` por ruta relativa,
+así que cada textura tiene que seguir siendo hermana de los `.glb` de su carpeta o
+esos modelos salen en blanco **sin error en consola**.
+
+**Y meter 80 modelos y borrar 330 no movió el empaquetado ni un byte** —`GameScene`
+dio 849,52 kB antes y después—, que es la prueba en los dos sentidos de que los
+`.glb` se piden por URL y no viajan con el código.
+
+**EL SUELO ES UNA SOLA GEOMETRÍA, no veinticinco piezas**, y es el cambio del que
+cuelga todo lo demás. Se construye en un `useMemo`: una tapa por casilla a y = 0
+—repartida entre dos verdes por la paridad de fila más columna— y un canto de
+tierra **sólo en el contorno**, el de fuera y el del hueco. Las casillas comparten
+arista, así que no hay junta que dibujar: **la cuadrícula se ve sólo por el
+color**, que es la única razón por la que se ve —el niño cuenta casillas para
+saber cuántos pasos da—. La forma la manda `LevelConfig`, así que un tablero sin
+huecos sale de ahí sin tocar nada.
+
+**Los tres colores del tablero NO son del tema: son del kit, y están medidos.**
+`colormap.png` del platformer no es un dibujo sino una **paleta de 16 × 16
+celdas**, y cada modelo apunta con sus UV a una. Leyendo las UV del propio
+`block-grass.glb` —cara de arriba en (0,9688 · 0,5312), caras de abajo en
+(0,4688 · 0,5312)— salen **hierba `#57C186`**, **tierra `#E89066`** y, en la celda
+de debajo de la hierba, el **verde oscuro `#45AF7E`**. Es el color del **centro**
+de cada celda, que no es lo mismo que «el color de la celda»: llevan 27, 27 y 31
+tonos distintos, un degradado mínimo de compresión que en pantalla no se ve.
+
+**Y EL LABIO DE HIERBA ABRIÓ UNA RENDIJA QUE COSTÓ UNA VUELTA ENTERA.** Los
+faldones se metían `GRASS_LIP` **por los cuatro costados**, así que dos casillas
+vecinas del contorno dejaban **0,08 de aire** entre sus paneles —dos veces 0,04— y
+por ahí se veía el fondo: una grieta blanca en el canto, justo el defecto que el
+paso venía a quitar. El labio sólo debe meterse en la **perpendicular a su cara**;
+a lo largo de ella el panel va de borde a borde, y en las esquinas los dos paneles
+se cruzan un poco: **un solape que no se ve es mejor que una rendija que sí**.
+
+**La regla que sale de ahí, y vale para todo lo que venga: el damero se juzga
+desde arriba y el canto desde el lado.** La rendija sobrevivió a una revisión
+entera porque las dos sesiones miraron el tablero desde la vista de partida, que
+no enseña el canto.
+
+**LOS CUATRO MUROS DEJARON DE SER CUBOS**, uno por casilla y cada uno distinto,
+repartidos por el usuario sobre su boceto: la **tabla de madera** (`platform.glb`)
+junto a la bandera, el **tocón** (`tree-trunk` del survival, escala 4) en la
+casilla más cercana al personaje, y **dos rocas** (`rock-b`, escalas 1,6 y 1,45)
+en las otras dos. Todo **hundido** entre un octavo y un tercio de su alto, que es
+la regla que el usuario puso para el paso entero: **las piezas se funden, no se
+posan**. La meta lleva `flag.glb` y **la salida dejó de marcarse**: basta con que
+el personaje esté ahí.
+
+**El survival está a OTRA ESCALA que el platformer** —sus rocas no llegan a la
+casilla y `tree-trunk` mide 0,20 × 0,26—, así que lo que va de obstáculo hay que
+escalarlo. Es lo que permite que el obstáculo pase de su casilla y se lea como
+obstáculo, contra unos adornos que miden la mitad.
+
+**EL ESCENARIO DE FUERA NO ENTRA EN LA HUELLA DEL TABLERO, y ésa es la línea.**
+Plataformas de `block-grass-large` y `-large-tall` alrededor, árboles a cuatro
+escalas hundidos en ellas, un `rock-flat` tumbado, la valla en **su plataforma
+propia detrás del personaje** —sobre una casilla pisable se leería como muro— y un
+trozo de pasarela saliendo del canto. Fundir es que las piezas **se toquen y se
+muerdan entre ellas**; contra el tablero, **nada cuya cima esté por encima de la
+hierba puede entrar en x ni en z de −2,5 a 2,5**.
+
+La primera versión se lo saltó: las cinco plataformas se metían dentro y **se
+comían la casilla de la salida y la de la meta**. Y había una causa escondida:
+**girar un bloque cuadrado le engorda la caja alineada en `|cos t| + |sin t| − 1`**
+—25 % a 0,3 rad, 18 % a 0,2, hasta 41 % a 45°—, así que dos plataformas colocadas
+con el borde teóricamente pegado se metían **0,26 y 0,19**. Por eso las
+plataformas no se giran y lo que se gira es lo de encima. Con `block-grass-large`
+en 2,0821 de lado, el centro va en **±3,541** para que el borde quede pegado.
+**Medido después en las trece piezas del escenario: cero invasión.**
+
+**Y hay dos formas de mirar esto que no son la misma**, porque la primera no vio
+lo segundo: **la oclusión** —qué tapa qué desde la cámara— y **la invasión** —qué
+pisa la huella del tablero—. Una pieza puede no tapar nada y estar comiéndose una
+casilla.
+
+**LO QUE NO SE HIZO, y es la mitad del paso:**
+
+- **la decoración** —flores y pasto sobre casillas pisables, sin colisión— no
+  llegó a entrar;
+- **el personaje sigue siendo el cubo morado con su marca**. El modelo estaba
+  medido y listo, y no se puso;
+- **las dos comprobaciones del tablero** —que ningún obstáculo esconda la casilla
+  de al lado, y el topetazo contra un obstáculo nuevo— quedaron sin hacer, porque
+  dependían de una decisión sobre la tabla que ya no llegó;
+- **la tabla de madera no cumple el requisito que este mismo cambio escribió**:
+  es plana, está sobre la hierba y se lee como adorno, y el requisito pide que un
+  obstáculo se vea como tal **antes** de que el niño choque. Se deja dicho porque
+  es deuda, no descuido.
+
+**Las cifras que el J13 no debería volver a pagar:**
+
+- **la casilla al noroeste del tocón se ve a 3 de 5 puntos** desde la vista de
+  partida, y quien la tapa es el tocón. De las 19 casillas pisables sin obstáculo,
+  catorce están a 5 de 5 y cuatro a 4; **ninguna oclusión viene del escenario de
+  fuera**: son piezas del propio tablero o el personaje. El día que una pieza suba
+  de tamaño, esa casilla es la primera que se cae;
+- **el personaje se ve desde los 24 azimuts mientras la cámara no baje de 58°**
+  —la vista de partida está en **50,74°**, el tope de arriba en **25,71°** y el de
+  abajo en **83,13°**—. El primer estorbo a 59° es un árbol en 1 de 24, a 61°
+  entra el tocón, y pegado al tope de abajo se suman las plataformas, la valla y
+  **el propio tablero**. **Está medido contra el CUBO**: `character-oobi` mide
+  0,907 de alto contra 0,7 y tiene otra silueta, así que **ese número hay que
+  volver a sacarlo con el modelo puesto**;
+- y por eso el requisito de ver hacia dónde mira el personaje **no promete
+  visibilidad desde cualquier vista alcanzable**: con la cámara casi a ras, lo que
+  esté delante tapa lo que hay detrás y eso es perspectiva, no un defecto. La
+  salida es el botón de vista inicial.
+
+**UN MODELO QUE NO LLEGA YA NO SE LLEVA LA PANTALLA**, y esto sí quedó hecho y
+verificado. Se midió primero qué pasaba: con un `.glb` inexistente, `useLoader`
+lanza, el `ErrorBoundary` de fiber **vuelve a lanzar en el render del `<Canvas>`**
+y, sin nadie que lo pare, React desmonta el árbol **entero** —`#root` con cero
+hijos: se van la barra lateral, el editor y la navegación, no sólo el juego—. Hay
+un `SceneBoundary` **encima del `<Canvas>`**, en `GameSceneLoader.tsx`, que es
+donde tiene que estar porque nada de dentro puede atrapar ese error. Es un
+componente de clase porque es la única forma que da React, y no importa `three`:
+la frontera diferida sigue en pie. Los tres botones y el mensaje del intento **sí**
+desaparecen con la escena, y es correcto: son un portal desde debajo de la
+frontera, y sin escena no hay nada que ejecutar ni nada que contar.
+
+**Un detalle de desarrollo que confunde si no se sabe**: Vite devuelve
+`index.html` para una ruta inexistente bajo `/models/`, así que el error no es un
+404 sino «Unexpected token '<'» al parsear HTML como JSON.
+
+**LA CASILLA DEL PERSONAJE YA NO SE LEE POR EL COLOR DEL CUBO.** El grupo del
+personaje se llama `character`, el del tablero `board` y el del escenario
+`scenery`, así que `scene.getObjectByName` da el personaje sea cual sea su
+aspecto. Comprobado contra la vía vieja antes de cambiar nada: **32 muestras de un
+PROGRAMA A entero, las dos vías con la misma lectura en todas**.
+
+**Y del intento descartado quedan dos medidas que valen para el J13:**
+
+- **`character-oobi` lleva esqueleto, y `<Clone>` lo rompe**: la copia se queda
+  apuntando a los huesos del original y **deja de seguir a su grupo**. Se vio con
+  el recorrido terminado, el contador en diez y la barra diciendo «¡Perfecto!»
+  mientras **el personaje seguía pintado en la salida**. Va con `<primitive>`, que
+  además es lo correcto: hay uno solo;
+- **y la forma de cazarlo**, que es la regla del J6.3 llevada un paso más allá: si
+  «dónde está el personaje» se lee del grafo, un fallo de dibujo no se ve.
+  **Comparar dos fotogramas** —uno con el personaje visible y otro con
+  `visible = false`— y sacar la caja de los píxeles que cambian. Con el fallo
+  cambiaban **cero**; con `primitive`, **2.414** en una caja centrada a **dos
+  píxeles** de la proyección de la meta.
+
+**Y el modelo mira a +z mientras el juego cuenta con −z**, así que se le da media
+vuelta **dentro de su propio envoltorio** y `FACING_ANGLE` no se toca: lo comparten
+el recorrido y el topetazo, y girarlo movería al personaje de casilla para
+arreglar un asunto de dibujo.
+
+**Verificado en el navegador, con el `<pre>` comprobado antes de nada:** el
+PROGRAMA A entero sobre el suelo nuevo va de col 0/fila 4 a **col 4/fila 0**, con
+el contador de 1 a **10** y «¡Perfecto! …con 10 pasos», leyendo la casilla por
+nombre. El encuadre no hizo falta tocarlo: el tablero cae entre y 405 y **y 581** a
+1440 px, y la bandeja del lienzo empieza en **679**.
 
 ---
 
@@ -3196,11 +3372,30 @@ devuelve `/login` con la contraseña equivocada.
 `.eslintrc.cjs` usa la configuración heredada. Migrar a ESLint 9 con
 configuración plana es una tarea pendiente sin urgencia.
 
-### 4.8 Bundle: 625 kB de aplicación, 644 kB de editor y 830 kB de escena
+### 4.8 Bundle: 625 kB de aplicación, 648 kB de editor y 905 kB de escena
 
 `npm run build` avisa de que los chunks superan los 500 kB. Sin urgencia, pero
 conviene no perderlo de vista ahora que el juego crece. Se resolvería con
 `manualChunks` o más importaciones dinámicas por ruta.
+
+**Medido el 10-sep-2026, con el J6.4 cerrado**: trozo principal **625,00 kB**
+(167,90 gzip), trozo `BlockEditor` **648,40 kB** (174,73), trozo `GameScene`
+**904,65 kB** (246,46), hoja de estilos **53,32 kB** (10,11).
+
+**El principal no se movió NI UN BYTE**, que era la marca de que la frontera
+diferida sigue en pie: los modelos, el cargador y el límite de error viven todos
+del lado perezoso. `GameScene` sube **55,13 kB** (+16,63 gzip) y **es el cargador,
+no los modelos**: los `.glb` se piden por URL desde `public/` y no entran al
+empaquetado —medido en los dos sentidos: meter los 80 del survival y borrar los
+330 de nature dejó el trozo exactamente igual—. Con `useGLTF` de drei habrían sido
+**78,80 kB**, porque su módulo arrastra los decodificadores de Draco y de Meshopt,
+que aquí no se usan; por eso se carga con `useLoader` y el `GLTFLoader` de `three`.
+
+**Y las cifras de partida de este apartado estaban desfasadas**, lo que se vio al
+medir antes de tocar nada: el árbol daba **648,40** y **53,32** donde el bloque de
+abajo decía 647,94 y 53,25. No es una medida mala: el commit `7b5c43a` —los cuatro
+ajustes de encuadre— metió 92 líneas en `BlockEditor.tsx`, tocó `main.css` y **no
+actualizó esta sección**. Los números de arriba son los buenos.
 
 **Medido el 9-sep-2026, con los seis defectos del J6.3 corregidos**: trozo
 principal **625,00 kB** (167,90 gzip), trozo `BlockEditor` **647,94 kB** (174,54),

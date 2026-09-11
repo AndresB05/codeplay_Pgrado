@@ -29,7 +29,7 @@ problema de **llegar**; la eficiencia se aprende al terminar, y ahí el número 
 una lección y no una exigencia. Lo único que se le dice mientras construye es que
 ha dejado **bloques sueltos**, y eso no lleva ninguna cifra.
 
-Las **diecinueve** garantías con las que la capacidad cuenta hasta aquí. Cinco venían
+Las **veintidós** garantías con las que la capacidad cuenta hasta aquí. Cinco venían
 de antes: que el juego se dibuje dentro de la aplicación, que su código no pese
 en la carga inicial, que el banco de pruebas no llegue a producción, que el
 tablero salga de una configuración y no del código que lo pinta, y que el
@@ -135,6 +135,39 @@ ejecuta» y es **«el contador de pasos se ve siempre»**. Un marcador ya puesto
 explica de qué van a ser los números que suban, y **un cero no es el número a
 batir** que el J6.2 retiró.
 
+**Y tres llegan con los modelos**, del paso que los puso delante por primera vez:
+que los modelos **se pidan por su dirección en tiempo de ejecución** y no viajen
+dentro de ninguna descarga de código —añadir o quitar una pieza no mueve ni un
+byte del programa—; que **un modelo que no llega no deje la pantalla en blanco**,
+que es nueva de verdad, porque hasta aquí todo lo que se dibujaba era geometría
+escrita en el código y no podía faltar; y que **se vea hacia dónde mira el
+personaje**, que hasta hoy sostenía un saliente sobre la cabeza de un cubo. La
+segunda se escribió midiendo: sin un límite de error, un `.glb` que no está se
+lleva **la aplicación entera** y no sólo el juego, que es la misma forma del fallo
+que dejó la pantalla en blanco en el J6.3.
+
+La tercera dice además dónde **no** se promete: acercando la cámara al tope
+inferior, con la vista casi a ras, lo que esté delante puede tapar al personaje.
+Es geometría y no un defecto del dibujo —a esa altura el propio tablero tapa lo
+que hay detrás—, y exigir lo contrario sería exigir que no haya perspectiva.
+
+**Y dos se acotaron con ellos.** La del tablero admite ahora que **lo que dibuja
+una casilla se salga de ella** —el labio de hierba de las piezas del kit, un
+obstáculo más grande que su cuadro— siempre que no abra rendijas ni esconda la
+casilla de al lado; y exige, por escrito y por primera vez, que **la rejilla se
+pueda contar**, que hasta entonces sólo vivía como el porqué del damero. La de la
+cámara deja de justificar su tope de arriba nombrando **la marca sobre la cabeza
+del cubo** y pasa a nombrar lo que se tiene que seguir viendo, que es lo que
+sobrevive a cambiar de personaje.
+
+**Y una garantía se escribió y no entró**, que es una forma nueva de no tenerla:
+que **lo que estorba se distinga de lo que adorna** —el pasto nunca bloquea, y un
+obstáculo se ve como tal antes de que el niño choque—. Es del usuario y sigue en
+pie como intención, pero el paso que la escribió terminó **hecho y no
+satisfactorio**: la pieza que hace de obstáculo junto a la meta es plana y se lee
+como adorno. Archivarla habría metido aquí una garantía falsa, así que espera al
+paso que dibuje los obstáculos de verdad.
+
 ## Requirements
 
 ### Requirement: El juego se dibuja dentro de la aplicación
@@ -226,9 +259,20 @@ vista:
 - un **hueco**, que es una casilla que no existe y por la que se ve el vacío;
 - un **muro**, que es una casilla que existe y que el personaje no puede pisar.
 
-Todas las casillas SHALL ocupar el mismo tamaño y SHALL quedar contiguas, sin
-rendijas ni solapes entre ellas. Ese tamaño SHALL ser una constante del juego y
-NO SHALL deducirse de las medidas de ningún modelo gráfico.
+Todas las casillas SHALL ocupar el mismo tamaño y SHALL quedar contiguas, **sin
+rendijas entre ellas**. Ese tamaño SHALL ser una constante del juego y NO SHALL
+deducirse de las medidas de ningún modelo gráfico.
+
+**Lo que dibuja una casilla SÍ SHALL poder salirse de ella** cuando su forma lo
+pida —un obstáculo mayor que su casilla, el labio de hierba del borde—, siempre
+que no abra rendijas, no mueva ninguna casilla de su sitio y **no esconda las
+contiguas**: la casilla de al lado SHALL seguir viéndose y contándose. Lo que
+ocupa el mismo tamaño es la casilla, no la pieza con la que se dibuja.
+
+**La rejilla SHALL poder contarse.** Dos casillas pisables contiguas SHALL
+distinguirse la una de la otra a la vista, desde la vista de partida y sin
+acercar ni girar la cámara. El niño cuenta casillas para saber cuántos pasos da,
+y un suelo continuo en el que no se ven las juntas deja de poder contarse.
 
 La casilla de salida y la de meta SHALL distinguirse a la vista del resto.
 
@@ -248,6 +292,12 @@ La casilla de salida y la de meta SHALL distinguirse a la vista del resto.
 
 - **WHEN** se abre la pantalla que aloja el juego
 - **THEN** el personaje aparece sobre la casilla de salida que indica la configuración, mirando hacia la dirección que ésta indica
+
+#### Scenario: Se cuenta la rejilla
+
+- **WHEN** el niño mira el tablero en la vista de partida y cuenta las casillas de una fila
+- **THEN** se ve dónde acaba cada casilla y empieza la siguiente
+- **AND** el número de casillas que se cuentan es el que describe la configuración
 
 ### Requirement: El personaje se mueve por casillas y no atraviesa nada
 
@@ -1007,9 +1057,8 @@ tener un mínimo y un máximo, y **NO SHALL poder mirarse el tablero desde
 abajo**: la cámara se queda por encima de él.
 
 **Tampoco SHALL poder mirarse en vertical desde arriba.** Desde el cenit el
-personaje se ve como una silueta y la marca que lleva sobre la cabeza —la que
-dice hacia dónde mira— deja de distinguirse, así que **girar dejaría de verse**,
-que es justamente lo que esa marca existe para enseñar.
+personaje se ve como una silueta y **deja de verse hacia dónde mira**, así que
+**girar dejaría de verse**, que es justamente lo que hay que poder ver.
 
 **El tablero NO SHALL poder perderse de vista.** La cámara gira alrededor del
 tablero y siempre lo mira; no hay forma de desplazarla hasta dejarlo fuera de la
@@ -1041,7 +1090,7 @@ mientras se mira desde otro sitio.
 #### Scenario: Se intenta mirar el tablero en vertical desde arriba
 
 - **WHEN** el niño gira la vista hacia arriba todo lo que puede
-- **THEN** la vista se queda por debajo del cenit, y la marca que dice hacia dónde mira el personaje se sigue distinguiendo
+- **THEN** la vista se queda por debajo del cenit, y se sigue distinguiendo hacia dónde mira el personaje
 
 #### Scenario: Se recupera la vista inicial
 
@@ -1052,3 +1101,101 @@ mientras se mira desde otro sitio.
 
 - **WHEN** el niño mueve la cámara mientras el personaje está recorriendo el programa
 - **THEN** el recorrido sigue su curso, y el personaje sigue en la casilla que le toca
+
+### Requirement: Los modelos 3D se piden por URL en tiempo de ejecución
+
+Los modelos con los que se dibuja la escena —el tablero, el personaje y el
+decorado— SHALL pedirse **por su dirección, cuando la escena los necesita**, y NO
+SHALL viajar dentro de ninguna de las descargas de código de la aplicación.
+
+Añadir, cambiar o quitar un modelo NO SHALL cambiar el tamaño de esas descargas,
+ni el de la carga inicial, ni el de la del juego, más allá de lo que ocupe el
+código que los pide.
+
+Quien no abra una pantalla con juego dentro NO SHALL descargar ningún modelo.
+
+#### Scenario: Se compila la aplicación
+
+- **WHEN** se compila la aplicación para producción
+- **THEN** ningún modelo 3D queda dentro de las descargas de código
+- **AND** los modelos siguen sirviéndose como archivos aparte, por su dirección
+
+#### Scenario: Se abre la pantalla que aloja el juego
+
+- **WHEN** se abre esa pantalla
+- **THEN** los modelos que la escena necesita se piden en ese momento, cada uno por su dirección
+
+#### Scenario: Se recorre la aplicación sin abrir el juego
+
+- **WHEN** se abre la aplicación y se navega por sus pantallas sin abrir ninguna que aloje el juego
+- **THEN** no se descarga ningún modelo 3D
+
+### Requirement: Un modelo que no llega no deja la pantalla en blanco
+
+Cuando un modelo de la escena **no se pueda cargar** —no está, no llega o llega
+roto—, el sistema NO SHALL dejar la pantalla en blanco ni tumbar el resto de la
+aplicación. La pantalla SHALL seguir en pie y SHALL seguir pudiéndose usar todo
+lo que no dependa de ese modelo: el editor de bloques, el resto del panel y la
+navegación.
+
+Los controles y los avisos que **sólo sirven a la escena** —ejecutar, detener,
+devolver a la salida, y el mensaje que cuenta el intento— SÍ SHALL poder
+desaparecer con ella: sin escena no hay nada que ejecutar ni nada que contar, y
+un botón que no puede hacer su trabajo es peor que su ausencia.
+
+El sistema SHALL **decir que algo no se ha podido dibujar**, en el sitio donde
+iba, en lugar de callarlo: una escena a la que le falta el tablero sin que nada lo
+diga se lee como un fallo del juego.
+
+Mientras los modelos están llegando, la zona del juego NO SHALL quedarse en
+blanco sin explicación.
+
+#### Scenario: Falta un modelo del tablero
+
+- **WHEN** se abre la pantalla del juego y uno de los modelos con los que se dibuja el tablero no se puede cargar
+- **THEN** la pantalla sigue en pie, con su editor de bloques y su navegación
+- **AND** en la zona del juego se dice que no se ha podido dibujar la escena
+
+#### Scenario: Los modelos tardan en llegar
+
+- **WHEN** los modelos de la escena aún no han llegado
+- **THEN** la zona del juego muestra un aviso de carga en lugar de quedarse en blanco
+
+### Requirement: Se ve hacia dónde mira el personaje
+
+El personaje SHALL dejar ver **hacia cuál de las cuatro direcciones mira** desde
+la vista de partida y desde **todo el rango de giro y acercamiento en el que el
+tablero se mira desde arriba**, que es donde el niño juega, y sin que haga falta
+moverlo.
+
+Girar SHALL verse: dos orientaciones distintas NO SHALL dibujarse igual. Un
+personaje del que no se sabe hacia dónde mira convierte los dos bloques de giro en
+órdenes sin efecto visible, y el niño no puede corregir un programa cuyo efecto no
+ve.
+
+**Acercándose al tope inferior de la cámara**, con la vista casi a ras del suelo,
+lo que esté delante SÍ SHALL poder tapar al personaje. Es geometría y no un
+defecto del dibujo —a esa altura el propio tablero tapa lo que hay detrás—, y
+exigir lo contrario sería exigir que no haya perspectiva. La salida SHALL estar
+siempre a mano: volver a la vista inicial.
+
+#### Scenario: El personaje está parado en su casilla
+
+- **WHEN** el niño mira al personaje sin ejecutar nada
+- **THEN** se distingue hacia cuál de las cuatro direcciones mira
+
+#### Scenario: El personaje gira
+
+- **WHEN** el personaje ejecuta una orden de giro
+- **THEN** se ve que ha cambiado de orientación, aunque no haya cambiado de casilla
+
+#### Scenario: Se mira desde otro ángulo
+
+- **WHEN** el niño gira la cámara alrededor del tablero sin bajarla hasta cerca del suelo
+- **THEN** se sigue distinguiendo hacia dónde mira el personaje, desde cualquier lado
+
+#### Scenario: Se baja la cámara hasta cerca del tope inferior
+
+- **WHEN** el niño baja la vista hasta casi ras del suelo y algo del escenario queda delante del personaje
+- **THEN** el personaje puede quedar tapado
+- **AND** volver a la vista inicial lo devuelve a la vista

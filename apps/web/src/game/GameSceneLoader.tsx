@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { Component, lazy, Suspense, type ReactNode } from 'react';
 import type { Program } from './program';
 
 /*
@@ -19,6 +19,47 @@ const LazyGameScene = lazy(() =>
   import('./GameScene').then((module) => ({ default: module.GameScene })),
 );
 
+/*
+ * EL LÍMITE DE ERROR VA AQUÍ, ENCIMA DEL `<Canvas>`, y no puede ir más abajo:
+ * fiber envuelve a sus hijos en su propio límite y VUELVE A LANZAR el error en
+ * el render del `<Canvas>`, así que nada colocado dentro de la escena lo
+ * atrapa. Medido con un modelo que no existe: sin este límite nadie para la
+ * excepción y React desmonta el árbol ENTERO —`#root` se queda con cero hijos—,
+ * así que se va la aplicación, no sólo el juego. Es la misma forma del fallo de
+ * `hasLooseStacks` que dejó la pantalla en blanco en el J6.3.
+ *
+ * Es un componente de clase porque es la única forma que React da de declarar un
+ * límite de error: la convención del repo son funciones, y ésta es la excepción
+ * que impone la API, no una elección.
+ *
+ * Y vive de este lado de la frontera diferida sin romperla: un límite de error
+ * no importa `three` ni la escena.
+ */
+interface SceneBoundaryProps {
+  children: ReactNode;
+}
+
+class SceneBoundary extends Component<SceneBoundaryProps, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    if (!this.state.failed) {
+      return this.props.children;
+    }
+
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-1 px-6 text-center">
+        <p className="font-display text-[17px] text-ink">No se ha podido dibujar el juego.</p>
+        <p className="text-[14px] text-ink-soft">Vuelve a cargar la página para intentarlo otra vez.</p>
+      </div>
+    );
+  }
+}
+
 interface GameSceneLoaderProps {
   program: Program | null;
   /* El hueco de los tres botones. Cruza como dato, igual que el programa. */
@@ -28,14 +69,16 @@ interface GameSceneLoaderProps {
 }
 
 export const GameSceneLoader = ({ program, controlsHost, messageHost }: GameSceneLoaderProps) => (
-  <Suspense
-    fallback={
-      <div className="flex h-full w-full items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-[5px] border-line border-t-grape" />
-        <span className="sr-only">Cargando el juego…</span>
-      </div>
-    }
-  >
-    <LazyGameScene program={program} controlsHost={controlsHost} messageHost={messageHost} />
-  </Suspense>
+  <SceneBoundary>
+    <Suspense
+      fallback={
+        <div className="flex h-full w-full items-center justify-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-[5px] border-line border-t-grape" />
+          <span className="sr-only">Cargando el juego…</span>
+        </div>
+      }
+    >
+      <LazyGameScene program={program} controlsHost={controlsHost} messageHost={messageHost} />
+    </Suspense>
+  </SceneBoundary>
 );
