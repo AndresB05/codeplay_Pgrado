@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import type { Program } from './program';
+import type { Program, WorkspaceState } from './program';
 
 /*
  * La segunda frontera del bundle, y existe por lo mismo que `GameSceneLoader`:
@@ -19,9 +19,15 @@ interface BlockEditorLoaderProps {
   onProgramChange: (program: Program) => void;
   /* El hueco de la caja de bloques. Cruza la frontera como dato, igual que el programa. */
   flyoutHost: HTMLElement;
+  /* Con qué bloques arranca el lienzo. Lo saca del sobre quien lee el nivel. */
+  starterWorkspace: WorkspaceState;
 }
 
-export const BlockEditorLoader = ({ onProgramChange, flyoutHost }: BlockEditorLoaderProps) => (
+export const BlockEditorLoader = ({
+  onProgramChange,
+  flyoutHost,
+  starterWorkspace,
+}: BlockEditorLoaderProps) => (
   <Suspense
     fallback={
       <div className="flex h-full w-full items-center justify-center">
@@ -30,6 +36,10 @@ export const BlockEditorLoader = ({ onProgramChange, flyoutHost }: BlockEditorLo
       </div>
     }
   >
-    <LazyBlockEditor onProgramChange={onProgramChange} flyoutHost={flyoutHost} />
+    <LazyBlockEditor
+      onProgramChange={onProgramChange}
+      flyoutHost={flyoutHost}
+      starterWorkspace={starterWorkspace}
+    />
   </Suspense>
 );

@@ -2,6 +2,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import { Sidebar } from '../../components/dashboard/Sidebar/Sidebar';
 import { StudentClassroomModule } from '../../components/dashboard/student/StudentClassroomModule';
 import { StudentGameLabModule } from '../../components/dashboard/student/StudentGameLabModule';
+import { StudentLevelModule } from '../../components/dashboard/student/StudentLevelModule';
 import { StudentSettingsModule } from '../../components/dashboard/student/StudentSettingsModule';
 import { StudentTopBar } from '../../components/dashboard/student/StudentTopBar';
 import { StudentTrophiesModule } from '../../components/dashboard/student/StudentTrophiesModule';
@@ -12,7 +13,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 export const Dashboard = () => {
   const location = useLocation();
-  const { worldId } = useParams();
+  const { levelId, worldId } = useParams();
   const { loading: authLoading, user } = useAuth();
 
   const activeRoute =
@@ -30,9 +31,20 @@ export const Dashboard = () => {
 
   const renderStudentModule = () => {
     switch (activeRoute) {
+      /*
+       * Las tres pantallas del mapa caen en este caso, porque `activeRoute`
+       * colapsa todo lo que cuelga de `WORLDS/`. Lo que las distingue son los
+       * parámetros de la dirección, del más concreto al más general: sin mirar
+       * `levelId` aquí, abrir un nivel devolvería la lista de su mundo sin que
+       * nada delatara el fallo.
+       */
       case ROUTES.WORLDS:
+        if (levelId && worldId) {
+          return <StudentLevelModule levelId={levelId} worldId={worldId} />;
+        }
+
         return worldId ? (
-          <StudentWorldLevelsModule worldId={worldId} />
+          <StudentWorldLevelsModule user={user} worldId={worldId} />
         ) : (
           <StudentWorldsModule user={user} />
         );

@@ -183,7 +183,7 @@ codeplayPGrado/
 │                             (5,96 MB, CC0), con su propio README
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
-│   └── migrations/           22 migraciones SQL (la siembra vive en la 0012,
+│   └── migrations/           24 migraciones SQL (la siembra vive en la 0012,
 │                             no hay seed.sql suelto)
 ├── docs/                     CONTEXT.md (este), ESTADO-DEL-PROYECTO.md,
 │                             ROADMAP.md, ROADMAP-JUEGO.md,
@@ -951,7 +951,7 @@ progreso conseguido.
 seguras del backend.
 
 **Estado global: aplicado.** El proyecto de Supabase existe, está enlazado con la
-CLI y **las 22 migraciones** se ejecutaron contra la base real. Las quince
+CLI y **las 24 migraciones** se ejecutaron contra la base real. Las quince
 primeras entraron con `backend-supabase-real` (25-ago-2026) y `tablas-salones`
 (26-ago-2026); las siete restantes las fueron añadiendo los pasos 15, 16, 18, 19
 y 28. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
@@ -1222,6 +1222,8 @@ la primera.
 | Tabla `mission_assignments`, sus políticas y sus `grant` | ✅ aplicado | `…0020_create_mission_assignments.sql` |
 | Tres tablas publicadas en `supabase_realtime` | ✅ aplicado | `…0021_publish_realtime_tables.sql` |
 | `redeem_invitation` y `preview_invitation`, el canje de enlaces | ✅ aplicado | `…0022_create_invitation_redemption.sql` |
+| **El nivel 1 del mundo 1, rediseñado, y `xp_reward` igualado a 100 en los nueve** | ✅ aplicado | `…0023_seed_level_1_world_1.sql` |
+| **El tablero del nivel 1, rediseñado por el usuario al verlo jugándose** | ✅ aplicado | `…0024_level_1_vertical_board.sql` |
 | Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
@@ -1406,7 +1408,7 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
 
 ### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques, su ejecución y el resultado (J1 a J6.4)
 
-**Aplicado con `esqueleto-del-juego` (J1), `rejilla-y-personaje` (J2),
+**Aplicado con `nivel-1-desde-la-base` (J7.1), `esqueleto-del-juego` (J1), `rejilla-y-personaje` (J2),
 `bloques-del-programa` (J4), `ejecutar-el-programa` (J5), `recuento-y-resultado`
 (J6), `contador-en-vivo` (J6.1), `contador-sobre-el-lienzo` (J6.2),
 `pantalla-compuesta-y-camara` (J6.3) y `assets-de-tanteo` (J6.4), más el J3, que
@@ -1428,10 +1430,13 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/game/debugLevel.ts` | **Puro.** La rejilla de pega: 5×5, cuatro muros, un hueco, salida y meta. **No es un puzle diseñado** — los nueve los diseña el usuario y se siembran en el J7 |
 | `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Los reutiliza el intérprete**: nació para eso |
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
-| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero, el personaje, la animación con `useFrame` y **la cámara movible acotada** (`OrbitControls` de `drei`); **el contador de pasos, siempre visible**; **la superposición que dice todo lo demás** —reposo, ejecución, resultado y avisos—; y los tres botones —**«Ejecutar», «Detener» y «Reiniciar»**—, pintados **con un portal** en el hueco que baja la composición. Desde el J6.4, **el tablero es geometría generada de una pieza** —dos verdes y tierra, con los colores medidos del `colormap` del kit— y los obstáculos, la meta y el escenario de fuera son **modelos de `public/models/` pedidos por URL**. El personaje sigue siendo el cubo. Importa `three`, `@react-three/fiber` y `@react-three/drei` |
-| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Baja el programa y **el hueco de los botones**; **sólo el tipo** del sobre cruza. Desde el J6.4 lleva además el **límite de error de la escena**, que va aquí porque el `<Canvas>` vuelve a lanzar en su propio render |
+| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero, el personaje, la animación con `useFrame` y **la cámara movible acotada** (`OrbitControls` de `drei`); **el contador de pasos, siempre visible**; **la superposición que dice todo lo demás** —reposo, ejecución, resultado y avisos—; y los tres botones —**«Ejecutar», «Detener» y «Reiniciar»**—, pintados **con un portal** en el hueco que baja la composición. **Desde el J7.1 el nivel LLEGA POR PROPIEDADES** —`level: LevelConfig`— y la escena no trae ninguno dentro. **Y no carga ni un modelo**: el usuario retiró los assets del J6.4, así que el tablero vuelve a ser **un cubo por casilla** —damero de dos verdes, muro, salida en azul y meta en amarillo— y se fueron `Scenery`, `Obstacles`, el `GLTFLoader` y el `Clone` de drei. El encuadre **se deriva del tablero**: `CAMERA_START`, `BOARD_LIFT` y `MAX_DISTANCE` se escalan por su lado mayor contra la referencia de cinco, así que un 5 × 5 da exactamente la vista de siempre. El personaje sigue siendo el cubo. Importa `three`, `@react-three/fiber` y `@react-three/drei` |
+| `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Baja **el nivel ya comprobado**, el programa y **el hueco de los botones**; **sólo el tipo** del sobre cruza. Desde el J6.4 lleva además el **límite de error de la escena**, que va aquí porque el `<Canvas>` vuelve a lanzar en su propio render |
 | `apps/web/src/game/program.ts` | **Puro.** El sobre del contrato §4.3: `Program`, `PROGRAM_FORMAT_VERSION` y las funciones `sealProgram` y `openProgram`. **Sin Blockly** — lo reutilizan el J8 al abrir el `starterProgram` y el J9 al mandar el intento |
 | `apps/web/src/game/program.test.ts` | El sobre: que se cierre con la versión del contrato y que una desconocida se rechace entera (§7) |
+| `apps/web/src/game/levelConfig.ts` | **Nuevo en el J7.1. Puro.** La frontera del §7: `readLevelConfig` comprueba el `config` campo por campo —matriz rectangular, clases de casilla conocidas, salida y meta dentro **y pisables**, `optimalSteps` entero positivo— y `openLevel` es **la puerta única** de los tres campos de la fila: versión, puzle y sobre. Rechaza **entero** y devuelve `null` sin motivo, como `openProgram`. Corre **por encima** de la frontera diferida, así que un nivel ilegible no descarga el motor |
+| `apps/web/src/game/levelConfig.test.ts` | 17 casos. **Lee el `config` del nivel 1 del propio archivo `.sql`** con `?raw`, así que si la migración y el test se separan el test cae — comprobado rompiéndolo |
+| `apps/web/src/components/dashboard/student/StudentLevelModule.tsx` | **Nuevo en el J7.1.** La pantalla de nivel, la primera de producto que monta el juego: lee la fila por su id, la comprueba con `openLevel`, y o monta el juego o enseña el rechazo del §7 **con palabras de niño**. Las instrucciones salen de la `narrative` de la fila. Posee la misma composición que el J6.3 ensayó en el laboratorio |
 | `apps/web/src/game/blockTypes.ts` | **Nuevo en el J5. Puro.** Cómo se llaman los tres bloques y su campo en el JSON. Vive aparte porque `blocks.ts` importa Blockly y **el intérprete no puede importarlo** |
 | `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` y devuelve `{ orders, rootCount }` —o `null` si no entiende algo—, `countSteps` suma los pasos **leyendo** las órdenes (§4.4), `runProgram` las pliega sobre la pose inicial con `turn` y `advance`, `hasLooseStacks` responde por los bloques de sobra y **`stepsTaken` da los pasos dados que enseña el contador**. Sin Blockly y sin `three` |
 | `apps/web/src/game/interpreter.test.ts` | El recorrido y la meta, con el **PROGRAMA A del contrato §4.3 pegado tal cual** como entrada |
@@ -3128,6 +3133,13 @@ personales** porque el repositorio es público.
 
 ### P4 — `integracion-juego`: apartado de implementación de los niveles
 
+**LA TAREA 1 ESTÁ HECHA, en el J7.1.** La ruta y la pantalla de nivel existen en
+`/dashboard/worlds/:worldId/:levelId`, con el juego montado dentro y la selección
+de niveles leyendo de la base. No hay ningún «contenedor del build de WebGL»
+porque no hay build: el juego es parte de esta aplicación. **Lo que queda de este
+apartado es la tarea 3** —escribir el resultado por `progressService` y
+`attemptsService`—, que es el J9 y el paso 21.
+
 **Descripción.** Dejar montado el hueco donde entrará el juego: la pantalla de
 nivel con el contenedor del build de WebGL, el paso de parámetros al juego y la
 recepción del resultado. **El juego sigue sin construirse**, y desde el
@@ -3267,7 +3279,7 @@ se edita a mano**.
 npx supabase gen types typescript --linked > apps/web/src/types/database.types.ts
 ```
 
-### 4.2b Los nueve niveles sembrados son de otro juego
+### 4.2b Ocho de los nueve niveles sembrados siguen siendo de otro juego
 
 Descubierto el 4-sep-2026 leyendo la migración 0012. Las nueve filas de `levels`
 llevan `validation_rules` del concepto anterior —el de escribir JavaScript—:
@@ -3279,6 +3291,16 @@ Los diseña el usuario, y con ellos se rediseñan los títulos. Lo aplica el J7 
 roadmap del juego, que pasa a reescribir título, narrativa y `validation_rules`
 además de sembrar la configuración. Ver `DISENO-DEL-JUEGO.md` §2 y
 `ROADMAP-JUEGO.md` §3.
+
+**EL PRIMERO YA ESTÁ, desde el J7.1**: la fila del nivel 1 de la Selva es
+`siempre-adelante`, con el puzle en `validation_rules`, el sobre vacío en
+`starter_code` y `grid-blockly-1` en `programming_language`. **Quedan ocho**, y
+son los del J7.2, el J7.3 y el J12.
+
+**Lo que eso significa hoy para quien abra cualquiera de los otros ocho**: el
+juego los **rechaza enteros** por el camino del contrato §7 —`levelConfig.ts`— y
+la pantalla se lo dice al niño con palabras suyas, sin dibujar tablero a medias.
+No es un fallo: es el estado esperado hasta que cada uno se siembre.
 
 ### 4.2 No hay catálogo de logros
 
@@ -3560,6 +3582,49 @@ Blockly no reparte **y** que la escena no avanza; **frames que corren** descarta
 lo primero pero **no** lo segundo —la escena puede seguir congelada con sesenta
 fps, y ahí la señal es que el recorrido progrese y el remedio `resize_window`—.
 **`document.hidden` no detecta ninguno de los dos**: sale `false` en ambos.
+
+**Y LA CAPTURA NO ES SEÑAL DE NADA, medido en el J7.1.** Con el panel de vista
+previa **oculto**, `requestAnimationFrame` no dispara **ni un frame** —tres
+intentos seguidos de capturar el lienzo murieron sin frames—, y sin embargo las
+capturas del panel **siguen devolviendo imagen**, porque enseñan el último
+fotograma compuesto. Es la trampa entera en una línea: **la foto sale bien con la
+escena congelada.** El párrafo de arriba dice que los frames son una señal doble;
+esto añade que la imagen no es señal ni de una. El remedio sigue siendo
+`resize_window` con un tamaño concreto, y comprobar que los frames corren
+**antes** de creerse lo que se ve.
+
+**Dos capturas con el mismo `md5` no son una coincidencia: son una pregunta.** En
+el J7.1 salieron dos idénticas y la explicación resultó ser buena —la cámara
+estaba pegada a su tope, así que era literalmente el mismo fotograma—, pero
+comprobarlo destapó otra cosa: **los arrastres que empezaban en la mitad de abajo
+del juego caían sobre la bandeja del lienzo**, que se come el puntero, así que la
+cámara no se movía y se estaba capturando la vista anterior creyendo que era otra.
+**El arrastre para girar la cámara empieza por encima de la bandeja.**
+
+**«Parece que una pieza se mete en el tablero» no es «se mete».** Dos cosas que
+solapan en **un solo eje** se ven superpuestas desde un ángulo bajo sin invadirse:
+comprobado en el J7.1 calculando las huellas en vez de mirando la pantalla. Vale
+para cualquier cosa que se dibuje al lado del tablero, con modelos o sin ellos.
+
+### 4.11 El candado de los niveles se comprueba en la lista, no en la pantalla
+
+**Desde el J7.1**, y es deliberado con una fecha de caducidad.
+
+Qué niveles están disponibles sale del progreso real del niño, y la lista los
+pinta bloqueados y no deja pulsarlos. **Pero la pantalla de nivel no comprueba el
+candado**: escribir la dirección de uno bloqueado lo abre.
+
+**Hoy no se nota, y por eso hay que anotarlo.** Los otros ocho niveles siguen
+sembrados en el formato del juego anterior, así que quien escriba su dirección se
+topa con el rechazo del §7 y no juega nada. De hecho es lo único que hace
+alcanzable ese camino a mano, que es como se verifica.
+
+**Lo destapa el J7.2.** En cuanto el nivel 2 tenga su puzle sembrado, su
+dirección se salta el 1 — y ese día nadie va a estar releyendo por qué. La
+decisión fue que el candado **ordena el avance, no guarda un secreto**: no hay
+nada que proteger detrás, sólo un orden que sugerir. Si el J7.2 decide que sí
+hace falta, el sitio es la propia pantalla de nivel, que ya sabe qué nivel es y
+ya lee el progreso.
 
 ---
 

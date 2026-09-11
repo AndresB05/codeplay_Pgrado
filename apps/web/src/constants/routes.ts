@@ -18,6 +18,11 @@ export const ROUTES = {
    * NO cuelga de WORLDS: `Dashboard.tsx` colapsa cualquier ruta bajo
    * `${WORLDS}/` en WORLDS antes del `switch`, así que ahí debajo esta pantalla
    * no llegaría nunca a su caso y saldría la de mundos, sin error que lo delate.
+   *
+   * La pantalla de NIVEL sí cuelga de ahí —`${WORLDS}/:worldId/:levelId`, que es
+   * la dirección que le corresponde: un nivel pertenece a un mundo—, y por eso
+   * el caso de `WORLDS` mira ahora también `levelId`. Quien cuelgue una pantalla
+   * nueva de ese prefijo tiene que hacer lo mismo; el colapso sigue ahí.
    */
   GAME_LAB: '/dashboard/game',
   TEACHER: '/teacher',

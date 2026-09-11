@@ -137,9 +137,12 @@ context: |
   laboratorio—. Debajo si: GameScene.tsx importa three, BlockEditor.tsx importa
   blockly. Juntarlos anula la separacion.
   Hay ademas modulos PUROS en src/game/ —level.ts, debugLevel.ts, movement.ts,
-  program.ts, blockTypes.ts e interpreter.ts— que no arrastran three ni blockly
-  pero que solo se importan desde el lado perezoso: importarlos desde arriba los
-  mete en el trozo principal. El interprete (J5) es el que conoce la forma que
+  program.ts, blockTypes.ts, interpreter.ts y levelConfig.ts— que no arrastran
+  three ni blockly. Casi todos se importan solo desde el lado perezoso, e
+  importarlos desde arriba los mete en el trozo principal. levelConfig.ts es la
+  EXCEPCION DELIBERADA del J7.1: la pantalla de nivel lo llama POR ENCIMA de las
+  fronteras, porque el contrato §7 manda avisar al anfitrion y porque asi un
+  nivel ilegible no descarga el motor 3D. El interprete (J5) es el que conoce la forma que
   serializa Blockly; program.ts se niega a conocerla a proposito, y por eso los
   nombres de los bloques viven en blockTypes.ts y no en blocks.ts, que importa
   Blockly. Desde el J5 el sobre y esos nombres los usan los DOS trozos perezosos,
@@ -332,9 +335,10 @@ context: |
      contraseñas cerradas en el paso 13 y GOOGLE OAUTH en el paso 15, los tres
      verificados contra la base real. Fuera queda solo retirar la sesion de
      invitado (paso 24, despues del juego).
-  4. Apartado web de integración de los niveles del juego (el juego sigue en
-     desarrollo; aquí sólo entra el contenedor y el contrato de datos), después
-     del consentimiento del acudiente (paso 14).
+  4. Apartado web de integración de los niveles del juego: LA PANTALLA DE NIVEL
+     YA EXISTE, hecha en el J7.1 —ruta /dashboard/worlds/:worldId/:levelId, la
+     lista de niveles leyendo de la base y el juego montado dentro—. El nivel 1
+     del mundo 1 se juega desde su fila. Queda escribir el resultado (J9).
   El apartado gráfico queda FUERA de este hito a propósito.
 
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO

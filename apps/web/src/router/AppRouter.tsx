@@ -140,6 +140,19 @@ export const AppRouter = () => {
                 </PrivateRoute>
               }
             />
+            {/*
+             * La pantalla de nivel. Cuelga del mundo porque un nivel pertenece a
+             * uno, y con la misma guarda que el resto del panel del niño: el
+             * juego es suyo y sólo suyo.
+             */}
+            <Route
+              path={`${ROUTES.WORLDS}/:worldId/:levelId`}
+              element={
+                <PrivateRoute role="child">
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
             <Route
               path={ROUTES.TROPHY_ROOM}
               element={

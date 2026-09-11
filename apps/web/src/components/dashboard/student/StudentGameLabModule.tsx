@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { BlockEditorLoader } from '../../../game/BlockEditorLoader';
+import { debugLevel } from '../../../game/debugLevel';
 import { GameSceneLoader } from '../../../game/GameSceneLoader';
 import type { Program } from '../../../game/program';
 import { PalmFrond } from '../../decor/JungleDecor';
@@ -204,7 +205,15 @@ export const StudentGameLabModule = () => {
        */}
       <section className="marco-del-juego mt-5 grid h-[640px] gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="zona-del-juego relative overflow-hidden rounded-[28px]">
+          {/*
+           * LA REJILLA DE PEGA, y es de este banco de pruebas: desde que el
+           * nivel llega de fuera, alguien tiene que ponerlo, y aquí no hay fila
+           * que leer. Los niveles del producto se juegan en su pantalla, que lee
+           * el suyo de la base; ésta existe para ejercitar el tablero con muros
+           * y huecos, que ninguno de los nueve puzles lleva todavía.
+           */}
           <GameSceneLoader
+            level={debugLevel}
             program={program}
             controlsHost={controlsHost}
             messageHost={messageHost}
@@ -289,7 +298,11 @@ export const StudentGameLabModule = () => {
                 )}
 
                 {blockBox !== null && (
-                  <BlockEditorLoader onProgramChange={handleProgramChange} flyoutHost={blockBox} />
+                  <BlockEditorLoader
+                    onProgramChange={handleProgramChange}
+                    flyoutHost={blockBox}
+                    starterWorkspace={{}}
+                  />
                 )}
               </div>
             </div>

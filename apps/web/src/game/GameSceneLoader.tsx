@@ -1,4 +1,5 @@
 import { Component, lazy, Suspense, type ReactNode } from 'react';
+import type { LevelConfig } from './level';
 import type { Program } from './program';
 
 /*
@@ -9,8 +10,10 @@ import type { Program } from './program';
  * estática desde aquí anula el cambio entero.
  *
  * Tampoco se importa el intérprete: el programa cruza como DATO y quien lo
- * ejecuta vive al otro lado. `program.ts` sí se importa —y sólo su tipo—: no
- * arrastra nada, y el tipo desaparece al compilar.
+ * ejecuta vive al otro lado. `program.ts` y `level.ts` sí se importan —y sólo
+ * sus tipos—: no arrastran nada, y los tipos desaparecen al compilar. El nivel
+ * viene YA COMPROBADO de arriba: quien lo rechaza es el anfitrión (§7), así que
+ * de este lado no hay ninguna rama de error que mantener.
  *
  * El `.then` traduce la exportación con nombre a la exportación por defecto que
  * `lazy` exige, para no abrir la primera excepción a la convención del repo.
@@ -61,6 +64,8 @@ class SceneBoundary extends Component<SceneBoundaryProps, { failed: boolean }> {
 }
 
 interface GameSceneLoaderProps {
+  /* El nivel que se juega, ya comprobado. Cruza como dato, igual que el programa. */
+  level: LevelConfig;
   program: Program | null;
   /* El hueco de los tres botones. Cruza como dato, igual que el programa. */
   controlsHost: HTMLElement | null;
@@ -68,7 +73,12 @@ interface GameSceneLoaderProps {
   messageHost: HTMLElement | null;
 }
 
-export const GameSceneLoader = ({ program, controlsHost, messageHost }: GameSceneLoaderProps) => (
+export const GameSceneLoader = ({
+  level,
+  program,
+  controlsHost,
+  messageHost,
+}: GameSceneLoaderProps) => (
   <SceneBoundary>
     <Suspense
       fallback={
@@ -78,7 +88,12 @@ export const GameSceneLoader = ({ program, controlsHost, messageHost }: GameScen
         </div>
       }
     >
-      <LazyGameScene program={program} controlsHost={controlsHost} messageHost={messageHost} />
+      <LazyGameScene
+        level={level}
+        program={program}
+        controlsHost={controlsHost}
+        messageHost={messageHost}
+      />
     </Suspense>
   </SceneBoundary>
 );

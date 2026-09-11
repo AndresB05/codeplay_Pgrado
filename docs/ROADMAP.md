@@ -134,7 +134,7 @@ escrito en §2.1.
 | 23 | ★ **PARTIDO EN DOS, ver §2.1.** **23.1 — Preparar el terreno y escribir el contrato: HECHO.** Cerró las tres decisiones —cómo se verifica un logro (§3.2), si las misiones necesitan tabla propia (§3), y dónde vive la configuración de un nivel (§3.3)— y escribió [`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md). **Ninguna exigió migración.** De paso midió por primera vez `create_level_attempt` y `upsert_my_progress`, escritas hacía ocho días y nunca ejecutadas: ver `CONTEXT.md` §2.7. **No entró el puente ni el contenedor del build** —dependen de un WebGL que no existe y no se verifican de punta a punta—: siguen en el paso 20. **23.2 — Construir el juego: REPLANTEADO EL 3-SEP-2026.** Se descartó Unity en favor de librerías de JavaScript, así que ya no hay que instalar nada ni activar Git LFS ni generar un build de WebGL: **el juego pasa a ser parte de la aplicación web**. Con eso, 23.2 deja de depender de una persona y deja de ser lo único ajeno a este repositorio. El diseño está en [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) | 🔄 | 23.1 directo · 23.2 pendiente |
 | 17 | Reportes de habilidades sobre progreso real — **ver §3.1** | ⬜ | P5 |
 | 31 | ★ **Seguimiento por alumno en el panel del tutor.** Pedido por el usuario el 3-sep-2026: desde el apartado de salones, el tutor selecciona a un alumno y ve **su avance por mundos** —qué niveles ha completado y qué mundos ha terminado—. Hoy no existe: la tabla de seguimiento enseña una fila por alumno con datos de ejemplo, y no hay ninguna vista de detalle. **Va detrás del 21 por la misma razón que el 17**: sin progreso real escrito no hay nada que mostrar que no sea inventado. Hereda además la decisión de §3.1, que este paso hace visible por primera vez: **el tutor verá también lo que el niño jugó antes de entrar al salón**, salvo que se acote por `joined_at` | ⬜ | — |
-| 20 | Pantalla de nivel con contenedor, y el puente hacia el juego — **el contrato ya está escrito, lo hizo el 23.1**: [`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md). Este paso lo implementa del lado web. Incluye conectar la selección de niveles al backend, hoy maqueta (§3.3), crear la ruta de nivel —`constants/routes.ts` llega a `WORLDS/:worldId` y no hay ninguna de nivel—, y mapear `starter_code` y `validation_rules`, que `mapLevelRow` no trae aunque el `select('*')` los traiga. **Arrastra un defecto medido de §3.3:** no es que la pantalla enseñe diez niveles falsos, es que siempre enseña el **mismo mundo falso**, porque resuelve el mundo contra ids de maqueta con el uuid real | ⬜ | P4 |
+| 20 | ~~Pantalla de nivel con contenedor, y el puente hacia el juego~~ — **HECHO en el J7.1**, por decisión del usuario de montarla donde va en vez de ensayarla otra vez: la ruta `/dashboard/worlds/:worldId/:levelId`, la pantalla con el juego dentro, la selección de niveles **leyendo de la base** —fuera los diez títulos inventados y el `find ?? studentWorlds[0]` que metía cualquier uuid real en el primer mundo de maqueta— y `mapLevelRow` trayendo ya `narrative`, `starter_code` y `validation_rules`. **Le queda mandar el intento**, que es el paso 21. Ver `ROADMAP-JUEGO.md` §3 | ✅ | P4 |
 | 21 | Escritura de progreso y XP desde el juego — **ver §3.2** | ⬜ | P4 |
 | 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye el catálogo y retirar las estrellas. **Ver §3.2** | ⬜ | P4 |
 | — | 🔬 **PRUEBA PRELIMINAR** — la hacen el usuario y gente cercana con cuentas de prueba, **sin menores de fuera**. Por eso el 14 puede ir detrás: ver §2.1 | ⬜ | — |
@@ -463,8 +463,11 @@ que hay que saber aquí es qué trabajo implica:
 - **La pieza que lo resuelve ya existe:** `best_score` está acotado de 0 a 100 y
   nunca baja, así que la regla es conceder
   `(marca nueva − marca anterior) × tope ÷ 100`. Sin columnas nuevas.
-- **Hay que igualar `levels.xp_reward` a 100**, hoy sembrado con 100, 120, 140,
-  180, 200, 240 y 260.
+- ~~**Hay que igualar `levels.xp_reward` a 100**~~ — **hecho en el J7.1**, con la
+  migración `202606030023`. Estaban sembrados con **100, 120 y 140** en la Selva,
+  **180, 200 y 240** en la Cordillera y **150, 210 y 260** en la Costa; los nueve
+  valen 100, comprobado contra la base. *(Esta línea listaba siete valores para
+  nueve filas: le faltaban el 150 y el 210.)*
 - **Y hay que rehacer la barra de XP del panel del niño**, que hoy va contra un
   máximo inventado (`PROVISIONAL_MAX_XP = 1000`). Pasa a marcar **tramos de 300
   XP** —lo que da un mundo entero perfecto—, calculados en vez de enumerados:

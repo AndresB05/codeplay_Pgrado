@@ -1,8 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
+import { useProgress } from '../../../hooks/useProgress';
+import { worldsService } from '../../../services/worlds.service';
+import type { User } from '../../../types/user.types';
+import type { Level, World } from '../../../types/world.types';
 import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
-import { getCardToneStyles, studentWorlds } from './worlds/worldsData';
+import { getCardToneStyles, type WorldModuleCard } from './worlds/worldsData';
 
 const ForestIcon = () => <MonsteraLeaf size={64} color="#FFF9EF" />;
 
@@ -49,6 +53,15 @@ const iconByTone = {
   ocean: OceanIcon,
 };
 
+/*
+ * El bioma sale de la POSICIÓN del mundo en la lista ordenada, que es el mismo
+ * criterio literal que usa la pantalla de mundos. No de su `sort_order`: hoy los
+ * dos dan lo mismo —los tres mundos sembrados van 1, 2 y 3—, pero son dos reglas
+ * distintas, y el día que se siembre un mundo con otro orden el mismo mundo
+ * cambiaría de color entre las dos pantallas sin que nada lo delate.
+ */
+const TONES: WorldModuleCard['tone'][] = ['forest', 'volcano', 'ocean'];
+
 const BackIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
     <path
@@ -82,45 +95,128 @@ const LockIcon = () => (
   </svg>
 );
 
-const LEVEL_TITLES = [
-  'plataformas',
-  'saltos',
-  'secuencias',
-  'bloques',
-  'retos',
-  'bucles',
-  'rutas',
-  'objetos',
-  'patrones',
-  'meta',
-];
+/*
+ * Tres estados y no dos banderas: «cargando», «este mundo no existe» y «aquí
+ * están sus niveles» se excluyen entre sí. Con banderas sueltas, el primer
+ * repintado —cuando la consulta todavía no ha vuelto— anunciaría que el mundo no
+ * está disponible, que es lo que hay que no hacer.
+ */
+type LevelsState =
+  | { status: 'loading' }
+  | { status: 'missing' }
+  | { status: 'ready'; world: World; index: number; levels: Level[] };
 
 type StudentWorldLevelsModuleProps = {
+  user: User | null;
   worldId: string;
 };
 
-export const StudentWorldLevelsModule = ({ worldId }: StudentWorldLevelsModuleProps) => {
+export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsModuleProps) => {
   const navigate = useNavigate();
+  const { progress } = useProgress(user?.id ?? null);
+  const [state, setState] = useState<LevelsState>({ status: 'loading' });
 
-  const world = useMemo(
-    () => studentWorlds.find((item) => item.id === worldId) ?? studentWorlds[0],
-    [worldId]
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async (): Promise<void> => {
+      /*
+       * El mundo se resuelve POR SU IDENTIFICADOR contra las filas de la base.
+       * Antes se buscaba entre los mundos de maqueta con un repliegue al
+       * primero, así que cualquier uuid real acababa enseñando el mundo de
+       * ejemplo: el nombre era de mentira y los niveles, de otro mundo.
+       */
+      const worldsResult = await worldsService.getWorlds();
+      const worlds = worldsResult.data ?? [];
+      const index = worlds.findIndex((item) => item.id === worldId);
+
+      if (index === -1) {
+        if (mounted) {
+          setState({ status: 'missing' });
+        }
+
+        return;
+      }
+
+      const levelsResult = await worldsService.getLevelsByWorld(worldId);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState({
+        status: 'ready',
+        world: worlds[index],
+        index,
+        levels: levelsResult.data ?? [],
+      });
+    };
+
+    void load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [worldId]);
+
+  if (state.status === 'loading') {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-5 py-5">
+        <div className="h-14 w-14 animate-spin rounded-full border-[5px] border-line border-t-grape" />
+        <span className="sr-only">Cargando los niveles…</span>
+      </div>
+    );
+  }
+
+  if (state.status === 'missing') {
+    return (
+      <div className="px-5 py-5">
+        <section className="card p-6 text-center">
+          <h1 className="title-lg">Este mundo no está disponible</h1>
+          <p className="subtitle mx-auto mt-2 max-w-[520px]">
+            Puede que lo hayan retirado. Vuelve al mapa y elige otro.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => navigate(ROUTES.WORLDS)}
+            className="btn btn-primary mt-5"
+          >
+            <BackIcon />
+            Volver a mundos
+          </button>
+        </section>
+      </div>
+    );
+  }
+
+  const { world, index, levels } = state;
+  const tone = getCardToneStyles(TONES[index % TONES.length]);
+  const Icon = iconByTone[TONES[index % TONES.length]];
+
+  const completedIds = new Set(
+    progress.filter((item) => item.completionStatus === 'completed').map((item) => item.levelId)
   );
-  const tone = getCardToneStyles(world.tone);
-  const Icon = iconByTone[world.tone];
 
-  const levels = LEVEL_TITLES.map((title, index) => {
-    const levelNumber = index + 1;
+  /*
+   * El primero de un mundo está SIEMPRE disponible, y los demás cuelgan del
+   * anterior. Sin esa regla, un niño sin ningún progreso no podría empezar: hoy
+   * nada escribe progreso —eso es el J9—, así que la lista entera nacería
+   * bloqueada.
+   */
+  const cards = levels.map((level, position) => {
+    const isCompleted = completedIds.has(level.id);
+    const isUnlocked = position === 0 || completedIds.has(levels[position - 1].id);
 
     return {
-      levelNumber,
-      title,
-      isCompleted: levelNumber <= world.completedLevels,
-      isCurrent: levelNumber === world.completedLevels + 1,
-      isLocked: levelNumber > world.completedLevels + 1,
-      description: `Curso de diseño de juegos · nivel ${levelNumber}`,
+      level,
+      isCompleted,
+      isCurrent: isUnlocked && !isCompleted,
+      isLocked: !isUnlocked,
     };
   });
+
+  const completedCount = cards.filter((card) => card.isCompleted).length;
 
   return (
     <div className="px-5 py-5">
@@ -149,7 +245,7 @@ export const StudentWorldLevelsModule = ({ worldId }: StudentWorldLevelsModulePr
                 Volver a mundos
               </button>
 
-              <h1 className="title-xl mt-3">{world.title}</h1>
+              <h1 className="title-xl mt-3">{world.name}</h1>
               <p className="subtitle mt-1 max-w-[620px]">{world.description}</p>
             </div>
           </div>
@@ -159,7 +255,7 @@ export const StudentWorldLevelsModule = ({ worldId }: StudentWorldLevelsModulePr
               Progreso actual
             </p>
             <p className={`mt-1 font-display text-[32px] leading-none ${tone.text}`}>
-              {world.completedLevels}/{world.totalLevels}
+              {completedCount}/{levels.length}
             </p>
             <p className="mt-1 text-[14px] font-bold text-ink-soft">niveles superados</p>
           </div>
@@ -170,77 +266,82 @@ export const StudentWorldLevelsModule = ({ worldId }: StudentWorldLevelsModulePr
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="title-lg">Selecciona un nivel</h2>
-            <p className="subtitle mt-1">Cada mundo tiene 10 niveles para avanzar paso a paso.</p>
+            <p className="subtitle mt-1">{world.regionLabel}</p>
           </div>
-
-          <span className={`chip ${tone.chip}`}>{world.difficultyLabel}</span>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-          {levels.map((level) => {
-            const headerBackground = level.isLocked ? '#E3D9F7' : tone.gradient;
+        {levels.length === 0 ? (
+          <p className="mt-6 text-[15px] font-semibold text-ink-soft">
+            Este mundo todavía no tiene niveles.
+          </p>
+        ) : (
+          <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {cards.map(({ level, isCompleted, isCurrent, isLocked }, position) => {
+              const headerBackground = isLocked ? '#E3D9F7' : tone.gradient;
 
-            return (
-              <button
-                key={level.levelNumber}
-                type="button"
-                disabled={level.isLocked}
-                className={`card overflow-hidden text-left transition-transform duration-100 ${
-                  level.isLocked
-                    ? 'cursor-not-allowed opacity-70'
-                    : 'hover:-translate-y-1 active:translate-y-0'
-                }`}
-              >
-                <div
-                  className="flex items-center justify-between border-b-[3px] border-ink px-3 py-2"
-                  style={{ background: headerBackground }}
+              return (
+                <button
+                  key={level.id}
+                  type="button"
+                  disabled={isLocked}
+                  onClick={() => navigate(`${ROUTES.WORLDS}/${world.id}/${level.id}`)}
+                  className={`card overflow-hidden text-left transition-transform duration-100 ${
+                    isLocked
+                      ? 'cursor-not-allowed opacity-70'
+                      : 'hover:-translate-y-1 active:translate-y-0'
+                  }`}
                 >
-                  <span
-                    className={`font-display text-[14px] ${level.isLocked ? 'text-ink-soft' : 'text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)]'}`}
+                  <div
+                    className="flex items-center justify-between border-b-[3px] border-ink px-3 py-2"
+                    style={{ background: headerBackground }}
                   >
-                    Nivel {level.levelNumber}
-                  </span>
-
-                  {level.isCompleted ? (
-                    <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full border-2 border-ink bg-mint">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                        <path
-                          d="M5 12.5L10 17.5L19 7"
-                          stroke="#FFF9EF"
-                          strokeWidth="3.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                    <span
+                      className={`font-display text-[14px] ${isLocked ? 'text-ink-soft' : 'text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)]'}`}
+                    >
+                      Nivel {position + 1}
                     </span>
-                  ) : null}
 
-                  {level.isCurrent ? (
-                    <span className="rounded-full border-2 border-ink bg-sun px-2 py-0.5 font-display text-[11px] text-ink">
-                      Aquí vas
-                    </span>
-                  ) : null}
+                    {isCompleted ? (
+                      <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full border-2 border-ink bg-mint">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M5 12.5L10 17.5L19 7"
+                            stroke="#FFF9EF"
+                            strokeWidth="3.6"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                    ) : null}
 
-                  {level.isLocked ? <LockIcon /> : null}
-                </div>
+                    {isCurrent ? (
+                      <span className="rounded-full border-2 border-ink bg-sun px-2 py-0.5 font-display text-[11px] text-ink">
+                        Aquí vas
+                      </span>
+                    ) : null}
 
-                <div className="px-3 pt-3">
-                  {/* Hueco reservado para la ilustración del nivel. */}
-                  <div className="flex h-[110px] items-center justify-center rounded-[16px] border-[3px] border-dashed border-line bg-cream font-display text-[13px] text-ink-faint">
-                    Imagen Nivel
+                    {isLocked ? <LockIcon /> : null}
                   </div>
-                </div>
 
-                <div className="px-3 pb-4 pt-3 text-center">
-                  <div className="font-display text-[17px] capitalize text-ink">{level.title}</div>
-                  <p className="mt-1 text-[12px] font-semibold leading-[1.4] text-ink-soft">
-                    {level.description}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                  <div className="px-3 pt-3">
+                    {/* Hueco reservado para la ilustración del nivel. */}
+                    <div className="flex h-[110px] items-center justify-center rounded-[16px] border-[3px] border-dashed border-line bg-cream font-display text-[13px] text-ink-faint">
+                      Imagen Nivel
+                    </div>
+                  </div>
+
+                  <div className="px-3 pb-4 pt-3 text-center">
+                    <div className="font-display text-[17px] text-ink">{level.name}</div>
+                    <p className="mt-1 text-[12px] font-semibold leading-[1.4] text-ink-soft">
+                      {level.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </section>
     </div>
   );

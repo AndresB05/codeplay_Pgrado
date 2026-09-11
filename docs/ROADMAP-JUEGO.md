@@ -100,10 +100,10 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | J6.3 | **El ensayo general**: el laboratorio compuesto como estará el nivel, y la cámara movible | Se ve dónde va cada cosa y el mapa se gira y se acerca con el ratón | ✅ |
 | J6.4 | **Assets de tanteo** en el laboratorio, para ver por dónde puede ir | Se vio por dónde puede ir, y **no era por ahí**: hecho, no satisfactorio. De él sale mover el apartado gráfico entero al **J13** | ✅ |
 | **J7** | **Sembrar el mundo 1** — partido en tres, uno por nivel | Los tres niveles se juegan leyendo su definición de la base | ⬜ |
-| J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra | Se juega el nivel 1 leyendo su fila, no el objeto escrito a mano del J2 | ⬜ |
+| J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra — **y, por decisión del usuario, la pantalla de nivel entera adelantando el J8, los assets fuera y el tablero rediseñado dos veces** | Se juega el nivel 1 leyendo su fila, en su pantalla, no el objeto escrito a mano del J2 | ✅ |
 | J7.2 | Nivel 2, igual | Se juega el nivel 2 desde la base | ⬜ |
 | J7.3 | Nivel 3, igual | Se juega el nivel 3 desde la base | ⬜ |
-| **J8** | Conectar la pantalla de nivel al backend y montar el juego dentro | Se elige un nivel en la web y arranca el que se eligió | ⬜ |
+| **J8** | ~~Conectar la pantalla de nivel al backend y montar el juego dentro~~ — **lo hizo el J7.1**, por decisión del usuario: montar la pantalla dos veces era hacerlo dos veces. Le queda **mandar el intento**, que es lo que el J9 escribe | Se elige un nivel en la web y arranca el que se eligió | ✅ |
 | **J9** | Mandar el intento al servidor con el programa | La partida aparece guardada en la base | ⬜ |
 | **J10** | La migración del XP: contar pasos y conceder por marca de agua | El XP sube 80, y 20 al mejorar. Nunca más de 100 | ⬜ |
 | **J11** | La barra de XP por tramos de 300 | El niño sube de nivel al terminar un mundo | ⬜ |
@@ -333,6 +333,39 @@ pantalla que la necesita es rehacerla dos veces.
 La barra de controles no se reescribe: vive dentro de `GameScene.tsx` a
 propósito, debajo del `<Canvas>`, para que la pantalla del J8 la herede.
 
+### Lo que el J7.1 acabó siendo, que es más de lo que su línea decía
+
+**Se hizo en la pantalla de nivel de verdad y no en el laboratorio**, decidido
+por el usuario el 11-sep-2026 —«para ser rápidos, hagámoslo directamente donde
+debería ir, en el nivel»—. Eso **adelanta el J8** entero: la ruta
+`/dashboard/worlds/:worldId/:levelId`, la pantalla, la lista de niveles leyendo
+de la base y el juego montado dentro. Al J8 le queda mandar el intento, que es
+J9.
+
+**Y el aspecto dio dos vueltas más, las dos suyas y con la pantalla delante:**
+
+1. **Cero assets.** «Quiero los assets eliminados, 0 assets, y las plataformas
+   originales sin assets.» Se fueron los diez `.glb` que usaba la escena —el
+   tablero, la meta, la roca, el tocón y las seis piezas del decorado— y con
+   ellos `Scenery`, `Obstacles`, el `GLTFLoader` y el `Clone` de drei. El trozo
+   del motor bajó **55,34 kB**. **Los 233 archivos se quedan en
+   `public/models/`**, decidido por él: los hereda el J13.
+2. **El tablero, rediseñado dos veces.** Empezó siendo 1 × 4 —sembrado y jugado
+   así— y acabó en **5 × 1**: «añade una columna más, que se ve más corto de lo
+   que pensé» y «lo quiero vertical». Eso costó una **segunda migración**, la
+   `202606030024`, porque la 0023 ya estaba aplicada y una migración aplicada no
+   se edita.
+3. **Las casillas son cubos, no losas**, también suyo y también mirando la
+   pantalla.
+
+**Lo que el J13 hereda ya no es lo que dejó el J6.4**: no hereda un tablero
+vestido con el kit, hereda cubos de colores otra vez y los 233 modelos sin usar.
+
+**Y una lección de método que costó una migración**: el tablero se dio por bueno
+sobre el papel y el usuario lo corrigió **en cuanto lo vio jugándose**. Lo que
+hay que enseñarle es la pantalla, no el JSON — el J7.2 y el J7.3 harían bien en
+enseñar su puzle antes de escribir el SQL.
+
 ### El ensayo general antes de sembrar: J6.3 y J6.4
 
 **Pedidos por el usuario el 7-sep-2026, con la fase A terminada.** Van **antes
@@ -413,8 +446,10 @@ nivel funcionando antes de diseñar el siguiente.
 - **J7.1, J7.2 y J7.3** siembran, cada una, el puzle de su nivel en
   `levels.validation_rules` y reescriben su título, su narrativa y su
   `starter_code`, que hoy son de otro juego. La primera de las tres iguala además
-  `xp_reward` a 100 en los nueve niveles, que hoy está sembrado con 100, 120,
-  140, 180, 200, 240 y 260.
+  `xp_reward` a 100 en los nueve niveles, que estaban sembrados con **100, 120 y
+  140** en la Selva, **180, 200 y 240** en la Cordillera y **150, 210 y 260** en
+  la Costa. *(Hasta el J7.1 esta línea listaba siete valores para nueve filas: se
+  le habían caído el 150 y el 210. Contados en la 0012 y corregidos entonces.)*
 
   **Dos cosas del formato que muerden justo aquí**, las dos del contrato §4.2.
   La primera: el `optimalSteps` de cada nivel **no lo comprueba nadie**, y la

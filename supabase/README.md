@@ -201,19 +201,45 @@ migración 0012 y se aplica como todo lo demás.
     - **SÍ exige regenerar los tipos**: añade dos funciones que el cliente llama
       por `rpc()`, aunque no cambie el esquema de ninguna tabla.
 
+23. `202606030023_seed_level_1_world_1.sql`
+    - **La primera migración de datos desde la 0012**, y la primera que siembra
+      un nivel del juego de bloques: rediseña el nivel 1 de la Selva
+      Algorítmica —título, slug, descripción, narrativa y las tres columnas del
+      formato— e iguala `xp_reward` a 100 en los nueve niveles, que estaban
+      sembrados con nueve cifras distintas.
+    - **NO toca el esquema**: ninguna columna se añade, se renombra ni cambia de
+      tipo, así que **no exige regenerar los tipos**. Tampoco trae políticas ni
+      `grant`, y por el mismo motivo: no crea ninguna tabla.
+    - **Localiza la fila por `(world_id, sort_order)`, no por slug**, porque el
+      slug es justo lo que cambia —`ruta-del-colibri` es del concepto anterior—.
+      Por el slug viejo no la encontraría la segunda vez y por el nuevo no la
+      encontraría la primera. La pareja sobrevive al cambio y tiene índice único
+      propio desde la 0003 (`levels_world_sort_order_unique`), así que señala una
+      fila y sólo una.
+    - **Las tres columnas van reinterpretadas**, como decidió el paso 23.1:
+      `validation_rules` lleva la definición del puzle, `starter_code` la
+      disposición inicial de bloques —aquí el sobre con el lienzo vacío— y
+      `programming_language` la versión del formato, `grid-blockly-1`. Ver
+      `docs/CONTRATO-DE-INTEGRACION.md` §4.
+    - Sin `insert`: las nueve filas existen desde la 0012. Repetible, con una
+      salvedad: el disparador `handle_levels_updated_at` de la 0003 mueve
+      `updated_at` en cada pasada aunque el contenido quede idéntico.
+
 ## Cómo aplicarlo
 
-Si ya tienes el proyecto Supabase enlazado con la CLI:
+Si ya tienes el proyecto Supabase enlazado con la CLI. **Va con `npx`**: la CLI
+es dependencia del repositorio —`supabase` en el `package.json` de la raíz— y no
+hay ninguna instalada en el PATH, así que el comando a secas no corre.
 
 ```sh
-supabase db push
+npx supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las veintiuna migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las veintitrés migraciones —siembra
 incluida—:
 
 ```sh
-supabase db reset
+npx supabase db reset
 ```
 
 **Toda migración nueva debe traer sus propias políticas y sus `grant`.** El

@@ -2,7 +2,7 @@ import * as Blockly from 'blockly/core';
 import * as SpanishMessages from 'blockly/msg/es';
 import { useEffect, useRef } from 'react';
 import { FLYOUT_BLOCKS, defineGameBlocks } from './blocks';
-import { sealProgram, type Program } from './program';
+import { sealProgram, type Program, type WorkspaceState } from './program';
 
 /*
  * El editor de bloques. Es el lado perezoso de su frontera: aquí se importa
@@ -90,9 +90,19 @@ interface BlockEditorProps {
    * importar Blockly.
    */
   flyoutHost: HTMLElement;
+  /*
+   * La disposición INICIAL de bloques del nivel, ya sacada de su sobre. Es el
+   * `starterProgram` del contrato §2, y lo normal es que esté vacía: §7 llama a
+   * eso «sin programa de partida» y es un nivel perfectamente corriente.
+   */
+  starterWorkspace: WorkspaceState;
 }
 
-export const BlockEditor = ({ onProgramChange, flyoutHost }: BlockEditorProps) => {
+export const BlockEditor = ({
+  onProgramChange,
+  flyoutHost,
+  starterWorkspace,
+}: BlockEditorProps) => {
   const container = useRef<HTMLDivElement>(null);
 
   /*
@@ -102,6 +112,14 @@ export const BlockEditor = ({ onProgramChange, flyoutHost }: BlockEditorProps) =
    */
   const publish = useRef(onProgramChange);
   publish.current = onProgramChange;
+
+  /*
+   * La disposición inicial se lee UNA vez, por lo mismo: si viajara en las
+   * dependencias del efecto, el editor se reinyectaría —y con él se irían los
+   * bloques que el niño lleve puestos— cada vez que el padre se repintara. Es
+   * con lo que empieza el lienzo, no algo que cambie mientras se juega.
+   */
+  const starter = useRef(starterWorkspace);
 
   useEffect(() => {
     if (!container.current) {
@@ -461,6 +479,16 @@ export const BlockEditor = ({ onProgramChange, flyoutHost }: BlockEditorProps) =
         report();
       }
     });
+
+    /*
+     * Los bloques con los que el nivel arranca, si trae alguno. Va DESPUÉS del
+     * oyente para que cargarlos publique el programa hacia arriba como cualquier
+     * otro cambio, y sólo si hay algo que cargar: un sobre vacío es un lienzo
+     * vacío, no una orden de borrar nada.
+     */
+    if (Object.keys(starter.current).length > 0) {
+      Blockly.serialization.workspaces.load(starter.current, workspace);
+    }
 
     report();
 

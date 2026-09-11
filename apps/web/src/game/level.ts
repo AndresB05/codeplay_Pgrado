@@ -53,8 +53,16 @@ export interface LevelConfig {
  * El paso de la rejilla es 1,0 por decisión, y NO se deduce del tamaño de
  * ningún modelo: los bloques de Kenney miden 1,082 de ancho porque el labio de
  * hierba se solapa a propósito. Sacar el paso de ahí produce rendijas entre
- * casillas, y con los modelos entrando en el J7.4 el fallo aparecería con la
- * mecánica ya escrita encima.
+ * casillas.
+ *
+ * EL AVISO YA SE PUSO A PRUEBA, y valía. El J6.4 metió los modelos y el paso no
+ * se tocó, que era justo de lo que avisaba esto; la rendija apareció igual por
+ * otro lado —el labio del faldón metido por los cuatro costados, 0,08 de aire
+ * entre casillas vecinas—, o sea que el fallo entró por donde no se le esperaba.
+ *
+ * Hoy el juego **no carga ningún modelo**: el usuario los retiró enteros en el
+ * J7.1 y el tablero volvió a ser geometría. La regla se queda escrita para
+ * cuando el J13 los traiga otra vez.
  */
 export const TILE_SIZE = 1;
 

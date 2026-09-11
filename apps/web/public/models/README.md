@@ -71,8 +71,22 @@ está en `docs/CONTEXT.md` §2.9.
 
 ## Cuándo entran de verdad
 
-**Entran con el J6.4.** La fase A del juego se hizo entera con cubos de colores, y
-los modelos llegan cuando la mecánica ya funciona y se sabe qué piezas hacen
-falta. La primera pantalla que los pinta es el laboratorio; el apartado gráfico
-definitivo —mundo por mundo— es el **J7.4**. Ver `docs/ROADMAP-JUEGO.md` §3 y
-`docs/CONTEXT.md` §2.9, que es donde se anota qué se está usando de verdad.
+**Entraron con el J6.4 y volvieron a salir en el J7.1.** La fase A del juego se
+hizo entera con cubos de colores; los modelos llegaron cuando la mecánica ya
+funcionaba, se vieron en el laboratorio y el usuario los devolvió: «quiero los
+assets eliminados, 0 assets, y las plataformas originales sin assets». El
+tablero volvió a ser geometría —cubos de un lado completo, dos verdes en
+damero—, y el apartado gráfico definitivo, con los tres mundos en una sola
+pasada, es el **J13**.
+
+**HOY NO LOS CARGA NADIE, Y ESTÁN AQUÍ A PROPÓSITO.** Desde el J7.1 no queda ni
+un `useLoader` ni una URL de `.glb` en `apps/web/src/game/`, así que quien llegue
+y encuentre 233 archivos que nadie importa va a pensar que sobran. **No sobran:
+los deja el usuario para el J13**, decidido por él el 11-sep-2026 —«no borres los
+modelos, déjalos para el J13»—, que es el paso que vuelve a vestir el juego con
+los nueve puzles delante. Lo que cuesta tenerlos aquí es que `public/` se copia
+entero a `dist/`, así que estos 4,3 MB viajan en cada despliegue sin que el juego
+los pida.
+
+Ver `docs/ROADMAP-JUEGO.md` §3 y `docs/CONTEXT.md` §2.9, que es donde se anota
+qué se está usando de verdad.
