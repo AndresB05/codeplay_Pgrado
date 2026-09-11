@@ -1487,8 +1487,11 @@ un muro no es un fallo, es una regla del juego.
 
 **El paso de la rejilla es `TILE_SIZE = 1` y no se deduce de ningún modelo.** Los
 bloques de Kenney miden 1,082 de ancho porque el labio de hierba se solapa a
-propósito; sacar el paso de ahí produce rendijas, y con los modelos entrando en
-el J13 el fallo aparecería con la mecánica ya escrita encima.
+propósito; sacar el paso de ahí produce rendijas. **El J6.4 metió los modelos y
+el paso no se tocó**, que era de lo que avisaba esto. La rendija apareció igual
+por otro lado —el labio del faldón metido por los cuatro costados, 0,08 de aire
+entre casillas vecinas— y está contada en este mismo apartado: el aviso valía,
+sólo que el fallo entró por donde no se le esperaba.
 
 **El suelo va en damero de dos verdes**, y no es adorno: con un solo verde las 25
 casillas se ven como un único plano y la rejilla deja de poder contarse, que es
@@ -1508,10 +1511,12 @@ permitían ver se ve ahora ejecutando un programa y reiniciándolo, con botones 
 sin consola. La cadena `codeplayGame` no aparece en `apps/web/src`; sí en los
 cambios archivados, que son el registro de lo que pasó.
 
-**`drei` sigue sin entrar.** El roadmap lo admite fijado a `^9.122` si
-`OrbitControls` hace falta; para un 5×5 en cámara fija no hace falta, y la
-dependencia trae `three` en sus `peerDependencies`, con la trampa de la copia
-doble de abajo. Si el J13 necesita orbitar para colocar modelos, entra ahí.
+**`drei` entró en el J6.3**, fijado a `^9.122` y **sólo por `OrbitControls`**,
+que es como el roadmap lo dejó previsto: en el paso que primero lo necesitara.
+Hasta entonces no hizo falta, porque un 5×5 en cámara fija no lo pide. Trae
+`three` en sus `peerDependencies` con la trampa de la copia doble de abajo, y
+por eso se comprobó al entrar: `npm ls three` sigue dando **una sola copia en
+0.170.0**.
 
 **`three` está fijado a 0.170 por el runtime, no por gusto.** Con
 `@react-three/fiber` 8.18 —la rama que se queda en React 18— contra `three`
