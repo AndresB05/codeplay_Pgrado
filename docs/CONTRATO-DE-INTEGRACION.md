@@ -670,7 +670,7 @@ Esta sección sí supone conocimiento del repositorio.
 | --- | --- |
 | `config` | `levels.validation_rules` (`jsonb`) |
 | `starterProgram` | `levels.starter_code` (`text`) |
-| `formatVersion` del nivel | `levels.programming_language`, reaprovechado. Hoy `'javascript'` en las nueve filas sembradas, sin `check` que lo ate |
+| `formatVersion` del nivel | `levels.programming_language`, reaprovechado. Hoy `'grid-blockly-1'` en las filas ya rediseñadas y `'javascript'` en las demás, sin `check` que lo ate |
 | `formatVersion` del intento | **Dentro** de `level_attempts.submitted_code`, en el sobre de §4.3. No tiene columna |
 | `program` | `level_attempts.submitted_code` (`text`, **sin `check`**) |
 | `metadata` | `level_attempts.metadata` (`jsonb`) |
@@ -701,7 +701,7 @@ y ninguno se arregla en la fase A, que no escribe migración:
 Una fila publicada puede llegar con las tres por defecto y **el juego no debe
 reventar**: §7 dice qué hacer con cada una.
 
-**Las nueve filas sembradas no cumplen §4, y eso es lo esperado.** Siguen con
+**Las filas que no se han rediseñado no cumplen §4, y eso es lo esperado.** Siguen con
 `programming_language = 'javascript'`, con `validation_rules` del juego anterior
 —`requiresAsyncAwait`, `requiresRecursion`, `requiresArray`, `requiresDebugging`—
 y con `starter_code` en texto JavaScript. **Las reescribe el J7**, una migración

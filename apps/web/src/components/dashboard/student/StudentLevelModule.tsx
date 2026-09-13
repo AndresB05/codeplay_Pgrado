@@ -134,7 +134,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
 
       /*
        * La puerta única del §7: la versión, el puzle y el sobre se comprueban
-       * juntos y el nivel se acepta o se rechaza entero. Las ocho filas que
+       * juntos y el nivel se acepta o se rechaza entero. Las filas que
        * siguen sembradas con el contenido del juego anterior salen por aquí.
        */
       const level = openLevel({
@@ -226,7 +226,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
             Estamos preparándolo. Vuelve a la lista y prueba con otro.
           </p>
 
-          <button type="button" onClick={backToLevels} className="btn btn-primary mt-5">
+          <button type="button" onClick={backToLevels} className="btn btn-grape mt-5">
             <BackIcon />
             Volver a los niveles
           </button>

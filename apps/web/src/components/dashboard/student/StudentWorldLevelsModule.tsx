@@ -74,27 +74,6 @@ const BackIcon = () => (
   </svg>
 );
 
-const LockIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M8 10V8C8 5.79 9.79 4 12 4C14.21 4 16 5.79 16 8V10"
-      stroke="#2A1B45"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-    />
-    <rect
-      x="5"
-      y="10"
-      width="14"
-      height="9"
-      rx="3"
-      fill="#E3D9F7"
-      stroke="#2A1B45"
-      strokeWidth="2.4"
-    />
-  </svg>
-);
-
 /*
  * Tres estados y no dos banderas: «cargando», «este mundo no existe» y «aquí
  * están sus niveles» se excluyen entre sí. Con banderas sueltas, el primer
@@ -180,7 +159,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
           <button
             type="button"
             onClick={() => navigate(ROUTES.WORLDS)}
-            className="btn btn-primary mt-5"
+            className="btn btn-grape mt-5"
           >
             <BackIcon />
             Volver a mundos
@@ -199,22 +178,19 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
   );
 
   /*
-   * El primero de un mundo está SIEMPRE disponible, y los demás cuelgan del
-   * anterior. Sin esa regla, un niño sin ningún progreso no podría empezar: hoy
-   * nada escribe progreso —eso es el J9—, así que la lista entera nacería
-   * bloqueada.
+   * SIN CANDADO HASTA LA PRUEBA PRELIMINAR, decidido por el usuario el
+   * 13-sep-2026: todos los niveles se abren desde aquí, y cómo se ordena el
+   * avance se decide después (`docs/CONTEXT.md` §4.11). «Aquí vas» sale del
+   * primer nivel sin completar y no de «desbloqueado y sin completar», que sin
+   * candado marcaría todos.
    */
-  const cards = levels.map((level, position) => {
-    const isCompleted = completedIds.has(level.id);
-    const isUnlocked = position === 0 || completedIds.has(levels[position - 1].id);
+  const currentPosition = levels.findIndex((level) => !completedIds.has(level.id));
 
-    return {
-      level,
-      isCompleted,
-      isCurrent: isUnlocked && !isCompleted,
-      isLocked: !isUnlocked,
-    };
-  });
+  const cards = levels.map((level, position) => ({
+    level,
+    isCompleted: completedIds.has(level.id),
+    isCurrent: position === currentPosition,
+  }));
 
   const completedCount = cards.filter((card) => card.isCompleted).length;
 
@@ -276,28 +252,19 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
           </p>
         ) : (
           <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-            {cards.map(({ level, isCompleted, isCurrent, isLocked }, position) => {
-              const headerBackground = isLocked ? '#E3D9F7' : tone.gradient;
-
+            {cards.map(({ level, isCompleted, isCurrent }, position) => {
               return (
                 <button
                   key={level.id}
                   type="button"
-                  disabled={isLocked}
                   onClick={() => navigate(`${ROUTES.WORLDS}/${world.id}/${level.id}`)}
-                  className={`card overflow-hidden text-left transition-transform duration-100 ${
-                    isLocked
-                      ? 'cursor-not-allowed opacity-70'
-                      : 'hover:-translate-y-1 active:translate-y-0'
-                  }`}
+                  className="card overflow-hidden text-left transition-transform duration-100 hover:-translate-y-1 active:translate-y-0"
                 >
                   <div
                     className="flex items-center justify-between border-b-[3px] border-ink px-3 py-2"
-                    style={{ background: headerBackground }}
+                    style={{ background: tone.gradient }}
                   >
-                    <span
-                      className={`font-display text-[14px] ${isLocked ? 'text-ink-soft' : 'text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)]'}`}
-                    >
+                    <span className="font-display text-[14px] text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)]">
                       Nivel {position + 1}
                     </span>
 
@@ -320,8 +287,6 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
                         Aquí vas
                       </span>
                     ) : null}
-
-                    {isLocked ? <LockIcon /> : null}
                   </div>
 
                   <div className="px-3 pt-3">

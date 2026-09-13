@@ -164,7 +164,8 @@ context: |
                    van en public/ porque GLTFLoader los pide por URL
   apps/game/       NO EXISTE y ya no existirá: no hay Unity
   packages/        código compartido — vacío
-  supabase/        migrations/ (22 migraciones SQL; el seed vive en la 0012)
+  supabase/        migrations/ (25 migraciones SQL; el seed vive en la 0012,
+                   y los niveles del juego de bloques desde la 0023)
   docs/            CONTEXT.md (estado y prioridades), ESTADO-DEL-PROYECTO.md,
                    ROADMAP.md, ROADMAP-JUEGO.md (el orden del juego),
                    CONTRATO-DE-INTEGRACION.md (el contrato del juego) y
@@ -337,8 +338,11 @@ context: |
      invitado (paso 24, despues del juego).
   4. Apartado web de integración de los niveles del juego: LA PANTALLA DE NIVEL
      YA EXISTE, hecha en el J7.1 —ruta /dashboard/worlds/:worldId/:levelId, la
-     lista de niveles leyendo de la base y el juego montado dentro—. El nivel 1
-     del mundo 1 se juega desde su fila. Queda escribir el resultado (J9).
+     lista de niveles leyendo de la base y el juego montado dentro—. Los
+     niveles 1 y 2 del mundo 1 se juegan desde su fila (J7.1 y J7.2). La lista
+     NO bloquea ningun nivel hasta la prueba preliminar, decidido por el
+     usuario: el candado se decide despues (docs/CONTEXT.md 4.11). Queda
+     escribir el resultado (J9).
   El apartado gráfico queda FUERA de este hito a propósito.
 
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO

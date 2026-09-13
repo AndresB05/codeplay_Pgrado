@@ -2,7 +2,7 @@
 
 > **Fuente de verdad del estado del proyecto.** Este archivo se mantiene
 > sincronizado entre sesiones de Claude Code y OpenSpec.
-> Última verificación contra el código: **2 de septiembre de 2026**.
+> Última verificación contra el código: **13 de septiembre de 2026**.
 
 ---
 
@@ -183,7 +183,7 @@ codeplayPGrado/
 │                             (5,96 MB, CC0), con su propio README
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
-│   └── migrations/           24 migraciones SQL (la siembra vive en la 0012,
+│   └── migrations/           25 migraciones SQL (la siembra vive en la 0012,
 │                             no hay seed.sql suelto)
 ├── docs/                     CONTEXT.md (este), ESTADO-DEL-PROYECTO.md,
 │                             ROADMAP.md, ROADMAP-JUEGO.md,
@@ -933,7 +933,7 @@ progreso conseguido.
 | Listado de mundos con filtros (dificultad, tema, categoría) | 🟡 | `student/StudentWorldsModule.tsx` |
 | Lectura desde Supabase con repliegue a datos locales | 🟡 | `useWorlds()` + `fallbackWorlds` (`student/worlds/worldsData.ts`) |
 | Recuento de niveles completados por mundo | 🟡 | `worldsService.getLevelsByWorld()` + `useProgress()` |
-| Niveles de un mundo, con bloqueo por progresión | 🟡 | `student/StudentWorldLevelsModule.tsx` |
+| Niveles de un mundo, **sin candado hasta la prueba preliminar** (§4.11) | 🟡 | `student/StudentWorldLevelsModule.tsx` |
 | Sala de trofeos | 🟡 | `student/StudentTrophiesModule.tsx` + `AchievementList/` |
 | Ajustes de cuenta del alumno | 🟡 | `student/StudentSettingsModule.tsx` |
 
@@ -951,10 +951,10 @@ progreso conseguido.
 seguras del backend.
 
 **Estado global: aplicado.** El proyecto de Supabase existe, está enlazado con la
-CLI y **las 24 migraciones** se ejecutaron contra la base real. Las quince
+CLI y **las 25 migraciones** se ejecutaron contra la base real. Las quince
 primeras entraron con `backend-supabase-real` (25-ago-2026) y `tablas-salones`
-(26-ago-2026); las siete restantes las fueron añadiendo los pasos 15, 16, 18, 19
-y 28. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
+(26-ago-2026); las diez restantes las fueron añadiendo los pasos 15, 16, 18, 19
+y 28, el J7.1 —la 0023 y la 0024— y el J7.2 —la 0025—. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
 responden con los 3 mundos y los 9 niveles de la siembra, y las cuatro tablas de
 salones responden 401 a la clave anónima.
 
@@ -1224,6 +1224,7 @@ la primera.
 | `redeem_invitation` y `preview_invitation`, el canje de enlaces | ✅ aplicado | `…0022_create_invitation_redemption.sql` |
 | **El nivel 1 del mundo 1, rediseñado, y `xp_reward` igualado a 100 en los nueve** | ✅ aplicado | `…0023_seed_level_1_world_1.sql` |
 | **El tablero del nivel 1, rediseñado por el usuario al verlo jugándose** | ✅ aplicado | `…0024_level_1_vertical_board.sql` |
+| **El nivel 2 del mundo 1, sembrado desde el boceto del usuario** | ✅ aplicado | `…0025_seed_level_2_world_1.sql` |
 | Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
@@ -1435,7 +1436,8 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/game/program.ts` | **Puro.** El sobre del contrato §4.3: `Program`, `PROGRAM_FORMAT_VERSION` y las funciones `sealProgram` y `openProgram`. **Sin Blockly** — lo reutilizan el J8 al abrir el `starterProgram` y el J9 al mandar el intento |
 | `apps/web/src/game/program.test.ts` | El sobre: que se cierre con la versión del contrato y que una desconocida se rechace entera (§7) |
 | `apps/web/src/game/levelConfig.ts` | **Nuevo en el J7.1. Puro.** La frontera del §7: `readLevelConfig` comprueba el `config` campo por campo —matriz rectangular, clases de casilla conocidas, salida y meta dentro **y pisables**, `optimalSteps` entero positivo— y `openLevel` es **la puerta única** de los tres campos de la fila: versión, puzle y sobre. Rechaza **entero** y devuelve `null` sin motivo, como `openProgram`. Corre **por encima** de la frontera diferida, así que un nivel ilegible no descarga el motor |
-| `apps/web/src/game/levelConfig.test.ts` | 17 casos. **Lee el `config` del nivel 1 del propio archivo `.sql`** con `?raw`, así que si la migración y el test se separan el test cae — comprobado rompiéndolo |
+| `apps/web/src/game/levelConfig.test.ts` | 18 casos. **Lee el `config` de los niveles 1 y 2 de sus propios archivos `.sql`** con `?raw`, así que si la migración y el test se separan el test cae — comprobado rompiéndolo |
+| `apps/web/src/game/levelSolutions.test.ts` | **Nuevo en el J7.2.** El `optimalSteps` de cada nivel sembrado, **comprobado en las dos direcciones** y leído de su migración: la solución a mano llega a la meta con ese número, y una búsqueda en anchura sobre (casilla, orientación) no encuentra ningún programa más corto. Es lo único del sistema que valida ese número. Comprobado que muerde: con 11 y con 13 en el `.sql` cae |
 | `apps/web/src/components/dashboard/student/StudentLevelModule.tsx` | **Nuevo en el J7.1.** La pantalla de nivel, la primera de producto que monta el juego: lee la fila por su id, la comprueba con `openLevel`, y o monta el juego o enseña el rechazo del §7 **con palabras de niño**. Las instrucciones salen de la `narrative` de la fila. Posee la misma composición que el J6.3 ensayó en el laboratorio |
 | `apps/web/src/game/blockTypes.ts` | **Nuevo en el J5. Puro.** Cómo se llaman los tres bloques y su campo en el JSON. Vive aparte porque `blocks.ts` importa Blockly y **el intérprete no puede importarlo** |
 | `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` y devuelve `{ orders, rootCount }` —o `null` si no entiende algo—, `countSteps` suma los pasos **leyendo** las órdenes (§4.4), `runProgram` las pliega sobre la pose inicial con `turn` y `advance`, `hasLooseStacks` responde por los bloques de sobra y **`stepsTaken` da los pasos dados que enseña el contador**. Sin Blockly y sin `three` |
@@ -3279,7 +3281,7 @@ se edita a mano**.
 npx supabase gen types typescript --linked > apps/web/src/types/database.types.ts
 ```
 
-### 4.2b Ocho de los nueve niveles sembrados siguen siendo de otro juego
+### 4.2b Siete de los nueve niveles sembrados siguen siendo de otro juego
 
 Descubierto el 4-sep-2026 leyendo la migración 0012. Las nueve filas de `levels`
 llevan `validation_rules` del concepto anterior —el de escribir JavaScript—:
@@ -3292,12 +3294,13 @@ roadmap del juego, que pasa a reescribir título, narrativa y `validation_rules`
 además de sembrar la configuración. Ver `DISENO-DEL-JUEGO.md` §2 y
 `ROADMAP-JUEGO.md` §3.
 
-**EL PRIMERO YA ESTÁ, desde el J7.1**: la fila del nivel 1 de la Selva es
-`siempre-adelante`, con el puzle en `validation_rules`, el sobre vacío en
-`starter_code` y `grid-blockly-1` en `programming_language`. **Quedan ocho**, y
-son los del J7.2, el J7.3 y el J12.
+**LOS DOS PRIMEROS YA ESTÁN.** Desde el J7.1 la fila del nivel 1 de la Selva es
+`siempre-adelante`, y desde el J7.2 la del nivel 2 es `camino-con-curvas` —el
+primer tablero con giros y con huecos—; las dos con el puzle en
+`validation_rules`, el sobre vacío en `starter_code` y `grid-blockly-1` en
+`programming_language`. **Quedan siete**, y son los del J7.3 y el J12.
 
-**Lo que eso significa hoy para quien abra cualquiera de los otros ocho**: el
+**Lo que eso significa hoy para quien abra cualquiera de los otros siete**: el
 juego los **rechaza enteros** por el camino del contrato §7 —`levelConfig.ts`— y
 la pantalla se lo dice al niño con palabras suyas, sin dibujar tablero a medias.
 No es un fallo: es el estado esperado hasta que cada uno se siembre.
@@ -3606,25 +3609,28 @@ solapan en **un solo eje** se ven superpuestas desde un ángulo bajo sin invadir
 comprobado en el J7.1 calculando las huellas en vez de mirando la pantalla. Vale
 para cualquier cosa que se dibuje al lado del tablero, con modelos o sin ellos.
 
-### 4.11 El candado de los niveles se comprueba en la lista, no en la pantalla
+### 4.11 Los niveles no tienen candado, y cómo ordenar el avance está por decidir
 
-**Desde el J7.1**, y es deliberado con una fecha de caducidad.
+**Desde `niveles-sin-candado` (13-sep-2026), por decisión del usuario:** hasta la
+prueba preliminar **todos los niveles se abren desde la lista**, y el candado se
+decide después de esa prueba. No es un olvido ni una deuda escondida: es
+provisional con fecha.
 
-Qué niveles están disponibles sale del progreso real del niño, y la lista los
-pinta bloqueados y no deja pulsarlos. **Pero la pantalla de nivel no comprueba el
-candado**: escribir la dirección de uno bloqueado lo abre.
+**Lo que había antes, y por qué se quitó.** Desde el J7.1 la lista bloqueaba
+cada nivel hasta completar el anterior, pero la pantalla de nivel no lo
+comprobaba: escribir la dirección de uno bloqueado lo abría. Con **nada
+escribiendo progreso hasta el J9**, eso dejaba jugable desde la interfaz sólo el
+nivel 1 de cada mundo, y el J7.2 iba a sembrar un nivel 2 al que no se llegaba.
 
-**Hoy no se nota, y por eso hay que anotarlo.** Los otros ocho niveles siguen
-sembrados en el formato del juego anterior, así que quien escriba su dirección se
-topa con el rechazo del §7 y no juega nada. De hecho es lo único que hace
-alcanzable ese camino a mano, que es como se verifica.
+**Lo que queda hoy.** La lista marca completados y «Aquí vas» —el primero sin
+completar— y no impide entrar en ninguno. La pantalla de nivel sigue sin
+comprobar nada, ahora coherente con la lista. Los niveles que siguen sembrados en
+el formato del juego anterior se pueden pulsar y enseñan el rechazo del §7.
 
-**Lo destapa el J7.2.** En cuanto el nivel 2 tenga su puzle sembrado, su
-dirección se salta el 1 — y ese día nadie va a estar releyendo por qué. La
-decisión fue que el candado **ordena el avance, no guarda un secreto**: no hay
-nada que proteger detrás, sólo un orden que sugerir. Si el J7.2 decide que sí
-hace falta, el sitio es la propia pantalla de nivel, que ya sabe qué nivel es y
-ya lee el progreso.
+**Cuando se decida**, la decisión anterior sigue siendo el punto de partida: el
+candado **ordena el avance, no guarda un secreto**. Si vuelve, el sitio donde
+comprobarlo de verdad es la pantalla de nivel, que ya sabe qué nivel es y ya lee
+el progreso; en la lista sólo sería una sugerencia que la dirección se salta.
 
 ---
 

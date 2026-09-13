@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import migration from '../../../../supabase/migrations/202606030023_seed_level_1_world_1.sql?raw';
+import level2Migration from '../../../../supabase/migrations/202606030025_seed_level_2_world_1.sql?raw';
 import { debugLevel } from './debugLevel';
 import { openLevel, readLevelConfig } from './levelConfig';
 import { PROGRAM_FORMAT_VERSION } from './program';
 
 /*
  * La frontera del §7, probada con los datos que de verdad hay en la base: las
- * nueve filas sembradas siguen en el formato del juego anterior salvo la del
- * nivel 1, así que el camino de rechazo no es una hipótesis —se recorre al
- * abrir cualquier otro nivel—.
+ * filas sembradas siguen en el formato del juego anterior salvo las de los
+ * niveles ya rediseñados, así que el camino de rechazo no es una hipótesis —se
+ * recorre al abrir cualquiera de las demás—.
  *
  * EL `config` DEL NIVEL 1 SE LEE DE SU MIGRACIÓN, no se copia a mano aquí. Es un
  * puzle diseñado por el usuario, sembrado en una migración que una vez aplicada
@@ -16,11 +17,11 @@ import { PROGRAM_FORMAT_VERSION } from './program';
  * este test se separaran, la copia de aquí seguiría en verde mientras lo que se
  * juega es otra cosa.
  */
-const seededConfig = (): unknown => {
-  const match = /validation_rules = '([\s\S]*?)'::jsonb/.exec(migration);
+const seededConfig = (sql: string = migration): unknown => {
+  const match = /validation_rules = '([\s\S]*?)'::jsonb/.exec(sql);
 
   if (match === null) {
-    throw new Error('La migración del nivel 1 ya no siembra `validation_rules` como se esperaba.');
+    throw new Error('La migración ya no siembra `validation_rules` como se esperaba.');
   }
 
   return JSON.parse(match[1]);
@@ -29,7 +30,11 @@ const seededConfig = (): unknown => {
 /* El sobre vacío tal y como lo escribe esa misma migración. */
 const emptyEnvelope = `{"formatVersion":"${PROGRAM_FORMAT_VERSION}","workspace":{}}`;
 
-/* Las `validation_rules` del nivel 2, copiadas de la siembra 0012. */
+/*
+ * Las `validation_rules` que la siembra 0012 puso en el nivel 2, del juego
+ * anterior. Ya no son las suyas —la 0025 lo rediseñó—, pero siguen siendo la
+ * forma exacta de las filas que quedan sin rediseñar.
+ */
 const previousGame = { goal: 'choose_safe_path', requiresCondition: true };
 
 describe('readLevelConfig', () => {
@@ -40,6 +45,17 @@ describe('readLevelConfig', () => {
       goal: { row: 0, column: 3 },
       optimalSteps: 3,
     });
+  });
+
+  /* El primer tablero sembrado con huecos y con una salida que no mira al frente. */
+  it('acepta el puzle que siembra la migración del nivel 2', () => {
+    const config = readLevelConfig(seededConfig(level2Migration));
+
+    expect(config?.tiles).toHaveLength(5);
+    expect(config?.tiles.every((row) => row.length === 5)).toBe(true);
+    expect(config?.start).toEqual({ cell: { row: 3, column: 0 }, facing: 'south' });
+    expect(config?.goal).toEqual({ row: 0, column: 4 });
+    expect(config?.optimalSteps).toBe(12);
   });
 
   /* Aceptar no puede depender de que el tablero sea trivial: éste lleva muro y hueco. */

@@ -47,7 +47,7 @@ describe('openProgram', () => {
 
   /*
    * Los tres valores con los que la base puede entregar un `starter_code`: la
-   * columna es `text` y las nueve filas sembradas traen la cadena vacía, que el
+   * columna es `text` y su valor por defecto es la cadena vacía, que el
    * contrato §7 llama «sin programa de partida». Aquí lo único que se comprueba
    * es que ninguno pasa por sobre; qué hacer con un nivel sin programa de
    * partida es del J8, que es quien tiene anfitrión al que avisar.

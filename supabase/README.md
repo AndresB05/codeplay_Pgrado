@@ -225,6 +225,29 @@ migración 0012 y se aplica como todo lo demás.
       salvedad: el disparador `handle_levels_updated_at` de la 0003 mueve
       `updated_at` en cada pasada aunque el contenido quede idéntico.
 
+24. `202606030024_level_1_vertical_board.sql`
+    - Rediseña **sólo `validation_rules`** del nivel 1 de la Selva: el usuario
+      vio el tablero 1 × 4 jugándose y lo pidió más largo y en profundidad, así
+      que pasa a 5 × 1 con `optimalSteps` 4. **La 0023 no se edita**: ya estaba
+      aplicada.
+    - De datos, no de esquema. Misma fila, localizada igual, por
+      `(world_id, sort_order)`.
+    - *(Entrada añadida en el J7.2: la 0024 se aplicó sin documentarse aquí.)*
+
+25. `202606030025_seed_level_2_world_1.sql`
+    - Siembra el **nivel 2 de la Selva** con el boceto del usuario: reescribe
+      slug, título, descripción, narrativa y las tres columnas del formato de
+      la fila que era «Puente Condicional». Tablero 5 × 5 con un único camino
+      en zigzag —el resto, huecos `'gap'`—, salida mirando al sur y
+      `optimalSteps` 12.
+    - De datos, no de esquema, así que **no exige regenerar los tipos**. No
+      toca `xp_reward`: la 0023 ya igualó los nueve.
+    - Localiza la fila por `(world_id, sort_order)` y no por slug, por lo mismo
+      que la 0023.
+    - **Su `optimalSteps` lo comprueba un test**, `levelSolutions.test.ts`, que
+      lee este archivo: que la solución a mano llega con 12 y que la búsqueda
+      del mínimo no encuentra menos.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI. **Va con `npx`**: la CLI
@@ -235,7 +258,7 @@ hay ninguna instalada en el PATH, así que el comando a secas no corre.
 npx supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las veintitrés migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las veinticinco migraciones —siembra
 incluida—:
 
 ```sh

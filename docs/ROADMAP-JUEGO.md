@@ -101,7 +101,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | J6.4 | **Assets de tanteo** en el laboratorio, para ver por dónde puede ir | Se vio por dónde puede ir, y **no era por ahí**: hecho, no satisfactorio. De él sale mover el apartado gráfico entero al **J13** | ✅ |
 | **J7** | **Sembrar el mundo 1** — partido en tres, uno por nivel | Los tres niveles se juegan leyendo su definición de la base | ⬜ |
 | J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra — **y, por decisión del usuario, la pantalla de nivel entera adelantando el J8, los assets fuera y el tablero rediseñado dos veces** | Se juega el nivel 1 leyendo su fila, en su pantalla, no el objeto escrito a mano del J2 | ✅ |
-| J7.2 | Nivel 2, igual | Se juega el nivel 2 desde la base | ⬜ |
+| J7.2 | Nivel 2, igual — **el primero con giros y huecos, montado y enseñado en el laboratorio antes de sembrarlo, con su `optimalSteps` comprobado por un test** | Se juega el nivel 2 desde la base | ✅ |
 | J7.3 | Nivel 3, igual | Se juega el nivel 3 desde la base | ⬜ |
 | **J8** | ~~Conectar la pantalla de nivel al backend y montar el juego dentro~~ — **lo hizo el J7.1**, por decisión del usuario: montar la pantalla dos veces era hacerlo dos veces. Le queda **mandar el intento**, que es lo que el J9 escribe | Se elige un nivel en la web y arranca el que se eligió | ✅ |
 | **J9** | Mandar el intento al servidor con el programa | La partida aparece guardada en la base | ⬜ |
