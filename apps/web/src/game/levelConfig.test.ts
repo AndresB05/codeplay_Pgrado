@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import migration from '../../../../supabase/migrations/202606030023_seed_level_1_world_1.sql?raw';
 import level2Migration from '../../../../supabase/migrations/202606030025_seed_level_2_world_1.sql?raw';
+import level3Migration from '../../../../supabase/migrations/202606030026_seed_level_3_world_1.sql?raw';
 import { debugLevel } from './debugLevel';
 import { openLevel, readLevelConfig } from './levelConfig';
 import { PROGRAM_FORMAT_VERSION } from './program';
@@ -56,6 +57,16 @@ describe('readLevelConfig', () => {
     expect(config?.start).toEqual({ cell: { row: 3, column: 0 }, facing: 'south' });
     expect(config?.goal).toEqual({ row: 0, column: 4 });
     expect(config?.optimalSteps).toBe(12);
+  });
+
+  it('acepta el puzle que siembra la migración del nivel 3', () => {
+    const config = readLevelConfig(seededConfig(level3Migration));
+
+    expect(config?.tiles).toHaveLength(5);
+    expect(config?.tiles.every((row) => row.length === 5)).toBe(true);
+    expect(config?.start).toEqual({ cell: { row: 4, column: 2 }, facing: 'west' });
+    expect(config?.goal).toEqual({ row: 3, column: 4 });
+    expect(config?.optimalSteps).toBe(20);
   });
 
   /* Aceptar no puede depender de que el tablero sea trivial: éste lleva muro y hueco. */

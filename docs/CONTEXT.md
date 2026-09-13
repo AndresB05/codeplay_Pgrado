@@ -183,7 +183,7 @@ codeplayPGrado/
 │                             (5,96 MB, CC0), con su propio README
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
-│   └── migrations/           25 migraciones SQL (la siembra vive en la 0012,
+│   └── migrations/           26 migraciones SQL (la siembra vive en la 0012,
 │                             no hay seed.sql suelto)
 ├── docs/                     CONTEXT.md (este), ESTADO-DEL-PROYECTO.md,
 │                             ROADMAP.md, ROADMAP-JUEGO.md,
@@ -951,10 +951,10 @@ progreso conseguido.
 seguras del backend.
 
 **Estado global: aplicado.** El proyecto de Supabase existe, está enlazado con la
-CLI y **las 25 migraciones** se ejecutaron contra la base real. Las quince
+CLI y **las 26 migraciones** se ejecutaron contra la base real. Las quince
 primeras entraron con `backend-supabase-real` (25-ago-2026) y `tablas-salones`
-(26-ago-2026); las diez restantes las fueron añadiendo los pasos 15, 16, 18, 19
-y 28, el J7.1 —la 0023 y la 0024— y el J7.2 —la 0025—. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
+(26-ago-2026); las once restantes las fueron añadiendo los pasos 15, 16, 18, 19
+y 28, el J7.1 —la 0023 y la 0024—, el J7.2 —la 0025— y el J7.3 —la 0026—. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
 responden con los 3 mundos y los 9 niveles de la siembra, y las cuatro tablas de
 salones responden 401 a la clave anónima.
 
@@ -1225,6 +1225,7 @@ la primera.
 | **El nivel 1 del mundo 1, rediseñado, y `xp_reward` igualado a 100 en los nueve** | ✅ aplicado | `…0023_seed_level_1_world_1.sql` |
 | **El tablero del nivel 1, rediseñado por el usuario al verlo jugándose** | ✅ aplicado | `…0024_level_1_vertical_board.sql` |
 | **El nivel 2 del mundo 1, sembrado desde el boceto del usuario** | ✅ aplicado | `…0025_seed_level_2_world_1.sql` |
+| **El nivel 3 del mundo 1, sembrado desde el boceto del usuario y sin «repetir»** | ✅ aplicado | `…0026_seed_level_3_world_1.sql` |
 | Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
@@ -3281,7 +3282,7 @@ se edita a mano**.
 npx supabase gen types typescript --linked > apps/web/src/types/database.types.ts
 ```
 
-### 4.2b Siete de los nueve niveles sembrados siguen siendo de otro juego
+### 4.2b Seis de los nueve niveles sembrados siguen siendo de otro juego
 
 Descubierto el 4-sep-2026 leyendo la migración 0012. Las nueve filas de `levels`
 llevan `validation_rules` del concepto anterior —el de escribir JavaScript—:
@@ -3294,13 +3295,14 @@ roadmap del juego, que pasa a reescribir título, narrativa y `validation_rules`
 además de sembrar la configuración. Ver `DISENO-DEL-JUEGO.md` §2 y
 `ROADMAP-JUEGO.md` §3.
 
-**LOS DOS PRIMEROS YA ESTÁN.** Desde el J7.1 la fila del nivel 1 de la Selva es
-`siempre-adelante`, y desde el J7.2 la del nivel 2 es `camino-con-curvas` —el
-primer tablero con giros y con huecos—; las dos con el puzle en
+**EL MUNDO 1 ESTÁ ENTERO.** Desde el J7.1 la fila del nivel 1 de la Selva es
+`siempre-adelante`; desde el J7.2 la del nivel 2 es `camino-con-curvas` —el
+primer tablero con giros y con huecos—, y desde el J7.3 la del nivel 3 es
+`la-escalera`, sin «repetir» por decisión del usuario. Las tres con el puzle en
 `validation_rules`, el sobre vacío en `starter_code` y `grid-blockly-1` en
-`programming_language`. **Quedan siete**, y son los del J7.3 y el J12.
+`programming_language`. **Quedan seis**, los de los mundos 2 y 3, y son el J12.
 
-**Lo que eso significa hoy para quien abra cualquiera de los otros siete**: el
+**Lo que eso significa hoy para quien abra cualquiera de los otros seis**: el
 juego los **rechaza enteros** por el camino del contrato §7 —`levelConfig.ts`— y
 la pantalla se lo dice al niño con palabras suyas, sin dibujar tablero a medias.
 No es un fallo: es el estado esperado hasta que cada uno se siembre.

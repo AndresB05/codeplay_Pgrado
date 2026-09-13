@@ -248,6 +248,16 @@ migración 0012 y se aplica como todo lo demás.
       lee este archivo: que la solución a mano llega con 12 y que la búsqueda
       del mínimo no encuentra menos.
 
+26. `202606030026_seed_level_3_world_1.sql`
+    - Siembra el **nivel 3 de la Selva**, el último del mundo 1, con el boceto
+      del usuario: reescribe la fila que era «Ciclo del Río». Tablero 5 × 5 con
+      un único camino de 14 casillas que rodea el tablero y sube una escalera
+      —el resto, huecos—, salida mirando al oeste y `optimalSteps` 20.
+    - **Sin «repetir»**, decidido por el usuario: se resuelve con los tres
+      bloques de siempre.
+    - De datos, no de esquema; localiza la fila por `(world_id, sort_order)`, y
+      su `optimalSteps` lo comprueba `levelSolutions.test.ts` como el de la 0025.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI. **Va con `npx`**: la CLI
@@ -258,7 +268,7 @@ hay ninguna instalada en el PATH, así que el comando a secas no corre.
 npx supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las veinticinco migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las veintiséis migraciones —siembra
 incluida—:
 
 ```sh
