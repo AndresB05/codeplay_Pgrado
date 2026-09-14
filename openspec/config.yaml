@@ -164,7 +164,7 @@ context: |
                    van en public/ porque GLTFLoader los pide por URL
   apps/game/       NO EXISTE y ya no existirá: no hay Unity
   packages/        código compartido — vacío
-  supabase/        migrations/ (28 migraciones SQL; el seed vive en la 0012,
+  supabase/        migrations/ (29 migraciones SQL; el seed vive en la 0012,
                    y los niveles del juego de bloques desde la 0023)
   docs/            CONTEXT.md (estado y prioridades), ESTADO-DEL-PROYECTO.md,
                    ROADMAP.md, ROADMAP-JUEGO.md (el orden del juego),
@@ -339,8 +339,8 @@ context: |
   4. Apartado web de integración de los niveles del juego: LA PANTALLA DE NIVEL
      YA EXISTE, hecha en el J7.1 —ruta /dashboard/worlds/:worldId/:levelId, la
      lista de niveles leyendo de la base y el juego montado dentro—. Los tres
-     niveles del mundo 1 se juegan desde su fila (J7 cerrado), y del mundo 2
-     el nivel 2, el primero con subidas; el resto del J12 sigue sin disenar.
+     niveles del mundo 1 y los tres del mundo 2 se juegan desde su fila (J7 y
+     J12.1 a J12.3 cerrados); los tres del mundo 3 siguen sin disenar.
      EL TABLERO TIENE ALTURAS Y HAY UN BLOQUE CON CUERPO desde salto-y-alturas:
      config gana heights (hueco 0, lo demas 1 o mas), el bloque saltar ejecuta
      saltando lo que lleva dentro y cuesta el doble de su cuerpo (vacio, 1), y la

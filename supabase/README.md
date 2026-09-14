@@ -281,6 +281,19 @@ migración 0012 y se aplica como todo lo demás.
     - De datos, no de esquema, en la versión 2 del formato; necesita la 0027
       aplicada antes, que el orden de las migraciones garantiza.
 
+29. `202606030029_world_2_levels.sql`
+    - Completa **los tres niveles de la Cordillera Binaria**. «Salta y sube»
+      baja al nivel 1 con el mismo tablero y 15 pasos, reescribiendo la fila que
+      era «Eco de Funciones». El nivel 2 pasa a ser «El gran rodeo» —un camino
+      único que rodea un valle, salida mirando al este, `optimalSteps` 25— y el
+      3, que era «Sendero Recursivo», «La torre» —meta a altura 6, salida
+      mirando al norte, `optimalSteps` 23—.
+    - **El `update` del nivel 2 va antes que el del 1**: `levels_world_slug_unique`
+      se comprueba sentencia a sentencia, y `salta-y-sube` es del 2 hasta que
+      se reescribe.
+    - Tres `update` por `(world_id, sort_order)`. De datos, no de esquema. Los
+      tests del juego leen los tres tableros de este archivo.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI. **Va con `npx`**: la CLI
@@ -291,7 +304,7 @@ hay ninguna instalada en el PATH, así que el comando a secas no corre.
 npx supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las veintiocho migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las veintinueve migraciones —siembra
 incluida—:
 
 ```sh

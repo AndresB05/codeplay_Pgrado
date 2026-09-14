@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import migration from '../../../../supabase/migrations/202606030027_world_1_levels_format_2.sql?raw';
-import world2Level2Migration from '../../../../supabase/migrations/202606030028_seed_level_2_world_2.sql?raw';
+import world2Migration from '../../../../supabase/migrations/202606030029_world_2_levels.sql?raw';
 import { debugLevel } from './debugLevel';
 import { openLevel, readLevelConfig } from './levelConfig';
 import { PROGRAM_FORMAT_VERSION } from './program';
@@ -100,9 +100,9 @@ describe('readLevelConfig', () => {
     });
   });
 
-  /* El primer tablero sembrado con alturas distintas de 1. */
-  it('acepta el puzle del nivel 2 del mundo 2 tal y como lo siembra la 0028', () => {
-    const config = readLevelConfig(seededConfig(world2Level2Migration, 2));
+  /* El primer tablero sembrado con alturas distintas de 1: la 0028 lo puso en el 2. */
+  it('acepta el puzle del nivel 1 del mundo 2 tal y como lo mueve la 0029', () => {
+    const config = readLevelConfig(seededConfig(world2Migration, 1));
 
     expect(config?.heights).toEqual([
       [0, 3, 0, 0, 0],
@@ -114,6 +114,36 @@ describe('readLevelConfig', () => {
     expect(config?.start).toEqual({ cell: { row: 4, column: 0 }, facing: 'north' });
     expect(config?.goal).toEqual({ row: 0, column: 1 });
     expect(config?.optimalSteps).toBe(15);
+  });
+
+  it('acepta el puzle del nivel 2 del mundo 2 tal y como lo siembra la 0029', () => {
+    const config = readLevelConfig(seededConfig(world2Migration, 2));
+
+    expect(config?.heights).toEqual([
+      [2, 1, 1, 2, 3],
+      [2, 0, 0, 0, 0],
+      [2, 0, 1, 1, 1],
+      [2, 2, 0, 0, 1],
+      [0, 1, 1, 1, 1],
+    ]);
+    expect(config?.start).toEqual({ cell: { row: 2, column: 2 }, facing: 'east' });
+    expect(config?.goal).toEqual({ row: 0, column: 4 });
+    expect(config?.optimalSteps).toBe(25);
+  });
+
+  it('acepta el puzle del nivel 3 del mundo 2 tal y como lo siembra la 0029', () => {
+    const config = readLevelConfig(seededConfig(world2Migration, 3));
+
+    expect(config?.heights).toEqual([
+      [0, 0, 4, 3, 0],
+      [0, 6, 4, 2, 0],
+      [0, 6, 5, 2, 0],
+      [1, 1, 1, 1, 0],
+      [1, 0, 0, 0, 0],
+    ]);
+    expect(config?.start).toEqual({ cell: { row: 4, column: 0 }, facing: 'north' });
+    expect(config?.goal).toEqual({ row: 1, column: 1 });
+    expect(config?.optimalSteps).toBe(23);
   });
 
   /* Aceptar no puede depender de que el tablero sea trivial: éste lleva muro y hueco. */

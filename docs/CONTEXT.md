@@ -183,7 +183,7 @@ codeplayPGrado/
 │                             (5,96 MB, CC0), con su propio README
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
-│   └── migrations/           28 migraciones SQL (la siembra vive en la 0012,
+│   └── migrations/           29 migraciones SQL (la siembra vive en la 0012,
 │                             no hay seed.sql suelto)
 ├── docs/                     CONTEXT.md (este), ESTADO-DEL-PROYECTO.md,
 │                             ROADMAP.md, ROADMAP-JUEGO.md,
@@ -951,11 +951,12 @@ progreso conseguido.
 seguras del backend.
 
 **Estado global: aplicado.** El proyecto de Supabase existe, está enlazado con la
-CLI y **las 28 migraciones** se ejecutaron contra la base real. Las quince
+CLI y **las 29 migraciones** se ejecutaron contra la base real. Las quince
 primeras entraron con `backend-supabase-real` (25-ago-2026) y `tablas-salones`
-(26-ago-2026); las trece restantes las fueron añadiendo los pasos 15, 16, 18, 19
+(26-ago-2026); las catorce restantes las fueron añadiendo los pasos 15, 16, 18, 19
 y 28, el J7.1 —la 0023 y la 0024—, el J7.2 —la 0025—, el J7.3 —la 0026—,
-`salto-y-alturas` —la 0027— y el nivel 2 del mundo 2 —la 0028—. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
+`salto-y-alturas` —la 0027—, el nivel 2 del mundo 2 —la 0028— y
+`mundo-2-completo` —la 0029—. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
 responden con los 3 mundos y los 9 niveles de la siembra, y las cuatro tablas de
 salones responden 401 a la clave anónima.
 
@@ -1229,6 +1230,7 @@ la primera.
 | **El nivel 3 del mundo 1, sembrado desde el boceto del usuario y sin «repetir»** | ✅ aplicado | `…0026_seed_level_3_world_1.sql` |
 | **Los tres niveles del mundo 1, pasados a la versión 2 del formato con alturas a 1** | ✅ aplicado | `…0027_world_1_levels_format_2.sql` |
 | **El nivel 2 del mundo 2, el primero con subidas** | ✅ aplicado | `…0028_seed_level_2_world_2.sql` |
+| **Los tres niveles del mundo 2: «Salta y sube» baja al 1, y el 2 y el 3 sembrados desde boceto** | ✅ aplicado | `…0029_world_2_levels.sql` |
 | Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
@@ -3285,7 +3287,7 @@ se edita a mano**.
 npx supabase gen types typescript --linked > apps/web/src/types/database.types.ts
 ```
 
-### 4.2b Cinco de los nueve niveles sembrados siguen siendo de otro juego
+### 4.2b Tres de los nueve niveles sembrados siguen siendo de otro juego
 
 Descubierto el 4-sep-2026 leyendo la migración 0012. Las nueve filas de `levels`
 llevan `validation_rules` del concepto anterior —el de escribir JavaScript—:
@@ -3306,14 +3308,14 @@ primer tablero con giros y con huecos—, y desde el J7.3 la del nivel 3 es
 `programming_language` —sembradas en la 1 y reescritas a la 2, con alturas a 1,
 por la 0027 de `salto-y-alturas`—.
 
-**Y EL MUNDO 2 EMPEZÓ POR SU NIVEL 2**, `salta-y-sube`, el primero con subidas y
-con el bloque «saltar». Va en el 2 por decisión del usuario: el nivel 1 del mundo
-será uno más fácil que todavía no está diseñado, así que hoy el mundo 2 abre con
-un nivel 1 que la lista deja pulsar y que dice que todavía no se puede jugar.
+**Y EL MUNDO 2 TAMBIÉN ESTÁ ENTERO**, desde `mundo-2-completo` —la 0029—. Empezó
+por su nivel 2, `salta-y-sube`, el primero con subidas, sembrado por la 0028; el
+usuario cambió de plan el 14-sep-2026, lo bajó al nivel 1 y diseñó dos más
+difíciles: `el-gran-rodeo` en el 2 y `la-torre` en el 3, con la meta a altura 6.
 
-**Quedan cinco**: el 1 y el 3 del mundo 2 y los tres del mundo 3, que son el J12.
+**Quedan tres**: los del mundo 3, que son el resto del J12.
 
-**Lo que eso significa hoy para quien abra cualquiera de los otros cinco**: el
+**Lo que eso significa hoy para quien abra cualquiera de los otros tres**: el
 juego los **rechaza enteros** por el camino del contrato §7 —`levelConfig.ts`— y
 la pantalla se lo dice al niño con palabras suyas, sin dibujar tablero a medias.
 No es un fallo: es el estado esperado hasta que cada uno se siembre.

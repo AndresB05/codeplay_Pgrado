@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import world1Migration from '../../../../supabase/migrations/202606030027_world_1_levels_format_2.sql?raw';
-import world2Level2Migration from '../../../../supabase/migrations/202606030028_seed_level_2_world_2.sql?raw';
+import world2Migration from '../../../../supabase/migrations/202606030029_world_2_levels.sql?raw';
 import { countSteps, runProgram, type Order } from './interpreter';
 import type { LevelConfig, Pose } from './level';
 import { readLevelConfig } from './levelConfig';
@@ -128,8 +128,8 @@ const levels: { name: string; config: LevelConfig; solution: Order[] }[] = [
    * la meseta, 15. Es exactamente el fallo que esto existe para evitar.
    */
   {
-    name: 'nivel 2 del mundo 2',
-    config: seededConfig(world2Level2Migration, 2),
+    name: 'nivel 1 del mundo 2',
+    config: seededConfig(world2Migration, 1),
     solution: [
       { kind: 'advance', steps: 2 },
       { kind: 'turn', side: 'right' },
@@ -139,6 +139,48 @@ const levels: { name: string; config: LevelConfig; solution: Order[] }[] = [
       { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
       { kind: 'turn', side: 'left' },
       { kind: 'advance', steps: 2 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'advance', steps: 1 },
+    ],
+  },
+  {
+    name: 'nivel 2 del mundo 2',
+    config: seededConfig(world2Migration, 2),
+    solution: [
+      { kind: 'advance', steps: 2 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'advance', steps: 2 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'advance', steps: 3 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'turn', side: 'left' },
+      { kind: 'advance', steps: 1 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'advance', steps: 3 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'advance', steps: 2 },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 2 }] },
+    ],
+  },
+  {
+    name: 'nivel 3 del mundo 2',
+    config: seededConfig(world2Migration, 3),
+    solution: [
+      { kind: 'advance', steps: 1 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'advance', steps: 3 },
+      { kind: 'turn', side: 'left' },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'advance', steps: 1 },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'turn', side: 'left' },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'turn', side: 'left' },
+      { kind: 'advance', steps: 1 },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'turn', side: 'right' },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
       { kind: 'turn', side: 'right' },
       { kind: 'advance', steps: 1 },
     ],
