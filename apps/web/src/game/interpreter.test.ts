@@ -5,6 +5,7 @@ import {
   readProgram,
   runProgram,
   stepsTaken,
+  stoppedIndex,
   type Order,
 } from './interpreter';
 import type { LevelConfig } from './level';
@@ -576,6 +577,43 @@ describe('stepsTaken', () => {
    */
   it('el número en el que se queda es el recuento que enseña el resultado', () => {
     expect(stepsTaken(run, run.steps.length, false)).toBe(countSteps(orders));
+  });
+});
+
+/*
+ * Dónde se planta un recorrido detenido. El borde que importa es el salto: parar
+ * entre su despegue y su aterrizaje dejaría al personaje a media altura al
+ * reanudar.
+ */
+describe('stoppedIndex', () => {
+  const orders: Order[] = [
+    { kind: 'advance', steps: 1 },
+    { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+    { kind: 'turn', side: 'right' },
+  ];
+  const run = runProgram(board, orders);
+
+  it('andando se planta en la casilla del paso en curso', () => {
+    expect(run.steps[0].motion).toBe('walk');
+    expect(stoppedIndex(run, 0)).toBe(1);
+  });
+
+  it('en un despegue se salta también el aterrizaje', () => {
+    expect(run.steps[1].motion).toBe('takeoff');
+    expect(stoppedIndex(run, 1)).toBe(3);
+  });
+
+  it('en un aterrizaje se planta en la casilla donde cae', () => {
+    expect(run.steps[2].motion).toBe('landing');
+    expect(stoppedIndex(run, 2)).toBe(3);
+  });
+
+  it('en el último paso no se pasa del final', () => {
+    expect(stoppedIndex(run, run.steps.length - 1)).toBe(run.steps.length);
+  });
+
+  it('el contador detenido en un despegue cuenta el salto entero', () => {
+    expect(stepsTaken(run, stoppedIndex(run, 1), false)).toBe(3);
   });
 });
 

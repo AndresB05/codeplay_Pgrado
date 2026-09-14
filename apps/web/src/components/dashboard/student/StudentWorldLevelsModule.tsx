@@ -251,7 +251,8 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
             Este mundo todavía no tiene niveles.
           </p>
         ) : (
-          <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          // Tres columnas y no más: cada mundo tiene tres niveles, y con más columnas sobraba medio ancho vacío.
+          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
             {cards.map(({ level, isCompleted, isCurrent }, position) => {
               return (
                 <button

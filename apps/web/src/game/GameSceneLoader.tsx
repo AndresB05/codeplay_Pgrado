@@ -1,4 +1,5 @@
 import { Component, lazy, Suspense, type ReactNode } from 'react';
+import type { LevelFinish } from './GameScene';
 import type { LevelConfig } from './level';
 import type { Program } from './program';
 
@@ -71,6 +72,11 @@ interface GameSceneLoaderProps {
   controlsHost: HTMLElement | null;
   /* Y el del mensaje, en la franja del lienzo. Cruza igual. */
   messageHost: HTMLElement | null;
+  /* Los dos avisos hacia arriba: si está detenido y si llegó. Sólo datos. */
+  onHaltedChange?: (halted: boolean) => void;
+  onFinish?: (result: LevelFinish) => void;
+  /* El alto que la bandeja deja libre, para el encuadre. */
+  freeHeight?: number | null;
 }
 
 export const GameSceneLoader = ({
@@ -78,6 +84,9 @@ export const GameSceneLoader = ({
   program,
   controlsHost,
   messageHost,
+  onHaltedChange,
+  onFinish,
+  freeHeight,
 }: GameSceneLoaderProps) => (
   <SceneBoundary>
     <Suspense
@@ -93,6 +102,9 @@ export const GameSceneLoader = ({
         program={program}
         controlsHost={controlsHost}
         messageHost={messageHost}
+        onHaltedChange={onHaltedChange}
+        onFinish={onFinish}
+        freeHeight={freeHeight}
       />
     </Suspense>
   </SceneBoundary>

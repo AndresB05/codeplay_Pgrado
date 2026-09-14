@@ -1,14 +1,25 @@
 import { OrbitControls } from '@react-three/drei';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { useCallback, useMemo, useRef, useState, type ElementRef } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ElementRef,
+  type RefObject,
+} from 'react';
 import { createPortal } from 'react-dom';
-import type { Group } from 'three';
+import type { Group, PerspectiveCamera } from 'three';
+import { FOV, frameBoard } from './framing';
 import {
   countSteps,
   hasLooseStacks,
   readProgram,
   runProgram,
   stepsTaken,
+  stoppedIndex,
   type Run,
   type RunStep,
 } from './interpreter';
@@ -111,83 +122,10 @@ const MIN_DISTANCE = 4;
 const MAX_DISTANCE = 18;
 
 /*
- * EL ENCUADRE DE PARTIDA LO MANDA LA BANDEJA, y por eso son dos números y no
- * uno. Desde que el lienzo va superpuesto al juego, la mitad de abajo del hueco
- * está tapada por él: un tablero centrado y a la distancia de antes metía su
- * fila sur —la de la salida— justo debajo de la bandeja. Medido: la esquina
- * sureste caía 154 px por debajo del borde de la bandeja.
- *
- * Se corrige por los dos lados. `CAMERA_START` aleja la cámara hasta que el
- * tablero cabe en la franja libre, y `BOARD_LIFT` lo sube hasta el centro de
- * esa franja. Alejar sin subir no basta —la perspectiva deja la esquina
- * cercana abajo por mucho que se aleje—, y subir sin alejar saca el borde
- * norte por arriba.
- *
- * La cámara ARRANCA MÁS LEJOS de lo que el tablero de hoy pide, y es a
- * propósito: las cinco por cinco casillas son cubos de colores, y las
- * ilustraciones del mundo ocuparán bastante más alto que una losa de 0,2. Un
- * encuadre ajustado a los cubos se queda corto el día que lleguen, y acercarse
- * está a una rueda de ratón —volver a encuadrar un tablero que ya no cabe, no—.
- * Por eso sube también `MAX_DISTANCE`: el tope de antes queda por debajo del
- * arranque de ahora, y los controles lo recortarían en el primer frame.
- *
- * El ÁNGULO es el mismo de antes —los tres números crecen a la vez, así que la
- * vista no gira—, y la subida se vuelve a medir porque la franja libre ha
- * cambiado: la bandeja abre más plegada.
- *
- * Y el tablero NO se centra en esa franja, que era lo primero que se probó: se
- * queda entre su centro y el del hueco entero, porque centrado en la franja se
- * lee alto —lo que el ojo toma por «el juego» es el hueco, y la bandeja va
- * ENCIMA de él, no al lado—. Lo que manda por abajo es no llegar a tocar la
- * bandeja. Con estos números el tablero cae en 345-623 y la bandeja empieza en
- * 653: 30 px de aire, justo el borde de su sombra.
- *
- * Se levanta EL TABLERO y no el punto al que mira la cámara porque mover ése
- * rompería «Vista inicial»: los controles guardan su vista de partida al
- * construirse, con el punto en el origen, y volver a ella lo devolvería ahí. El
- * personaje va dentro del mismo grupo, así que su casilla se sigue calculando
- * igual: cambia dónde se pinta el tablero, no dónde está.
+ * El encuadre de partida ya no son números medidos a mano: lo calcula
+ * `framing.ts` con el tablero y el hueco que la bandeja deja libre. Ver
+ * `FramedView`.
  */
-const CAMERA_START: [number, number, number] = [6.7, 9.5, 9.5];
-const BOARD_LIFT = 1.8;
-
-/*
- * EL TABLERO CONTRA EL QUE SE MIDIERON LOS DOS NÚMEROS DE ARRIBA: cinco por
- * cinco casillas, que es la rejilla de pega del J2. Desde que el nivel llega de
- * la base el tablero ya no mide siempre eso, así que esas cifras dejan de valer
- * como cifras y pasan a valer como REFERENCIA: lo que se conserva es la
- * relación. Con un tablero de cinco, todo esto da exactamente lo de antes.
- */
-const REFERENCE_SPAN = 5;
-
-/*
- * LA CÁMARA ARRANCA A LA DISTANCIA QUE PIDE EL TABLERO, y no a una fija: un
- * tablero pequeño encuadrado para un 5 × 5 se queda minúsculo, y entonces la
- * rejilla deja de poder contarse, que es lo único que el niño necesita ver.
- *
- * Se escala la POSICIÓN entera, así que el ángulo no cambia. Manda el lado mayor
- * porque es el que primero se sale del encuadre.
- *
- * Y CON ELLA SE ESCALAN `BOARD_LIFT` Y `MAX_DISTANCE`. La subida coloca el
- * tablero en la franja que la bandeja deja libre, y cuánto hay que subir depende
- * de lo lejos que esté la cámara: medido, acercarla sin tocar la subida saca el
- * tablero por arriba. Y el tope del acercamiento, porque la partida sale a
- * 3,0026 por casilla del lado mayor: con el tope fijo de 18, un tablero de seis
- * arrancaría recortado. El SUELO no se escala y no es incoherencia: no meterse
- * dentro del tablero es una distancia absoluta, y no perderlo de vista es
- * relativa a lo grande que sea.
- */
-const boardScale = (config: LevelConfig): number => {
-  const span = Math.max(config.tiles.length, config.tiles[0]?.length ?? 0);
-
-  return Math.max(span / REFERENCE_SPAN, MIN_DISTANCE / Math.hypot(...CAMERA_START));
-};
-
-const cameraStartFor = (config: LevelConfig): [number, number, number] => {
-  const scale = boardScale(config);
-
-  return [CAMERA_START[0] * scale, CAMERA_START[1] * scale, CAMERA_START[2] * scale];
-};
 
 /*
  * Los iconos de la superposición y de los botones. Van aquí y no en
@@ -492,6 +430,54 @@ const Character = ({ config, pose, step, nextStep, stepIndex, onStepDone }: Char
   );
 };
 
+interface FramedViewProps {
+  config: LevelConfig;
+  freeHeight: number | null;
+  board: RefObject<Group>;
+  controls: RefObject<ElementRef<typeof OrbitControls>>;
+}
+
+/*
+ * EL ENCUADRE, APLICADO. Vive dentro del `<Canvas>` porque el tamaño del lienzo
+ * sólo se sabe ahí, y se recalcula cuando ese tamaño cambia.
+ *
+ * Se sube EL TABLERO y no el punto al que mira la cámara, porque los controles
+ * guardan su vista de partida con el punto en el origen y «Vista inicial» vuelve
+ * a ella. Por eso, con el encuadre puesto, se les pide guardarla otra vez. El
+ * personaje va dentro del grupo del tablero, así que su casilla se sigue leyendo
+ * igual: cambia dónde se pinta, no dónde está.
+ */
+const FramedView = ({ config, freeHeight, board, controls }: FramedViewProps) => {
+  const camera = useThree((state) => state.camera) as PerspectiveCamera;
+  const width = useThree((state) => state.size.width);
+  const height = useThree((state) => state.size.height);
+
+  useLayoutEffect(() => {
+    if (width === 0 || height === 0) {
+      return;
+    }
+
+    const framing = frameBoard(config, { width, height, freeHeight: freeHeight ?? height });
+    const distance = Math.hypot(...framing.position);
+
+    camera.position.set(...framing.position);
+    camera.lookAt(0, 0, 0);
+    board.current?.position.setY(framing.lift);
+
+    const orbit = controls.current;
+
+    if (orbit !== null) {
+      // Los topes se abren si hace falta: unos topes más cerrados que la partida la recortarían.
+      orbit.minDistance = Math.min(MIN_DISTANCE, distance);
+      orbit.maxDistance = Math.max(MAX_DISTANCE, distance * 1.5);
+      orbit.update();
+      orbit.saveState();
+    }
+  }, [board, camera, config, controls, freeHeight, height, width]);
+
+  return null;
+};
+
 interface GameSceneProps {
   /*
    * EL NIVEL LLEGA DE FUERA, y la escena no trae ninguno dentro: es lo que
@@ -516,6 +502,25 @@ interface GameSceneProps {
    * del intento, y el intento no sube.
    */
   messageHost: HTMLElement | null;
+  /*
+   * Si el recorrido está detenido, para que la composición bloquee el lienzo:
+   * lo que se reanuda tiene que ser lo que está a la vista, y el lienzo no es de
+   * la escena. Sube un booleano y nada del intento.
+   */
+  onHaltedChange?: (halted: boolean) => void;
+  /* Un recorrido terminado que llegó a la meta, con lo que costó y lo que costaba. */
+  onFinish?: (result: LevelFinish) => void;
+  /*
+   * El alto del juego que la bandeja del lienzo deja libre al abrir, en píxeles
+   * desde arriba. Lo mide la composición, que es quien pone la bandeja; sin
+   * medida todavía, se encuadra en el alto entero.
+   */
+  freeHeight?: number | null;
+}
+
+export interface LevelFinish {
+  steps: number;
+  optimalSteps: number;
 }
 
 /*
@@ -536,7 +541,7 @@ const stepsLabel = (count: number): string => (count === 1 ? '1 paso' : `${count
 const OUTCOME_MESSAGES = {
   idle: 'Coloca bloques y pulsa «Ejecutar» para ver al personaje moverse.',
   running: 'Ejecutando el programa…',
-  stopped: 'Has detenido el recorrido. Pulsa «Ejecutar» para empezar otra vez.',
+  stopped: 'Has detenido el recorrido. Pulsa «Ejecutar» para seguir o «Reiniciar» para cambiar los bloques.',
   empty: 'No hay bloques que ejecutar. Arrastra alguno al lienzo.',
   unreadable: 'Ese programa no se puede leer.',
 };
@@ -586,7 +591,15 @@ const outcomeOf = (run: Run, steps: number, optimalSteps: number): string => {
   return `¡Perfecto! Llegaste a la meta con ${stepsLabel(steps)}, justo lo que cuesta la mejor solución.`;
 };
 
-export const GameScene = ({ level, program, controlsHost, messageHost }: GameSceneProps) => {
+export const GameScene = ({
+  level,
+  program,
+  controlsHost,
+  messageHost,
+  onHaltedChange,
+  onFinish,
+  freeHeight = null,
+}: GameSceneProps) => {
   const config = level;
 
   const [attempt, setAttempt] = useState<Attempt | null>(null);
@@ -600,6 +613,7 @@ export const GameScene = ({ level, program, controlsHost, messageHost }: GameSce
   const [halted, setHalted] = useState(false);
 
   const controls = useRef<ElementRef<typeof OrbitControls>>(null);
+  const board = useRef<Group>(null);
 
   /*
    * El programa se lee al pulsar, no al recibirlo: si viajara en el estado, mover
@@ -636,6 +650,18 @@ export const GameScene = ({ level, program, controlsHost, messageHost }: GameSce
    * sería el recorrido ejecutándose por duplicado.
    */
   const start = useCallback(() => {
+    /*
+     * UN RECORRIDO DETENIDO SE REANUDA, y reanudar es sólo quitar la marca: el
+     * intento, su recorrido y el índice se quedan, así que el personaje sigue
+     * desde su casilla y el contador desde su número. No se relee el lienzo: la
+     * composición lo bloquea mientras está detenido, así que no ha cambiado.
+     */
+    if (halted && run !== null) {
+      setHalted(false);
+
+      return;
+    }
+
     // Sin editor todavía montado no hay programa, y eso es un lienzo vacío (§4.3).
     const workspace = latest.current === null ? {} : openProgram(latest.current);
     const reading = workspace === null ? null : readProgram(workspace);
@@ -669,7 +695,7 @@ export const GameScene = ({ level, program, controlsHost, messageHost }: GameSce
       steps: countSteps(reading.orders),
       rootCount: reading.rootCount,
     });
-  }, [config]);
+  }, [config, halted, run]);
 
   /*
    * Detener es ADELANTAR EL ÍNDICE y marcar el intento como congelado, y con eso
@@ -680,12 +706,34 @@ export const GameScene = ({ level, program, controlsHost, messageHost }: GameSce
    *
    * El personaje ATERRIZA en esa casilla en vez de congelarse entre dos: un cubo
    * parado a medio camino se lee como un fallo de dibujo, y lo que se recorre de
-   * más dura un tercio de segundo.
+   * más dura un tercio de segundo. Y un salto aterriza entero: ver `stoppedIndex`.
    */
   const stop = useCallback(() => {
-    setIndex((current) => current + 1);
+    setIndex((current) => (run === null ? current + 1 : stoppedIndex(run, current)));
     setHalted(true);
-  }, []);
+  }, [run]);
+
+  useEffect(() => {
+    onHaltedChange?.(halted);
+  }, [halted, onHaltedChange]);
+
+  /*
+   * LA LLEGADA SE AVISA UNA VEZ POR RECORRIDO TERMINADO. La referencia guarda el
+   * recorrido ya avisado: sin ella, cualquier repintado con el recorrido
+   * terminado volvería a abrir la ventana que el niño acaba de cerrar, y con
+   * `React.StrictMode` el efecto avisaría dos veces.
+   */
+  const reported = useRef<Run | null>(null);
+  const finished = run !== null && !halted && index >= run.steps.length;
+
+  useEffect(() => {
+    if (!finished || active === null || !active.run.success || reported.current === active.run) {
+      return;
+    }
+
+    reported.current = active.run;
+    onFinish?.({ steps: active.steps, optimalSteps: config.optimalSteps });
+  }, [finished, active, config.optimalSteps, onFinish]);
 
   const reset = useCallback(() => {
     setAttempt(null);
@@ -734,11 +782,11 @@ export const GameScene = ({ level, program, controlsHost, messageHost }: GameSce
 
   return (
     <div className="relative h-full w-full">
-      <Canvas camera={{ position: cameraStartFor(config), fov: 45 }}>
+      <Canvas camera={{ fov: FOV }}>
         <ambientLight intensity={1.4} />
         <directionalLight position={[4, 6, 3]} intensity={2.2} />
 
-        <group name={BOARD_NODE} position={[0, BOARD_LIFT * boardScale(config), 0]}>
+        <group ref={board} name={BOARD_NODE}>
           <Board config={config} />
           <Character
             config={config}
@@ -761,8 +809,10 @@ export const GameScene = ({ level, program, controlsHost, messageHost }: GameSce
           minPolarAngle={MIN_POLAR_ANGLE}
           maxPolarAngle={MAX_POLAR_ANGLE}
           minDistance={MIN_DISTANCE}
-          maxDistance={MAX_DISTANCE * boardScale(config)}
+          maxDistance={MAX_DISTANCE}
         />
+
+        <FramedView config={config} freeHeight={freeHeight} board={board} controls={controls} />
       </Canvas>
 
       {/*

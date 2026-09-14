@@ -40,7 +40,8 @@ export const Dashboard = () => {
        */
       case ROUTES.WORLDS:
         if (levelId && worldId) {
-          return <StudentLevelModule levelId={levelId} worldId={worldId} />;
+          // Por el id: al pasar al siguiente nivel, el lienzo y el intento empiezan de cero.
+          return <StudentLevelModule key={levelId} levelId={levelId} worldId={worldId} />;
         }
 
         return worldId ? (

@@ -4,6 +4,7 @@ import { debugLevel } from '../../../game/debugLevel';
 import { GameSceneLoader } from '../../../game/GameSceneLoader';
 import type { Program } from '../../../game/program';
 import { PalmFrond } from '../../decor/JungleDecor';
+import { HaltedLock } from './HaltedLock';
 
 const CubeIcon = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -129,6 +130,17 @@ export const StudentGameLabModule = () => {
   const [canvasHeight, setCanvasHeight] = useState(CANVAS_HEIGHT);
   const resizing = useRef<{ y: number; height: number } | null>(null);
 
+  // Detenido, el lienzo se bloquea igual que en la pantalla de nivel.
+  const [halted, setHalted] = useState(false);
+
+  // Dónde empieza la bandeja al abrir, para el encuadre: igual que en la pantalla de nivel.
+  const [trayTop, setTrayTop] = useState<number | null>(null);
+  const measureTray = useCallback((node: HTMLDivElement | null) => {
+    if (node !== null) {
+      setTrayTop((current) => current ?? node.offsetTop);
+    }
+  }, []);
+
   const startResize = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (!canvasOpen) {
@@ -217,6 +229,8 @@ export const StudentGameLabModule = () => {
             program={program}
             controlsHost={controlsHost}
             messageHost={messageHost}
+            onHaltedChange={setHalted}
+            freeHeight={trayTop}
           />
 
           {/*
@@ -224,7 +238,10 @@ export const StudentGameLabModule = () => {
            * rectángulo más pequeño dentro de la misma zona, no un apartado
            * aparte.
            */}
-          <div className="bandeja-del-lienzo absolute inset-x-4 bottom-4 rounded-[24px] bg-mist shadow-[0_10px_28px_rgba(42,27,69,0.16)] backdrop-blur-sm">
+          <div
+            ref={measureTray}
+            className="bandeja-del-lienzo absolute inset-x-4 bottom-4 rounded-[24px] bg-mist shadow-[0_10px_28px_rgba(42,27,69,0.16)] backdrop-blur-sm"
+          >
             {/*
              * El tirador para estirar la bandeja. Va en su borde de arriba, que
              * es el que se mueve: está anclada abajo y crece contra el juego.
@@ -304,6 +321,8 @@ export const StudentGameLabModule = () => {
                     starterWorkspace={{}}
                   />
                 )}
+
+                {halted && <HaltedLock />}
               </div>
             </div>
           </div>
@@ -327,8 +346,10 @@ export const StudentGameLabModule = () => {
              * absoluto dentro de él, y su alto es el que la rejilla de bloques pide:
              * la caja ya no lo hereda del lienzo, ver `BlockEditor.tsx`.
              */}
-            <div className="mt-2.5 rounded-[18px] bg-mist-soft p-2">
+            <div className="relative mt-2.5 rounded-[18px] bg-mist-soft p-2">
               <div ref={setBlockBox} className="relative h-[240px] w-full" />
+
+              {halted && <HaltedLock />}
             </div>
 
             {/* El hueco de los tres botones, que los pinta la escena con un portal. */}

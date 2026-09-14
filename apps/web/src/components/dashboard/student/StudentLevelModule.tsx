@@ -2,10 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { BlockEditorLoader } from '../../../game/BlockEditorLoader';
+import type { LevelFinish } from '../../../game/GameScene';
 import { GameSceneLoader } from '../../../game/GameSceneLoader';
 import { openLevel, type PlayableLevel } from '../../../game/levelConfig';
 import type { Program } from '../../../game/program';
 import { worldsService } from '../../../services/worlds.service';
+import { HaltedLock } from './HaltedLock';
+import { LevelCompleteDialog } from './LevelCompleteDialog';
+import { nextLevelId } from './nextLevel';
 
 /* El rótulo de la caja: tres piezas encajadas, que es lo que se hace con los bloques. */
 const BlocksIcon = () => (
@@ -78,7 +82,14 @@ const CANVAS_MAX = 380;
 type LevelState =
   | { status: 'loading' }
   | { status: 'rejected' }
-  | { status: 'ready'; title: string; instructions: string; level: PlayableLevel };
+  | {
+      status: 'ready';
+      title: string;
+      instructions: string;
+      level: PlayableLevel;
+      nextLevelId: string | null;
+      xpReward: number;
+    };
 
 type StudentLevelModuleProps = {
   levelId: string;
@@ -115,6 +126,28 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
   const [canvasHeight, setCanvasHeight] = useState(CANVAS_HEIGHT);
   const resizing = useRef<{ y: number; height: number } | null>(null);
 
+  const [halted, setHalted] = useState(false);
+  const [finish, setFinish] = useState<LevelFinish | null>(null);
+
+  /*
+   * «Volver a intentar» MONTA LA ESCENA DE NUEVO, y es lo que devuelve personaje,
+   * contador e intento a la salida: el intento vive dentro de la escena y no
+   * sube. El editor no cuelga de esta clave, así que los bloques se quedan.
+   */
+  const [attemptKey, setAttemptKey] = useState(0);
+
+  /*
+   * Dónde empieza la bandeja AL ABRIR, que es lo que el encuadre de partida deja
+   * libre. Se mide una vez: estirar o plegar el lienzo después no vuelve a
+   * encuadrar, porque la vista de partida no cambia mientras se juega.
+   */
+  const [trayTop, setTrayTop] = useState<number | null>(null);
+  const measureTray = useCallback((node: HTMLDivElement | null) => {
+    if (node !== null) {
+      setTrayTop((current) => current ?? node.offsetTop);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
@@ -148,7 +181,25 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         return;
       }
 
-      setState({ status: 'ready', title: row.name, instructions: row.narrative, level });
+      /*
+       * Sin la lista del mundo el nivel se juega igual, y la ventana sale sin
+       * «Siguiente nivel»: no poder ofrecer el siguiente no es motivo para no
+       * dejar jugar éste.
+       */
+      const siblings = await worldsService.getLevelsByWorld(row.worldId);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState({
+        status: 'ready',
+        title: row.name,
+        instructions: row.narrative,
+        level,
+        nextLevelId: siblings.data === null ? null : nextLevelId(siblings.data, row.orderIndex),
+        xpReward: row.xpReward,
+      });
     };
 
     void load();
@@ -202,6 +253,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
   }, []);
 
   const backToLevels = () => navigate(`${ROUTES.WORLDS}/${worldId}`);
+  const closeFinish = useCallback(() => setFinish(null), []);
 
   if (state.status === 'loading') {
     return (
@@ -256,13 +308,20 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
       <section className="marco-del-juego mt-5 grid h-[640px] gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="zona-del-juego relative overflow-hidden rounded-[28px]">
           <GameSceneLoader
+            key={attemptKey}
             level={state.level.config}
             program={program}
             controlsHost={controlsHost}
             messageHost={messageHost}
+            onHaltedChange={setHalted}
+            onFinish={setFinish}
+            freeHeight={trayTop}
           />
 
-          <div className="bandeja-del-lienzo absolute inset-x-4 bottom-4 rounded-[24px] bg-mist shadow-[0_10px_28px_rgba(42,27,69,0.16)] backdrop-blur-sm">
+          <div
+            ref={measureTray}
+            className="bandeja-del-lienzo absolute inset-x-4 bottom-4 rounded-[24px] bg-mist shadow-[0_10px_28px_rgba(42,27,69,0.16)] backdrop-blur-sm"
+          >
             <div
               onPointerDown={startResize}
               onPointerMove={doResize}
@@ -318,6 +377,8 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
                     starterWorkspace={state.level.workspace}
                   />
                 )}
+
+                {halted && <HaltedLock />}
               </div>
             </div>
           </div>
@@ -330,8 +391,10 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
               <h2 className="font-display text-[18px] text-grape-dark">Bloques</h2>
             </div>
 
-            <div className="mt-2.5 rounded-[18px] bg-mist-soft p-2">
+            <div className="relative mt-2.5 rounded-[18px] bg-mist-soft p-2">
               <div ref={setBlockBox} className="relative h-[240px] w-full" />
+
+              {halted && <HaltedLock />}
             </div>
 
             {/* El hueco de los tres botones, que los pinta la escena con un portal. */}
@@ -355,6 +418,25 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
           </div>
         </div>
       </section>
+
+      {finish !== null && (
+        <LevelCompleteDialog
+          steps={finish.steps}
+          optimalSteps={finish.optimalSteps}
+          xpReward={state.xpReward}
+          onExit={backToLevels}
+          onNext={
+            state.nextLevelId === null
+              ? undefined
+              : () => navigate(`${ROUTES.WORLDS}/${worldId}/${state.nextLevelId}`)
+          }
+          onRetry={() => {
+            setFinish(null);
+            setAttemptKey((key) => key + 1);
+          }}
+          onClose={closeFinish}
+        />
+      )}
     </div>
   );
 };

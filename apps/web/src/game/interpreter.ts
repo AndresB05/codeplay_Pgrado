@@ -290,6 +290,20 @@ export const stepsTaken = (run: Run | null, index: number, running: boolean): nu
   run === null ? 0 : Math.min(running ? index + 1 : index, run.steps.length);
 
 /*
+ * El índice en el que se planta un recorrido detenido con el paso `index` en
+ * curso: el siguiente, para que el personaje aterrice en la casilla de ese paso.
+ *
+ * SALVO EN UN DESPEGUE, que se salta también su aterrizaje. Un salto son dos
+ * entradas del recorrido, y parar entre ellas deja pendiente la segunda mitad del
+ * arco: al reanudar, el personaje arrancaría a media altura entre dos casillas.
+ */
+export const stoppedIndex = (run: Run, index: number): number => {
+  const next = run.steps[index]?.motion === 'takeoff' ? index + 2 : index + 1;
+
+  return Math.min(next, run.steps.length);
+};
+
+/*
  * Si el lienzo trae bloques de sobra, que es lo ÚNICO que hay que preguntarle
  * mientras el niño construye: el J6.2 retiró enseñarle lo que cuesta su programa
  * antes de jugar, y sin eso no queda ningún número que contar aquí.

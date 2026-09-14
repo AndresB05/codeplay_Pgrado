@@ -613,17 +613,22 @@ pueden dar se intentan igual.
 Mientras una ejecución está en curso, el sistema NO SHALL empezar otra.
 
 El sistema SHALL ofrecer, además, **devolver al personaje a la casilla de salida**
-con su orientación de partida, tanto al terminar una ejecución como durante ella.
+con su orientación de partida, tanto al terminar una ejecución como durante ella
+o con ella detenida.
 
 **Y SHALL ofrecer detener una ejecución en curso, que no es lo mismo.** Detenerla
 SHALL **congelar el recorrido donde va**: el personaje SHALL quedarse en la
 casilla y con la orientación del paso en curso, y NO SHALL volver a la salida.
-Son dos controles porque son dos cosas: uno para ver dónde se ha quedado, otro
-para empezar de nuevo.
+**Detener NO SHALL dejar al personaje a mitad de un salto**: si lo detiene
+despegando, SHALL quedarse en la casilla donde ese salto aterriza.
 
-**Un recorrido detenido NO SHALL reanudarse.** Pedir la ejecución otra vez SHALL
-ejecutar el programa **desde el principio**, con el personaje partiendo de la
-salida, y SHALL leer el programa que haya en el lienzo en ese momento.
+**Un recorrido detenido SHALL reanudarse.** Pedir la ejecución con un recorrido
+detenido SHALL **seguir desde el paso en que se quedó**, sin volver a la salida, y
+SHALL dar **sólo los pasos que faltaban**: lo que se reanuda es el programa que
+se estaba ejecutando. Empezar de nuevo desde la salida SHALL pedirse devolviendo
+al personaje a la salida y ejecutando después. Decidido por el usuario el
+14-sep-2026: hasta entonces detener no se reanudaba y ejecutar hacía de
+reiniciar.
 
 Detener SHALL poder pedirse **sólo mientras hay una ejecución en curso**.
 
@@ -674,7 +679,7 @@ mover a nadie y sin error.
 
 - **WHEN** se pide devolver al personaje a la salida
 - **THEN** el personaje vuelve a la casilla de salida, mirando hacia la dirección de partida
-- **AND** si había una ejecución en curso, deja de haberla
+- **AND** si había una ejecución en curso o detenida, deja de haberla
 
 #### Scenario: Se detiene el recorrido a mitad
 
@@ -682,10 +687,21 @@ mover a nadie y sin error.
 - **THEN** el recorrido deja de avanzar y el personaje se queda en la casilla y la orientación del paso en curso
 - **AND** no vuelve a la casilla de salida
 
+#### Scenario: Se detiene el recorrido a mitad de un salto
+
+- **WHEN** se pide detener con el personaje despegando para saltar a otra casilla
+- **THEN** el personaje se queda en la casilla donde ese salto aterriza, apoyado sobre ella
+
 #### Scenario: Se vuelve a ejecutar después de detener
 
-- **WHEN** se pide ejecutar el programa con un recorrido detenido a mitad
-- **THEN** el personaje parte otra vez de la casilla de salida y recorre el programa desde el principio
+- **WHEN** se detiene un programa de cuatro pasos después del segundo y se pide ejecutar otra vez
+- **THEN** el personaje sigue desde la casilla donde se quedó y da sólo los dos pasos que faltaban
+- **AND** no vuelve a pasar por la casilla de salida
+
+#### Scenario: Se empieza de nuevo después de detener
+
+- **WHEN** con un recorrido detenido se devuelve al personaje a la salida y después se pide ejecutar
+- **THEN** el personaje parte de la casilla de salida y recorre el programa desde el principio
 
 #### Scenario: No hay nada que detener
 
@@ -991,8 +1007,9 @@ números que suban, y un cero no es un número que haya que batir.
 **Durante la ejecución SHALL avanzar con el personaje**, paso a paso.
 
 **Al terminar el recorrido SHALL quedarse en lo que costó**, y **al detenerlo
-SHALL quedarse en los pasos dados hasta ahí**. Al devolver al personaje a la
-salida SHALL volver a cero.
+SHALL quedarse en los pasos dados hasta ahí**. **Al reanudarlo SHALL seguir
+contando desde ese número**, no desde cero. Al devolver al personaje a la salida
+SHALL volver a cero.
 
 **NO SHALL decir cuántos pasos faltan, ni de cuántos consta el recorrido, ni
 cuántos cuesta la mejor solución.** Enseñar mientras se juega el número que hay
@@ -1015,7 +1032,8 @@ cero**: el contador cuenta pasos dados, no pasos puestos.
 Los pasos que cuenta SHALL ser los **ordenados**, contados como los cuenta el
 recuento del resultado: un avance imposible cuenta igual. El número **en el que
 el contador se queda** al terminar SHALL coincidir con el recuento que se enseña
-en el resultado — es la misma magnitud contada de la misma manera.
+en el resultado — es la misma magnitud contada de la misma manera, también cuando
+el recorrido se detuvo y se reanudó por el camino.
 
 #### Scenario: No se ha ejecutado nada todavía
 
@@ -1053,6 +1071,11 @@ en el resultado — es la misma magnitud contada de la misma manera.
 
 - **WHEN** se detiene el recorrido antes de que termine
 - **THEN** el contador se queda en los pasos que el personaje había dado hasta ahí
+
+#### Scenario: Se reanuda el recorrido detenido
+
+- **WHEN** se reanuda un recorrido detenido con dos pasos dados
+- **THEN** el contador sigue desde dos y termina en lo que cuesta el recorrido entero
 
 #### Scenario: Se devuelve al personaje a la salida a mitad del recorrido
 
@@ -1441,10 +1464,12 @@ La vista de partida SHALL enseñar **el tablero entero** del nivel que se está
 jugando, con sus casillas contables, sin que el niño tenga que girar ni acercar
 la cámara.
 
-Eso SHALL cumplirse para tableros de tamaños distintos, y NO SHALL depender de
-que el tablero tenga la forma de ninguno en concreto. El acercamiento de partida
-SHALL quedar **dentro** de los topes que la cámara impone, para que ningún
-tablero arranque recortado por ellos.
+Eso SHALL cumplirse para tableros de tamaños distintos **y de alturas
+distintas**, y NO SHALL depender de que el tablero tenga la forma de ninguno en
+concreto. **La columna más alta SHALL verse entera, con la casilla que la
+corona**: una meta en lo alto de una torre que se sale por arriba del encuadre es
+una meta que no se ve. El acercamiento de partida SHALL quedar **dentro** de los
+topes que la cámara impone, para que ningún tablero arranque recortado por ellos.
 
 Si alguna vez se dibuja algo **fuera** del tablero, SHALL quedar fuera de su
 huella: no SHALL meterse en ninguna casilla ni taparla. Hoy no hay nada fuera —el
@@ -1460,3 +1485,149 @@ paso que vuelva a vestir el juego.
 
 - **WHEN** se abre un nivel cuyo tablero es mayor que aquel contra el que se midió el encuadre
 - **THEN** se ve entero, sin que los topes de la cámara lo recorten al arrancar
+
+#### Scenario: Un tablero con una torre alta
+
+- **WHEN** se abre un nivel con una columna de altura seis y la meta encima de ella
+- **THEN** se ven la columna entera y la meta desde la vista de partida, sin girar ni acercar la cámara
+- **AND** el tablero entero sigue quedando por encima del lienzo
+
+### Requirement: El tablero aprovecha el hueco del juego sin deformarse
+
+La vista de partida SHALL **acercar o alejar la cámara y subir o bajar el
+tablero** hasta que ocupe el hueco que el lienzo deja libre tanto como quepa: el
+tablero NO SHALL quedarse pequeño en el centro cuando hay sitio para verlo más
+grande.
+
+El tablero NO SHALL **deformarse** para llenar el hueco: **las casillas SHALL
+verse cúbicas**, aunque sobre ancho a los lados. Estirar la imagen a lo ancho se
+probó y el usuario lo retiró el 14-sep-2026 al verlo: se veía aplastado y
+amontonado.
+
+#### Scenario: Un tablero plano en un hueco ancho
+
+- **WHEN** se abre un nivel de cinco por cinco casillas planas
+- **THEN** el tablero se ve tan grande como cabe por encima del lienzo, con sus casillas cúbicas
+
+#### Scenario: Un camino llano con huecos
+
+- **WHEN** se abre un nivel plano cuyo camino ocupa poco de su rejilla
+- **THEN** la cámara no se acerca más que para el mismo tablero lleno, y el camino no queda pegado a ella
+
+#### Scenario: Una torre en el mismo hueco
+
+- **WHEN** se abre un nivel con una columna de altura seis
+- **THEN** la cámara se aleja o el tablero baja lo que haga falta para que la torre entera quepa
+- **AND** las casillas siguen viéndose cúbicas
+
+### Requirement: El lienzo se bloquea mientras el recorrido está detenido
+
+Mientras un recorrido esté **detenido**, el sistema NO SHALL dejar cambiar el
+programa: ni mover, añadir o quitar bloques en el lienzo, ni sacarlos de la caja.
+Así lo que se reanuda es siempre lo que está a la vista. Decidido por el usuario
+el 14-sep-2026.
+
+El bloqueo SHALL **decir por qué** y cómo salir de él: que el recorrido está
+detenido, que «Ejecutar» lo sigue y que «Reiniciar» deja volver a cambiar los
+bloques.
+
+El bloqueo SHALL levantarse **al reanudar**, **al terminar** y **al devolver al
+personaje a la salida**. Mientras el recorrido está en curso sin detener, el
+lienzo NO SHALL bloquearse.
+
+#### Scenario: Se intenta mover un bloque con el recorrido detenido
+
+- **WHEN** el recorrido está detenido y el niño intenta arrastrar un bloque del lienzo o de la caja
+- **THEN** el bloque no se mueve y se ve por qué
+
+#### Scenario: Se reinicia un recorrido detenido
+
+- **WHEN** con el recorrido detenido se devuelve al personaje a la salida
+- **THEN** los bloques se pueden volver a mover
+
+#### Scenario: Se reanuda un recorrido detenido
+
+- **WHEN** con el recorrido detenido se pide ejecutar
+- **THEN** el recorrido sigue y el lienzo deja de estar bloqueado
+
+### Requirement: Llegar a la meta abre una ventana de felicitaciones
+
+Cuando **termine** un recorrido que **ha llegado a la meta**, la pantalla de
+nivel SHALL abrir **una ventana de felicitaciones**, siempre, llegue con los pasos
+justos o con más. Decidido por el usuario el 14-sep-2026.
+
+La ventana SHALL decir que se completó el nivel, **cuántos pasos se usaron y
+cuántos cuesta la mejor solución**. Con los pasos justos o menos SHALL felicitar
+el recorrido perfecto; con más, SHALL felicitar la llegada y **animar a
+intentarlo con menos**, sin presentarlo como un fracaso.
+
+La ventana SHALL ofrecer **tres botones**:
+
+- **«Salir al mundo»**, que lleva a la lista de niveles del mundo del nivel;
+- **«Volver a intentar»**, que cierra la ventana y devuelve al personaje a la
+  salida con el contador a cero, **dejando los bloques del lienzo** como estaban:
+  quien vuelve a intentarlo suele querer mejorar su programa, no rehacerlo.
+  Pedido por el usuario el 14-sep-2026;
+- **«Siguiente nivel»**, que abre el nivel con el orden siguiente **del mismo
+  mundo**, empezando de cero: lienzo, personaje y contador.
+
+En el **último nivel de un mundo**, «Siguiente nivel» NO SHALL aparecer.
+
+La ventana SHALL mostrar además **la experiencia que da el nivel**, la de su fila.
+Es un recordatorio pedido por el usuario el 14-sep-2026 y **todavía no se
+concede**: mostrarla NO SHALL sumar experiencia a nadie. Lo que se gane de verdad
+lo decide el paso que la conceda.
+
+La ventana NO SHALL salir al detener un recorrido, al terminar uno que no llegó a
+la meta, ni con un lienzo vacío. SHALL poder cerrarse con Escape para volver a
+mirar el tablero.
+
+Fuera de la pantalla de nivel —el banco de pruebas— NO SHALL abrirse: no hay
+mundo al que salir.
+
+#### Scenario: Se llega a la meta con los pasos justos
+
+- **WHEN** termina un recorrido que llega a la meta con los pasos de la mejor solución
+- **THEN** se abre la ventana, felicita el recorrido perfecto y dice los pasos usados y los de la mejor solución
+
+#### Scenario: Se llega a la meta con pasos de más
+
+- **WHEN** termina un recorrido que llega a la meta con más pasos de los de la mejor solución
+- **THEN** se abre la ventana, felicita la llegada, dice los dos números y anima a intentarlo con menos
+
+#### Scenario: No se llega a la meta
+
+- **WHEN** termina un recorrido que no pisa la meta
+- **THEN** no se abre la ventana
+
+#### Scenario: Se detiene un recorrido
+
+- **WHEN** se detiene un recorrido antes de que termine
+- **THEN** no se abre la ventana
+
+#### Scenario: Se pasa al siguiente nivel
+
+- **WHEN** en la ventana del nivel 1 de un mundo se pulsa «Siguiente nivel»
+- **THEN** se abre el nivel 2 de ese mundo con el lienzo vacío, el personaje en la salida y el contador a cero
+
+#### Scenario: La ventana enseña la experiencia del nivel
+
+- **WHEN** se abre la ventana de un nivel cuya fila da 100 de experiencia
+- **THEN** la ventana dice que el nivel da 100 de experiencia
+- **AND** la experiencia del niño no cambia
+
+#### Scenario: Se vuelve a intentar el nivel
+
+- **WHEN** en la ventana se pulsa «Volver a intentar»
+- **THEN** la ventana se cierra, el personaje está en la salida y el contador dice cero
+- **AND** los bloques del lienzo siguen donde estaban
+
+#### Scenario: Se sale al mundo
+
+- **WHEN** en la ventana se pulsa «Salir al mundo»
+- **THEN** se ve la lista de niveles del mundo del nivel
+
+#### Scenario: El último nivel del mundo
+
+- **WHEN** se completa el último nivel de un mundo
+- **THEN** la ventana ofrece «Salir al mundo» y «Volver a intentar», y no «Siguiente nivel»
