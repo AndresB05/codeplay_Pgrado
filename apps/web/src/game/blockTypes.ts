@@ -13,6 +13,10 @@
 export const ADVANCE_BLOCK = 'codeplay_advance';
 export const TURN_LEFT_BLOCK = 'codeplay_turn_left';
 export const TURN_RIGHT_BLOCK = 'codeplay_turn_right';
+export const JUMP_BLOCK = 'codeplay_jump';
+
+/** La entrada donde van los bloques que se ejecutan saltando. */
+export const JUMP_BODY = 'BODY';
 
 /** El campo con cuántas casillas avanzar. Lo lee el J5 y lo cuenta el J6. */
 export const STEPS_FIELD = 'STEPS';

@@ -183,7 +183,7 @@ codeplayPGrado/
 │                             (5,96 MB, CC0), con su propio README
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
-│   └── migrations/           26 migraciones SQL (la siembra vive en la 0012,
+│   └── migrations/           28 migraciones SQL (la siembra vive en la 0012,
 │                             no hay seed.sql suelto)
 ├── docs/                     CONTEXT.md (este), ESTADO-DEL-PROYECTO.md,
 │                             ROADMAP.md, ROADMAP-JUEGO.md,
@@ -951,10 +951,11 @@ progreso conseguido.
 seguras del backend.
 
 **Estado global: aplicado.** El proyecto de Supabase existe, está enlazado con la
-CLI y **las 26 migraciones** se ejecutaron contra la base real. Las quince
+CLI y **las 28 migraciones** se ejecutaron contra la base real. Las quince
 primeras entraron con `backend-supabase-real` (25-ago-2026) y `tablas-salones`
-(26-ago-2026); las once restantes las fueron añadiendo los pasos 15, 16, 18, 19
-y 28, el J7.1 —la 0023 y la 0024—, el J7.2 —la 0025— y el J7.3 —la 0026—. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
+(26-ago-2026); las trece restantes las fueron añadiendo los pasos 15, 16, 18, 19
+y 28, el J7.1 —la 0023 y la 0024—, el J7.2 —la 0025—, el J7.3 —la 0026—,
+`salto-y-alturas` —la 0027— y el nivel 2 del mundo 2 —la 0028—. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
 responden con los 3 mundos y los 9 niveles de la siembra, y las cuatro tablas de
 salones responden 401 a la clave anónima.
 
@@ -1226,6 +1227,8 @@ la primera.
 | **El tablero del nivel 1, rediseñado por el usuario al verlo jugándose** | ✅ aplicado | `…0024_level_1_vertical_board.sql` |
 | **El nivel 2 del mundo 1, sembrado desde el boceto del usuario** | ✅ aplicado | `…0025_seed_level_2_world_1.sql` |
 | **El nivel 3 del mundo 1, sembrado desde el boceto del usuario y sin «repetir»** | ✅ aplicado | `…0026_seed_level_3_world_1.sql` |
+| **Los tres niveles del mundo 1, pasados a la versión 2 del formato con alturas a 1** | ✅ aplicado | `…0027_world_1_levels_format_2.sql` |
+| **El nivel 2 del mundo 2, el primero con subidas** | ✅ aplicado | `…0028_seed_level_2_world_2.sql` |
 | Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
@@ -1428,9 +1431,9 @@ esos pasos en XP es el servidor, en el J10.
 
 | Archivo | Qué es |
 | --- | --- |
-| `apps/web/src/game/level.ts` | **Puro.** Los tipos del tablero —`TileKind`, `Direction`, `Cell`, `Pose`, `LevelConfig`— y `TILE_SIZE`. El formato **ya no es provisional**: lo fijó el J3 en el contrato §4.2, y `LevelConfig` es ese mismo objeto |
+| `apps/web/src/game/level.ts` | **Puro.** Los tipos del tablero —`TileKind`, `Direction`, `Cell`, `Pose`, `LevelConfig`— y `TILE_SIZE`. El formato **ya no es provisional**: lo fijó el J3 en el contrato §4.2, y `LevelConfig` es ese mismo objeto. **Desde `salto-y-alturas` lleva `heights`**, la altura de cada columna: hueco 0, lo demás 1 o más |
 | `apps/web/src/game/debugLevel.ts` | **Puro.** La rejilla de pega: 5×5, cuatro muros, un hueco, salida y meta. **No es un puzle diseñado** — los nueve los diseña el usuario y se siembran en el J7 |
-| `apps/web/src/game/movement.ts` | **Puro.** `turn` y `advance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| null`. **Los reutiliza el intérprete**: nació para eso |
+| `apps/web/src/game/movement.ts` | **Puro.** `turn`, `advance` y, desde `salto-y-alturas`, `jumpAdvance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| 'high' \| null`. Andando se pasa a la misma altura o más abajo; saltando se sube uno. Las dos comparten una función que sólo difiere en cuánto se puede subir. **Los reutiliza el intérprete**: nació para eso |
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
 | `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero, el personaje, la animación con `useFrame` y **la cámara movible acotada** (`OrbitControls` de `drei`); **el contador de pasos, siempre visible**; **la superposición que dice todo lo demás** —reposo, ejecución, resultado y avisos—; y los tres botones —**«Ejecutar», «Detener» y «Reiniciar»**—, pintados **con un portal** en el hueco que baja la composición. **Desde el J7.1 el nivel LLEGA POR PROPIEDADES** —`level: LevelConfig`— y la escena no trae ninguno dentro. **Y no carga ni un modelo**: el usuario retiró los assets del J6.4, así que el tablero vuelve a ser **un cubo por casilla** —damero de dos verdes, muro, salida en azul y meta en amarillo— y se fueron `Scenery`, `Obstacles`, el `GLTFLoader` y el `Clone` de drei. El encuadre **se deriva del tablero**: `CAMERA_START`, `BOARD_LIFT` y `MAX_DISTANCE` se escalan por su lado mayor contra la referencia de cinco, así que un 5 × 5 da exactamente la vista de siempre. El personaje sigue siendo el cubo. Importa `three`, `@react-three/fiber` y `@react-three/drei` |
 | `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Baja **el nivel ya comprobado**, el programa y **el hueco de los botones**; **sólo el tipo** del sobre cruza. Desde el J6.4 lleva además el **límite de error de la escena**, que va aquí porque el `<Canvas>` vuelve a lanzar en su propio render |
@@ -1438,12 +1441,12 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/game/program.test.ts` | El sobre: que se cierre con la versión del contrato y que una desconocida se rechace entera (§7) |
 | `apps/web/src/game/levelConfig.ts` | **Nuevo en el J7.1. Puro.** La frontera del §7: `readLevelConfig` comprueba el `config` campo por campo —matriz rectangular, clases de casilla conocidas, salida y meta dentro **y pisables**, `optimalSteps` entero positivo— y `openLevel` es **la puerta única** de los tres campos de la fila: versión, puzle y sobre. Rechaza **entero** y devuelve `null` sin motivo, como `openProgram`. Corre **por encima** de la frontera diferida, así que un nivel ilegible no descarga el motor |
 | `apps/web/src/game/levelConfig.test.ts` | 18 casos. **Lee el `config` de los niveles 1 y 2 de sus propios archivos `.sql`** con `?raw`, así que si la migración y el test se separan el test cae — comprobado rompiéndolo |
-| `apps/web/src/game/levelSolutions.test.ts` | **Nuevo en el J7.2.** El `optimalSteps` de cada nivel sembrado, **comprobado en las dos direcciones** y leído de su migración: la solución a mano llega a la meta con ese número, y una búsqueda en anchura sobre (casilla, orientación) no encuentra ningún programa más corto. Es lo único del sistema que valida ese número. Comprobado que muerde: con 11 y con 13 en el `.sql` cae |
+| `apps/web/src/game/levelSolutions.test.ts` | **Nuevo en el J7.2.** El `optimalSteps` de cada nivel sembrado, **comprobado en las dos direcciones** y leído de su migración: la solución a mano llega a la meta con ese número, y una búsqueda del mínimo sobre (casilla, orientación) no encuentra ningún programa más corto. Es lo único del sistema que valida ese número. Desde `salto-y-alturas` la búsqueda **salta a coste 2**, así que es Dijkstra y no anchura. **Y ya cazó un error de verdad**: el nivel 2 del mundo 2 se contó a mano en 17 y tenía un atajo de 15, antes de sembrarse |
 | `apps/web/src/components/dashboard/student/StudentLevelModule.tsx` | **Nuevo en el J7.1.** La pantalla de nivel, la primera de producto que monta el juego: lee la fila por su id, la comprueba con `openLevel`, y o monta el juego o enseña el rechazo del §7 **con palabras de niño**. Las instrucciones salen de la `narrative` de la fila. Posee la misma composición que el J6.3 ensayó en el laboratorio |
-| `apps/web/src/game/blockTypes.ts` | **Nuevo en el J5. Puro.** Cómo se llaman los tres bloques y su campo en el JSON. Vive aparte porque `blocks.ts` importa Blockly y **el intérprete no puede importarlo** |
-| `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` y devuelve `{ orders, rootCount }` —o `null` si no entiende algo—, `countSteps` suma los pasos **leyendo** las órdenes (§4.4), `runProgram` las pliega sobre la pose inicial con `turn` y `advance`, `hasLooseStacks` responde por los bloques de sobra y **`stepsTaken` da los pasos dados que enseña el contador**. Sin Blockly y sin `three` |
+| `apps/web/src/game/blockTypes.ts` | **Nuevo en el J5. Puro.** Cómo se llaman los bloques, el campo de pasos y la entrada del cuerpo de «saltar» en el JSON. Vive aparte porque `blocks.ts` importa Blockly y **el intérprete no puede importarlo** |
+| `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` —y por `inputs.BODY.block` dentro de un «saltar»— y devuelve `{ orders, rootCount }`, o `null` si no entiende algo o encuentra un salto dentro de otro; `countSteps` suma los pasos **leyendo** las órdenes (§4.4), con el salto al doble de su cuerpo; `runProgram` las pliega sobre la pose inicial y **cada paso saltado deja dos entradas, despegue y aterrizaje**, con su `motion`, para que el recorrido siga teniendo tantas entradas como pasos; `hasLooseStacks` responde por los bloques de sobra y **`stepsTaken` da los pasos dados que enseña el contador**. Sin Blockly y sin `three` |
 | `apps/web/src/game/interpreter.test.ts` | El recorrido y la meta, con el **PROGRAMA A del contrato §4.3 pegado tal cual** como entrada |
-| `apps/web/src/game/blocks.ts` | Los tres bloques —`avanzar N`, `girar a la izquierda`, `girar a la derecha`—, en español, y **la lista que enseña la caja** (`FLYOUT_BLOCKS`, sin categoría desde el J6.3). Importa `blockly/core` |
+| `apps/web/src/game/blocks.ts` | Los cuatro bloques —`avanzar N`, `girar a la izquierda`, `girar a la derecha` y, desde `salto-y-alturas`, **`saltar`, el primero con otros dentro**—, en español, y **la lista que enseña la caja** (`FLYOUT_BLOCKS`, sin categoría desde el J6.3). Una extensión desengancha un `saltar` soltado dentro de otro. Importa `blockly/core` |
 | `apps/web/src/game/blocks.test.ts` | El **viaje de ida y vuelta** contra un espacio de trabajo sin interfaz, que es lo único que valida la decisión del J3 |
 | `apps/web/src/game/BlockEditor.tsx` | El editor: inyecta el **lienzo** —sin caja—, carga el español, publica el programa y se limpia al desmontarse. Y crea **la caja aparte**: un `VerticalFlyout` suelto en el hueco que le baja la composición, con sus tres correcciones medidas |
 | `apps/web/src/game/BlockEditorLoader.tsx` | **La segunda frontera de carga diferida**, la de Blockly. Calcada de `GameSceneLoader`; baja además **el hueco de la caja** |
@@ -3282,7 +3285,7 @@ se edita a mano**.
 npx supabase gen types typescript --linked > apps/web/src/types/database.types.ts
 ```
 
-### 4.2b Seis de los nueve niveles sembrados siguen siendo de otro juego
+### 4.2b Cinco de los nueve niveles sembrados siguen siendo de otro juego
 
 Descubierto el 4-sep-2026 leyendo la migración 0012. Las nueve filas de `levels`
 llevan `validation_rules` del concepto anterior —el de escribir JavaScript—:
@@ -3299,10 +3302,18 @@ además de sembrar la configuración. Ver `DISENO-DEL-JUEGO.md` §2 y
 `siempre-adelante`; desde el J7.2 la del nivel 2 es `camino-con-curvas` —el
 primer tablero con giros y con huecos—, y desde el J7.3 la del nivel 3 es
 `la-escalera`, sin «repetir» por decisión del usuario. Las tres con el puzle en
-`validation_rules`, el sobre vacío en `starter_code` y `grid-blockly-1` en
-`programming_language`. **Quedan seis**, los de los mundos 2 y 3, y son el J12.
+`validation_rules`, el sobre vacío en `starter_code` y `grid-blockly-2` en
+`programming_language` —sembradas en la 1 y reescritas a la 2, con alturas a 1,
+por la 0027 de `salto-y-alturas`—.
 
-**Lo que eso significa hoy para quien abra cualquiera de los otros seis**: el
+**Y EL MUNDO 2 EMPEZÓ POR SU NIVEL 2**, `salta-y-sube`, el primero con subidas y
+con el bloque «saltar». Va en el 2 por decisión del usuario: el nivel 1 del mundo
+será uno más fácil que todavía no está diseñado, así que hoy el mundo 2 abre con
+un nivel 1 que la lista deja pulsar y que dice que todavía no se puede jugar.
+
+**Quedan cinco**: el 1 y el 3 del mundo 2 y los tres del mundo 3, que son el J12.
+
+**Lo que eso significa hoy para quien abra cualquiera de los otros cinco**: el
 juego los **rechaza enteros** por el camino del contrato §7 —`levelConfig.ts`— y
 la pantalla se lo dice al niño con palabras suyas, sin dibujar tablero a medias.
 No es un fallo: es el estado esperado hasta que cada uno se siembre.

@@ -1,6 +1,13 @@
-import { ADVANCE_BLOCK, STEPS_FIELD, TURN_LEFT_BLOCK, TURN_RIGHT_BLOCK } from './blockTypes';
+import {
+  ADVANCE_BLOCK,
+  JUMP_BLOCK,
+  JUMP_BODY,
+  STEPS_FIELD,
+  TURN_LEFT_BLOCK,
+  TURN_RIGHT_BLOCK,
+} from './blockTypes';
 import type { Cell, LevelConfig, Pose } from './level';
-import { advance, turn, type Blocker, type TurnSide } from './movement';
+import { advance, jumpAdvance, turn, type Blocker, type TurnSide } from './movement';
 import { openProgram, type Program, type WorkspaceState } from './program';
 
 /*
@@ -13,12 +20,15 @@ import { openProgram, type Program, type WorkspaceState } from './program';
  * conocerla es el trabajo de este archivo, no de aquél: si viviera allí, el J8 y
  * el J9 —que sólo abren y cierran el sobre— cargarían con ella sin usarla.
  *
- * Y no reimplementa ninguna regla de movimiento: `turn` y `advance` ya deciden
- * qué se puede pisar. Ejecutar es plegarlas sobre la pose inicial quedándose con
- * las intermedias.
+ * Y no reimplementa ninguna regla de movimiento: `turn`, `advance` y
+ * `jumpAdvance` ya deciden qué se puede pisar. Ejecutar es plegarlas sobre la
+ * pose inicial quedándose con las intermedias.
  */
 
-export type Order = { kind: 'advance'; steps: number } | { kind: 'turn'; side: TurnSide };
+export type Order =
+  | { kind: 'advance'; steps: number }
+  | { kind: 'turn'; side: TurnSide }
+  | { kind: 'jump'; body: Order[] };
 
 export interface ProgramReading {
   orders: Order[];
@@ -31,9 +41,22 @@ export interface ProgramReading {
   rootCount: number;
 }
 
+/*
+ * Cómo se mueve el personaje en cada entrada del recorrido, que es lo único que
+ * la escena necesita para elegir la animación.
+ *
+ * Un salto con algo dentro deja DOS entradas por cada paso de su cuerpo —el
+ * despegue y el aterrizaje— porque ese paso cuesta dos (§4.4), y el recorrido
+ * tiene que tener tantas entradas como pasos cuenta la lectura: de eso cuelgan el
+ * contador de la pantalla y los tests que atan las dos cuentas. Un salto vacío
+ * cuesta uno y deja una, `hop`.
+ */
+export type Motion = 'walk' | 'takeoff' | 'landing' | 'hop';
+
 export interface RunStep {
   pose: Pose;
   blockedBy: Blocker | null;
+  motion: Motion;
 }
 
 export interface Run {
@@ -48,6 +71,8 @@ export interface Run {
 interface SerializedBlock {
   type?: unknown;
   fields?: unknown;
+  /* Donde Blockly deja los bloques que van DENTRO de otro, cada entrada con su cadena. */
+  inputs?: unknown;
   /*
    * `block` puede faltar Y puede venir a `null`, que no es lo mismo para el
    * `?.` de abajo: Blockly escribe el `null` mientras se arrastra el bloque
@@ -118,56 +143,17 @@ const firstOnCanvas = (roots: SerializedBlock[]): SerializedBlock | undefined =>
     return coordinate(block.x) < coordinate(best.x) ? block : best;
   }, undefined);
 
-const readOrder = (block: SerializedBlock): Order | null => {
-  if (block.type === TURN_LEFT_BLOCK) {
-    return { kind: 'turn', side: 'left' };
-  }
-
-  if (block.type === TURN_RIGHT_BLOCK) {
-    return { kind: 'turn', side: 'right' };
-  }
-
-  if (block.type !== ADVANCE_BLOCK) {
-    return null;
-  }
-
-  const steps = isObject(block.fields) ? block.fields[STEPS_FIELD] : undefined;
-
-  if (typeof steps !== 'number' || !Number.isInteger(steps) || steps < 1) {
-    return null;
-  }
-
-  return { kind: 'advance', steps };
-};
-
 /*
- * Devuelve `null` cuando encuentra algo que no entiende —un tipo de bloque que
- * no es de los tres, o un número que no lo es—, y rechaza el programa ENTERO,
- * como `openProgram` con el sobre. Saltarse el bloque raro dejaría un programa
- * ejecutado a medias, jugado hasta el final y con un resultado que nadie podría
- * volver a explicar; es lo que el contrato §4.2 manda con una casilla de clase
- * desconocida y por el mismo motivo.
- *
- * Hoy el único productor es nuestro editor. El día que el programa venga de la
- * base (J8) o de un intento guardado, este camino deja de ser teórico.
- *
- * Devuelve además CUÁNTOS montones había, que es información que `readRoots` ya
- * tiene y que `firstOnCanvas` descarta al elegir uno. Sacarla por aquí es lo que
- * permite avisar de los bloques sueltos: contarlos fuera obligaría a repetir
- * `readRoots`, que además de contar valida la forma.
+ * Una secuencia: el bloque de arriba y los que cuelgan de él. Sirve igual para el
+ * programa entero que para el cuerpo de un salto, que es otra secuencia colgada
+ * de su entrada.
  */
-export const readProgram = (workspace: WorkspaceState): ProgramReading | null => {
-  const roots = readRoots(workspace);
-
-  if (roots === null) {
-    return null;
-  }
-
+const readChain = (first: unknown, insideJump: boolean): Order[] | null => {
   const orders: Order[] = [];
-  let block = firstOnCanvas(roots);
+  let block = isObject(first) ? (first as SerializedBlock) : undefined;
 
   while (block !== undefined) {
-    const order = readOrder(block);
+    const order = readOrder(block, insideJump);
 
     if (order === null) {
       return null;
@@ -186,7 +172,7 @@ export const readProgram = (workspace: WorkspaceState): ProgramReading | null =>
      * **la pantalla se queda en blanco**. Es lo que pasaba al separar dos
      * bloques pegados: mientras dura el arrastre, Blockly serializa el `next`
      * del de arriba con `block: null`, y el editor publica ese estado
-     * intermedio.
+     * intermedio. Dentro de un salto pasa lo mismo.
      *
      * Se para en vez de rechazar el programa entero porque eso es lo que se ve
      * en pantalla: el bloque de abajo está en el aire, y la cadena que queda
@@ -196,11 +182,78 @@ export const readProgram = (workspace: WorkspaceState): ProgramReading | null =>
     block = isObject(next) ? (next as SerializedBlock) : undefined;
   }
 
-  return { orders, rootCount: roots.length };
+  return orders;
+};
+
+const readOrder = (block: SerializedBlock, insideJump: boolean): Order | null => {
+  if (block.type === TURN_LEFT_BLOCK) {
+    return { kind: 'turn', side: 'left' };
+  }
+
+  if (block.type === TURN_RIGHT_BLOCK) {
+    return { kind: 'turn', side: 'right' };
+  }
+
+  if (block.type === JUMP_BLOCK) {
+    /*
+     * UN SALTO DENTRO DE OTRO no tiene regla —ni de cuánto cuesta ni de qué hace—,
+     * así que no se interpreta a medias: el programa entero es ilegible, igual
+     * que con un bloque desconocido. El editor ya no deja encajarlo; esto cubre
+     * lo que llegue por otro camino.
+     */
+    if (insideJump) {
+      return null;
+    }
+
+    const body = isObject(block.inputs) ? block.inputs[JUMP_BODY] : undefined;
+    const orders = readChain(isObject(body) ? body.block : undefined, true);
+
+    return orders === null ? null : { kind: 'jump', body: orders };
+  }
+
+  if (block.type !== ADVANCE_BLOCK) {
+    return null;
+  }
+
+  const steps = isObject(block.fields) ? block.fields[STEPS_FIELD] : undefined;
+
+  if (typeof steps !== 'number' || !Number.isInteger(steps) || steps < 1) {
+    return null;
+  }
+
+  return { kind: 'advance', steps };
 };
 
 /*
- * El recuento del contrato §4.4: `avanzar N` son N pasos y `girar` es uno.
+ * Devuelve `null` cuando encuentra algo que no entiende —un tipo de bloque que
+ * no es de los nuestros, un número que no lo es, un salto dentro de otro—, y
+ * rechaza el programa ENTERO, como `openProgram` con el sobre. Saltarse el
+ * bloque raro dejaría un programa ejecutado a medias, jugado hasta el final y
+ * con un resultado que nadie podría volver a explicar; es lo que el contrato
+ * §4.2 manda con una casilla de clase desconocida y por el mismo motivo.
+ *
+ * Devuelve además CUÁNTOS montones había, que es información que `readRoots` ya
+ * tiene y que `firstOnCanvas` descarta al elegir uno. Sacarla por aquí es lo que
+ * permite avisar de los bloques sueltos: contarlos fuera obligaría a repetir
+ * `readRoots`, que además de contar valida la forma.
+ */
+export const readProgram = (workspace: WorkspaceState): ProgramReading | null => {
+  const roots = readRoots(workspace);
+
+  if (roots === null) {
+    return null;
+  }
+
+  const orders = readChain(firstOnCanvas(roots), false);
+
+  return orders === null ? null : { orders, rootCount: roots.length };
+};
+
+/*
+ * El recuento del contrato §4.4: `avanzar N` son N pasos, `girar` es uno, un
+ * salto vacío es uno y un salto con cuerpo es EL DOBLE de su cuerpo. La regla del
+ * salto es del usuario: saltar ahorra bloques, no pasos, así que un salto con
+ * `avanzar 2` cuesta lo mismo que dos saltos con `avanzar 1`.
  *
  * Existe pudiendo usarse `runProgram(...).steps.length`, que da el mismo número,
  * porque §4.4 define el recuento como una LECTURA del programa —sin tablero,
@@ -210,7 +263,17 @@ export const readProgram = (workspace: WorkspaceState): ProgramReading | null =>
  * coincidirían por suerte.
  */
 export const countSteps = (orders: Order[]): number =>
-  orders.reduce((total, order) => total + (order.kind === 'advance' ? order.steps : 1), 0);
+  orders.reduce((total, order) => {
+    if (order.kind === 'advance') {
+      return total + order.steps;
+    }
+
+    if (order.kind === 'turn') {
+      return total + 1;
+    }
+
+    return total + (order.body.length === 0 ? 1 : 2 * countSteps(order.body));
+  }, 0);
 
 /*
  * Los pasos que el personaje LLEVA DADOS, que es lo que el contador enseña: cero
@@ -258,6 +321,11 @@ const isGoal = (goal: Cell, cell: Cell): boolean =>
  * programa: lo natural al escribir esto es parar, y parar hace que el recuento
  * del cliente y el del servidor dejen de poder coincidir con lo que se vio.
  *
+ * Saltando, cada paso del cuerpo son dos entradas: el despegue, en la pose de
+ * partida, y el aterrizaje, donde el salto lo deje —en la casilla siguiente, o en
+ * la misma si no pudo—. El despegue no mueve nada a propósito: la escena lee el
+ * aterrizaje que viene detrás para dibujar el arco entero.
+ *
  * Y pisar la meta cuenta aunque el programa siga y acabe en otra casilla, que es
  * la otra mitad de la misma regla: pasarse de largo es ineficiencia, y la
  * ineficiencia se paga en la puntuación, no invalidando el nivel.
@@ -267,22 +335,51 @@ export const runProgram = (config: LevelConfig, orders: Order[]): Run => {
   let pose = config.start;
   let success = isGoal(config.goal, pose.cell);
 
-  orders.forEach((order) => {
-    if (order.kind === 'turn') {
-      pose = { cell: pose.cell, facing: turn(pose.facing, order.side) };
-      steps.push({ pose, blockedBy: null });
+  const push = (next: Pose, blockedBy: Blocker | null, motion: Motion): void => {
+    pose = next;
+    steps.push({ pose, blockedBy, motion });
+    success = success || isGoal(config.goal, pose.cell);
+  };
 
-      return;
-    }
+  const execute = (list: Order[], jumping: boolean): void => {
+    list.forEach((order) => {
+      if (order.kind === 'jump') {
+        if (order.body.length === 0) {
+          push(pose, null, 'hop');
+        } else {
+          execute(order.body, true);
+        }
 
-    for (let step = 0; step < order.steps; step += 1) {
-      const result = advance(config, pose);
+        return;
+      }
 
-      pose = result.pose;
-      steps.push({ pose, blockedBy: result.blockedBy });
-      success = success || isGoal(config.goal, pose.cell);
-    }
-  });
+      if (order.kind === 'turn') {
+        const turned: Pose = { cell: pose.cell, facing: turn(pose.facing, order.side) };
+
+        if (jumping) {
+          push(pose, null, 'takeoff');
+        }
+
+        push(turned, null, jumping ? 'landing' : 'walk');
+
+        return;
+      }
+
+      for (let step = 0; step < order.steps; step += 1) {
+        if (jumping) {
+          push(pose, null, 'takeoff');
+
+          const landed = jumpAdvance(config, pose);
+          push(landed.pose, landed.blockedBy, 'landing');
+        } else {
+          const walked = advance(config, pose);
+          push(walked.pose, walked.blockedBy, 'walk');
+        }
+      }
+    });
+  };
+
+  execute(orders, false);
 
   return { steps, success };
 };

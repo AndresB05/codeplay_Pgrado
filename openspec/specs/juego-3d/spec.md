@@ -168,6 +168,17 @@ satisfactorio**: la pieza que hace de obstáculo junto a la meta es plana y se l
 como adorno. Archivarla habría metido aquí una garantía falsa, así que espera al
 paso que dibuje los obstáculos de verdad.
 
+**Y el tablero dejó de ser llano**, con el mundo 2. Desde `salto-y-alturas` cada
+casilla es una columna apoyada en el suelo, andando no se sube nada, y hay un
+**cuarto bloque, saltar, que es el primero que lleva otros dentro**: ejecuta
+saltando lo que tiene y sube un nivel. Siete garantías cambiaron con él —el
+tablero, el movimiento, cómo se construye y cómo se lee el programa, su
+ejecución, el recuento y la caja—, y ninguna nació nueva: el salto no es otra
+capacidad, es la misma con una orden más. La que más cuidado pide es la del
+recuento: **saltar cuesta el doble de lo que lleva dentro**, porque ahorra
+bloques y no pasos, y cada paso saltado se ve en dos tiempos —despegue y
+aterrizaje— para que lo que el contador cuenta siga siendo lo que se ve.
+
 ## Requirements
 
 ### Requirement: El juego se dibuja dentro de la aplicación
@@ -259,8 +270,9 @@ llevar ninguna cuadrícula fija escrita dentro del código que la dibuja. Cambia
 la configuración SHALL cambiar lo que se ve, sin tocar el dibujado.
 
 La configuración SHALL describir, como mínimo: qué casillas forman el tablero,
-cuáles se pueden pisar y cuáles no, en qué casilla empieza el personaje y hacia
-dónde mira, y cuál es la casilla de meta.
+cuáles se pueden pisar y cuáles no, **qué altura tiene cada casilla que existe**,
+en qué casilla empieza el personaje y hacia dónde mira, y cuál es la casilla de
+meta.
 
 El tablero NO SHALL ser necesariamente un rectángulo lleno. Una casilla que no se
 puede pisar SHALL ser de una de dos clases, y las dos SHALL distinguirse a la
@@ -268,6 +280,15 @@ vista:
 
 - un **hueco**, que es una casilla que no existe y por la que se ve el vacío;
 - un **muro**, que es una casilla que existe y que el personaje no puede pisar.
+
+**Cada casilla que existe SHALL ser una columna** de una altura entera de uno o
+más niveles, y SHALL dibujarse **apoyada en el suelo del tablero**: NO SHALL haber
+nada flotando. Un hueco NO SHALL tener altura. Una configuración en la que un
+hueco tenga altura o una casilla que existe no la tenga NO SHALL describir un
+tablero, y el nivel SHALL rechazarse entero.
+
+Un tablero cuyas casillas midan todas un nivel SHALL verse **igual que un tablero
+sin alturas**.
 
 Todas las casillas SHALL ocupar el mismo tamaño y SHALL quedar contiguas, **sin
 rendijas entre ellas**. Ese tamaño SHALL ser una constante del juego y NO SHALL
@@ -309,24 +330,46 @@ La casilla de salida y la de meta SHALL distinguirse a la vista del resto.
 - **THEN** se ve dónde acaba cada casilla y empieza la siguiente
 - **AND** el número de casillas que se cuentan es el que describe la configuración
 
+#### Scenario: La configuración describe casillas de varias alturas
+
+- **WHEN** la configuración da a una casilla altura tres y a su vecina altura uno
+- **THEN** la primera se ve como una columna tres niveles alta, apoyada en el suelo del tablero
+- **AND** el personaje, sobre cualquiera de las dos, aparece encima de su columna
+
+#### Scenario: Un hueco con altura
+
+- **WHEN** la configuración da altura a una casilla que es hueco, o deja sin altura una que existe
+- **THEN** el nivel se rechaza entero y no se dibuja ningún tablero
+
 ### Requirement: El personaje se mueve por casillas y no atraviesa nada
 
 El personaje SHALL ocupar **una casilla** del tablero y mirar hacia **una de las
-cuatro direcciones**. Su posición y su orientación SHALL cambiar únicamente por
-dos órdenes:
+cuatro direcciones**, y SHALL estar siempre **encima de la columna** de esa
+casilla. Su posición y su orientación SHALL cambiar únicamente por tres órdenes:
 
 - **avanzar**, que lo lleva a la casilla contigua en la dirección a la que mira,
   sin cambiar de orientación;
 - **girar** a un lado o al otro, que cambia su orientación un cuarto de vuelta
-  **sin cambiar de casilla**.
+  **sin cambiar de casilla**;
+- **saltar**, que ejecuta **saltando** las órdenes que lleva dentro, con las
+  reglas de abajo.
 
-Avanzar SHALL quedar sin efecto —el personaje se queda donde está, mirando a
-donde miraba— cuando la casilla de destino sea un muro, sea un hueco, o quede
-fuera del tablero. En ninguno de los tres casos SHALL el personaje salir del
-tablero, meterse en un hueco ni ocupar un muro.
+Avanzar SHALL llevarlo a una casilla contigua **de la misma altura o más baja**,
+sea cual sea la diferencia: bajar SHALL ser posible siempre que haya dónde pisar.
+Avanzar SHALL quedar sin efecto —el personaje se queda donde está, mirando a donde
+miraba— cuando la casilla de destino sea un muro, sea un hueco, quede fuera del
+tablero **o sea más alta que la suya**.
+
+**Avanzar saltando** SHALL llevarlo a una casilla contigua **un nivel más alta, de
+la misma altura o más baja**. SHALL quedar sin efecto —salta en el sitio y se
+queda— cuando la casilla de destino esté **dos o más niveles más alta**, sea un
+muro, sea un hueco o quede fuera del tablero.
+
+En ningún caso SHALL el personaje salir del tablero, meterse en un hueco, caer al
+vacío ni ocupar un muro.
 
 Girar SHALL ser siempre posible, sea cual sea la casilla que el personaje ocupa y
-lo que haya a su alrededor.
+lo que haya a su alrededor, también saltando.
 
 Las reglas anteriores SHALL depender únicamente de la configuración del nivel, de
 la casilla ocupada y de la orientación: NO SHALL depender de cómo se dibuje la
@@ -334,7 +377,7 @@ escena.
 
 #### Scenario: Avanzar hacia una casilla pisable
 
-- **WHEN** se ordena avanzar y la casilla contigua en la dirección a la que mira el personaje se puede pisar
+- **WHEN** se ordena avanzar y la casilla contigua en la dirección a la que mira el personaje se puede pisar y está a su misma altura
 - **THEN** el personaje pasa a ocupar esa casilla
 - **AND** sigue mirando hacia la misma dirección
 
@@ -353,6 +396,31 @@ escena.
 - **WHEN** se ordena avanzar y la dirección a la que mira el personaje lo sacaría del tablero
 - **THEN** el personaje se queda en su casilla, mirando hacia donde miraba
 
+#### Scenario: Avanzar hacia una casilla más alta
+
+- **WHEN** se ordena avanzar y la casilla contigua es un nivel o más alta que la del personaje
+- **THEN** el personaje se queda en su casilla, mirando hacia donde miraba
+
+#### Scenario: Avanzar hacia una casilla más baja
+
+- **WHEN** se ordena avanzar y la casilla contigua se puede pisar y es más baja, aunque sea varios niveles
+- **THEN** el personaje baja a esa casilla
+
+#### Scenario: Avanzar saltando a una casilla un nivel más alta
+
+- **WHEN** se ordena avanzar saltando y la casilla contigua se puede pisar y está un nivel más alta
+- **THEN** el personaje sube a esa casilla
+
+#### Scenario: Avanzar saltando a una casilla dos niveles más alta
+
+- **WHEN** se ordena avanzar saltando y la casilla contigua está dos o más niveles más alta
+- **THEN** el personaje salta en el sitio y se queda en su casilla, mirando hacia donde miraba
+
+#### Scenario: Avanzar saltando hacia un hueco
+
+- **WHEN** se ordena avanzar saltando y la casilla contigua es un hueco
+- **THEN** el personaje salta en el sitio y se queda en su casilla, sin caer
+
 #### Scenario: Girar sobre la propia casilla
 
 - **WHEN** se ordena girar a un lado
@@ -369,17 +437,21 @@ escena.
 El sistema SHALL ofrecer un **editor de bloques** en el que el niño construya el
 programa arrastrando piezas, sin escribir texto en ninguna parte.
 
-El juego de bloques disponible SHALL ser, por ahora, el mínimo con el que se
-recorre un tablero:
+El juego de bloques disponible SHALL ser, por ahora:
 
 - **avanzar**, con **cuántas casillas** avanzar escrito en el propio bloque;
 - **girar a la izquierda**;
-- **girar a la derecha**.
+- **girar a la derecha**;
+- **saltar**, que **lleva otros bloques dentro**.
 
 Los bloques SHALL poder **encadenarse en secuencia**, y el orden en que quedan
 encadenados SHALL ser el orden en que se leen. Un bloque suelto —que no cuelga de
 la secuencia— NO SHALL formar parte del programa. El niño SHALL poder **quitar**
 un bloque que ya colocó.
+
+**Dentro de saltar SHALL poder encadenarse** una secuencia de **avanzar y giros**,
+que es su cuerpo, y SHALL leerse en su orden. Dentro de saltar NO SHALL poder
+colocarse otro saltar. Un saltar sin nada dentro SHALL ser un bloque válido.
 
 El número de casillas del bloque de avanzar SHALL ser **un número escrito en el
 bloque**, nunca una expresión ni el resultado de otro bloque. Es lo que permite
@@ -414,6 +486,16 @@ medidas viejas.
 - **WHEN** se cambia el tamaño de la ventana con el editor visible
 - **THEN** el lienzo de bloques se redibuja ajustado a su zona
 
+#### Scenario: Se meten bloques dentro de saltar
+
+- **WHEN** el niño encaja un girar y después un avanzar dentro de un bloque saltar
+- **THEN** los dos quedan dentro de saltar, en ese orden, como su cuerpo
+
+#### Scenario: Se intenta meter un saltar dentro de otro
+
+- **WHEN** el niño arrastra un bloque saltar hasta el interior de otro saltar
+- **THEN** no queda dentro
+
 ### Requirement: El editor de bloques está entero en español
 
 Todo el texto del editor que el niño puede ver SHALL estar **en español**: el de
@@ -437,12 +519,13 @@ terminado y no lo está.
 ### Requirement: El programa se lee como JSON con la versión del formato pegada
 
 El sistema SHALL poder **leer el programa construido como JSON**, y ese JSON
-SHALL reflejar qué bloques hay y en qué orden.
+SHALL reflejar qué bloques hay, en qué orden **y cuáles van dentro de cuáles**.
 
 El JSON del programa SHALL viajar siempre **acompañado de la versión del
 formato**, pegada a los mismos datos que describe y no en un campo aparte, de
 modo que quien reciba sólo el programa sepa qué está leyendo. La versión SHALL
-ser la única que existe hoy.
+ser **`grid-blockly-2`**, la única que el juego acepta: la que nombra el tablero
+con alturas y el programa con bloques dentro de otros.
 
 Mientras no haya pantalla de nivel, el sistema SHALL **enseñar ese JSON** en el
 banco de pruebas, para que se pueda ver lo que los bloques producen.
@@ -462,6 +545,16 @@ banco de pruebas, para que se pueda ver lo que los bloques producen.
 
 - **WHEN** el niño arrastra o quita un bloque en el banco de pruebas
 - **THEN** el JSON que se enseña en pantalla pasa a reflejar el programa que hay
+
+#### Scenario: Se lee un programa con un saltar lleno
+
+- **WHEN** el lienzo tiene un saltar con bloques dentro y se lee el programa
+- **THEN** el JSON refleja el saltar y, dentro de él, sus bloques en su orden
+
+#### Scenario: Llega un nivel en la versión anterior
+
+- **WHEN** se abre un nivel cuya versión del formato es `grid-blockly-1`
+- **THEN** el nivel se rechaza entero, como cualquier versión que el juego no acepta
 
 ### Requirement: Un programa guardado se vuelve a cargar igual
 
@@ -495,19 +588,26 @@ le pide**: mientras no se pida, los bloques se colocan sin que nadie se mueva.
 
 Las órdenes SHALL ejecutarse **en el orden en que quedan encadenadas**, y cada
 una SHALL producir en el personaje el mismo efecto que produciría dada a mano:
-avanzar lo lleva a la casilla contigua en la dirección a la que mira, y girar le
-cambia la orientación sin sacarlo de su casilla.
+avanzar lo lleva a la casilla contigua en la dirección a la que mira, girar le
+cambia la orientación sin sacarlo de su casilla, y **saltar ejecuta su cuerpo
+saltando**.
 
 **La ejecución SHALL verse paso a paso**: cada casilla recorrida y cada giro
 SHALL representarse por separado y con una duración perceptible, de modo que se
 pueda seguir el recorrido con la vista. Un `avanzar` de varias casillas SHALL
 verse como varios movimientos de una casilla, no como un salto.
 
+**Saltar SHALL verse como un salto**: un saltar vacío, como un salto en el sitio;
+y cada orden de su cuerpo, como **un salto por cada una**. Un `avanzar` de varias
+casillas dentro de saltar SHALL verse como **un salto por casilla**, y un giro,
+como un salto durante el que el personaje gira. Subir, avanzar a la misma altura,
+bajar y quedarse en el sitio SHALL distinguirse a la vista.
+
 **Un avance imposible NO SHALL interrumpir la ejecución.** Cuando la casilla de
-destino sea un muro, un hueco o quede fuera del tablero, el personaje SHALL
-quedarse donde está, el intento SHALL **verse** —de modo que se entienda contra
-qué se ha topado— y el programa SHALL continuar con la orden siguiente. Esto vale
-también para las casillas que le queden a un `avanzar` de varias: las que no se
+destino no se pueda alcanzar, el personaje SHALL quedarse donde está, el intento
+SHALL **verse** —de modo que se entienda contra qué se ha topado— y el programa
+SHALL continuar con la orden siguiente. Esto vale también para las casillas que
+le queden a un `avanzar` de varias, dentro o fuera de saltar: las que no se
 pueden dar se intentan igual.
 
 Mientras una ejecución está en curso, el sistema NO SHALL empezar otra.
@@ -546,9 +646,24 @@ mover a nadie y sin error.
 
 #### Scenario: El programa choca contra algo que no se puede pisar
 
-- **WHEN** durante la ejecución le toca avanzar hacia un muro, un hueco o fuera del tablero
+- **WHEN** durante la ejecución le toca avanzar hacia un muro, un hueco, fuera del tablero o una casilla más alta
 - **THEN** se ve que el personaje lo intenta y no puede, y se queda en su casilla mirando hacia donde miraba
 - **AND** la ejecución continúa con la orden siguiente en lugar de detenerse
+
+#### Scenario: Se ejecuta un saltar con un avance de dos casillas por una escalera
+
+- **WHEN** se ejecuta un saltar con avanzar 2 dentro, delante de dos casillas que suben un nivel cada una
+- **THEN** el personaje sube la escalera con un salto por casilla, y cada salto se ve
+
+#### Scenario: Se ejecuta un saltar vacío
+
+- **WHEN** se ejecuta un saltar sin nada dentro
+- **THEN** se ve al personaje saltar en el sitio, sin cambiar de casilla ni de orientación
+
+#### Scenario: Se ejecuta un saltar con un giro y un avance dentro
+
+- **WHEN** se ejecuta un saltar con girar a la derecha y avanzar 1 dentro
+- **THEN** el personaje salta girando en su casilla y después salta a la casilla siguiente
 
 #### Scenario: Se pide ejecutar mientras se está ejecutando
 
@@ -652,13 +767,20 @@ tablero, sin saber dónde está el personaje y sin ejecutarlo.
 Las reglas del recuento SHALL ser:
 
 - **avanzar N** cuenta **N** pasos;
-- **girar** a un lado o al otro cuenta **un** paso.
+- **girar** a un lado o al otro cuenta **un** paso;
+- **saltar sin nada dentro** cuenta **un** paso;
+- **saltar con un cuerpo** cuenta **el doble de lo que cuenta su cuerpo**.
+
+La regla del salto la decidió el usuario el 13-sep-2026: **saltar ahorra bloques,
+no pasos**. Un saltar con avanzar 2 dentro cuesta lo mismo que dos saltar con
+avanzar 1, igual que avanzar 4 cuesta lo mismo que cuatro avanzar 1.
 
 Se SHALL contar los pasos **ordenados**, no los conseguidos: un `avanzar` de
-cuatro casillas contra un muro que está a dos cuenta **cuatro**. Chocar es
-ineficiencia y la ineficiencia es lo que se puntúa; contar lo conseguido
-obligaría a ejecutar para saber el número, y entonces quien no ejecuta —el
-servidor, al puntuar— contaría distinto.
+cuatro casillas contra un muro que está a dos cuenta **cuatro**, y un salto que
+se queda en el sitio cuenta lo mismo que uno que sube. Chocar es ineficiencia y la
+ineficiencia es lo que se puntúa; contar lo conseguido obligaría a ejecutar para
+saber el número, y entonces quien no ejecuta —el servidor, al puntuar— contaría
+distinto.
 
 El número que el juego le SHALL enseñar al niño SHALL ser **ese mismo**, y NO
 SHALL salir de contar lo que la ejecución produjo. Los dos caminos dan hoy el
@@ -691,6 +813,21 @@ Un programa sin ninguna orden SHALL costar **cero** pasos.
 
 - **WHEN** el programa no tiene ninguna orden
 - **THEN** el recuento es de cero pasos
+
+#### Scenario: Se cuenta un saltar vacío
+
+- **WHEN** el programa es un saltar sin nada dentro
+- **THEN** el recuento es de un paso
+
+#### Scenario: Se cuenta un saltar con un avance dentro
+
+- **WHEN** el programa es un saltar con avanzar 2 dentro
+- **THEN** el recuento es de cuatro pasos, los mismos que dos saltar con avanzar 1
+
+#### Scenario: Se cuenta un saltar con un giro y un avance dentro
+
+- **WHEN** el programa es un saltar con girar a la derecha y avanzar 1 dentro
+- **THEN** el recuento es de cuatro pasos
 
 ### Requirement: Al terminar se ve lo que costó y lo que costaba lo bueno
 
@@ -953,6 +1090,7 @@ El reparto SHALL ser:
 **El tablero SHALL verse entero por encima del lienzo.** Que el lienzo esté
 superpuesto al juego NO SHALL esconder ninguna casilla en la vista de partida:
 un personaje al que hay que buscar moviendo la cámara es un personaje perdido.
+Esto SHALL cumplirse también con **columnas de varias alturas**.
 
 **La caja de bloques SHALL seguir sirviendo para arrastrar.** Estar separada del
 lienzo NO SHALL convertirla en un dibujo: los bloques SHALL poder arrastrarse
@@ -989,7 +1127,7 @@ pulsa vive junto a la caja de bloques.
 #### Scenario: Se busca un bloque en la caja
 
 - **WHEN** el niño mira la caja de bloques
-- **THEN** ve los tres bloques a la vez, sin desplazar nada
+- **THEN** ve los cuatro bloques a la vez, saltar incluido, sin desplazar nada
 
 #### Scenario: Se arrastra un bloque desde la caja separada
 

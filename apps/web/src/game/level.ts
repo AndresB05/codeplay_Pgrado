@@ -42,6 +42,13 @@ export interface LevelConfig {
    * escribe `'gap'` y nunca acortando una fila, o `advance` lo trata como borde.
    */
   tiles: TileKind[][];
+  /**
+   * Cuántos cubos tiene la columna de cada casilla, alineada con `tiles`. Suelo
+   * y muro miden uno o más; un hueco mide cero. Las columnas se apoyan siempre en
+   * el suelo del tablero —nada flota—, así que no hace falta describir qué hay
+   * debajo de cada una.
+   */
+  heights: number[][];
   start: Pose;
   /** Se pisa mirando adonde sea: llegar no exige orientación. */
   goal: Cell;

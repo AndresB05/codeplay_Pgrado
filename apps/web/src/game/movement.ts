@@ -8,7 +8,13 @@ import { isWalkable, type Cell, type Direction, type LevelConfig, type Pose } fr
  * probar.
  */
 
-export type Blocker = 'wall' | 'gap' | 'edge';
+/*
+ * `high` es la columna demasiado alta: la que avanzar no sube nunca y saltar no
+ * sube si le saca dos niveles o más. Va con nombre propio y no disfrazada de muro
+ * porque la escena la enseña igual —un topetazo— pero no es lo mismo: un muro no
+ * se pisa nunca, y una columna alta se sube desde otra casilla.
+ */
+export type Blocker = 'wall' | 'gap' | 'edge' | 'high';
 
 export interface AdvanceResult {
   pose: Pose;
@@ -37,15 +43,17 @@ export const turn = (facing: Direction, side: TurnSide): Direction => {
  * la convención de los servicios —piezas que hablan con el exterior y fallan
  * por causas ajenas—. Un muro delante es una regla del juego.
  *
- * El motivo del bloqueo se devuelve aunque hoy no lo lea nadie: la función ya
- * tiene que distinguir los tres casos para decidir, así que sale gratis, y el
- * J5 lo necesita para decirle al niño por qué se paró.
- *
- * Y no muta la pose que recibe. Es lo que dejará al J5 ejecutar un programa
+ * Y no muta la pose que recibe. Es lo que deja al intérprete ejecutar un programa
  * plegando las órdenes sobre una pose inicial y quedarse con las intermedias
  * para animarlas.
+ *
+ * `climb` es lo único que distingue andar de saltar, y por eso las dos órdenes
+ * comparten esta función en vez de repetir las comprobaciones: cuántos niveles
+ * puede SUBIR el personaje de una casilla a la siguiente. Bajar no tiene límite
+ * —las columnas son pilares y siempre hay dónde pisar—, y caer al vacío no existe:
+ * un hueco bloquea igual.
  */
-export const advance = (config: LevelConfig, pose: Pose): AdvanceResult => {
+const reach = (config: LevelConfig, pose: Pose, climb: number): AdvanceResult => {
   const step = STEPS[pose.facing];
   const cell: Cell = {
     row: pose.cell.row + step.row,
@@ -62,5 +70,17 @@ export const advance = (config: LevelConfig, pose: Pose): AdvanceResult => {
     return { pose, blockedBy: kind === 'wall' ? 'wall' : 'gap' };
   }
 
+  const rise = config.heights[cell.row][cell.column] - config.heights[pose.cell.row][pose.cell.column];
+
+  if (rise > climb) {
+    return { pose, blockedBy: 'high' };
+  }
+
   return { pose: { cell, facing: pose.facing }, blockedBy: null };
 };
+
+/* Andando no se sube nada: a la misma altura o más abajo. */
+export const advance = (config: LevelConfig, pose: Pose): AdvanceResult => reach(config, pose, 0);
+
+/* Saltando se sube un nivel, nunca dos. */
+export const jumpAdvance = (config: LevelConfig, pose: Pose): AdvanceResult => reach(config, pose, 1);

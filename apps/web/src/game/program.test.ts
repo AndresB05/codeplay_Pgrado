@@ -5,7 +5,7 @@ import { PROGRAM_FORMAT_VERSION, openProgram, sealProgram } from './program';
  * El sobre, sin Blockly de por medio. Lo que aquí se prueba es la frontera que
  * el J8 y el J9 van a cruzar con datos que vienen de la base, así que los casos
  * malos importan tanto como el bueno: `submitted_code` es `text` sin `check` y
- * `starter_code` viene sembrado con la cadena vacía en las nueve filas.
+ * el valor por defecto de `starter_code` es la cadena vacía.
  *
  * El viaje de ida y vuelta del espacio de trabajo se prueba aparte, en
  * `blocks.test.ts`: son dos cosas distintas y sólo una necesita el editor.
@@ -31,8 +31,13 @@ describe('openProgram', () => {
     expect(openProgram(sealProgram(workspace))).toBe(workspace);
   });
 
+  /*
+   * La 1 va aquí a propósito: dejó de aceptarse al llegar las alturas, y un sobre
+   * suyo no puede colarse sólo porque su nombre se parezca al de la vigente.
+   */
   it('rechaza una versión desconocida sin leer nada de dentro', () => {
-    expect(openProgram({ formatVersion: 'grid-blockly-2', workspace })).toBeNull();
+    expect(openProgram({ formatVersion: 'grid-blockly-1', workspace })).toBeNull();
+    expect(openProgram({ formatVersion: 'grid-blockly-99', workspace })).toBeNull();
   });
 
   it('rechaza un sobre sin versión', () => {

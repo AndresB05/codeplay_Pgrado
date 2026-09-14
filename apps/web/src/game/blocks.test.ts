@@ -2,11 +2,14 @@ import * as Blockly from 'blockly/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
   ADVANCE_BLOCK,
+  JUMP_BLOCK,
+  JUMP_BODY,
   STEPS_FIELD,
   TURN_LEFT_BLOCK,
   TURN_RIGHT_BLOCK,
   defineGameBlocks,
 } from './blocks';
+import { countSteps, readProgram } from './interpreter';
 import { openProgram, sealProgram } from './program';
 
 /*
@@ -53,11 +56,71 @@ describe('los bloques del juego', () => {
     defineGameBlocks();
   });
 
-  it('define las tres órdenes y ninguna más', () => {
+  it('define las cuatro órdenes y ninguna más', () => {
     expect(Blockly.Blocks[ADVANCE_BLOCK]).toBeDefined();
     expect(Blockly.Blocks[TURN_LEFT_BLOCK]).toBeDefined();
     expect(Blockly.Blocks[TURN_RIGHT_BLOCK]).toBeDefined();
+    expect(Blockly.Blocks[JUMP_BLOCK]).toBeDefined();
     expect(Blockly.Blocks['controls_repeat_ext']).toBeUndefined();
+  });
+
+  /*
+   * EL PRIMER BLOQUE CON OTROS DENTRO, contra la salida REAL del editor y no
+   * contra una forma escrita a mano: el contrato §4.3 dejaba el anidamiento sin
+   * registrar a propósito hasta que existiera un bloque que lo produjera. Lo que
+   * se comprueba es el viaje entero —guardar, cerrar el sobre, abrirlo, volver a
+   * cargar— y que el intérprete lee lo que Blockly escribe.
+   */
+  it('va y vuelve con un saltar lleno, y el intérprete lo lee', () => {
+    const workspace = new Blockly.Workspace();
+    const jump = workspace.newBlock(JUMP_BLOCK);
+    const turnRight = workspace.newBlock(TURN_RIGHT_BLOCK);
+    const advanceOne = workspace.newBlock(ADVANCE_BLOCK);
+    advanceOne.setFieldValue(1, STEPS_FIELD);
+
+    jump.getInput(JUMP_BODY)!.connection!.connect(turnRight.previousConnection!);
+    turnRight.nextConnection!.connect(advanceOne.previousConnection!);
+
+    const saved = Blockly.serialization.workspaces.save(workspace);
+    const reopened = openProgram(JSON.parse(JSON.stringify(sealProgram(saved))));
+
+    const other = new Blockly.Workspace();
+    Blockly.serialization.workspaces.load(reopened!, other);
+
+    expect(Blockly.serialization.workspaces.save(other)).toEqual(saved);
+    expect(readProgram(saved)?.orders).toEqual([
+      {
+        kind: 'jump',
+        body: [
+          { kind: 'turn', side: 'right' },
+          { kind: 'advance', steps: 1 },
+        ],
+      },
+    ]);
+    expect(countSteps(readProgram(saved)!.orders)).toBe(4);
+
+    /*
+     * La forma que se registra en el contrato §4.3, copiada de lo que esto
+     * imprimió el 13-sep-2026: el cuerpo cuelga de `inputs.BODY.block` y sigue su
+     * propia cadena por `next`, igual que la secuencia principal.
+     */
+    expect(saved).toMatchObject({
+      blocks: {
+        blocks: [
+          {
+            type: JUMP_BLOCK,
+            inputs: {
+              [JUMP_BODY]: {
+                block: {
+                  type: TURN_RIGHT_BLOCK,
+                  next: { block: { type: ADVANCE_BLOCK, fields: { [STEPS_FIELD]: 1 } } },
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
   });
 
   it('deja el número de casillas dentro del propio bloque', () => {

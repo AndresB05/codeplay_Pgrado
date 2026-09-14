@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import level1Migration from '../../../../supabase/migrations/202606030024_level_1_vertical_board.sql?raw';
-import level2Migration from '../../../../supabase/migrations/202606030025_seed_level_2_world_1.sql?raw';
-import level3Migration from '../../../../supabase/migrations/202606030026_seed_level_3_world_1.sql?raw';
+import world1Migration from '../../../../supabase/migrations/202606030027_world_1_levels_format_2.sql?raw';
+import world2Level2Migration from '../../../../supabase/migrations/202606030028_seed_level_2_world_2.sql?raw';
 import { countSteps, runProgram, type Order } from './interpreter';
 import type { LevelConfig, Pose } from './level';
 import { readLevelConfig } from './levelConfig';
-import { advance, turn } from './movement';
+import { advance, jumpAdvance, turn } from './movement';
 
 /*
  * EL `optimalSteps` DE CADA NIVEL SEMBRADO, COMPROBADO EN LAS DOS DIRECCIONES.
@@ -14,72 +13,84 @@ import { advance, turn } from './movement';
  * salte ningún error, y uno por encima sólo se nota si alguien lo bate.
  *
  * Se lee de la MIGRACIÓN que lo siembra, no de una copia: si el SQL y el test se
- * separaran, la copia seguiría en verde mientras se juega otra cosa.
+ * separaran, la copia seguiría en verde mientras se juega otra cosa. Los tres del
+ * mundo 1 viven desde la versión 2 del formato en la 0027.
  */
-const seededConfig = (sql: string): LevelConfig => {
-  const match = /validation_rules = '([\s\S]*?)'::jsonb/.exec(sql);
+const seededConfig = (sql: string, sortOrder: number): LevelConfig => {
+  const update = sql
+    .split(/update public\.levels/)
+    .find((block) => block.includes(`and sort_order = ${sortOrder};`));
+  const match = update === undefined ? null : /validation_rules = '([\s\S]*?)'::jsonb/.exec(update);
   const config = match === null ? null : readLevelConfig(JSON.parse(match[1]));
 
   if (config === null) {
-    throw new Error('La migración ya no siembra un `config` legible.');
+    throw new Error(`La migración ya no siembra un \`config\` legible para el nivel ${sortOrder}.`);
   }
 
   return config;
 };
 
 /*
- * El mínimo real, buscado en anchura sobre (casilla, orientación). Avanzar una
- * casilla y girar cuestan 1, que es el recuento del contrato §4.4: `avanzar N`
- * cuesta lo mismo que N veces `avanzar 1`. Chocar gasta pasos sin mover, así que
- * un camino mínimo nunca choca y no hace falta explorarlo.
+ * El mínimo real, buscado sobre (casilla, orientación) con lo que cuesta cada
+ * movimiento según el contrato §4.4: andar una casilla o girar, 1; saltar a la
+ * casilla siguiente, 2. `avanzar N` cuesta lo mismo que N veces `avanzar 1`, y un
+ * salto con `avanzar N` lo mismo que N saltos, así que basta con movimientos de
+ * una casilla.
+ *
+ * Lo que NO se explora, y por qué no cambia el mínimo: chocar gasta pasos sin
+ * mover; saltar en el sitio o saltar girando cuesta más que no hacerlo o que
+ * girar andando.
+ *
+ * Con dos costes distintos ya no vale la búsqueda en anchura de antes: se expande
+ * siempre el estado más barato pendiente, que es Dijkstra con una cola escrita a
+ * mano —los tableros son de veinticinco casillas—.
  */
 const minimumSteps = (config: LevelConfig): number | null => {
   const key = ({ cell, facing }: Pose): string => `${cell.row},${cell.column},${facing}`;
-  const seen = new Set([key(config.start)]);
-  let frontier: Pose[] = [config.start];
+  const best = new Map<string, number>([[key(config.start), 0]]);
+  const pending: { pose: Pose; cost: number }[] = [{ pose: config.start, cost: 0 }];
 
-  for (let steps = 0; frontier.length > 0; steps += 1) {
-    if (
-      frontier.some(
-        ({ cell }) => cell.row === config.goal.row && cell.column === config.goal.column,
-      )
-    ) {
-      return steps;
+  while (pending.length > 0) {
+    pending.sort((a, b) => a.cost - b.cost);
+    const { pose, cost } = pending.shift()!;
+
+    if (cost > (best.get(key(pose)) ?? Infinity)) {
+      continue;
     }
 
-    const next: Pose[] = [];
+    if (pose.cell.row === config.goal.row && pose.cell.column === config.goal.column) {
+      return cost;
+    }
 
-    for (const pose of frontier) {
-      const moved = advance(config, pose);
-      const candidates = [
-        ...(moved.blockedBy === null ? [moved.pose] : []),
-        { cell: pose.cell, facing: turn(pose.facing, 'left') },
-        { cell: pose.cell, facing: turn(pose.facing, 'right') },
-      ];
+    const walked = advance(config, pose);
+    const jumped = jumpAdvance(config, pose);
+    const moves: { pose: Pose; cost: number }[] = [
+      { pose: { cell: pose.cell, facing: turn(pose.facing, 'left') }, cost: cost + 1 },
+      { pose: { cell: pose.cell, facing: turn(pose.facing, 'right') }, cost: cost + 1 },
+      ...(walked.blockedBy === null ? [{ pose: walked.pose, cost: cost + 1 }] : []),
+      ...(jumped.blockedBy === null ? [{ pose: jumped.pose, cost: cost + 2 }] : []),
+    ];
 
-      for (const candidate of candidates) {
-        if (!seen.has(key(candidate))) {
-          seen.add(key(candidate));
-          next.push(candidate);
-        }
+    for (const move of moves) {
+      if (move.cost < (best.get(key(move.pose)) ?? Infinity)) {
+        best.set(key(move.pose), move.cost);
+        pending.push(move);
       }
     }
-
-    frontier = next;
   }
 
   return null;
 };
 
-const levels: { name: string; sql: string; solution: Order[] }[] = [
+const levels: { name: string; config: LevelConfig; solution: Order[] }[] = [
   {
     name: 'nivel 1 del mundo 1',
-    sql: level1Migration,
+    config: seededConfig(world1Migration, 1),
     solution: [{ kind: 'advance', steps: 4 }],
   },
   {
     name: 'nivel 2 del mundo 1',
-    sql: level2Migration,
+    config: seededConfig(world1Migration, 2),
     solution: [
       { kind: 'advance', steps: 1 },
       { kind: 'turn', side: 'left' },
@@ -92,7 +103,7 @@ const levels: { name: string; sql: string; solution: Order[] }[] = [
   },
   {
     name: 'nivel 3 del mundo 1',
-    sql: level3Migration,
+    config: seededConfig(world1Migration, 3),
     solution: [
       { kind: 'advance', steps: 2 },
       { kind: 'turn', side: 'right' },
@@ -111,11 +122,30 @@ const levels: { name: string; sql: string; solution: Order[] }[] = [
       { kind: 'advance', steps: 3 },
     ],
   },
+  /*
+   * EL QUE ESTE TEST CAZÓ ANTES DE SEMBRARSE. A mano se dio por bueno el camino
+   * por la esquina, 17 pasos; la búsqueda encontró el salto directo del escalón a
+   * la meseta, 15. Es exactamente el fallo que esto existe para evitar.
+   */
+  {
+    name: 'nivel 2 del mundo 2',
+    config: seededConfig(world2Level2Migration, 2),
+    solution: [
+      { kind: 'advance', steps: 2 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'advance', steps: 2 },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'turn', side: 'left' },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'turn', side: 'left' },
+      { kind: 'advance', steps: 2 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'advance', steps: 1 },
+    ],
+  },
 ];
 
-describe.each(levels)('$name', ({ sql, solution }) => {
-  const config = seededConfig(sql);
-
+describe.each(levels)('$name', ({ config, solution }) => {
   it('la solución resuelta a mano llega a la meta con los pasos sembrados', () => {
     expect(runProgram(config, solution).success).toBe(true);
     expect(countSteps(solution)).toBe(config.optimalSteps);
@@ -123,5 +153,32 @@ describe.each(levels)('$name', ({ sql, solution }) => {
 
   it('no existe ningún programa más corto que los pasos sembrados', () => {
     expect(minimumSteps(config)).toBe(config.optimalSteps);
+  });
+});
+
+/*
+ * La búsqueda misma, contra un tablero donde saltar es obligatorio: si no supiera
+ * saltar, no llegaría; si contara el salto como un paso, daría menos.
+ *
+ *   columna   0   1   2   3
+ *   altura    1   2   3   3
+ */
+describe('minimumSteps con subidas', () => {
+  const stairs: LevelConfig = {
+    tiles: [['floor', 'floor', 'floor', 'floor']],
+    heights: [[1, 2, 3, 3]],
+    start: { cell: { row: 0, column: 0 }, facing: 'east' },
+    goal: { row: 0, column: 3 },
+    optimalSteps: 5,
+  };
+
+  it('sube saltando y cuenta cada salto como dos', () => {
+    expect(minimumSteps(stairs)).toBe(5);
+    expect(
+      countSteps([
+        { kind: 'jump', body: [{ kind: 'advance', steps: 2 }] },
+        { kind: 'advance', steps: 1 },
+      ]),
+    ).toBe(5);
   });
 });

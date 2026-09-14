@@ -18,10 +18,16 @@ export type WorkspaceState = Record<string, unknown>;
 
 /*
  * El token nombra el par: `grid` por la forma de `config`, `blockly` por el
- * interior del sobre y `1` por la versión. Si cambia cualquiera de las dos, el
- * juego desplegado no puede con ese nivel (§7).
+ * interior del sobre y el número por la versión. Si cambia cualquiera de las dos,
+ * el juego desplegado no puede con ese nivel (§7).
+ *
+ * La 2 llegó con las alturas del tablero y el bloque «saltar», que lleva otros
+ * dentro: cambiaron las dos formas a la vez. Es la ÚNICA que se acepta, y se pudo
+ * retirar la 1 sin coste porque todavía no había ningún intento guardado que la
+ * llevara; el día que los haya, cambiar de versión obligará a decidir qué se hace
+ * con ellos.
  */
-export const PROGRAM_FORMAT_VERSION = 'grid-blockly-1';
+export const PROGRAM_FORMAT_VERSION = 'grid-blockly-2';
 
 export interface Program {
   formatVersion: string;

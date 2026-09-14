@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import migration from '../../../../supabase/migrations/202606030023_seed_level_1_world_1.sql?raw';
-import level2Migration from '../../../../supabase/migrations/202606030025_seed_level_2_world_1.sql?raw';
-import level3Migration from '../../../../supabase/migrations/202606030026_seed_level_3_world_1.sql?raw';
+import migration from '../../../../supabase/migrations/202606030027_world_1_levels_format_2.sql?raw';
+import world2Level2Migration from '../../../../supabase/migrations/202606030028_seed_level_2_world_2.sql?raw';
 import { debugLevel } from './debugLevel';
 import { openLevel, readLevelConfig } from './levelConfig';
 import { PROGRAM_FORMAT_VERSION } from './program';
@@ -12,17 +11,21 @@ import { PROGRAM_FORMAT_VERSION } from './program';
  * niveles ya rediseñados, así que el camino de rechazo no es una hipótesis —se
  * recorre al abrir cualquiera de las demás—.
  *
- * EL `config` DEL NIVEL 1 SE LEE DE SU MIGRACIÓN, no se copia a mano aquí. Es un
- * puzle diseñado por el usuario, sembrado en una migración que una vez aplicada
- * no se edita, y el número de pasos óptimos no lo comprueba nadie: si el SQL y
- * este test se separaran, la copia de aquí seguiría en verde mientras lo que se
- * juega es otra cosa.
+ * LOS `config` DE LOS NIVELES SE LEEN DE SU MIGRACIÓN, no se copian a mano aquí.
+ * Son puzles diseñados por el usuario, sembrados en migraciones que una vez
+ * aplicadas no se editan, y el número de pasos óptimos no lo comprueba nadie: si
+ * el SQL y este test se separaran, la copia de aquí seguiría en verde mientras
+ * lo que se juega es otra cosa. Desde la versión 2 del formato los tres del mundo
+ * 1 viven en la 0027, que los reescribió con alturas.
  */
-const seededConfig = (sql: string = migration): unknown => {
-  const match = /validation_rules = '([\s\S]*?)'::jsonb/.exec(sql);
+const seededConfig = (sql: string, sortOrder: number): unknown => {
+  const update = sql
+    .split(/update public\.levels/)
+    .find((block) => block.includes(`and sort_order = ${sortOrder};`));
+  const match = update === undefined ? null : /validation_rules = '([\s\S]*?)'::jsonb/.exec(update);
 
   if (match === null) {
-    throw new Error('La migración ya no siembra `validation_rules` como se esperaba.');
+    throw new Error(`La migración ya no siembra el nivel ${sortOrder} como se esperaba.`);
   }
 
   return JSON.parse(match[1]);
@@ -38,19 +41,37 @@ const emptyEnvelope = `{"formatVersion":"${PROGRAM_FORMAT_VERSION}","workspace":
  */
 const previousGame = { goal: 'choose_safe_path', requiresCondition: true };
 
+/*
+ * Un tablero de dos casillas VÁLIDO EN TODO lo que los casos de rechazo no
+ * rompen. Cada caso cambia UNA cosa sobre él: si le faltaran las alturas, todos
+ * los rechazos saldrían en verde por ese motivo y ninguno probaría el suyo.
+ */
+const pair = {
+  tiles: [['floor', 'floor']],
+  heights: [[1, 1]],
+  start: { cell: { row: 0, column: 0 }, facing: 'east' },
+  goal: { row: 0, column: 1 },
+  optimalSteps: 1,
+};
+
 describe('readLevelConfig', () => {
-  it('acepta el puzle que siembra la migración del nivel 1', () => {
-    expect(readLevelConfig(seededConfig())).toEqual({
-      tiles: [['floor', 'floor', 'floor', 'floor']],
-      start: { cell: { row: 0, column: 0 }, facing: 'east' },
-      goal: { row: 0, column: 3 },
-      optimalSteps: 3,
+  it('acepta el tablero base de los casos de rechazo', () => {
+    expect(readLevelConfig(pair)).not.toBeNull();
+  });
+
+  it('acepta el puzle del nivel 1 tal y como lo reescribe la 0027', () => {
+    expect(readLevelConfig(seededConfig(migration, 1))).toEqual({
+      tiles: [['floor'], ['floor'], ['floor'], ['floor'], ['floor']],
+      heights: [[1], [1], [1], [1], [1]],
+      start: { cell: { row: 4, column: 0 }, facing: 'north' },
+      goal: { row: 0, column: 0 },
+      optimalSteps: 4,
     });
   });
 
   /* El primer tablero sembrado con huecos y con una salida que no mira al frente. */
-  it('acepta el puzle que siembra la migración del nivel 2', () => {
-    const config = readLevelConfig(seededConfig(level2Migration));
+  it('acepta el puzle del nivel 2 tal y como lo reescribe la 0027', () => {
+    const config = readLevelConfig(seededConfig(migration, 2));
 
     expect(config?.tiles).toHaveLength(5);
     expect(config?.tiles.every((row) => row.length === 5)).toBe(true);
@@ -59,19 +80,49 @@ describe('readLevelConfig', () => {
     expect(config?.optimalSteps).toBe(12);
   });
 
-  it('acepta el puzle que siembra la migración del nivel 3', () => {
-    const config = readLevelConfig(seededConfig(level3Migration));
+  it('acepta el puzle del nivel 3 tal y como lo reescribe la 0027', () => {
+    const config = readLevelConfig(seededConfig(migration, 3));
 
     expect(config?.tiles).toHaveLength(5);
-    expect(config?.tiles.every((row) => row.length === 5)).toBe(true);
     expect(config?.start).toEqual({ cell: { row: 4, column: 2 }, facing: 'west' });
     expect(config?.goal).toEqual({ row: 3, column: 4 });
     expect(config?.optimalSteps).toBe(20);
   });
 
+  /* La 0027 no cambia ningún puzle: gana alturas a 1 donde hay casilla y 0 donde no. */
+  it('la 0027 da altura 1 a cada casilla que existe y 0 a cada hueco', () => {
+    [1, 2, 3].forEach((sortOrder) => {
+      const config = readLevelConfig(seededConfig(migration, sortOrder));
+
+      config?.tiles.forEach((row, r) =>
+        row.forEach((kind, c) => expect(config.heights[r][c]).toBe(kind === 'gap' ? 0 : 1)),
+      );
+    });
+  });
+
+  /* El primer tablero sembrado con alturas distintas de 1. */
+  it('acepta el puzle del nivel 2 del mundo 2 tal y como lo siembra la 0028', () => {
+    const config = readLevelConfig(seededConfig(world2Level2Migration, 2));
+
+    expect(config?.heights).toEqual([
+      [0, 3, 0, 0, 0],
+      [0, 3, 3, 3, 3],
+      [1, 1, 1, 2, 3],
+      [1, 0, 0, 0, 0],
+      [1, 0, 0, 0, 0],
+    ]);
+    expect(config?.start).toEqual({ cell: { row: 4, column: 0 }, facing: 'north' });
+    expect(config?.goal).toEqual({ row: 0, column: 1 });
+    expect(config?.optimalSteps).toBe(15);
+  });
+
   /* Aceptar no puede depender de que el tablero sea trivial: éste lleva muro y hueco. */
   it('acepta un tablero con muros y huecos', () => {
     expect(readLevelConfig(JSON.parse(JSON.stringify(debugLevel)))).toEqual(debugLevel);
+  });
+
+  it('acepta columnas de varias alturas', () => {
+    expect(readLevelConfig({ ...pair, heights: [[1, 3]] })?.heights).toEqual([[1, 3]]);
   });
 
   it('rechaza el objeto vacío con que viene sembrada la columna', () => {
@@ -87,14 +138,7 @@ describe('readLevelConfig', () => {
    * que una versión que no se reconoce.
    */
   it('rechaza una casilla de clase desconocida', () => {
-    expect(
-      readLevelConfig({
-        tiles: [['floor', 'lava']],
-        start: { cell: { row: 0, column: 0 }, facing: 'east' },
-        goal: { row: 0, column: 1 },
-        optimalSteps: 1,
-      }),
-    ).toBeNull();
+    expect(readLevelConfig({ ...pair, tiles: [['floor', 'lava']] })).toBeNull();
   });
 
   /*
@@ -105,35 +149,36 @@ describe('readLevelConfig', () => {
   it('rechaza una fila más corta que las demás', () => {
     expect(
       readLevelConfig({
-        tiles: [
-          ['floor', 'floor'],
-          ['floor'],
-        ],
-        start: { cell: { row: 0, column: 0 }, facing: 'east' },
-        goal: { row: 0, column: 1 },
-        optimalSteps: 1,
+        ...pair,
+        tiles: [['floor', 'floor'], ['floor']],
+        heights: [[1, 1], [1]],
       }),
     ).toBeNull();
   });
 
+  it('rechaza un tablero sin alturas', () => {
+    expect(readLevelConfig({ ...pair, heights: undefined })).toBeNull();
+  });
+
+  /* La misma contradicción por los dos lados: dos maneras de decir si ahí hay casilla. */
+  it('rechaza un hueco con altura y una casilla que existe sin ella', () => {
+    expect(readLevelConfig({ ...pair, tiles: [['floor', 'gap']], heights: [[1, 1]] })).toBeNull();
+    expect(readLevelConfig({ ...pair, heights: [[1, 0]] })).toBeNull();
+  });
+
+  it('rechaza alturas que no casan con el tablero o que no son enteras', () => {
+    expect(readLevelConfig({ ...pair, heights: [[1]] })).toBeNull();
+    expect(readLevelConfig({ ...pair, heights: [[1, 1], [1, 1]] })).toBeNull();
+    expect(readLevelConfig({ ...pair, heights: [[1, 1.5]] })).toBeNull();
+    expect(readLevelConfig({ ...pair, heights: [[1, '2']] })).toBeNull();
+    expect(readLevelConfig({ ...pair, heights: [[1, -1]] })).toBeNull();
+  });
+
   it('rechaza una salida o una meta fuera del tablero', () => {
     expect(
-      readLevelConfig({
-        tiles: [['floor', 'floor']],
-        start: { cell: { row: 1, column: 0 }, facing: 'east' },
-        goal: { row: 0, column: 1 },
-        optimalSteps: 1,
-      }),
+      readLevelConfig({ ...pair, start: { cell: { row: 1, column: 0 }, facing: 'east' } }),
     ).toBeNull();
-
-    expect(
-      readLevelConfig({
-        tiles: [['floor', 'floor']],
-        start: { cell: { row: 0, column: 0 }, facing: 'east' },
-        goal: { row: 0, column: 2 },
-        optimalSteps: 1,
-      }),
-    ).toBeNull();
+    expect(readLevelConfig({ ...pair, goal: { row: 0, column: 2 } })).toBeNull();
   });
 
   /*
@@ -142,48 +187,22 @@ describe('readLevelConfig', () => {
    * cazar leyendo, a diferencia de un `optimalSteps` equivocado.
    */
   it('rechaza una salida o una meta sobre una casilla que no se pisa', () => {
-    expect(
-      readLevelConfig({
-        tiles: [['wall', 'floor']],
-        start: { cell: { row: 0, column: 0 }, facing: 'east' },
-        goal: { row: 0, column: 1 },
-        optimalSteps: 1,
-      }),
-    ).toBeNull();
-
-    expect(
-      readLevelConfig({
-        tiles: [['floor', 'gap']],
-        start: { cell: { row: 0, column: 0 }, facing: 'east' },
-        goal: { row: 0, column: 1 },
-        optimalSteps: 1,
-      }),
-    ).toBeNull();
+    expect(readLevelConfig({ ...pair, tiles: [['wall', 'floor']] })).toBeNull();
+    expect(readLevelConfig({ ...pair, tiles: [['floor', 'gap']], heights: [[1, 0]] })).toBeNull();
   });
 
   it('rechaza una orientación de salida que no existe', () => {
     expect(
-      readLevelConfig({
-        tiles: [['floor', 'floor']],
-        start: { cell: { row: 0, column: 0 }, facing: 'arriba' },
-        goal: { row: 0, column: 1 },
-        optimalSteps: 1,
-      }),
+      readLevelConfig({ ...pair, start: { cell: { row: 0, column: 0 }, facing: 'arriba' } }),
     ).toBeNull();
   });
 
   /* De este número sale la puntuación, y nada más en el sistema lo comprueba. */
   it('rechaza unos pasos óptimos que no son un entero positivo', () => {
-    const board = {
-      tiles: [['floor', 'floor']],
-      start: { cell: { row: 0, column: 0 }, facing: 'east' },
-      goal: { row: 0, column: 1 },
-    };
-
-    expect(readLevelConfig({ ...board, optimalSteps: 0 })).toBeNull();
-    expect(readLevelConfig({ ...board, optimalSteps: -3 })).toBeNull();
-    expect(readLevelConfig({ ...board, optimalSteps: 1.5 })).toBeNull();
-    expect(readLevelConfig({ ...board, optimalSteps: '3' })).toBeNull();
+    expect(readLevelConfig({ ...pair, optimalSteps: 0 })).toBeNull();
+    expect(readLevelConfig({ ...pair, optimalSteps: -3 })).toBeNull();
+    expect(readLevelConfig({ ...pair, optimalSteps: 1.5 })).toBeNull();
+    expect(readLevelConfig({ ...pair, optimalSteps: '3' })).toBeNull();
   });
 
   it('rechaza lo que no es un tablero', () => {
@@ -197,14 +216,14 @@ describe('readLevelConfig', () => {
 describe('openLevel', () => {
   const row = {
     formatVersion: PROGRAM_FORMAT_VERSION,
-    config: seededConfig(),
+    config: seededConfig(migration, 1),
     starterCode: emptyEnvelope,
   };
 
-  it('abre el nivel 1 tal y como lo siembra su migración', () => {
+  it('abre el nivel 1 tal y como lo reescribe la 0027', () => {
     const level = openLevel(row);
 
-    expect(level?.config.optimalSteps).toBe(3);
+    expect(level?.config.optimalSteps).toBe(4);
     expect(level?.workspace).toEqual({});
   });
 
@@ -221,6 +240,21 @@ describe('openLevel', () => {
   });
 
   /*
+   * La versión 1 dejó de aceptarse con las alturas: un tablero de la 1 no las
+   * trae, y su programa no sabría qué es un salto. Es el caso de las filas del
+   * mundo 1 mientras la 0027 no esté aplicada.
+   */
+  it('rechaza un nivel de la versión 1 del formato', () => {
+    expect(
+      openLevel({
+        ...row,
+        formatVersion: 'grid-blockly-1',
+        starterCode: '{"formatVersion":"grid-blockly-1","workspace":{}}',
+      }),
+    ).toBeNull();
+  });
+
+  /*
    * Las dos versiones tienen que ser la conocida, y eso es lo que hace que un
    * DESACUERDO entre ellas rechace el nivel: hoy sólo existe una versión, así
    * que coincidir y ser la conocida son lo mismo. Es el único caso que no se cae
@@ -229,7 +263,7 @@ describe('openLevel', () => {
    */
   it('rechaza el nivel cuando la versión del sobre no es la del nivel', () => {
     expect(
-      openLevel({ ...row, starterCode: '{"formatVersion":"grid-blockly-0","workspace":{}}' }),
+      openLevel({ ...row, starterCode: '{"formatVersion":"grid-blockly-1","workspace":{}}' }),
     ).toBeNull();
   });
 

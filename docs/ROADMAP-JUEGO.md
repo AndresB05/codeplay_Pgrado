@@ -108,7 +108,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J10** | La migración del XP: contar pasos y conceder por marca de agua | El XP sube 80, y 20 al mejorar. Nunca más de 100 | ⬜ |
 | **J11** | La barra de XP por tramos de 300 | El niño sube de nivel al terminar un mundo | ⬜ |
 | **J12** | **Mundos 2 y 3** — partido en seis, con el mismo patrón que el J7 | Hay nueve niveles jugables | ⬜ |
-| J12.1 · .2 · .3 | Los tres niveles del mundo 2, uno por punto | Cada nivel se juega desde la base en cuanto se cierra su punto | ⬜ |
+| J12.1 · .2 · .3 | Los tres niveles del mundo 2, uno por punto — **el 2 primero**, `salta-y-sube`, el primero con subidas, que trajo el bloque «saltar» y las alturas (`salto-y-alturas`); el 1 será uno más fácil, sin diseñar | Cada nivel se juega desde la base en cuanto se cierra su punto | 🔄 |
 | J12.5 · .6 · .7 | Los tres niveles del mundo 3, uno por punto | Igual que arriba | ⬜ |
 | **J13** | **Assets y diseño de los tres mundos**, en una sola pasada y con los nueve puzles jugándose | Los nueve niveles dejan los cubos: suelo, decorado, cámara y luz, y por último el personaje | ⬜ |
 
@@ -192,7 +192,9 @@ Para el J2 basta un concepto: **cada casilla es transitable o no lo es**. Eso
 cubre las dos cosas —un hueco es una casilla que no existe, un muro es una que
 existe y no se pisa—, y distinguirlas es cuestión de cómo se pintan, no de la
 estructura. **Sin alturas**: el diseño no las menciona en ninguna parte y §3 dice
-que un paso es una casilla recorrida o un giro, no un escalón.
+que un paso es una casilla recorrida o un giro, no un escalón. *(Verdad hasta el
+13-sep-2026: el mundo 2 las trajo con el bloque «saltar», y el contrato §4.2 las
+describe desde `salto-y-alturas`.)*
 
 El formato definitivo lo fija el J3 igualmente; el del J2 es provisional y a
 mano.
@@ -232,8 +234,9 @@ J10, ahí se cambia, y con casos reales delante.
 - **§4.3, el programa**: va dentro de un **sobre** `{ formatVersion, workspace }`,
   y el nativo de Blockly va dentro del sobre. El sobre existe porque el intento
   **no tiene ningún hueco propio** para la versión, y `metadata` es otra columna:
-  quien lea el programa solo se quedaría sin saber qué está leyendo. Valor único
-  hoy: `grid-blockly-1`.
+  quien lea el programa solo se quedaría sin saber qué está leyendo. El valor
+  único de entonces era `grid-blockly-1`; desde `salto-y-alturas` es
+  `grid-blockly-2`, y la 1 dejó de aceptarse.
 - **§4.4**, las reglas de recuento con un ejemplo resuelto sobre el tablero de
   §4.2 — dos programas que lo resuelven, de 10 y 11 pasos, para que el J6 y el
   J10 tengan contra qué comprobarse.
@@ -241,9 +244,10 @@ J10, ahí se cambia, y con casos reales delante.
 **El interior del sobre lo registró el J4**, no el J3: Blockly no estaba
 instalado —lo instaló ese paso, que es el primero que lo importa—, y transcribir
 de memoria la forma que serializa es transcribirla mal. Está en el contrato §4.3,
-copiado de una salida real, con el aviso de que **el anidamiento sigue sin
-ejemplo**: los tres bloques de hoy son planos y `repetir N veces [cuerpo]` no
-existe todavía.
+copiado de una salida real, con el aviso de que **el anidamiento seguía sin
+ejemplo** porque los bloques eran planos. Lo registró `salto-y-alturas` con el
+primer bloque que lleva otros dentro, «saltar»; `repetir N veces [cuerpo]` sigue
+sin existir.
 
 **Lo que el formato tiene que garantizar sí o sí**, venga de donde venga: que las
 repeticiones sean **números presentes en el programa**. Es lo que permite contar

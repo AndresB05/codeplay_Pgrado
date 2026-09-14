@@ -82,6 +82,14 @@ const STEP_SECONDS = 0.34;
 /** Cuánto se asoma el personaje contra lo que no puede pisar, antes de volver. */
 const BUMP_DISTANCE = 0.22;
 
+/*
+ * Lo alto que sube el arco de un salto por encima de la recta entre las dos
+ * casillas. Tiene que pasar holgado por encima de un nivel —si no, subir un
+ * escalón se ve como atravesarlo—, y no tanto que el personaje se salga del
+ * encuadre saltando en lo alto de una columna.
+ */
+const JUMP_HEIGHT = 0.9;
+
 const TWO_PI = Math.PI * 2;
 
 /*
@@ -255,6 +263,14 @@ const useBoardPlacement = (config: LevelConfig) =>
     ];
   }, [config]);
 
+/*
+ * La altura a la que se pisa una casilla, en metros del mundo. Una columna de un
+ * cubo tiene la cara de arriba en `y = 0`, que es donde ha pisado siempre el
+ * personaje: con todas las alturas a 1 nada cambia de sitio.
+ */
+const topOf = (config: LevelConfig, row: number, column: number): number =>
+  (config.heights[row][column] - 1) * TILE_SIZE;
+
 const Board = ({ config }: { config: LevelConfig }) => {
   const place = useBoardPlacement(config);
 
@@ -268,37 +284,53 @@ const Board = ({ config }: { config: LevelConfig }) => {
           }
 
           const [x, z] = place(row, column);
+          const height = config.heights[row][column];
           const isStart = config.start.cell.row === row && config.start.cell.column === column;
           const isGoal = config.goal.row === row && config.goal.column === column;
 
-          let slabColor = (row + column) % 2 === 0 ? FLOOR_COLOR : FLOOR_ALT_COLOR;
+          let topColor: string | null = null;
           if (kind === 'wall') {
-            slabColor = WALL_BASE_COLOR;
+            topColor = WALL_BASE_COLOR;
           } else if (isGoal) {
-            slabColor = GOAL_COLOR;
+            topColor = GOAL_COLOR;
           } else if (isStart) {
-            slabColor = START_COLOR;
+            topColor = START_COLOR;
           }
 
           return (
             <group key={`${row}-${column}`} position={[x, 0, z]}>
               {/*
-                * LA CASILLA ES UN CUBO, no una losa, y lo pidió el usuario
-                * mirando la pantalla: con 0,2 de canto el tablero se lee como
-                * una pegatina sobre el fondo, y con el lado completo se lee como
-                * terreno. Mide lo mismo que ocupa —el paso de la rejilla es
-                * 1,0—, así que no hay una segunda medida que mantener.
+                * LA CASILLA ES UNA COLUMNA DE CUBOS, uno por nivel, apoyada en el
+                * suelo del tablero: el usuario fijó que nada flota. Cada cubo mide
+                * lo que ocupa —el paso de la rejilla es 1,0—, así que no hay una
+                * segunda medida que mantener.
                 *
-                * Se hunde media altura porque la cara de arriba ES el plano de
-                * pisar, `y = 0`: nada de lo que anda por encima cambia de sitio.
+                * El de más abajo se hunde media altura porque la cara de arriba de
+                * una columna de UN cubo es el plano de pisar de siempre, `y = 0`.
+                *
+                * EL DAMERO SE EXTIENDE A LOS NIVELES, y no es adorno por lo mismo
+                * que no lo es en el suelo: dos cubos apilados del mismo color se
+                * leen como uno alto, y entonces no se cuentan los niveles que hay
+                * que subir. Sólo el de arriba lleva el color de la salida o la
+                * meta, que es la casilla que se pisa.
                 */}
-              <mesh position={[0, -TILE_SIZE / 2, 0]}>
-                <boxGeometry args={[TILE_SIZE, TILE_SIZE, TILE_SIZE]} />
-                <meshStandardMaterial color={slabColor} />
-              </mesh>
+              {Array.from({ length: height }, (_, level) => (
+                <mesh key={level} position={[0, (level - 0.5) * TILE_SIZE, 0]}>
+                  <boxGeometry args={[TILE_SIZE, TILE_SIZE, TILE_SIZE]} />
+                  <meshStandardMaterial
+                    color={
+                      level === height - 1 && topColor !== null
+                        ? topColor
+                        : (row + column + level) % 2 === 0
+                          ? FLOOR_COLOR
+                          : FLOOR_ALT_COLOR
+                    }
+                  />
+                </mesh>
+              ))}
 
               {kind === 'wall' && (
-                <mesh position={[0, TILE_SIZE / 2, 0]}>
+                <mesh position={[0, (height - 0.5) * TILE_SIZE, 0]}>
                   <boxGeometry args={[TILE_SIZE, TILE_SIZE, TILE_SIZE]} />
                   <meshStandardMaterial color={WALL_COLOR} />
                 </mesh>
@@ -317,11 +349,17 @@ interface CharacterProps {
   pose: Pose;
   /** El paso en curso, o `null` si no hay ejecución que animar. */
   step: RunStep | null;
+  /*
+   * El paso que viene después del en curso. Sólo lo lee el DESPEGUE de un salto:
+   * su pose no cambia —la lógica del salto vive en el aterrizaje—, y sin mirar
+   * adónde va a caer el arco no tendría hacia dónde ir.
+   */
+  nextStep: RunStep | null;
   stepIndex: number;
   onStepDone: (stepIndex: number) => void;
 }
 
-const Character = ({ config, pose, step, stepIndex, onStepDone }: CharacterProps) => {
+const Character = ({ config, pose, step, nextStep, stepIndex, onStepDone }: CharacterProps) => {
   const place = useBoardPlacement(config);
   const group = useRef<Group>(null);
 
@@ -340,6 +378,7 @@ const Character = ({ config, pose, step, stepIndex, onStepDone }: CharacterProps
   const angleFrom = useRef(FACING_ANGLE[pose.facing]);
 
   const [x, z] = place(pose.cell.row, pose.cell.column);
+  const y = topOf(config, pose.cell.row, pose.cell.column);
 
   useFrame((_, delta) => {
     const node = group.current;
@@ -359,6 +398,7 @@ const Character = ({ config, pose, step, stepIndex, onStepDone }: CharacterProps
       animated.current = null;
       angle.current = FACING_ANGLE[pose.facing];
       node.position.x = x;
+      node.position.y = y;
       node.position.z = z;
       node.rotation.y = angle.current;
 
@@ -374,7 +414,32 @@ const Character = ({ config, pose, step, stepIndex, onStepDone }: CharacterProps
     elapsed.current += delta;
 
     const progress = Math.min(elapsed.current / STEP_SECONDS, 1);
-    const [toX, toZ] = place(step.pose.cell.row, step.pose.cell.column);
+
+    /*
+     * UN SALTO SON DOS ENTRADAS Y UN SOLO ARCO. El recorrido lleva el despegue y
+     * el aterrizaje por separado porque cada casilla saltada cuesta dos pasos, y
+     * aquí se cosen: el despegue dibuja la primera mitad del arco —hacia donde
+     * caerá, que dice el paso siguiente— y el aterrizaje la segunda. Un salto
+     * vacío es el arco entero en el sitio.
+     *
+     * `along` es lo recorrido del trayecto completo, de la casilla de partida a la
+     * de llegada; en un paso andando coincide con el progreso.
+     */
+    let target = step.pose;
+    let alongFrom = 0;
+    let alongTo = 1;
+
+    if (step.motion === 'takeoff') {
+      target = nextStep?.pose ?? step.pose;
+      alongTo = 0.5;
+    } else if (step.motion === 'landing') {
+      alongFrom = 0.5;
+    }
+
+    const along = alongFrom + (alongTo - alongFrom) * progress;
+    const lift = step.motion === 'walk' ? 0 : JUMP_HEIGHT * 4 * along * (1 - along);
+    const [toX, toZ] = place(target.cell.row, target.cell.column);
+    const toY = topOf(config, target.cell.row, target.cell.column);
 
     /*
      * Un avance imposible no mueve al personaje, así que sin topetazo el paso
@@ -387,8 +452,9 @@ const Character = ({ config, pose, step, stepIndex, onStepDone }: CharacterProps
         : BUMP_DISTANCE * (progress < 0.5 ? progress * 2 : (1 - progress) * 2);
     const [offsetX, offsetZ] = FACING_OFFSET[step.pose.facing];
 
-    node.position.x = x + (toX - x) * progress + offsetX * bump;
-    node.position.z = z + (toZ - z) * progress + offsetZ * bump;
+    node.position.x = x + (toX - x) * along + offsetX * bump;
+    node.position.y = y + (toY - y) * along + lift;
+    node.position.z = z + (toZ - z) * along + offsetZ * bump;
 
     angle.current =
       angleFrom.current +
@@ -404,7 +470,7 @@ const Character = ({ config, pose, step, stepIndex, onStepDone }: CharacterProps
     <group
       ref={group}
       name={CHARACTER_NODE}
-      position={[x, 0, z]}
+      position={[x, y, z]}
       rotation={[0, FACING_ANGLE[pose.facing], 0]}
     >
       <mesh position={[0, 0.35, 0]}>
@@ -557,6 +623,7 @@ export const GameScene = ({ level, program, controlsHost, messageHost }: GameSce
   const active = attempt !== null && attempt.kind === 'run' ? attempt : null;
   const run = active === null ? null : active.run;
   const step = run !== null && !halted && index < run.steps.length ? run.steps[index] : null;
+  const nextStep = step !== null && run !== null ? (run.steps[index + 1] ?? null) : null;
   const pose = run === null || index === 0 ? config.start : run.steps[index - 1].pose;
   const isRunning = step !== null;
 
@@ -677,6 +744,7 @@ export const GameScene = ({ level, program, controlsHost, messageHost }: GameSce
             config={config}
             pose={pose}
             step={step}
+            nextStep={nextStep}
             stepIndex={index}
             onStepDone={advanceStep}
           />

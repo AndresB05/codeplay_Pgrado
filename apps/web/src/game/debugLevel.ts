@@ -23,6 +23,10 @@ import type { LevelConfig } from './level';
  * La mejor solución son diez pasos: girar a la derecha, avanzar cuatro por la
  * fila sur, girar a la izquierda y avanzar cuatro por la columna este. Es el
  * ejemplo resuelto del contrato §4.4, y de ahí sale `optimalSteps`.
+ *
+ * TODAS LAS ALTURAS VALEN 1, a propósito: el encuadre, la bandeja y las medidas
+ * del laboratorio se tomaron contra este tablero plano, y con alturas a 1 tiene
+ * que verse exactamente igual que antes de que existieran.
  */
 export const debugLevel: LevelConfig = {
   tiles: [
@@ -31,6 +35,13 @@ export const debugLevel: LevelConfig = {
     ['floor', 'floor', 'gap', 'floor', 'floor'],
     ['floor', 'wall', 'floor', 'wall', 'floor'],
     ['floor', 'floor', 'floor', 'floor', 'floor'],
+  ],
+  heights: [
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 0, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
   ],
   start: { cell: { row: 4, column: 0 }, facing: 'north' },
   goal: { row: 0, column: 4 },

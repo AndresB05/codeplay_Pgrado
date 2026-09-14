@@ -258,6 +258,29 @@ migración 0012 y se aplica como todo lo demás.
     - De datos, no de esquema; localiza la fila por `(world_id, sort_order)`, y
       su `optimalSteps` lo comprueba `levelSolutions.test.ts` como el de la 0025.
 
+27. `202606030027_world_1_levels_format_2.sql`
+    - Pasa **los tres niveles del mundo 1** a la versión 2 del formato,
+      `grid-blockly-2`, que llegó con `salto-y-alturas`: el tablero gana
+      `heights` y el programa un bloque con cuerpo. El juego sólo acepta ya la
+      2, así que sin esta migración el mundo 1 deja de jugarse.
+    - **No cambia ningún puzle**: mismos tableros, salidas, metas y pasos óptimos
+      —4, 12 y 20—, con altura 1 en cada casilla que existe y 0 en cada hueco.
+      Tampoco toca títulos, slugs ni textos.
+    - Tres `update` localizados por `(world_id, sort_order)`. De datos, no de
+      esquema. Los tests del juego leen los tres tableros de este archivo.
+
+28. `202606030028_seed_level_2_world_2.sql`
+    - Siembra el **nivel 2 de la Cordillera Binaria**, el primero del mundo 2 y
+      el primero con subidas: reescribe la fila que era «Mochila de Datos».
+      Tablero 5 × 5 de alturas 1, 2 y 3 que se sube con el bloque «saltar»,
+      salida mirando al norte y `optimalSteps` 15. Va en el nivel 2 por decisión
+      del usuario: el 1 será uno más fácil, sin diseñar.
+    - **Su `optimalSteps` se corrigió antes de aplicarse**: a mano se contaron 17
+      por el camino de la esquina, y la búsqueda del mínimo de
+      `levelSolutions.test.ts` encontró el salto directo del escalón a la meseta.
+    - De datos, no de esquema, en la versión 2 del formato; necesita la 0027
+      aplicada antes, que el orden de las migraciones garantiza.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI. **Va con `npx`**: la CLI
@@ -268,7 +291,7 @@ hay ninguna instalada en el PATH, así que el comando a secas no corre.
 npx supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las veintiséis migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las veintiocho migraciones —siembra
 incluida—:
 
 ```sh

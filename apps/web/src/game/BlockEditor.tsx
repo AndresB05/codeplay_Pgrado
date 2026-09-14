@@ -16,7 +16,7 @@ import { sealProgram, type Program, type WorkspaceState } from './program';
  */
 
 /*
- * El español no es sólo el texto de nuestros tres bloques —ése nace en español
+ * El español no es sólo el texto de nuestros bloques —ése nace en español
  * en `blocks.ts`—: son las categorías, los menús contextuales («Duplicate»,
  * «Delete Block»), los diálogos y los avisos, que son de Blockly. Se cargan sus
  * traducciones en vez de traducir a mano lo que se ve, porque un editor a medio
@@ -50,8 +50,9 @@ const BOX_INSET = 14;
 
 /*
  * LA REJILLA DE LA CAJA. Tres bloques por columna y dos columnas, o sea seis
- * huecos para los tres bloques de hoy: los mundos que vienen traen más, y una
- * caja que sólo enseña lo que ya tiene dentro se ve estrecha el día que llegan.
+ * huecos: los tres primeros bloques y, desde el mundo 2, «saltar». Se dejó sitio
+ * de sobra a propósito, porque una caja que sólo enseña lo que ya tiene dentro se
+ * ve estrecha el día que llegan más.
  *
  * `BOX_SCALE` es lo que se encoge un bloque de la caja respecto al que se suelta
  * en el lienzo, y sale de una medida, no del gusto: el más ancho de los tres

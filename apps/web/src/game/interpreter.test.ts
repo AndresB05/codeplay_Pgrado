@@ -36,10 +36,45 @@ const board: LevelConfig = {
     ['floor', 'wall', 'floor', 'wall', 'floor'],
     ['floor', 'floor', 'floor', 'floor', 'floor'],
   ],
+  heights: [
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 0, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+  ],
   start: { cell: { row: 4, column: 0 }, facing: 'north' },
   goal: { row: 0, column: 4 },
   optimalSteps: 10,
 };
+
+/*
+ * Una escalera, para el salto. Hay que saltar para subirla: andando se choca
+ * contra la columna de la 1, y saltando se sube de uno en uno.
+ *
+ *   columna   0   1   2   3
+ *   altura    1   2   3   3
+ */
+const stairs: LevelConfig = {
+  tiles: [['floor', 'floor', 'floor', 'floor']],
+  heights: [[1, 2, 3, 3]],
+  start: { cell: { row: 0, column: 0 }, facing: 'east' },
+  goal: { row: 0, column: 3 },
+  optimalSteps: 5,
+};
+
+/*
+ * Un saltar con girar a la derecha y avanzar 1 dentro, con la forma que Blockly
+ * escribe para un bloque con cuerpo: `inputs.BODY.block` y, desde ahí, su propia
+ * cadena `next`. La salida real la comprueba `blocks.test.ts` contra el editor;
+ * aquí se usa para los casos que el editor no produce.
+ */
+const jumpWith = (body: unknown) => ({
+  blocks: {
+    languageVersion: 0,
+    blocks: [{ type: 'codeplay_jump', x: 0, y: 0, inputs: { BODY: { block: body } } }],
+  },
+});
 
 /*
  * El PROGRAMA A del contrato §4.4 —girar derecha, avanzar 4, girar izquierda,
@@ -218,6 +253,55 @@ describe('readProgram', () => {
 
     expect(readProgram(workspace)).toBeNull();
   });
+
+  it('lee un saltar con su cuerpo en orden', () => {
+    const workspace = jumpWith({
+      type: 'codeplay_turn_right',
+      next: { block: { type: 'codeplay_advance', fields: { STEPS: 1 } } },
+    });
+
+    expect(readProgram(workspace)?.orders).toEqual([
+      {
+        kind: 'jump',
+        body: [
+          { kind: 'turn', side: 'right' },
+          { kind: 'advance', steps: 1 },
+        ],
+      },
+    ]);
+  });
+
+  it('un saltar sin nada dentro es un salto vacío, no un programa roto', () => {
+    const workspace = {
+      blocks: { languageVersion: 0, blocks: [{ type: 'codeplay_jump', x: 0, y: 0 }] },
+    };
+
+    expect(readProgram(workspace)?.orders).toEqual([{ kind: 'jump', body: [] }]);
+  });
+
+  /* El mismo `null` de un arrastre a mitad, pero dentro del cuerpo. */
+  it('un cuerpo con el bloque a null a mitad de un arrastre no revienta', () => {
+    expect(readProgram(jumpWith(null))?.orders).toEqual([{ kind: 'jump', body: [] }]);
+    expect(
+      readProgram(
+        jumpWith({ type: 'codeplay_advance', fields: { STEPS: 2 }, next: { block: null } }),
+      )?.orders,
+    ).toEqual([{ kind: 'jump', body: [{ kind: 'advance', steps: 2 }] }]);
+  });
+
+  it('rechaza el programa entero si un saltar lleva otro dentro', () => {
+    const nested = jumpWith({
+      type: 'codeplay_advance',
+      fields: { STEPS: 1 },
+      next: { block: { type: 'codeplay_jump' } },
+    });
+
+    expect(readProgram(nested)).toBeNull();
+  });
+
+  it('rechaza el programa entero si el cuerpo trae un bloque que no entiende', () => {
+    expect(readProgram(jumpWith({ type: 'controls_repeat_ext' }))).toBeNull();
+  });
 });
 
 describe('runProgram', () => {
@@ -296,6 +380,61 @@ describe('runProgram', () => {
     expect(run.steps[1].blockedBy).toBe('edge');
     expect(run.steps[1].pose.cell).toEqual(board.start.cell);
   });
+
+  it('andando se choca contra la escalera', () => {
+    const run = runProgram(stairs, [{ kind: 'advance', steps: 1 }]);
+
+    expect(run.steps).toEqual([
+      { pose: stairs.start, blockedBy: 'high', motion: 'walk' },
+    ]);
+  });
+
+  /*
+   * Dos entradas por casilla saltada, despegue y aterrizaje, porque esa casilla
+   * cuesta dos: es lo que mantiene el recorrido con tantas entradas como pasos
+   * cuenta la lectura.
+   */
+  it('saltando sube la escalera, con despegue y aterrizaje por casilla', () => {
+    const run = runProgram(stairs, [
+      { kind: 'jump', body: [{ kind: 'advance', steps: 2 }] },
+      { kind: 'advance', steps: 1 },
+    ]);
+
+    expect(run.success).toBe(true);
+    expect(run.steps.map((step) => step.motion)).toEqual([
+      'takeoff',
+      'landing',
+      'takeoff',
+      'landing',
+      'walk',
+    ]);
+    expect(run.steps.map((step) => step.pose.cell.column)).toEqual([0, 1, 1, 2, 3]);
+  });
+
+  it('un saltar vacío salta en el sitio con una sola entrada', () => {
+    const run = runProgram(stairs, [{ kind: 'jump', body: [] }]);
+
+    expect(run.steps).toEqual([{ pose: stairs.start, blockedBy: null, motion: 'hop' }]);
+  });
+
+  it('un salto que no alcanza su casilla aterriza donde despegó', () => {
+    const tooHigh: LevelConfig = { ...stairs, heights: [[1, 3, 3, 3]] };
+    const run = runProgram(tooHigh, [{ kind: 'jump', body: [{ kind: 'advance', steps: 1 }] }]);
+
+    expect(run.steps.map((step) => [step.motion, step.pose.cell.column, step.blockedBy])).toEqual([
+      ['takeoff', 0, null],
+      ['landing', 0, 'high'],
+    ]);
+  });
+
+  it('un giro dentro de un salto gira al aterrizar, sin cambiar de casilla', () => {
+    const run = runProgram(stairs, [{ kind: 'jump', body: [{ kind: 'turn', side: 'left' }] }]);
+
+    expect(run.steps).toEqual([
+      { pose: stairs.start, blockedBy: null, motion: 'takeoff' },
+      { pose: { cell: stairs.start.cell, facing: 'north' }, blockedBy: null, motion: 'landing' },
+    ]);
+  });
 });
 
 describe('countSteps', () => {
@@ -318,6 +457,7 @@ describe('countSteps', () => {
   it('cuenta sin tablero: el mismo programa cuesta lo mismo lo pise donde lo pise', () => {
     const otherBoard: LevelConfig = {
       tiles: [['floor', 'floor']],
+      heights: [[1, 1]],
       start: { cell: { row: 0, column: 0 }, facing: 'east' },
       goal: { row: 0, column: 1 },
       optimalSteps: 1,
@@ -348,6 +488,52 @@ describe('countSteps', () => {
 
   it('cuenta lo mismo que la ejecución aunque el programa choque', () => {
     expect(countSteps(BLOCKED_PROGRAM)).toBe(runProgram(board, BLOCKED_PROGRAM).steps.length);
+  });
+
+  it('un saltar vacío cuesta un paso', () => {
+    expect(countSteps([{ kind: 'jump', body: [] }])).toBe(1);
+  });
+
+  /* La regla del usuario: saltar ahorra bloques, no pasos. */
+  it('un saltar con avanzar 2 cuesta lo mismo que dos saltar con avanzar 1', () => {
+    const together: Order[] = [{ kind: 'jump', body: [{ kind: 'advance', steps: 2 }] }];
+    const apart: Order[] = [
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+    ];
+
+    expect(countSteps(together)).toBe(4);
+    expect(countSteps(apart)).toBe(4);
+  });
+
+  it('un saltar con girar y avanzar 1 dentro cuesta cuatro', () => {
+    expect(
+      countSteps([
+        {
+          kind: 'jump',
+          body: [
+            { kind: 'turn', side: 'right' },
+            { kind: 'advance', steps: 1 },
+          ],
+        },
+      ]),
+    ).toBe(4);
+  });
+
+  /*
+   * Y la misma atadura que los dos de arriba, con saltos: se rompe el día que un
+   * paso saltado deje UNA entrada en vez de dos, que es el atajo natural al
+   * animarlo.
+   */
+  it('cuenta lo mismo que la ejecución con saltos llenos, vacíos y fallidos', () => {
+    const orders: Order[] = [
+      { kind: 'jump', body: [] },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 3 }] },
+      { kind: 'jump', body: [{ kind: 'turn', side: 'left' }, { kind: 'advance', steps: 1 }] },
+      { kind: 'advance', steps: 2 },
+    ];
+
+    expect(countSteps(orders)).toBe(runProgram(stairs, orders).steps.length);
   });
 });
 

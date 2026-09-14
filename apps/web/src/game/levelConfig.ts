@@ -72,6 +72,49 @@ const readTiles = (value: unknown): TileKind[][] | null => {
   return tiles;
 };
 
+/*
+ * LAS ALTURAS SE COMPRUEBAN JUNTO A LAS CASILLAS, y no por separado: una casilla
+ * que existe mide uno o más niveles y un hueco mide exactamente cero. Un hueco
+ * con altura, o una casilla con cero, son la misma contradicción que el contrato
+ * evita al no tener un campo «transitable»: dos maneras de decir si ahí hay algo,
+ * que dejan de coincidir en cuanto alguien edita una. Se rechaza el nivel entero.
+ */
+const readHeights = (value: unknown, tiles: TileKind[][]): number[][] | null => {
+  if (!Array.isArray(value) || value.length !== tiles.length) {
+    return null;
+  }
+
+  const heights: number[][] = [];
+
+  for (let row = 0; row < tiles.length; row += 1) {
+    const line: unknown = value[row];
+
+    if (!Array.isArray(line) || line.length !== tiles[row].length) {
+      return null;
+    }
+
+    const levels: number[] = [];
+
+    for (let column = 0; column < line.length; column += 1) {
+      const height: unknown = line[column];
+
+      if (!isIndex(height)) {
+        return null;
+      }
+
+      if (tiles[row][column] === 'gap' ? height !== 0 : height < 1) {
+        return null;
+      }
+
+      levels.push(height);
+    }
+
+    heights.push(levels);
+  }
+
+  return heights;
+};
+
 const readCell = (value: unknown, rows: number, columns: number): Cell | null => {
   if (!isObject(value)) {
     return null;
@@ -117,6 +160,12 @@ export const readLevelConfig = (value: unknown): LevelConfig | null => {
     return null;
   }
 
+  const heights = readHeights(value.heights, tiles);
+
+  if (heights === null) {
+    return null;
+  }
+
   const rows = tiles.length;
   const columns = tiles[0].length;
 
@@ -155,7 +204,7 @@ export const readLevelConfig = (value: unknown): LevelConfig | null => {
     return null;
   }
 
-  return { tiles, start, goal, optimalSteps };
+  return { tiles, heights, start, goal, optimalSteps };
 };
 
 /*

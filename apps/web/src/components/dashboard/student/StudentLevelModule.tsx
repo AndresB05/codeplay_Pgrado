@@ -7,7 +7,7 @@ import { openLevel, type PlayableLevel } from '../../../game/levelConfig';
 import type { Program } from '../../../game/program';
 import { worldsService } from '../../../services/worlds.service';
 
-/* El rótulo de la caja: tres piezas, como los tres bloques que ofrece. */
+/* El rótulo de la caja: tres piezas encajadas, que es lo que se hace con los bloques. */
 const BlocksIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <rect x="2.5" y="12.5" width="8.5" height="8.5" rx="2.4" fill="#7B3FE4" />

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LevelConfig, Pose } from './level';
-import { advance, turn } from './movement';
+import { advance, jumpAdvance, turn } from './movement';
 
 /*
  * Los primeros tests del juego. El J1 no pudo llevar ninguno porque jsdom no
@@ -18,6 +18,10 @@ import { advance, turn } from './movement';
  *  S │  .   hueco .   │
  *    └────────────────┘
  *
+ * Plano, con todas las alturas a 1: estos tests son los de antes de que hubiera
+ * alturas, y tienen que seguir diciendo lo mismo. Las alturas tienen su tablero
+ * más abajo.
+ *
  * `optimalSteps` no lo mira ningún test —estas reglas no cuentan pasos—, pero el
  * tipo lo exige desde el J3. El valor es el real: avanzar, girar a la derecha y
  * avanzar.
@@ -28,9 +32,29 @@ const board: LevelConfig = {
     ['floor', 'floor', 'wall'],
     ['floor', 'gap', 'floor'],
   ],
+  heights: [
+    [1, 1, 1],
+    [1, 1, 1],
+    [1, 0, 1],
+  ],
   start: { cell: { row: 1, column: 1 }, facing: 'north' },
   goal: { row: 0, column: 2 },
   optimalSteps: 3,
+};
+
+/*
+ * Una fila de columnas para ejercitar las alturas, cada vecina elegida para un
+ * caso de la tabla de `design.md`:
+ *
+ *   columna   0   1   2   3   4   5
+ *   altura    1   2   2   4   1   hueco
+ */
+const hills: LevelConfig = {
+  tiles: [['floor', 'floor', 'floor', 'floor', 'floor', 'gap']],
+  heights: [[1, 2, 2, 4, 1, 0]],
+  start: { cell: { row: 0, column: 0 }, facing: 'east' },
+  goal: { row: 0, column: 4 },
+  optimalSteps: 1,
 };
 
 const poseAt = (row: number, column: number, facing: Pose['facing']): Pose => ({
@@ -107,6 +131,60 @@ describe('advance', () => {
     advance(board, pose);
 
     expect(pose).toEqual({ cell: { row: 1, column: 1 }, facing: 'north' });
+  });
+});
+
+describe('advance con alturas', () => {
+  it('choca contra una columna un nivel más alta', () => {
+    const result = advance(hills, poseAt(0, 0, 'east'));
+
+    expect(result.pose.cell).toEqual({ row: 0, column: 0 });
+    expect(result.blockedBy).toBe('high');
+  });
+
+  it('pasa a una columna de la misma altura', () => {
+    expect(advance(hills, poseAt(0, 1, 'east')).pose.cell).toEqual({ row: 0, column: 2 });
+  });
+
+  it('baja a una columna más baja, aunque sean varios niveles', () => {
+    expect(advance(hills, poseAt(0, 3, 'west')).pose.cell).toEqual({ row: 0, column: 2 });
+    expect(advance(hills, poseAt(0, 3, 'east')).pose.cell).toEqual({ row: 0, column: 4 });
+  });
+});
+
+describe('jumpAdvance', () => {
+  it('sube a una columna un nivel más alta', () => {
+    const result = jumpAdvance(hills, poseAt(0, 0, 'east'));
+
+    expect(result.pose.cell).toEqual({ row: 0, column: 1 });
+    expect(result.blockedBy).toBeNull();
+  });
+
+  it('avanza a una columna de la misma altura', () => {
+    expect(jumpAdvance(hills, poseAt(0, 1, 'east')).pose.cell).toEqual({ row: 0, column: 2 });
+  });
+
+  it('se queda en el sitio ante una columna dos niveles más alta', () => {
+    const result = jumpAdvance(hills, poseAt(0, 2, 'east'));
+
+    expect(result.pose).toEqual(poseAt(0, 2, 'east'));
+    expect(result.blockedBy).toBe('high');
+  });
+
+  it('baja saltando a una columna más baja', () => {
+    expect(jumpAdvance(hills, poseAt(0, 3, 'east')).pose.cell).toEqual({ row: 0, column: 4 });
+  });
+
+  it('no cae al vacío', () => {
+    const result = jumpAdvance(hills, poseAt(0, 4, 'east'));
+
+    expect(result.pose.cell).toEqual({ row: 0, column: 4 });
+    expect(result.blockedBy).toBe('gap');
+  });
+
+  it('no sube un muro ni sale del tablero', () => {
+    expect(jumpAdvance(board, poseAt(1, 1, 'east')).blockedBy).toBe('wall');
+    expect(jumpAdvance(hills, poseAt(0, 0, 'west')).blockedBy).toBe('edge');
   });
 });
 

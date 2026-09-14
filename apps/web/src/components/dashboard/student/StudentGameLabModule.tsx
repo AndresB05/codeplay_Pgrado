@@ -23,7 +23,7 @@ const CubeIcon = () => (
   </svg>
 );
 
-/* El rótulo de la caja: tres piezas, como los tres bloques que ofrece. */
+/* El rótulo de la caja: tres piezas encajadas, que es lo que se hace con los bloques. */
 const BlocksIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <rect x="2.5" y="12.5" width="8.5" height="8.5" rx="2.4" fill="#7B3FE4" />
@@ -324,7 +324,7 @@ export const StudentGameLabModule = () => {
 
             {/*
              * El hueco de la caja. Va `relative` porque el flyout se coloca
-             * absoluto dentro de él, y su alto es el que los tres bloques piden:
+             * absoluto dentro de él, y su alto es el que la rejilla de bloques pide:
              * la caja ya no lo hereda del lienzo, ver `BlockEditor.tsx`.
              */}
             <div className="mt-2.5 rounded-[18px] bg-mist-soft p-2">

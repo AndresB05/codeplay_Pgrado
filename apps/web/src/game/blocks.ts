@@ -1,5 +1,12 @@
 import * as Blockly from 'blockly/core';
-import { ADVANCE_BLOCK, STEPS_FIELD, TURN_LEFT_BLOCK, TURN_RIGHT_BLOCK } from './blockTypes';
+import {
+  ADVANCE_BLOCK,
+  JUMP_BLOCK,
+  JUMP_BODY,
+  STEPS_FIELD,
+  TURN_LEFT_BLOCK,
+  TURN_RIGHT_BLOCK,
+} from './blockTypes';
 
 /*
  * Los bloques del juego y la caja de herramientas que los ofrece.
@@ -26,13 +33,14 @@ import { ADVANCE_BLOCK, STEPS_FIELD, TURN_LEFT_BLOCK, TURN_RIGHT_BLOCK } from '.
 const ADVANCE_COLOR = '#3B9DF8'; // sky
 const TURN_LEFT_COLOR = '#FF8A3D'; // papaya
 const TURN_RIGHT_COLOR = '#7B3FE4'; // grape
+const JUMP_COLOR = '#17C3B2'; // mint
 
 /*
- * Los nombres de los tres bloques nacen en `blockTypes.ts`, sin Blockly, para
- * que el intérprete pueda leerlos sin cruzar la frontera. Se reexportan aquí
- * porque quien trabaja con los bloques los busca en este archivo.
+ * Los nombres de los bloques nacen en `blockTypes.ts`, sin Blockly, para que el
+ * intérprete pueda leerlos sin cruzar la frontera. Se reexportan aquí porque
+ * quien trabaja con los bloques los busca en este archivo.
  */
-export { ADVANCE_BLOCK, STEPS_FIELD, TURN_LEFT_BLOCK, TURN_RIGHT_BLOCK };
+export { ADVANCE_BLOCK, JUMP_BLOCK, JUMP_BODY, STEPS_FIELD, TURN_LEFT_BLOCK, TURN_RIGHT_BLOCK };
 
 /*
  * LOS ICONOS DE LOS BLOQUES, en línea y no como ficheros.
@@ -56,6 +64,8 @@ const ROTATE_LEFT = icon(
 const ROTATE_RIGHT = icon(
   'M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z',
 );
+
+const JUMP_UP = icon('M12 3l5.5 6.5H14V14h-4V9.5H6.5L12 3zM3 18h5v2H3v-2zm13 0h5v2h-5v-2z');
 
 const ICON_SIZE = 20;
 const iconField = (src: string, alt: string) => ({
@@ -119,7 +129,59 @@ const BLOCK_DEFINITIONS = [
     colour: TURN_RIGHT_COLOR,
     tooltip: 'Gira un cuarto de vuelta sin cambiar de casilla.',
   },
+  /*
+   * SALTAR LLEVA OTROS BLOQUES DENTRO, y es el primero que lo hace: los ejecuta
+   * en orden, saltando, como una función. Vacío salta en el sitio. Se decidió con
+   * el usuario el 13-sep-2026 al diseñar el mundo 2.
+   *
+   * El cuerpo es una entrada de sentencias y no un campo, al revés que el número
+   * de avanzar: aquí lo que va dentro son órdenes, no una cantidad, y el recuento
+   * sigue pudiendo leerse porque cada una trae su propio número (§4.4).
+   */
+  {
+    type: JUMP_BLOCK,
+    message0: '%1 saltar',
+    args0: [iconField(JUMP_UP, 'saltar')],
+    message1: '%1',
+    args1: [{ type: 'input_statement', name: JUMP_BODY }],
+    previousStatement: null,
+    nextStatement: null,
+    colour: JUMP_COLOR,
+    tooltip: 'Hace saltando lo que pongas dentro. Así se sube a una casilla un nivel más alta.',
+    extensions: ['codeplay_no_nested_jump'],
+  },
 ];
+
+/*
+ * UN SALTAR NO SE QUEDA DENTRO DE OTRO. No tiene regla —ni de lo que cuesta ni de
+ * lo que hace—, y el intérprete rechaza entero el programa que lo traiga; aquí se
+ * evita que el niño lo construya sin darse cuenta.
+ *
+ * No se puede decir con los `check` de las conexiones: un saltar colgado del
+ * `next` de un avanzar que ya está dentro de otro conecta con el avanzar, no con
+ * el salto de fuera, y esa conexión es legal en cualquier otro sitio. Lo que sí
+ * sabe dónde ha acabado el bloque es `getSurroundParent`, así que se mira al
+ * soltarlo y se saca de ahí, cerrando el hueco que deja.
+ */
+const NO_NESTED_JUMP = 'codeplay_no_nested_jump';
+
+const registerNoNestedJump = (): void => {
+  if (Blockly.Extensions.isRegistered(NO_NESTED_JUMP)) {
+    return;
+  }
+
+  Blockly.Extensions.register(NO_NESTED_JUMP, function (this: Blockly.Block) {
+    this.setOnChange((event) => {
+      if (event.type !== Blockly.Events.BLOCK_MOVE || this.isInFlyout) {
+        return;
+      }
+
+      if (this.getSurroundParent()?.type === JUMP_BLOCK) {
+        this.unplug(true);
+      }
+    });
+  });
+};
 
 /*
  * Las definiciones viven en un registro global de Blockly, así que definirlas
@@ -131,11 +193,12 @@ export const defineGameBlocks = (): void => {
     return;
   }
 
+  registerNoNestedJump();
   Blockly.defineBlocksWithJsonArray(BLOCK_DEFINITIONS);
 };
 
 /*
- * Los tres bloques que la caja ofrece, sin categoría que los envuelva.
+ * Los bloques que la caja ofrece, sin categoría que los envuelva.
  *
  * Hasta el J6.3 esto era un `categoryToolbox` de una sola categoría, porque la
  * caja se inyectaba con el lienzo. Desde que vive SEPARADA —en la columna
@@ -147,4 +210,5 @@ export const FLYOUT_BLOCKS: Blockly.utils.toolbox.FlyoutItemInfoArray = [
   { kind: 'block', type: ADVANCE_BLOCK },
   { kind: 'block', type: TURN_LEFT_BLOCK },
   { kind: 'block', type: TURN_RIGHT_BLOCK },
+  { kind: 'block', type: JUMP_BLOCK },
 ];

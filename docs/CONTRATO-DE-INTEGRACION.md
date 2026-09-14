@@ -141,10 +141,16 @@ La puntuación mide **eficiencia**: cuantos menos pasos use el niño para llegar
 la meta, más alta. Y el servidor puede calcularla él mismo, porque el programa de
 bloques le llega entero y en JSON (§4) — no necesita que nadie se la diga.
 
-**Un paso es una casilla recorrida o un giro.** Avanzar cuatro casillas son
-cuatro pasos; girar es uno, y ocurre sin cambiar de casilla. Se cuentan
+**Un paso es una casilla recorrida, un giro o un salto.** Avanzar cuatro casillas
+son cuatro pasos; girar es uno, y ocurre sin cambiar de casilla. Se cuentan
 movimientos, no bloques: repetir cuatro veces «avanzar» son cuatro pasos aunque
 se escriba con dos bloques.
+
+**Saltar cuesta el doble de lo que se hace saltando.** El bloque «saltar» lleva
+otros dentro y los ejecuta saltando: vacío cuesta un paso, y con bloques dentro
+cuesta el doble de lo que costarían esos bloques sueltos. Sigue siendo la misma
+regla: un salto con «avanzar 2» dentro cuesta lo mismo que dos saltos con
+«avanzar 1», así que saltar ahorra bloques y no pasos. Decidido el 13-sep-2026.
 
 Eso le impone una condición al formato del programa: **las repeticiones tienen
 que ser números presentes en el propio programa**. Mientras lo sean, el servidor
@@ -230,6 +236,13 @@ Un nivel de rejilla se describe así, y esto es un ejemplo completo y válido:
     ["floor", "wall",  "floor", "wall",  "floor"],
     ["floor", "floor", "floor", "floor", "floor"]
   ],
+  "heights": [
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 0, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1]
+  ],
   "start": { "cell": { "row": 4, "column": 0 }, "facing": "north" },
   "goal": { "row": 0, "column": 4 },
   "optimalSteps": 10
@@ -239,6 +252,7 @@ Un nivel de rejilla se describe así, y esto es un ejemplo completo y válido:
 | Campo | Tipo | Qué es |
 | --- | --- | --- |
 | `tiles` | matriz de textos | El tablero. Filas de **norte a sur**, columnas de **oeste a este**. Cada casilla es `floor`, `wall` o `gap` |
+| `heights` | matriz de enteros | La altura de cada casilla, alineada con `tiles`: cuántos cubos tiene su columna. `floor` y `wall`, 1 o más; `gap`, exactamente 0 |
 | `start` | pose | Dónde empieza el personaje **y hacia dónde mira**: `north`, `east`, `south` o `west` |
 | `goal` | casilla | Dónde hay que llegar. `row` y `column`, sin orientación |
 | `optimalSteps` | entero > 0 | Los pasos de la mejor solución posible. Ver §4.4 |
@@ -276,9 +290,24 @@ cosa, y mezclarlos es el error clásico del género.
 adonde sea: exigir una orientación al llegar sería una regla de juego más, y
 ninguno de los nueve niveles la pide.
 
-**Sin alturas.** Un paso es una casilla recorrida o un giro, nunca un escalón
-(§3). Un tablero con pisos obligaría a revisar el recuento entero, y nada del
-diseño los pide.
+**Con alturas, desde el 13-sep-2026.** Hasta ese día este apartado decía «sin
+alturas», porque nada del diseño las pedía; las pidió el mundo 2, que ya no es un
+camino llano sino una subida. Cada casilla que existe es una **columna** de uno o
+más cubos, y **se apoya siempre en el suelo del tablero**: nada flota, así que
+basta un número por casilla para describir qué hay debajo.
+
+- **Andando** se pasa a una casilla de la **misma altura o más baja**, sin límite
+  de bajada. Contra una **más alta** se choca, como contra un muro.
+- **Saltando** se sube **un nivel**, se avanza a la misma altura o se baja. Contra
+  una casilla **dos o más niveles más alta**, un hueco, un muro o el borde, se
+  salta en el sitio y se queda.
+- **No se cae al vacío**: bajar exige una casilla donde pisar.
+
+**El hueco mide 0 y lo que existe mide 1 o más**, y las dos matrices se comprueban
+juntas: un hueco con altura o una casilla con 0 son dos maneras de decir si ahí
+hay algo que no coinciden, y se rechaza el nivel entero, igual que una clase de
+casilla desconocida. Un tablero con todas las alturas a 1 se juega exactamente
+igual que uno sin alturas.
 
 **`optimalSteps` va aquí, y lo decide este documento.** Hasta hoy el número de
 pasos de la mejor solución no tenía sitio asignado en ninguna parte. Va en
@@ -330,7 +359,7 @@ El programa viaja **dentro de un sobre**, y el sobre lleva la versión:
 
 ```json
 {
-  "formatVersion": "grid-blockly-1",
+  "formatVersion": "grid-blockly-2",
   "workspace": { "…": "lo que serialicen los bloques" }
 }
 ```
@@ -365,7 +394,7 @@ girar izquierda, avanzar 4— tal y como lo serializa el editor:
 
 ```json
 {
-  "formatVersion": "grid-blockly-1",
+  "formatVersion": "grid-blockly-2",
   "workspace": {
     "blocks": {
       "languageVersion": 0,
@@ -436,20 +465,72 @@ tiene que poder verse. Y no se rechaza el programa por tener bloques sueltos,
 aunque sería defendible: eso exige decírselo al niño, y castiga el bloque
 olvidado en una esquina, que es lo más frecuente en un lienzo de niño.
 
-**Lo que este ejemplo NO enseña, y en qué paso se registra.** Los tres bloques
-que hoy existen son **planos**: se encadenan uno detrás de otro y ninguno tiene
-cuerpo. Pero §4.1 exige que el formato deje ver «qué bloques hay, en qué orden
-**y anidados cómo**», y §4.4 ya define y usa `repetir N veces [cuerpo]`. **Ese
-bloque todavía no está construido**, así que la parte más interesante de la forma
-—cómo se serializa un cuerpo dentro de un bucle— sigue sin registrar aquí. La
-pega el paso que construya `repetir`. Hasta entonces, un `program` con bucles no
-existe y ningún lector debe suponer su forma.
+**Un bloque con otros dentro, registrado el 13-sep-2026 con el primero que
+existe: «saltar».** Hasta ese día este apartado avisaba de que todos los bloques
+eran planos y de que el anidamiento seguía sin ejemplo, a propósito, para que
+nadie supusiera su forma. Éste es un «saltar» con «girar a la derecha» y
+«avanzar 1» dentro, tal y como lo serializa el editor:
+
+```json
+{
+  "formatVersion": "grid-blockly-2",
+  "workspace": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "codeplay_jump",
+          "id": "Pq1%xd]X/,P|J+;fKFw6",
+          "x": 0,
+          "y": 0,
+          "inputs": {
+            "BODY": {
+              "block": {
+                "type": "codeplay_turn_right",
+                "id": "eZM-Km`3q2O`+/SBQc|a",
+                "next": {
+                  "block": {
+                    "type": "codeplay_advance",
+                    "id": "{#tQ/xChQguT@OkGx-O}",
+                    "fields": { "STEPS": 1 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+- **Lo que va dentro cuelga de `inputs.BODY.block`**, y desde ahí sigue su propia
+  cadena por `next`, exactamente igual que la secuencia principal. Recorrer un
+  bloque con cuerpo es bajar por esa segunda cadena.
+- **Un «saltar» vacío no trae `inputs`**, o lo trae con el bloque ausente. Es un
+  bloque válido: salta en el sitio.
+- **Dentro de un «saltar» sólo caben «avanzar» y los giros.** Un «saltar» dentro
+  de otro no tiene regla de coste ni de movimiento, así que un programa que lo
+  traiga **no se interpreta a medias: se rechaza entero**, como uno con un bloque
+  desconocido.
+- **`repetir N veces [cuerpo]`**, que §4.4 define, **sigue sin construir**. Cuando
+  exista, su cuerpo usará esta misma forma de entrada, pero su nombre y su campo
+  se registran entonces.
 
 **`formatVersion` versiona las dos formas, no sólo los bloques.** El token nombra
 el par: `grid` por la forma de `config` de §4.2, `blockly` por el interior del
-sobre y `1` por la versión. Si cambia cualquiera de las dos, el juego desplegado
-no puede con ese nivel y la salida es la misma (§7), así que una segunda versión
-no compraría nada. **Valor actual, y único:** `grid-blockly-1`.
+sobre y el número por la versión. Si cambia cualquiera de las dos, el juego
+desplegado no puede con ese nivel y la salida es la misma (§7), así que versionar
+cada una por separado no compraría nada. **Valor actual, y único:**
+`grid-blockly-2`.
+
+**La 1 se retiró el 13-sep-2026**, cuando cambiaron las dos formas a la vez:
+`config` ganó las alturas y el programa ganó un bloque con cuerpo. Un nivel en la
+1 **se rechaza** como cualquier versión desconocida. Se pudo retirar sin coste
+porque todavía no había ningún intento guardado que la llevara, y los niveles
+sembrados en ella se reescribieron a la 2. **El día que haya intentos guardados,
+cambiar de versión obligará a decidir qué se hace con ellos**, y no será gratis.
 
 ### 4.4 Cómo se cuentan los pasos, con un ejemplo resuelto
 
@@ -460,7 +541,9 @@ las tres órdenes que existen:
 | --- | --- |
 | `avanzar N` | **N** |
 | `girar` a un lado o al otro | **1** |
-| `repetir N veces [cuerpo]` | **N × pasos(cuerpo)** |
+| `saltar` vacío | **1** |
+| `saltar [cuerpo]` | **2 × pasos(cuerpo)** |
+| `repetir N veces [cuerpo]` | **N × pasos(cuerpo)** — definido, todavía sin construir |
 
 Recorrer y sumar. Sin tablero, sin saber dónde está el personaje y sin ejecutar
 nada.
@@ -648,10 +731,6 @@ Escrito a propósito, para que nadie lo dé por resuelto:
 - **Cuántos pasos son «perfectos» en cada nivel.** Dónde vive ese número ya está
   fijado —`optimalSteps`, §4.2—, pero el valor de cada nivel sale del diseño de
   su puzle, y los puzles están sin diseñar.
-- **Cómo se serializa un bloque con cuerpo** — el `repetir N veces [cuerpo]` que
-  §4.4 define y usa—. El interior del sobre ya está registrado en §4.3 con una
-  salida real, pero los tres bloques que existen hoy son planos, así que el
-  anidamiento sigue sin ejemplo. Lo pega el paso que construya ese bloque.
 - **El catálogo de logros**: cuáles hay, qué condición cumple cada uno y cuánta
   experiencia da. Es diseño de producto y no afecta al juego, que no los nombra.
 - **Cómo se relacionan las misiones que un profesor asigna con los niveles del
@@ -670,7 +749,7 @@ Esta sección sí supone conocimiento del repositorio.
 | --- | --- |
 | `config` | `levels.validation_rules` (`jsonb`) |
 | `starterProgram` | `levels.starter_code` (`text`) |
-| `formatVersion` del nivel | `levels.programming_language`, reaprovechado. Hoy `'grid-blockly-1'` en las filas ya rediseñadas y `'javascript'` en las demás, sin `check` que lo ate |
+| `formatVersion` del nivel | `levels.programming_language`, reaprovechado. Hoy `'grid-blockly-2'` en las filas ya rediseñadas y `'javascript'` en las demás, sin `check` que lo ate |
 | `formatVersion` del intento | **Dentro** de `level_attempts.submitted_code`, en el sobre de §4.3. No tiene columna |
 | `program` | `level_attempts.submitted_code` (`text`, **sin `check`**) |
 | `metadata` | `level_attempts.metadata` (`jsonb`) |
