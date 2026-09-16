@@ -109,7 +109,8 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J11** | La barra de XP por tramos de 300 | El niño sube de nivel al terminar un mundo | ⬜ |
 | **J12** | **Mundos 2 y 3** — partido en seis, con el mismo patrón que el J7 | Hay nueve niveles jugables | ⬜ |
 | J12.1 · .2 · .3 | Los tres niveles del mundo 2 — **empezó por el 2**, `salta-y-sube`, el primero con subidas, que trajo el bloque «saltar» y las alturas (`salto-y-alturas`). **Y se cerraron juntos en `mundo-2-completo`**, por decisión del usuario: `salta-y-sube` bajó al 1, y el 2 y el 3 —`el-gran-rodeo` y `la-torre`— entraron en la misma migración, la 0029 | Los tres niveles del mundo 2 se juegan desde la base | ✅ |
-| J12.5 · .6 · .7 | Los tres niveles del mundo 3, uno por punto | Igual que arriba | ⬜ |
+| J12.4 | **El máximo de pasos**, la mecánica del mundo 3: `stepLimit` en `config`, el recorrido que se corta al agotarlo y el contador en cuenta atrás (`limite-de-pasos`). Va antes que los tableros porque el lector descartaba en silencio los campos que no conocía | Un nivel con máximo congela al personaje al llegar a cero y le pide reiniciar | ✅ |
+| J12.5 · .6 · .7 | Los tres niveles del mundo 3, uno por punto — **los tres con máximo de pasos**, y en una sola migración, la 0030 | Igual que arriba | ⬜ |
 | **J13** | **Assets y diseño de los tres mundos**, en una sola pasada y con los nueve puzles jugándose | Los nueve niveles dejan los cubos: suelo, decorado, cámara y luz, y por último el personaje | ⬜ |
 
 ### El apartado gráfico va al final, en una sola pasada
@@ -492,10 +493,14 @@ contrato.
 
 Escrito para que no se descubra a mitad:
 
-- **El mundo 3 puede necesitar condiciones que dependan del entorno** —«si hay
-  pared, gira»—, y ese día el recuento de pasos deja de poder calcularse leyendo
-  el programa. Está anotado en `DISENO-DEL-JUEGO.md` §3. Si el J12 llega ahí, la
-  decisión se toma entonces, no se improvisa.
+- **El mundo 3 NO va por ahí, resuelto el 16-sep-2026.** Este roadmap dio por
+  hecho que podía necesitar condiciones que dependieran del entorno —«si hay
+  pared, gira»—, con lo que el recuento de pasos dejaría de poder calcularse
+  leyendo el programa. El usuario diseñó el mundo alrededor de otra regla: **un
+  máximo de pasos por nivel**, que aprieta igual y **no toca el recuento**, porque
+  el máximo se agota ejecutando y los pasos se siguen contando leyendo. Lo
+  construyó `limite-de-pasos`, y el aviso de `DISENO-DEL-JUEGO.md` §3 se queda
+  escrito por si alguien vuelve a plantear las condiciones.
 - **El juego debe cargarse sólo en la pantalla de nivel**, con importación
   dinámica. El bundle ya avisa de que pasa de 500 kB y el motor 3D más Blockly
   suman bastante más. Es una línea, y se pone en el J1 o no se pone nunca.

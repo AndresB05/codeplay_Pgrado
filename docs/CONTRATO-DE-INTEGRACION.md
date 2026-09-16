@@ -256,6 +256,7 @@ Un nivel de rejilla se describe así, y esto es un ejemplo completo y válido:
 | `start` | pose | Dónde empieza el personaje **y hacia dónde mira**: `north`, `east`, `south` o `west` |
 | `goal` | casilla | Dónde hay que llegar. `row` y `column`, sin orientación |
 | `optimalSteps` | entero > 0 | Los pasos de la mejor solución posible. Ver §4.4 |
+| `stepLimit` | entero > 0, **opcional** | Los pasos que el nivel concede como mucho. Al agotarlos la ejecución se corta. Ver §4.4 |
 
 Escríbalas alineadas: así el JSON se lee como el tablero que describe, y ésa es
 la mitad de su valor.
@@ -344,6 +345,32 @@ cómo llegar al final con sólo 10 pasos en vez de llegar al final». Enseñar e
 número a batir **antes** de haber resuelto nada convierte el nivel en un problema
 de optimización cuando todavía es un problema de llegar. Quien vuelva a
 plantearlo tiene aquí el porqué de que no esté.
+
+**`stepLimit` es la excepción a ese párrafo, y sólo la de algunos niveles.**
+Desde el 16-sep-2026 un nivel puede conceder **un máximo de pasos**: al agotarlo
+la ejecución se corta, el personaje se queda donde esté y el nivel no se resuelve
+salvo que ya hubiera pisado la meta. Es lo que convierte un tablero en un
+problema de «elige el camino más corto» en lugar de uno de «llega», y es el
+motivo de que el párrafo de arriba deje de valer **en esos niveles**: el número a
+batir se enseña mientras se juega —bajando— porque ahí el nivel **ya es** un
+problema de optimización por diseño, y esconderlo sólo dejaría al niño
+plantándose sin saber por qué.
+
+```json
+"optimalSteps": 10,
+"stepLimit": 10
+```
+
+- **Es opcional, y que falte no es cero.** Un nivel sin el campo se juega **sin
+  límite**, que es como se juegan todos los del mundo 1 y del mundo 2.
+- **Nunca por debajo de `optimalSteps`.** Por debajo no es un nivel difícil, es
+  uno que nadie puede terminar, y ése sí se rechaza al leer (§7) — a diferencia
+  de un `optimalSteps` mal apuntado, que no hay forma de comprobar sin resolver
+  el puzle.
+- **Son dos números distintos y los dos siguen haciendo falta**: `optimalSteps`
+  es lo que cuesta la mejor solución y de él sale la puntuación; `stepLimit` es
+  lo que el nivel concede. Que coincidan es decisión de quien siembra el nivel,
+  no una regla de este formato.
 
 **Este JSON es, campo por campo, el tipo del juego.** No hay traducción entre el
 cable y el código, y es una decisión tomada, no un descuido: `config` viaja
@@ -596,6 +623,24 @@ meta con el resultado diciendo que llegó.** No se esconde, se enseña — la
 ejecución se ve entera, así que el niño ve el momento en que la pisa y ve el
 paseo que dio después.
 
+**Agotar `stepLimit` corta la ejecución, y es lo único que la corta.** Un avance
+imposible no la interrumpe —sigue con la orden siguiente y sigue costando su
+paso—; quedarse sin pasos sí: las órdenes que queden no se ejecutan. El personaje
+se planta donde el último paso concedido lo deje.
+
+**Y un salto no se parte por la mitad.** Saltar a la casilla de delante cuesta
+dos pasos; cuando queda **uno solo**, ese salto no se ejecuta y la ejecución se
+corta antes de él. La alternativa —partirlo— dejaría al personaje colgado a media
+parábola, que no es un estado del juego. La consecuencia es que el contador puede
+quedarse en **uno** y no en cero: ese paso sobrante no se puede gastar en nada.
+
+**Pisar la meta dentro del límite vale, aunque el corte llegue después.** Es la
+regla de arriba sin excepción: un programa que llega en el paso ocho, sigue y se
+queda sin pasos en el diez **resolvió el nivel**. Y el recuento que se enseña
+sigue siendo el del programa entero, no el de los pasos que se llegaron a dar —es
+el número que el servidor puede recalcular leyendo, sin ejecutar nada—. Es el
+único sitio donde «pasos contados» y «pasos dados» dejan de coincidir.
+
 **Y esta forma se deja ejecutar plegando.** Las tres órdenes son «avanza» y
 «gira» aplicadas en orden sobre una pose inicial, sin modificarla, quedándose con
 las intermedias para animarlas. Recorrer el programa para **contar** y recorrerlo
@@ -714,6 +759,9 @@ hacer con cada uno es distinto:
 - **`config` vacío** significa **que no hay puzle**, y ahí no hay nada que jugar.
   Trátelo como una `formatVersion` desconocida: avise al anfitrión y no cargue el
   nivel.
+- **`stepLimit` ausente** significa **sin límite de pasos** (§4.2), y eso es un
+  nivel perfectamente normal. Presente y menor que `optimalSteps`, en cambio, es
+  un nivel que nadie puede terminar: rechácelo entero, como el tablero ilegible.
 
 **Nunca bloquee la partida esperando confirmación.** El niño debe poder seguir
 jugando aunque el guardado falle.

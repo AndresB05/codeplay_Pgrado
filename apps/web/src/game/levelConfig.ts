@@ -171,7 +171,7 @@ export const readLevelConfig = (value: unknown): LevelConfig | null => {
 
   const start = readPose(value.start, rows, columns);
   const goal = readCell(value.goal, rows, columns);
-  const { optimalSteps } = value;
+  const { optimalSteps, stepLimit } = value;
 
   if (start === null || goal === null) {
     return null;
@@ -204,7 +204,27 @@ export const readLevelConfig = (value: unknown): LevelConfig | null => {
     return null;
   }
 
-  return { tiles, heights, start, goal, optimalSteps };
+  const config: LevelConfig = { tiles, heights, start, goal, optimalSteps };
+
+  /*
+   * EL MÁXIMO DE PASOS ES OPCIONAL, y que falte no es un nivel de cero pasos: es
+   * un nivel sin límite, que es como se juegan los seis sembrados antes del
+   * mundo 3. Por eso el campo ausente sale por arriba sin comprobar nada.
+   *
+   * Por debajo de `optimalSteps` NO es un nivel difícil, es uno que nadie puede
+   * terminar, y se rechaza entero. Es de la familia de la meta sobre un hueco
+   * —un error de siembra que sí se caza leyendo—, y no de la del `optimalSteps`
+   * mal apuntado, que sigue sin poder comprobarse aquí.
+   */
+  if (stepLimit === undefined) {
+    return config;
+  }
+
+  if (!isIndex(stepLimit) || stepLimit < optimalSteps) {
+    return null;
+  }
+
+  return { ...config, stepLimit };
 };
 
 /*

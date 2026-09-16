@@ -54,6 +54,15 @@ export interface LevelConfig {
   goal: Cell;
   /** Los pasos de la mejor solución. Se define a mano al diseñar el nivel. */
   optimalSteps: number;
+  /**
+   * Los pasos que el nivel concede como mucho, cuando concede un máximo. Al
+   * agotarlo el recorrido se corta y el personaje se queda donde esté.
+   *
+   * AUSENTE NO ES CERO: un nivel sin este campo se juega sin límite ninguno, que
+   * es como se juegan todos hasta el mundo 3. Y nunca por debajo de
+   * `optimalSteps`, que sería un nivel que nadie puede terminar.
+   */
+  stepLimit?: number;
 }
 
 /*

@@ -438,6 +438,88 @@ describe('runProgram', () => {
   });
 });
 
+/*
+ * EL MÁXIMO DE PASOS, que es la regla del mundo 3. Los dos tableros de arriba no
+ * lo traen —ninguno de los seis niveles sembrados lo trae—, así que cada caso se
+ * lo pone encima: así el mismo tablero prueba las dos mitades de la regla, y un
+ * fallo no se puede colar por estar jugando otro puzle.
+ */
+describe('runProgram con máximo de pasos', () => {
+  const capped = (stepLimit: number, config: LevelConfig = board): LevelConfig => ({
+    ...config,
+    stepLimit,
+  });
+
+  it('sin máximo no corta nunca, por largo que sea el programa', () => {
+    const run = runProgram(board, [{ kind: 'advance', steps: 40 }]);
+
+    expect(run.steps).toHaveLength(40);
+    expect(run.outOfSteps).toBe(false);
+  });
+
+  it('corta el recorrido al agotarlo y no ejecuta lo que quedaba', () => {
+    const run = runProgram(capped(4), [
+      { kind: 'advance', steps: 10 },
+      { kind: 'turn', side: 'right' },
+    ]);
+
+    expect(run.steps).toHaveLength(4);
+    expect(run.outOfSteps).toBe(true);
+    expect(run.success).toBe(false);
+    expect(run.steps[3].pose.facing).toBe('north');
+  });
+
+  /*
+   * El borde de la marca: un programa que cuesta EXACTAMENTE el máximo deja el
+   * mismo recorrido que uno que se pasó, y no se quedó sin pasos. Si `outOfSteps`
+   * se dedujera de comparar la longitud con el máximo, éste diría que sí.
+   */
+  it('un programa que cuesta justo el máximo no se queda sin pasos', () => {
+    const run = runProgram(capped(4), [{ kind: 'advance', steps: 4 }]);
+
+    expect(run.steps).toHaveLength(4);
+    expect(run.outOfSteps).toBe(false);
+  });
+
+  /*
+   * Saltar cuesta dos. Con un solo paso de sobra el salto NO se ejecuta y el
+   * recorrido se corta antes: partirlo dejaría al personaje a media parábola.
+   * Por eso aquí quedan dos entradas y no tres, y sobra un paso sin gastar.
+   */
+  it('un salto que no cabe en lo que queda no se ejecuta ni se parte', () => {
+    const jump: Order = { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] };
+    const run = runProgram(capped(3, stairs), [jump, jump]);
+
+    expect(run.steps.map((step) => step.motion)).toEqual(['takeoff', 'landing']);
+    expect(run.steps[1].pose.cell).toEqual({ row: 0, column: 1 });
+    expect(run.outOfSteps).toBe(true);
+  });
+
+  it('llegar a la meta con el último paso que concede el máximo resuelve el nivel', () => {
+    const run = runProgram(capped(10), readProgram(PROGRAM_A)!.orders);
+
+    expect(run.success).toBe(true);
+    expect(run.outOfSteps).toBe(false);
+  });
+
+  /*
+   * EL BORDE RARO Y DELIBERADO. Pisar la meta cuenta aunque el programa siga
+   * (§4.4), así que un programa que llega y se pasa de largo resuelve el nivel
+   * aunque el máximo lo corte después. Es el único sitio donde «se quedó sin
+   * pasos» y «llegó a la meta» son verdad a la vez.
+   */
+  it('pisar la meta antes del corte resuelve el nivel aunque el máximo lo corte', () => {
+    const run = runProgram(capped(12), [
+      ...readProgram(PROGRAM_A)!.orders,
+      { kind: 'advance', steps: 5 },
+    ]);
+
+    expect(run.success).toBe(true);
+    expect(run.outOfSteps).toBe(true);
+    expect(run.steps).toHaveLength(12);
+  });
+});
+
 describe('countSteps', () => {
   it('cuenta el PROGRAMA A del contrato en diez pasos', () => {
     expect(countSteps(readProgram(PROGRAM_A)!.orders)).toBe(10);

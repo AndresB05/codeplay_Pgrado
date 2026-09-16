@@ -62,6 +62,14 @@ export interface RunStep {
 export interface Run {
   steps: RunStep[];
   success: boolean;
+  /*
+   * Si el recorrido se cortó por agotar el máximo de pasos del nivel. NO se
+   * deduce comparando la longitud con el máximo: un programa que cuesta
+   * exactamente el máximo deja el mismo recorrido que uno que se pasó, y sólo el
+   * segundo se quedó sin pasos. De esa diferencia cuelga lo que se le dice al
+   * niño, que no es lo mismo que «no llegaste a la meta».
+   */
+  outOfSteps: boolean;
 }
 
 /*
@@ -348,6 +356,10 @@ export const runProgram = (config: LevelConfig, orders: Order[]): Run => {
   const steps: RunStep[] = [];
   let pose = config.start;
   let success = isGoal(config.goal, pose.cell);
+  let outOfSteps = false;
+
+  /* Sin máximo el recorrido no se corta nunca, y todo lo de abajo no hace nada. */
+  const limit = config.stepLimit ?? Infinity;
 
   const push = (next: Pose, blockedBy: Blocker | null, motion: Motion): void => {
     pose = next;
@@ -355,11 +367,33 @@ export const runProgram = (config: LevelConfig, orders: Order[]): Run => {
     success = success || isGoal(config.goal, pose.cell);
   };
 
+  /*
+   * UN MOVIMIENTO ENTERO O NINGUNO, y es la única cosa que interrumpe una
+   * ejecución por sí sola —chocar sigue sin interrumpirla y sigue costando su
+   * paso—. Saltar a la casilla de delante cuesta dos y deja dos entradas; con un
+   * solo paso de sobra NO se ejecuta, porque partirlo dejaría al personaje
+   * colgado a media parábola, que no es un estado del juego. Ese paso sobrante no
+   * se gasta: el contador puede quedarse en uno en vez de en cero.
+   */
+  const move = (cost: number, emit: () => void): void => {
+    if (steps.length + cost > limit) {
+      outOfSteps = true;
+
+      return;
+    }
+
+    emit();
+  };
+
   const execute = (list: Order[], jumping: boolean): void => {
     list.forEach((order) => {
+      if (outOfSteps) {
+        return;
+      }
+
       if (order.kind === 'jump') {
         if (order.body.length === 0) {
-          push(pose, null, 'hop');
+          move(1, () => push(pose, null, 'hop'));
         } else {
           execute(order.body, true);
         }
@@ -370,30 +404,34 @@ export const runProgram = (config: LevelConfig, orders: Order[]): Run => {
       if (order.kind === 'turn') {
         const turned: Pose = { cell: pose.cell, facing: turn(pose.facing, order.side) };
 
-        if (jumping) {
-          push(pose, null, 'takeoff');
-        }
+        move(jumping ? 2 : 1, () => {
+          if (jumping) {
+            push(pose, null, 'takeoff');
+          }
 
-        push(turned, null, jumping ? 'landing' : 'walk');
+          push(turned, null, jumping ? 'landing' : 'walk');
+        });
 
         return;
       }
 
-      for (let step = 0; step < order.steps; step += 1) {
-        if (jumping) {
-          push(pose, null, 'takeoff');
+      for (let step = 0; step < order.steps && !outOfSteps; step += 1) {
+        move(jumping ? 2 : 1, () => {
+          if (jumping) {
+            push(pose, null, 'takeoff');
 
-          const landed = jumpAdvance(config, pose);
-          push(landed.pose, landed.blockedBy, 'landing');
-        } else {
-          const walked = advance(config, pose);
-          push(walked.pose, walked.blockedBy, 'walk');
-        }
+            const landed = jumpAdvance(config, pose);
+            push(landed.pose, landed.blockedBy, 'landing');
+          } else {
+            const walked = advance(config, pose);
+            push(walked.pose, walked.blockedBy, 'walk');
+          }
+        });
       }
     });
   };
 
   execute(orders, false);
 
-  return { steps, success };
+  return { steps, success, outOfSteps };
 };

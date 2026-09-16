@@ -2980,6 +2980,58 @@ el contador de 1 a **10** y «¡Perfecto! …con 10 pasos», leyendo la casilla 
 nombre. El encuadre no hizo falta tocarlo: el tablero cae entre y 405 y **y 581** a
 1440 px, y la bandeja del lienzo empieza en **679**.
 
+#### El máximo de pasos, con `limite-de-pasos` (16-sep-2026)
+
+**La regla con la que está diseñado el mundo 3**, decidida por el usuario: cada
+nivel concede un máximo de pasos y hay que llegar a la meta sin agotarlo. Deja de
+ser un problema de llegar y pasa a ser uno de **elegir el camino más corto**.
+
+`config` gana **`stepLimit`, opcional** (contrato §4.2). Ausente **no es cero**:
+es un nivel sin límite, que es como se juegan los seis ya sembrados — y el lector
+**descartaba en silencio** los campos que no conocía, que es justo el motivo de
+que esta mecánica fuera antes que los tableros del mundo 3.
+
+| Archivo | Qué le pasó |
+| --- | --- |
+| `apps/web/src/game/level.ts` | `LevelConfig` con `stepLimit?: number` |
+| `apps/web/src/game/levelConfig.ts` | Lo lee; rechaza el nivel entero si no es entero positivo o si es menor que `optimalSteps` |
+| `apps/web/src/game/interpreter.ts` | `runProgram` corta el recorrido al agotarlo, y `Run` gana `outOfSteps` |
+| `apps/web/src/game/GameScene.tsx` | El contador en cuenta atrás y el texto de quedarse sin pasos |
+
+**Cuatro decisiones que no se deducen del código:**
+
+1. **La regla vive en `runProgram` y no en la escena**, porque el servidor tendrá
+   que reproducirla al puntuar (J10). En el componente, los dos lados dirían cosas
+   distintas del mismo intento.
+2. **Un salto es atómico.** Cuesta dos pasos, así que con **uno solo** de sobra no
+   se ejecuta y el recorrido se corta antes. Partirlo dejaría al personaje a media
+   parábola. Consecuencia: **el contador puede quedarse en uno y no en cero.**
+3. **Cortar por el límite NO es «Detener».** Un recorrido detenido lo para el niño
+   y se reanuda con «Ejecutar»; éste lo para el nivel y se acabó — reanudarlo
+   regalaría los pasos que el nivel no da. Por eso no pasa por la marca de
+   congelado: el lienzo no se bloquea y «Ejecutar» arranca un intento nuevo.
+4. **El contador se da la vuelta, y contradice a sabiendas** el requisito que
+   prohíbe anunciar lo que falta. No se relaja: en un nivel con límite el puzle
+   **ya es** un problema de optimización por diseño, así que esconder el número no
+   protege nada. Etiqueta distinta —«Pasos restantes: N»— para que no se lea como
+   la otra magnitud.
+
+**El borde raro, anotado para quien tropiece con él:** un programa que pisa la
+meta y sigue hasta agotar el máximo **resuelve el nivel** (§4.4, pasarse de largo
+es ineficiencia), y el recuento que se enseña sigue siendo el del programa entero.
+Es el único sitio donde «pasos contados» y «pasos dados» dejan de coincidir.
+
+**El XP del mundo 3, decidido y sin escribir.** Como el límite será el óptimo,
+pasar el nivel y ser óptimo son lo mismo, así que **pasar se lleva el XP entero**
+en vez de repartirlo entre las dos marcas. Lo escribe el **J10**, que no existe.
+
+**Verificado en el navegador** con un nivel de pega de máximo 10 en el
+laboratorio: en reposo «Pasos restantes: 10», sin moverse al colocar bloques; con
+un programa de 15 pasos baja 10 → 8 → 6 → 4 → 3 → 1 → **0** y el personaje se
+planta en **columna 3, fila 1**, con «Te quedaste sin pasos…»; el lienzo sigue
+editable y «Ejecutar» vuelve a empezar desde 10. Sin `stepLimit`, la píldora
+vuelve a decir **«Pasos: 0»**. El apaño del laboratorio se revirtió.
+
 ---
 
 ## 3. Especificaciones por aplicar
@@ -3319,7 +3371,10 @@ por su nivel 2, `salta-y-sube`, el primero con subidas, sembrado por la 0028; el
 usuario cambió de plan el 14-sep-2026, lo bajó al nivel 1 y diseñó dos más
 difíciles: `el-gran-rodeo` en el 2 y `la-torre` en el 3, con la meta a altura 6.
 
-**Quedan tres**: los del mundo 3, que son el resto del J12.
+**Quedan tres**: los del mundo 3, que son el resto del J12. **Su mecánica ya
+está construida** —`limite-de-pasos`, §2.9—: cada uno concederá un máximo de
+pasos y habrá que llegar sin agotarlo. El usuario diseñó sus niveles 1 y 2 el
+16-sep-2026 y el 3 llega después; los tres se siembran en la **0030**.
 
 **Lo que eso significa hoy para quien abra cualquiera de los otros tres**: el
 juego los **rechaza enteros** por el camino del contrato §7 —`levelConfig.ts`— y

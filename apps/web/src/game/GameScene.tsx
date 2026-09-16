@@ -566,6 +566,15 @@ const LOOSE_BLOCKS_WARNING =
 const LOOSE_BLOCKS_NOTICE = 'Tienes bloques sueltos: sólo se ejecutará el montón de más arriba.';
 
 /*
+ * Un recorrido cortado por el máximo NO se reanuda —eso regalaría los pasos que
+ * el nivel no da—, así que el texto manda a «Reiniciar» y no a «Ejecutar». Es la
+ * diferencia con el recorrido detenido, que se parece y no es lo mismo: aquél lo
+ * para el niño y sigue donde iba; éste lo para el nivel y se acabó.
+ */
+const OUT_OF_STEPS_MESSAGE =
+  'Te quedaste sin pasos y el personaje no puede seguir. Pulsa «Reiniciar» y busca un camino más corto.';
+
+/*
  * Gastar MENOS pasos que `optimalSteps` también es perfecto, y lleva texto
  * propio. Significa que el número del nivel está sembrado por encima del óptimo
  * real —el contrato §4.2 avisa de que no lo comprueba nadie—, y eso lo caza
@@ -575,6 +584,16 @@ const LOOSE_BLOCKS_NOTICE = 'Tienes bloques sueltos: sólo se ejecutará el mont
  */
 const outcomeOf = (run: Run, steps: number, optimalSteps: number): string => {
   const best = `la mejor solución cuesta ${stepsLabel(optimalSteps)}`;
+
+  /*
+   * QUEDARSE SIN PASOS NO ES NO LLEGAR, y decirle lo segundo le señala el fallo
+   * que no es: su programa no está mal escrito, es demasiado largo. Y va detrás
+   * de la llegada a propósito — un programa que pisó la meta y siguió hasta
+   * agotar el máximo SÍ resolvió el nivel (§4.4), así que ahí manda el resultado.
+   */
+  if (run.outOfSteps && !run.success) {
+    return OUT_OF_STEPS_MESSAGE;
+  }
 
   if (!run.success) {
     return `No llegaste a la meta. Usaste ${stepsLabel(steps)} y ${best}.`;
@@ -641,8 +660,18 @@ export const GameScene = ({
   const pose = run === null || index === 0 ? config.start : run.steps[index - 1].pose;
   const isRunning = step !== null;
 
-  // Los pasos DADOS, que es lo único que el contador dice. La cuenta vive fuera.
+  // Los pasos DADOS. La cuenta vive fuera para poder probarla sin WebGL.
   const steps = stepsTaken(run, index, isRunning);
+
+  /*
+   * LO QUE LE QUEDA, que es lo que el contador dice en un nivel con máximo. Es el
+   * vuelco de la regla de abajo, y sólo ahí: en un nivel con límite el puzle YA
+   * es un problema de optimización —está diseñado así—, de modo que esconder el
+   * número no protege nada y deja al niño plantándose sin saber por qué.
+   *
+   * `null` es «este nivel no tiene máximo», que es el caso de los seis sembrados.
+   */
+  const remaining = config.stepLimit === undefined ? null : config.stepLimit - steps;
 
   /*
    * El arranque cuelga del evento del botón y NUNCA de un efecto: con
@@ -835,19 +864,23 @@ export const GameScene = ({
       </button>
 
       {/*
-       * El contador dice lo que LLEVA y nunca lo que falta. Enseñar el número a
-       * batir mientras se juega convierte el nivel en un problema de optimización
-       * cuando todavía es un problema de llegar; lo que costó y lo que costaba lo
-       * bueno se dicen al terminar, y ahí es una lección y no una exigencia.
+       * Sin máximo, el contador dice lo que LLEVA y nunca lo que falta. Enseñar
+       * el número a batir mientras se juega convierte el nivel en un problema de
+       * optimización cuando todavía es un problema de llegar; lo que costó y lo
+       * que costaba lo bueno se dicen al terminar, y ahí es una lección y no una
+       * exigencia.
        *
-       * Y se ve SIEMPRE, con un cero en reposo: un marcador ya puesto explica de
-       * qué van a ser los números que suban, y un cero no es un número a batir.
-       * No usa el texto del resultado a propósito —aquí la etiqueta es la que
-       * nombra la magnitud, y allí la frase ya la nombra—.
+       * Con máximo dice lo que QUEDA, y baja. No es una excepción a la regla de
+       * arriba: es que ahí el nivel ya es un problema de optimización por diseño.
+       *
+       * Y se ve SIEMPRE, con su valor de reposo puesto —cero sin máximo, el
+       * máximo entero con él—: un marcador ya puesto explica de qué van a ser los
+       * números que se muevan. La ETIQUETA cambia con la magnitud, que es lo que
+       * impide leer lo que queda como lo que se lleva.
        */}
       <p className="pointer-events-none absolute right-4 top-4 flex items-center gap-2.5 rounded-full bg-ink px-4 py-2 font-display text-[17px] text-white shadow-[0_6px_18px_rgba(42,27,69,0.28)]">
         <StepsIcon />
-        Pasos: {steps}
+        {remaining === null ? `Pasos: ${steps}` : `Pasos restantes: ${remaining}`}
       </p>
 
       {/*

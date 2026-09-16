@@ -340,7 +340,17 @@ context: |
      YA EXISTE, hecha en el J7.1 —ruta /dashboard/worlds/:worldId/:levelId, la
      lista de niveles leyendo de la base y el juego montado dentro—. Los tres
      niveles del mundo 1 y los tres del mundo 2 se juegan desde su fila (J7 y
-     J12.1 a J12.3 cerrados); los tres del mundo 3 siguen sin disenar.
+     J12.1 a J12.3 cerrados); los del mundo 3 se siembran en la 0030, con el
+     1 y el 2 disenados el 16-sep-2026 y el 3 pendiente.
+     EL MUNDO 3 SE JUEGA CONTRA UN MAXIMO DE PASOS, mecanica construida por
+     limite-de-pasos (J12.4): config gana stepLimit, OPCIONAL —ausente es sin
+     limite, que es como se juegan los seis ya sembrados—; al agotarlo runProgram
+     corta el recorrido y Run lo marca con outOfSteps; un salto es atomico, asi
+     que con un solo paso de sobra no se ejecuta; cortar NO es Detener y no se
+     reanuda; y el contador se da la vuelta a "Pasos restantes: N", que contradice
+     a proposito la regla de no anunciar lo que falta porque ahi el nivel ya es un
+     problema de optimizacion. Un stepLimit por debajo de optimalSteps rechaza el
+     nivel entero. El XP del mundo 3 —pasar se lleva el entero— lo escribe el J10.
      EL TABLERO TIENE ALTURAS Y HAY UN BLOQUE CON CUERPO desde salto-y-alturas:
      config gana heights (hueco 0, lo demas 1 o mas), el bloque saltar ejecuta
      saltando lo que lleva dentro y cuesta el doble de su cuerpo (vacio, 1), y la

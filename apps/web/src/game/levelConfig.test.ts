@@ -227,6 +227,49 @@ describe('readLevelConfig', () => {
     ).toBeNull();
   });
 
+  /*
+   * EL MÁXIMO DE PASOS, POR LOS DOS LADOS. Que falte es el caso de los seis
+   * niveles sembrados, y tiene que seguir siendo un nivel normal: si el campo
+   * ausente se leyera como cero, los seis dejarían de dejar dar un paso.
+   */
+  it('acepta un nivel sin máximo de pasos y no se inventa ninguno', () => {
+    const config = readLevelConfig(pair);
+
+    expect(config).not.toBeNull();
+    expect(config).not.toHaveProperty('stepLimit');
+  });
+
+  it('acepta un máximo de pasos igual o mayor que los pasos óptimos', () => {
+    expect(readLevelConfig({ ...pair, stepLimit: 1 })?.stepLimit).toBe(1);
+    expect(readLevelConfig({ ...pair, stepLimit: 9 })?.stepLimit).toBe(9);
+  });
+
+  /*
+   * Por debajo del óptimo el nivel no es difícil: es imposible, y nadie lo
+   * notaría jugando —el niño creería que el puzle tiene una solución que él no
+   * encuentra—. Se caza leyendo, como la meta sobre un hueco.
+   */
+  it('rechaza un máximo de pasos por debajo de los pasos óptimos', () => {
+    expect(readLevelConfig({ ...pair, optimalSteps: 5, stepLimit: 4 })).toBeNull();
+  });
+
+  it('rechaza un máximo de pasos que no es un entero positivo', () => {
+    expect(readLevelConfig({ ...pair, stepLimit: 0 })).toBeNull();
+    expect(readLevelConfig({ ...pair, stepLimit: -2 })).toBeNull();
+    expect(readLevelConfig({ ...pair, stepLimit: 2.5 })).toBeNull();
+    expect(readLevelConfig({ ...pair, stepLimit: '4' })).toBeNull();
+    expect(readLevelConfig({ ...pair, stepLimit: null })).toBeNull();
+  });
+
+  /* Los seis ya sembrados se juegan sin límite, y este cambio no los toca. */
+  it('ninguno de los seis niveles sembrados trae máximo de pasos', () => {
+    [migration, world2Migration].forEach((sql) =>
+      [1, 2, 3].forEach((sortOrder) =>
+        expect(readLevelConfig(seededConfig(sql, sortOrder))).not.toHaveProperty('stepLimit'),
+      ),
+    );
+  });
+
   /* De este número sale la puntuación, y nada más en el sistema lo comprueba. */
   it('rechaza unos pasos óptimos que no son un entero positivo', () => {
     expect(readLevelConfig({ ...pair, optimalSteps: 0 })).toBeNull();
