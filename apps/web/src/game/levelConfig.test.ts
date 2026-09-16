@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import migration from '../../../../supabase/migrations/202606030027_world_1_levels_format_2.sql?raw';
 import world2Migration from '../../../../supabase/migrations/202606030029_world_2_levels.sql?raw';
+import world3Migration from '../../../../supabase/migrations/202606030030_world_3_levels_1_2.sql?raw';
 import { debugLevel } from './debugLevel';
 import { openLevel, readLevelConfig } from './levelConfig';
 import { PROGRAM_FORMAT_VERSION } from './program';
@@ -259,6 +260,56 @@ describe('readLevelConfig', () => {
     expect(readLevelConfig({ ...pair, stepLimit: 2.5 })).toBeNull();
     expect(readLevelConfig({ ...pair, stepLimit: '4' })).toBeNull();
     expect(readLevelConfig({ ...pair, stepLimit: null })).toBeNull();
+  });
+
+  /*
+   * LOS DEL MUNDO 3, que son los primeros con máximo de pasos. Se comprueba
+   * `stepLimit` además del tablero: es lo que gobierna el mundo entero, y un
+   * `update` que lo dejara fuera daría un nivel que se juega sin él en silencio.
+   */
+  it('acepta el nivel 1 del mundo 3 tal y como lo siembra la 0030', () => {
+    const config = readLevelConfig(seededConfig(world3Migration, 1));
+
+    expect(config?.heights).toEqual([
+      [1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 2],
+      [1, 1, 1, 2, 1],
+    ]);
+    expect(config?.start).toEqual({ cell: { row: 4, column: 0 }, facing: 'east' });
+    expect(config?.goal).toEqual({ row: 0, column: 4 });
+    expect(config?.optimalSteps).toBe(10);
+    expect(config?.stepLimit).toBe(10);
+  });
+
+  it('acepta el nivel 2 del mundo 3 tal y como lo siembra la 0030', () => {
+    const config = readLevelConfig(seededConfig(world3Migration, 2));
+
+    expect(config?.heights).toEqual([
+      [4, 3, 3, 2, 0],
+      [5, 2, 2, 1, 0],
+      [1, 2, 0, 1, 1],
+      [1, 1, 0, 0, 1],
+      [0, 1, 1, 1, 1],
+    ]);
+    expect(config?.start).toEqual({ cell: { row: 4, column: 4 }, facing: 'north' });
+    expect(config?.goal).toEqual({ row: 1, column: 0 });
+    expect(config?.optimalSteps).toBe(17);
+    expect(config?.stepLimit).toBe(17);
+  });
+
+  /*
+   * DECISIÓN DE SIEMBRA, no del formato: el formato admite un máximo con margen.
+   * En el mundo 3 el usuario los ató —pasar el nivel ES resolverlo del todo—, y
+   * de eso cuelga el XP que el J10 escribirá, así que se comprueba.
+   */
+  it('los dos del mundo 3 conceden justo los pasos de su mejor solución', () => {
+    [1, 2].forEach((sortOrder) => {
+      const config = readLevelConfig(seededConfig(world3Migration, sortOrder));
+
+      expect(config?.stepLimit).toBe(config?.optimalSteps);
+    });
   });
 
   /* Los seis ya sembrados se juegan sin límite, y este cambio no los toca. */

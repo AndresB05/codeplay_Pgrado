@@ -3371,10 +3371,34 @@ por su nivel 2, `salta-y-sube`, el primero con subidas, sembrado por la 0028; el
 usuario cambió de plan el 14-sep-2026, lo bajó al nivel 1 y diseñó dos más
 difíciles: `el-gran-rodeo` en el 2 y `la-torre` en el 3, con la meta a altura 6.
 
-**Quedan tres**: los del mundo 3, que son el resto del J12. **Su mecánica ya
-está construida** —`limite-de-pasos`, §2.9—: cada uno concederá un máximo de
-pasos y habrá que llegar sin agotarlo. El usuario diseñó sus niveles 1 y 2 el
-16-sep-2026 y el 3 llega después; los tres se siembran en la **0030**.
+**Y DEL MUNDO 3 YA HAY DOS**, desde `mundo-3-niveles-1-y-2` —la 0030—, los
+primeros con **máximo de pasos** (`limite-de-pasos`, §2.9): `dos-caminos` en el 1
+—un anillo llano con dos pilares de altura 2 que deciden por qué lado sale más
+barato rodearlo, 10 pasos contra 11— y `el-faro` en el 2 —una torre de altura 5 a
+la que sólo se entra desde arriba, 17 pasos—. En los dos `stepLimit` vale lo
+mismo que `optimalSteps`.
+
+**Queda uno**: el nivel 3 del mundo 3, que sigue siendo `tormenta-final` y que el
+juego rechaza. **No es un descuido**: el usuario diseñó sobre boceto el 1 y el 2
+el 16-sep-2026 y decidió sembrarlos ya en vez de esperar al tercero, que llegará
+con su propia migración, la **0031**.
+
+**Las dos salidas miran al camino MALO**, decidido por el usuario y en los dos
+niveles: en el 1 al borde de los pilares —que tiene un giro menos y aun así cuesta
+uno más— y en el 2 al borde que se acaba a dos casillas. Lo eligió **viendo los
+tableros montados**: las dos salidas tienen dos vecinas alcanzables, la regla de
+«mira a su única vecina» no decidía, y él no podía contestar en términos de norte y
+sur —«no sé cuáles son tu norte y tu sur»—. Se le renderizó el tablero desde
+cinco ángulos y dos imágenes del mismo sitio con el personaje mirando a cada
+lado, y eligió señalando. **Es el método que funciona cuando la pregunta es
+espacial**, y es la tercera vez que sus mapas vienen girados respecto al boceto.
+
+**Verificado contra la base real tras el `push`**: las catorce columnas de las dos
+filas coinciden campo a campo con el `.sql` —comparadas por hash, con las claves
+del `jsonb` ordenadas—, la fila 3 sigue intacta y `xp_reward` no cambió en
+ninguna. Los dos niveles se juegan desde la lista: el 1 termina con «¡Perfecto!
+…con 10 pasos» y el contador clavado en **0**, el 2 con 17, y el camino malo del 1
+**congela al personaje una casilla por debajo de la meta**.
 
 **Lo que eso significa hoy para quien abra cualquiera de los otros tres**: el
 juego los **rechaza enteros** por el camino del contrato §7 —`levelConfig.ts`— y

@@ -340,8 +340,11 @@ context: |
      YA EXISTE, hecha en el J7.1 —ruta /dashboard/worlds/:worldId/:levelId, la
      lista de niveles leyendo de la base y el juego montado dentro—. Los tres
      niveles del mundo 1 y los tres del mundo 2 se juegan desde su fila (J7 y
-     J12.1 a J12.3 cerrados); los del mundo 3 se siembran en la 0030, con el
-     1 y el 2 disenados el 16-sep-2026 y el 3 pendiente.
+     J12.1 a J12.3 cerrados). DEL MUNDO 3 YA HAY DOS, sembrados por la 0030
+     (mundo-3-niveles-1-y-2): dos-caminos en el 1 y el-faro en el 2, los
+     primeros con stepLimit. El nivel 3 sigue siendo tormenta-final, del juego
+     anterior, y el juego lo rechaza: el usuario no ha pasado su boceto y va en
+     la 0031.
      EL MUNDO 3 SE JUEGA CONTRA UN MAXIMO DE PASOS, mecanica construida por
      limite-de-pasos (J12.4): config gana stepLimit, OPCIONAL —ausente es sin
      limite, que es como se juegan los seis ya sembrados—; al agotarlo runProgram

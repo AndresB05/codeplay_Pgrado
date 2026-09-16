@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import world1Migration from '../../../../supabase/migrations/202606030027_world_1_levels_format_2.sql?raw';
 import world2Migration from '../../../../supabase/migrations/202606030029_world_2_levels.sql?raw';
+import world3Migration from '../../../../supabase/migrations/202606030030_world_3_levels_1_2.sql?raw';
 import { countSteps, runProgram, type Order } from './interpreter';
 import type { LevelConfig, Pose } from './level';
 import { readLevelConfig } from './levelConfig';
@@ -183,6 +184,45 @@ const levels: { name: string; config: LevelConfig; solution: Order[] }[] = [
       { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
       { kind: 'turn', side: 'right' },
       { kind: 'advance', steps: 1 },
+    ],
+  },
+  /*
+   * LOS DEL MUNDO 3, los primeros con máximo de pasos. El máximo NO entra en esta
+   * búsqueda y no hace falta que entre: `stepLimit` vale lo mismo que
+   * `optimalSteps` en los dos, así que el mínimo que encuentre es exactamente lo
+   * que el nivel concede. Si algún día se sembrara un nivel con margen, esto
+   * seguiría comprobando lo suyo —que el número apuntado es el mejor posible—,
+   * que es de lo que sale la puntuación.
+   *
+   * EL NIVEL 1 TIENE DOS CAMINOS y este test es el que fija cuál gana: el de
+   * frente —por el sur y el este— tiene un giro menos y cuesta 11 por los dos
+   * saltos de los pilares; el otro, 10.
+   */
+  {
+    name: 'nivel 1 del mundo 3',
+    config: seededConfig(world3Migration, 1),
+    solution: [
+      { kind: 'turn', side: 'left' },
+      { kind: 'advance', steps: 4 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'advance', steps: 4 },
+    ],
+  },
+  {
+    name: 'nivel 2 del mundo 3',
+    config: seededConfig(world3Migration, 2),
+    solution: [
+      { kind: 'turn', side: 'left' },
+      { kind: 'advance', steps: 3 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'advance', steps: 1 },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'advance', steps: 1 },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'turn', side: 'left' },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'turn', side: 'left' },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
     ],
   },
 ];

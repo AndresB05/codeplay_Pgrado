@@ -294,6 +294,25 @@ migración 0012 y se aplica como todo lo demás.
     - Tres `update` por `(world_id, sort_order)`. De datos, no de esquema. Los
       tests del juego leen los tres tableros de este archivo.
 
+30. `202606030030_world_3_levels_1_2.sql`
+    - Siembra **los niveles 1 y 2 de la Costa de Bugs**, los primeros con
+      **máximo de pasos** (`stepLimit`, la mecánica del mundo 3). El 1, que era
+      «Ola de Errores», pasa a ser «Dos caminos» —un anillo llano con dos
+      pilares de altura 2 que deciden por qué lado sale más barato rodearlo;
+      salida mirando al este, `optimalSteps` 10—. El 2, que era «Faro
+      Asíncrono», pasa a ser «El faro» —torre de altura 5 a la que sólo se
+      entra desde arriba; salida mirando al norte, `optimalSteps` 17—. En los
+      dos `stepLimit` vale lo mismo que `optimalSteps`.
+    - **El nivel 3 NO se toca**: sigue siendo «Tormenta Final», del juego
+      anterior, y el juego lo rechaza entero. Va en la 0031, cuando el usuario
+      pase su boceto.
+    - **El orden de los `update` es libre aquí**, al revés que en la 0029: los
+      dos slugs nuevos no coinciden con ninguno de los tres viejos del mundo, así
+      que `levels_world_slug_unique` no puede saltar entre sentencias.
+    - Dos `update` por `(world_id, sort_order)`. De datos, no de esquema, y sin
+      tocar `xp_reward` ni `difficulty`. Los tests del juego leen los dos
+      tableros de este archivo.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI. **Va con `npx`**: la CLI
@@ -304,7 +323,7 @@ hay ninguna instalada en el PATH, así que el comando a secas no corre.
 npx supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las veintinueve migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las treinta migraciones —siembra
 incluida—:
 
 ```sh
