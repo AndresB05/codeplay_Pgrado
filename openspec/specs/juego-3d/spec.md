@@ -603,6 +603,36 @@ casillas dentro de saltar SHALL verse como **un salto por casilla**, y un giro,
 como un salto durante el que el personaje gira. Subir, avanzar a la misma altura,
 bajar y quedarse en el sitio SHALL distinguirse a la vista.
 
+**BAJAR SE DIBUJA COMO UNA CAÍDA, NO COMO UNA RAMPA.** Cuando un movimiento
+lleve al personaje a una casilla **más baja**, SHALL mantener la altura que tenía
+mientras cruza hacia ella y **caer después**, ya sobre la casilla de destino. NO
+SHALL ir bajando mientras todavía está sobre la columna de partida: esa
+trayectoria **atraviesa el bloque sobre el que estaba**. Pedido por el usuario el
+17-sep-2026 con estas palabras: «algo parecido al coyote y el correcaminos».
+
+La caída SHALL **acelerar**, y SHALL empezar sin tirón, encadenada con lo que
+venía antes.
+
+**Un salto que baja SHALL seguir viéndose como un salto**: SHALL levantarse desde
+la altura de la que despega, como si fuera a subir, y acabar cayendo a la casilla
+de destino. Decidido por el usuario el 17-sep-2026.
+
+**Todas las caídas SHALL caer con la misma gravedad, y SHALL caer despacio.** La
+caída NO SHALL acelerar más en una bajada alta que en una corta: lo que cambia con
+la altura es **lo que la caída dura**, no cómo empieza. Pedido por el usuario el
+17-sep-2026 al ver la primera versión, que repartía el paso en dos mitades fijas y
+por tanto despeñaba una caída alta: «que no se sienta brusco, tipo gravedad
+lunar».
+
+De ahí se sigue que **un paso que baja dura más que uno que no**, y más cuanto más
+baja. Es lo único que puede durar distinto: **andar SHALL durar siempre lo mismo**,
+así que el ritmo del recorrido NO SHALL depender del relieve del tablero, y el
+personaje NO SHALL acercarse al borde a cámara lenta.
+
+**Subir y avanzar a la misma altura NO SHALL cambiar por esto.** Ir subiendo
+mientras se cruza aleja al personaje del bloque de partida en vez de meterlo
+dentro, y retrasarlo lo metería en el bloque al que sube.
+
 **Un avance imposible NO SHALL interrumpir la ejecución.** Cuando la casilla de
 destino no se pueda alcanzar, el personaje SHALL quedarse donde está, el intento
 SHALL **verse** —de modo que se entienda contra qué se ha topado— y el programa
@@ -717,6 +747,29 @@ mover a nadie y sin error.
 
 - **WHEN** no hay ningún bloque en el lienzo y se pide ejecutar el programa
 - **THEN** la ejecución termina sin mover al personaje y sin dar error
+
+#### Scenario: El personaje baja a una casilla más abajo
+
+- **WHEN** durante la ejecución el personaje avanza a una casilla más baja que la suya
+- **THEN** se mantiene a su altura mientras cruza hacia ella y cae después, ya sobre ella
+- **AND** en ningún momento está por debajo de su altura de partida mientras sigue sobre su casilla
+
+#### Scenario: El personaje salta a una casilla más abajo
+
+- **WHEN** durante la ejecución el personaje avanza saltando a una casilla más baja que la suya
+- **THEN** el salto se levanta por encima de la altura desde la que despega
+- **AND** acaba cayendo sobre la casilla de destino
+
+#### Scenario: Una caída de varios niveles
+
+- **WHEN** el personaje baja varios niveles de una vez
+- **THEN** cae con la misma gravedad que una bajada de un solo nivel, y tarda más en llegar al suelo
+- **AND** lo que tarda en cruzar hacia la casilla es lo mismo que en cualquier otro paso
+
+#### Scenario: El personaje sube a una casilla más alta
+
+- **WHEN** durante la ejecución el personaje avanza saltando a una casilla más alta que la suya
+- **THEN** va ganando altura mientras cruza, sin quedarse atrás
 
 ### Requirement: El juego sabe si el programa llegó a la meta
 

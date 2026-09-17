@@ -1474,6 +1474,8 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
 | `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero, el personaje, la animación con `useFrame` y **la cámara movible acotada** (`OrbitControls` de `drei`); **el contador de pasos, siempre visible**; **la superposición que dice todo lo demás** —reposo, ejecución, resultado y avisos—; y los tres botones —**«Ejecutar», «Detener» y «Reiniciar»**—, pintados **con un portal** en el hueco que baja la composición. **Desde el J7.1 el nivel LLEGA POR PROPIEDADES** —`level: LevelConfig`— y la escena no trae ninguno dentro. **Y no carga ni un modelo**: el usuario retiró los assets del J6.4, así que el tablero vuelve a ser **un cubo por casilla** —damero de dos verdes, muro, salida en azul y meta en amarillo— y se fueron `Scenery`, `Obstacles`, el `GLTFLoader` y el `Clone` de drei. **Desde `reanudar-encuadre-y-felicitaciones`**: «Ejecutar» con el recorrido detenido **lo reanuda** desde donde se quedó, sin releer el lienzo; detener **no parte un salto**; y la escena **avisa hacia arriba** con `onHaltedChange` y `onFinish` —un booleano y los dos números, nada del intento—. El encuadre ya no son números medidos a mano: `FramedView` aplica `framing.ts` con el tamaño real del lienzo y el alto libre que le mide la composición. El personaje sigue siendo el cubo. Importa `three`, `@react-three/fiber` y `@react-three/drei` |
 | `apps/web/src/game/framing.ts` | **Nuevo en `reanudar-encuadre-y-felicitaciones`. Puro.** El encuadre de partida: proyecta las esquinas de cada columna con la cámara de siempre y busca por bisección la distancia y la subida con que el tablero cabe entre la altura de los botones y la bandeja. **No deforma**: estirar la imagen a lo ancho se probó y el usuario lo retiró al verlo. Un tablero **plano con huecos** no se acerca más que el mismo rectángulo lleno, que es lo que aleja el 2 y el 3 del mundo 1. Medido a 1440 px: 11,41 · 15,5 · 15,5 en el mundo 1 y 11,42 · 13,47 · 17,01 en el mundo 2 |
+| `apps/web/src/game/fall.ts` | **Nuevo en `paso-del-coyote`. Puro.** Cuánto dura un paso y a qué altura va el personaje mientras dura. Al **bajar** se queda arriba media casilla y sólo entonces cae, con **gravedad** —`FALL_GRAVITY`, el único número que toca ajustar—, así que **el paso se alarga lo que la caída tarde**; **subir y llano siguen siendo rectas**. `COYOTE_AIR` es 0,5 porque **ahí está el borde**, no por gusto. Dueño de `STEP_SECONDS`, que se mudó aquí desde la escena. Sin `three` |
+| `apps/web/src/game/fall.test.ts` | **Nuevo en `paso-del-coyote`.** 13 casos: la duración de cada caída, que la gravedad es la misma en todas, y uno que fija **el número que la recta daba antes** en el punto donde cortaba el bloque — si alguien vuelve a poner la recta, cae |
 | `apps/web/src/game/framing.test.ts` | 15 casos, **sin WebGL**: cabe por encima de la bandeja, aprovecha el hueco, la torre llega casi a la altura de los botones sin cortar al personaje, y los caminos llanos con huecos no se pegan a la cámara |
 | `apps/web/src/game/GameSceneLoader.tsx` | La frontera de carga diferida del motor 3D: `React.lazy` + `Suspense`. Baja **el nivel ya comprobado**, el programa, **el hueco de los botones**, el alto libre para el encuadre y los dos avisos hacia arriba; **sólo tipos** cruzan. Desde el J6.4 lleva además el **límite de error de la escena**, que va aquí porque el `<Canvas>` vuelve a lanzar en su propio render |
 | `apps/web/src/game/program.ts` | **Puro.** El sobre del contrato §4.3: `Program`, `PROGRAM_FORMAT_VERSION` y las funciones `sealProgram` y `openProgram`. **Sin Blockly** — lo reutilizan el J8 al abrir el `starterProgram` y el J9 al mandar el intento |
@@ -2597,6 +2599,16 @@ del grupo con `col = x + 2`, `fila = z + 2`. Contra qué compararla: importando
 `/src/game/interpreter.ts` y `/src/game/debugLevel.ts` **en la propia página** se
 calcula la pose que el intérprete espera, y entonces la comprobación es el cubo
 contra el intérprete, no el cubo contra una captura.
+
+**Y el mismo camino sirve para medir CÓMO se mueve, no sólo dónde acaba**, que es
+lo que hizo comprobable el `paso-del-coyote`: guardando la referencia al nodo
+`character` y grabando su posición en un `requestAnimationFrame` propio mientras
+corre el programa, salen unas mil muestras de `(t, x, y, z)` en nueve segundos.
+Con eso la forma de una caída deja de ser una opinión sobre una captura y pasa a
+ser una columna de números — se ve el tramo con la altura congelada, dónde empieza
+a caer y cuánto acelera. **El grabador no descongela nada**: mide lo que haya, así
+que la pestaña tiene que estar dando frames, y eso se comprueba con que el
+recorrido progrese.
 
 **Verificado en el navegador, con `document.hidden` en `false` y el `<pre>`
 comprobado antes de nada:**
@@ -3860,31 +3872,81 @@ base:** el contador viejo decía **1**, el nuevo dice **0**, y en pantalla «Cos
 de Bugs» se quedó en 0/3 con un nivel fallado dentro — y pasó a **1/3** en cuanto
 ese mismo nivel se superó. Ver §2.7.
 
-### 4.13 Al bajar, el personaje atraviesa la esquina del cubo
+### 4.13 Al bajar, el personaje atraviesa la esquina del cubo — RESUELTO
 
-Pedido por el usuario el 17-sep-2026, al ver el mundo 3 jugándose. **No es un
-fallo funcional**: bajar cuesta un paso, como andar, y el recuento es correcto.
-Es el dibujo.
+Pedido por el usuario el 17-sep-2026, al ver el mundo 3 jugándose. **No era un
+fallo funcional**: bajar cuesta un paso, como andar, y el recuento era correcto.
+Era el dibujo.
 
 La causa: un descenso es un paso de andar normal —`runProgram` le pone
-`motion: 'walk'`— y la escena interpola las tres coordenadas a la vez, así que el
-personaje viaja en línea recta entre las dos casillas y corta el bloque por la
-esquina. `Motion` es `'walk' | 'takeoff' | 'landing' | 'hop'` y ninguno dice
-«esto es una caída».
+`motion: 'walk'`— y la escena interpolaba las tres coordenadas a la vez, así que
+el personaje viajaba en línea recta entre las dos casillas y **esa recta entra en
+el bloque de partida**. Medido en «La torre», con una bajada de tres niveles: a
+mitad de camino la recta lo dejaba **una casilla y media por debajo** de donde
+estaba, todavía sobre su columna.
 
 **El arreglo, con sus palabras:** «que en las bajadas el personaje haga un paso en
 el aire a la altura donde estaba y caiga hacia la casilla donde se posicionaría en
-la actualidad, algo parecido al coyote y el correcaminos». Mantiene la altura
-durante la primera parte del paso y sólo entonces cae.
+la actualidad, algo parecido al coyote y el correcaminos». Vive en
+`apps/web/src/game/fall.ts`, es **puro y tiene test**, y la escena lo usa en lugar
+de la interpolación lineal de la altura. Lo horizontal no cambia.
 
-**Y es PURAMENTE VISUAL, que es la restricción que decide**: no puede tocar
+**Y FUE PURAMENTE VISUAL, que era la restricción que decidía.** No toca
 `countSteps`, ni el recuento que se le enseña al niño, ni `stepLimit`, ni el
-número que el servidor recalculará en el J10. Un descenso cuesta un paso, antes y
-después. Una solución que necesite cambiar el recuento es la solución equivocada.
+número que el servidor recalculará en el J10. Comprobado con el mismo programa:
+20 pasos andando el último y 21 saltándolo, que es lo que cuesta un salto.
 
-**Dos cosas sin decidir**, y las decide el usuario: si aplica también a un
-descenso **dentro de un salto** —que ya dibuja un arco de por sí—, y si una caída
-de varios niveles de golpe cae entera o el aire mide siempre lo mismo.
+**LA CAÍDA SE REHIZO UNA VEZ, y conviene que quede el motivo.** La primera versión
+repartía el paso en dos mitades fijas —medio de aire, medio de caída—, así que una
+caída de tres niveles recorría tres casillas en **170 ms**. El usuario lo vio y lo
+mandó cambiar: «¿por qué no aumentas un poco el tiempo de caída para que no se
+sienta brusco? tipo gravedad lunar». Y tenía razón por una razón estructural:
+**con el tiempo fijado de antemano, cuanto más alta la caída más violenta**, que
+es al revés de lo que una caída parece.
+
+Hoy la constante es la **gravedad** y el tiempo sale de ella
+—`fallSeconds(altura) = √(2·altura/g)`, con `FALL_GRAVITY` a 7—, así que todas las
+caídas empiezan igual de suaves y **una alta tarda más**. `FALL_GRAVITY` es el
+único número que hay que tocar si se quiere más o menos flotante: subirlo acelera
+la caída, bajarlo la alarga.
+
+**Eso obliga a DOS RELOJES en el mismo paso**, y es lo único que este arreglo
+complica: `STEP_SECONDS` mueve lo horizontal, el giro y el arco del salto y **no
+cambia nunca** —el ritmo del recorrido no depende del relieve—, y la caída tiene
+el suyo, que se le pega al paso por detrás. Con un solo reloj, darle tiempo a la
+caída habría puesto al personaje a andar hacia el borde a cámara lenta.
+
+**Las tres decisiones del usuario, ese mismo día:**
+
+1. **Un salto que baja también.** «Salta como si fuera a subir pero termina
+   cayendo a la plataforma.» Se reparte solo entre las dos entradas que un salto
+   ya tenía: el **despegue** no cae nunca —se queda a la altura de partida, así
+   que el arco se levanta desde ahí— y el **aterrizaje** es la caída entera, que
+   arranca en el cenit.
+2. **Igual sea cual sea la altura.** «Debería comportarse igual independientemente
+   del tamaño de la caída.» Lo cumple la gravedad única: la misma para un nivel
+   que para cinco. Lo que cambia con la altura es lo que la caída **dura**.
+3. **Que no se sienta brusco.** El de arriba.
+
+**Medido en el navegador**, leyendo la posición del personaje de la escena con
+`_roots` mientras se juega «La torre» —hay una bajada de **tres** niveles, de la
+casilla a altura 5 a la de altura 2—:
+
+| Comprobado | Antes | Primera versión | Ahora |
+| --- | --- | --- | --- |
+| Altura al cruzar el borde, bajando tres niveles | 2,5 — **1,5 dentro del bloque de partida** | 4,0 | **4,0**: la de partida, intacta |
+| Cuánto dura la caída de tres niveles | 170 ms | 170 ms | **940 ms** |
+| Cuánto dura ese paso entero | 340 ms | 340 ms | **1110 ms** |
+| Cuánto dura un paso que baja **un** nivel | 340 ms | 340 ms | **730 ms** |
+| Cuándo cruza el borde | — | 167 ms | **167 ms**, caiga uno o tres |
+| Cenit de un salto que baja tres niveles | 3,4 — **0,6 por debajo** de donde despegó | 4,9 | **4,9**: 0,9 por encima, igual que un salto llano |
+| Andar en llano | altura constante | igual | **igual**, medido: no se mueve |
+| Cenit de un salto que sube uno | 1,4 | 1,4 | **1,4**, sin tocar |
+| Pasos del mismo programa | 20 y 21 | 20 y 21 | **20 y 21** |
+
+**Lo que cuesta, dicho en voz alta:** un paso que baja dura de dos a tres veces lo
+que uno normal. Es lo que se pidió, y quien quiera otra cosa tiene un solo número
+que mover.
 
 ## 5. Estado verificado
 

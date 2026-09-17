@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { Group, PerspectiveCamera } from 'three';
+import { heightAt, STEP_SECONDS, stepSeconds } from './fall';
 import { FOV, frameBoard } from './framing';
 import {
   countSteps,
@@ -82,13 +83,6 @@ const FACING_OFFSET: Record<Direction, [number, number]> = {
   south: [0, 1],
   west: [-1, 0],
 };
-
-/*
- * Lo que dura un paso en pantalla. Ni tanto que aburra ni tan poco que el niño
- * no pueda seguir el recorrido con la vista, que es para lo que se anima: si el
- * personaje apareciera directamente en la meta, no habría nada que contar.
- */
-const STEP_SECONDS = 0.34;
 
 /** Cuánto se asoma el personaje contra lo que no puede pisar, antes de volver. */
 const BUMP_DISTANCE = 0.22;
@@ -362,17 +356,12 @@ const Character = ({ config, pose, step, nextStep, stepIndex, onStepDone }: Char
 
     elapsed.current += delta;
 
-    const progress = Math.min(elapsed.current / STEP_SECONDS, 1);
-
     /*
      * UN SALTO SON DOS ENTRADAS Y UN SOLO ARCO. El recorrido lleva el despegue y
      * el aterrizaje por separado porque cada casilla saltada cuesta dos pasos, y
      * aquí se cosen: el despegue dibuja la primera mitad del arco —hacia donde
      * caerá, que dice el paso siguiente— y el aterrizaje la segunda. Un salto
      * vacío es el arco entero en el sitio.
-     *
-     * `along` es lo recorrido del trayecto completo, de la casilla de partida a la
-     * de llegada; en un paso andando coincide con el progreso.
      */
     let target = step.pose;
     let alongFrom = 0;
@@ -385,10 +374,24 @@ const Character = ({ config, pose, step, nextStep, stepIndex, onStepDone }: Char
       alongFrom = 0.5;
     }
 
-    const along = alongFrom + (alongTo - alongFrom) * progress;
-    const lift = step.motion === 'walk' ? 0 : JUMP_HEIGHT * 4 * along * (1 - along);
     const [toX, toZ] = place(target.cell.row, target.cell.column);
     const toY = topOf(config, target.cell.row, target.cell.column);
+
+    /*
+     * DOS RELOJES, Y UNO SOLO DECIDE CUÁNDO SE ACABA EL PASO. Andar dura siempre
+     * lo mismo —`walked`—, así que el ritmo del recorrido no depende del
+     * relieve; la CAÍDA, en cambio, tarda lo que la altura pida (`fall.ts`), y
+     * un paso que baja se alarga por detrás hasta que el personaje aterriza.
+     *
+     * Sin separarlos, darle tiempo a la caída habría puesto al personaje a andar
+     * a cámara lenta hacia el borde, que no es lo que se estaba arreglando.
+     */
+    const duration = stepSeconds(step.motion, y, toY);
+    const progress = Math.min(elapsed.current / duration, 1);
+    const walked = Math.min(elapsed.current / STEP_SECONDS, 1);
+
+    const along = alongFrom + (alongTo - alongFrom) * walked;
+    const lift = step.motion === 'walk' ? 0 : JUMP_HEIGHT * 4 * along * (1 - along);
 
     /*
      * Un avance imposible no mueve al personaje, así que sin topetazo el paso
@@ -396,18 +399,15 @@ const Character = ({ config, pose, step, nextStep, stepIndex, onStepDone }: Char
      * que es justo lo que `advance` devuelve en `blockedBy` para que se enseñe.
      */
     const bump =
-      step.blockedBy === null
-        ? 0
-        : BUMP_DISTANCE * (progress < 0.5 ? progress * 2 : (1 - progress) * 2);
+      step.blockedBy === null ? 0 : BUMP_DISTANCE * (walked < 0.5 ? walked * 2 : (1 - walked) * 2);
     const [offsetX, offsetZ] = FACING_OFFSET[step.pose.facing];
 
     node.position.x = x + (toX - x) * along + offsetX * bump;
-    node.position.y = y + (toY - y) * along + lift;
+    node.position.y = heightAt(step.motion, y, toY, along, elapsed.current) + lift;
     node.position.z = z + (toZ - z) * along + offsetZ * bump;
 
     angle.current =
-      angleFrom.current +
-      shortestTurn(angleFrom.current, FACING_ANGLE[step.pose.facing]) * progress;
+      angleFrom.current + shortestTurn(angleFrom.current, FACING_ANGLE[step.pose.facing]) * walked;
     node.rotation.y = angle.current;
 
     if (progress === 1) {
