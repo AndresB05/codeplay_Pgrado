@@ -1265,7 +1265,41 @@ existe**. No es una preferencia de diseño, es la única puerta abierta.
 
 **Quedaron filas de prueba** en la cuenta `userkid2`: dos en `level_attempts`,
 una en `user_progress` y `total_xp: 100`. No se pueden borrar desde el cliente
-—la 0009 revoca `delete`—; se limpian desde el panel si estorban.
+—la 0009 revoca `delete`—; se limpian desde el panel si estorban. **El J9 dejó
+más encima**, jugando de verdad: ver la tabla de abajo.
+
+**LAS DOS RPC YA TIENEN CONSUMIDOR, desde el J9 (17-sep-2026).** Hasta ese día
+estaban medidas por `curl` y **la aplicación no las llamaba nunca**: los nueve
+niveles se jugaban enteros y la base no se enteraba de nada. Quien las llama es
+el anfitrión de la pantalla de nivel, por
+`components/dashboard/student/submitAttempt.ts`, y son **dos llamadas por
+partida** — `attempt_count` cuenta las segundas y nada las sincroniza con las
+filas de la primera.
+
+**Verificado con sesión real a 17-sep-2026, en la cuenta `userkid2`**, jugando
+desde la pantalla y consultando las dos tablas después de cada caso. Con
+`React.StrictMode` puesto, que es donde se ve la escritura duplicada:
+
+| Comprobado | Resultado |
+| --- | --- |
+| Superar el nivel 2 del mundo 1 con los 12 pasos de la mejor solución | Un intento con éxito, **9348 ms** y `metadata` con `{steps:12, optimalSteps:12}`; progreso nuevo `completed` con su `completed_at` |
+| El `submitted_code` de ese intento | 689 caracteres, el sobre de §4.3 con `formatVersion: grid-blockly-2` y el espacio de trabajo entero |
+| El XP | **100 → 200**: `upsert_my_progress` concede el `xp_reward` del nivel |
+| Quedarse **sin pasos** en el nivel 1 del mundo 3, 12 pasos contra un máximo de 10 | Un intento sin éxito con `outOfSteps: true`; progreso nuevo **`in_progress`** y `completed_at` **nulo** |
+| El XP después de ese fallo | **Sigue en 200**: fallar no concede nada |
+| **Fallar un nivel ya superado** | Sigue `completed`, `completed_at` **intacto**, `attempt_count` 1 → 2, XP sin moverse, y **ninguna ventana** |
+| Lienzo **vacío** | Cero intentos y cero progreso: no llegó a ejecutarse |
+| Recorrido **detenido** y no reanudado | Cero y cero: no ha terminado |
+| El mismo, **reanudado** hasta el final | **Una** fila, no dos. `runtime_ms` 13 346, que incluye la pausa |
+| **Superar después** el nivel que se había fallado | `in_progress` → **`completed`**, `completed_at` puesto, `attempt_count` 1 → 2, XP **200 → 300** |
+| Una partida, ¿una fila? | **Sí en los siete casos.** Ninguno escribió por duplicado |
+| La lista de mundos | «Selva Algorítmica» 1/3 → **2/3** al superar; «Costa de Bugs» **0/3** con su fila `in_progress` dentro, y **1/3** sólo cuando ese nivel se superó de verdad |
+
+**Lo que este paso NO estrena, a propósito:** `score` y `best_score` se quedan en
+**cero** en todo lo que escribe. El contrato le quitó la puntuación al juego el
+3-sep-2026 —la calcula el servidor leyendo el programa— y quien la calcule es el
+**J10**, que además cambia cómo se concede el XP. Estrenar aquí un número que
+aquel paso va a cambiar habría sido peor que dejarlo a cero.
 
 **Decisiones de diseño**
 
@@ -1451,6 +1485,8 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/components/dashboard/student/LevelCompleteDialog.tsx` | **Nuevo en `reanudar-encuadre-y-felicitaciones`.** La felicitación al llegar a la meta, **siempre**, con los pasos usados y los de la mejor solución: «¡Nivel perfecto!» o «¡Nivel completado!» con un reto de menos pasos. **«Salir al mundo»**, **«Volver a intentar»** —la pantalla vuelve a montar la escena y los bloques se quedan— y **«Siguiente nivel»**, que no se pinta en el último del mundo. **Enseña la `xp_reward` de la fila, pero no la concede**: es un recordatorio del usuario, y el número de verdad lo dará el J10. Sin mascota. Escape la cierra |
 | `apps/web/src/components/dashboard/student/HaltedLock.tsx` | **Nuevo en `reanudar-encuadre-y-felicitaciones`.** La capa que se come el puntero sobre el lienzo y la caja con el recorrido detenido. No pasa Blockly a sólo lectura porque eso se decide al inyectar |
 | `apps/web/src/components/dashboard/student/nextLevel.ts` | **Nuevo en `reanudar-encuadre-y-felicitaciones`. Puro.** `nextLevelId`: el nivel de orden inmediatamente mayor del mismo mundo, o `null`. Con su test de 4 casos |
+| `apps/web/src/components/dashboard/student/submitAttempt.ts` | **Nuevo en el J9.** La traducción del anfitrión: de una partida terminada a las **dos** llamadas del apéndice del contrato. `attemptRecord` es puro y decide el estado —`completed` al superar, **`in_progress` al fallar**, decisión del usuario del 17-sep-2026— y arma el sobre y las observaciones; `submitAttempt` dispara las dos escrituras y **hace las dos aunque la primera falle**. Vive aquí y no en `game/` porque el juego no habla con el servidor |
+| `apps/web/src/components/dashboard/student/submitAttempt.test.ts` | **Nuevo en el J9.** 6 casos sobre `attemptRecord`: superado, fallado, sin pasos, la meta pisada antes de agotar el máximo, el sobre con su versión y las observaciones |
 | `apps/web/src/game/blockTypes.ts` | **Nuevo en el J5. Puro.** Cómo se llaman los bloques, el campo de pasos y la entrada del cuerpo de «saltar» en el JSON. Vive aparte porque `blocks.ts` importa Blockly y **el intérprete no puede importarlo** |
 | `apps/web/src/game/interpreter.ts` | **Puro.** `readProgram` baja por la cadena `next.block` —y por `inputs.BODY.block` dentro de un «saltar»— y devuelve `{ orders, rootCount }`, o `null` si no entiende algo o encuentra un salto dentro de otro; `countSteps` suma los pasos **leyendo** las órdenes (§4.4), con el salto al doble de su cuerpo; `runProgram` las pliega sobre la pose inicial y **cada paso saltado deja dos entradas, despegue y aterrizaje**, con su `motion`, para que el recorrido siga teniendo tantas entradas como pasos; `hasLooseStacks` responde por los bloques de sobra, **`stepsTaken` da los pasos dados que enseña el contador** y **`stoppedIndex` dice dónde se planta un recorrido detenido**, sin partir un salto entre su despegue y su aterrizaje. Sin Blockly y sin `three` |
 | `apps/web/src/game/interpreter.test.ts` | El recorrido y la meta, con el **PROGRAMA A del contrato §4.3 pegado tal cual** como entrada |
@@ -1919,6 +1955,38 @@ ahorran una tarde:**
    **bien en el caso que falla**, así que quien lo use como señal concluirá que su
    carga llegó y verificará encima de nada. Es la misma trampa que contar frames
    en el J6, con otro disfraz.
+
+   **REPRODUCIDO EN EL J9, y con salida.** El 17-sep-2026 volvió a fallar, esta
+   vez en la pantalla de nivel, que no tiene `<pre>`: cinco bloques pintados y la
+   pantalla diciendo «No hay bloques que ejecutar». Medido con un escuchador
+   propio añadido antes de cargar: **cero eventos**, o sea que
+   `serialization.workspaces.load` no emitió ninguno. Descartado que fuera un
+   espacio desechado: `Workspace.getAll()` devolvía **dos** —el principal y su
+   caja— y el principal tenía **cinco escuchadores vivos**.
+
+   **Lo que sí funciona es despertar a los escuchadores a mano**, después de
+   cargar:
+
+   ```js
+   const ev = new B.Events.BlockMove(ws.getTopBlocks(false)[0]);
+   ev.workspaceId = ws.id;
+   ws.fireChangeListener(ev);
+   ```
+
+   `fireChangeListener` los llama **en el sitio**, sin pasar por la cola de
+   eventos, así que no depende de lo que sea que la carga no dispara. Con eso el
+   sobre se llenó a la primera y todas las veces —seis partidas seguidas en la
+   verificación del J9—. **No explica la causa**, sigue sin encontrarse; sólo deja
+   de depender de ella. Y la comprobación sigue siendo obligatoria: en la pantalla
+   de nivel se mira que la barra del lienzo pase a «Ejecutando el programa…», y no
+   que los bloques se vean.
+
+   **Y una corrección sobre el remedio del panel oculto**: `resize_window` **no
+   descongeló** el bucle de `@react-three/fiber` en el J9, ni al cambiar de tamaño
+   ni repitiéndolo. Lo que lo descongeló las cuatro veces fue
+   `computer{action:"screenshot"}`, que obliga a capturar la pestaña. Queda como
+   la señal a la que recurrir cuando el recorrido se planta con el panel oculto:
+   una captura, y el recorrido sigue.
 
 **Lo que el J6.1 añadió: el contador en vivo, y por qué son dos piezas.**
 
@@ -3199,12 +3267,18 @@ personales** porque el repositorio es público.
 
 ### P4 — `integracion-juego`: apartado de implementación de los niveles
 
-**LA TAREA 1 ESTÁ HECHA, en el J7.1.** La ruta y la pantalla de nivel existen en
-`/dashboard/worlds/:worldId/:levelId`, con el juego montado dentro y la selección
-de niveles leyendo de la base. No hay ningún «contenedor del build de WebGL»
-porque no hay build: el juego es parte de esta aplicación. **Lo que queda de este
-apartado es la tarea 3** —escribir el resultado por `progressService` y
-`attemptsService`—, que es el J9 y el paso 21.
+**LAS TAREAS 1, 2 Y 3 ESTÁN HECHAS.** La 1 en el J7.1: la ruta y la pantalla de
+nivel existen en `/dashboard/worlds/:worldId/:levelId`, con el juego montado
+dentro y la selección de niveles leyendo de la base. No hay ningún «contenedor del
+build de WebGL» porque no hay build: el juego es parte de esta aplicación. La 2 la
+cerró `CONTRATO-DE-INTEGRACION.md`. **Y la 3 la cerró el J9 el 17-sep-2026**: cada
+partida terminada se escribe por `attemptsService` y `progressService`, con el
+programa entero, y el XP ya se concede al superar un nivel. Ver §2.7.
+
+**De este apartado ya no queda nada.** Lo que sigue pendiente del paso 21 es la
+otra mitad, el **J10**: contar los pasos en el servidor para puntuar, y conceder
+el XP por marca de agua en vez de una sola vez por nivel. Ésa sí necesita
+migración.
 
 **Descripción.** Dejar montado el hueco donde entrará el juego: la pantalla de
 nivel con el contenedor del build de WebGL, el paso de parámetros al juego y la
@@ -3244,7 +3318,7 @@ obliguen a nadie, ni build que copiar. Ver `DISENO-DEL-JUEGO.md` §5.
 | Envío real de invitaciones (**mitad B del paso 19**) | Elegir servicio de correo (Resend, SendGrid…) y enviarlo. Hoy el tutor comparte el enlace a mano, que es lo que hace la mitad A | P1 + **servicio contratado** |
 | Editar o archivar un salón | No existe | P1 |
 | Exportar reportes | No existe | P1 |
-| Progreso, XP y rachas reales | El XP ya se lee de la base y se muestra en cuatro sitios desde `arreglos-y-barra-xp`; lo que falta es que **algo lo escriba**, y con él la racha | P4 |
+| Progreso, XP y rachas reales | **El progreso y el XP ya se escriben**, desde el J9 (17-sep-2026): cada partida guarda intento y progreso, y superar un nivel concede su `xp_reward`. Lo que falta es **la racha**, que no la escribe nadie, y el XP por marca de agua del J10 | P4 |
 | Recursos educativos con destino | Hoy son tarjetas informativas sin enlace | Contenido |
 | Abrir los cambios en OpenSpec | Convertir P1–P4 en `openspec/changes/` con `/opsx:propose` | Ninguna |
 
@@ -3760,6 +3834,57 @@ comprobarlo de verdad es la pantalla de nivel, que ya sabe qué nivel es y ya le
 el progreso; en la lista sólo sería una sugerencia que la dirección se salta.
 
 ---
+
+### 4.12 El contador de niveles superados no mira si están superados — RESUELTO
+
+Descubierto el 17-sep-2026 midiendo por qué la lista de mundos sigue en 0/3 con
+los nueve niveles jugables. En `StudentWorldsModule.tsx`, `loadStats` contaba
+cualquier fila de `user_progress` de un nivel de ese mundo, **estuviera superado
+o no**:
+
+```ts
+const completed = progress.filter((item) => levelIds.includes(item.levelId)).length;
+```
+
+No se notaba porque la única fila que existía era de la verificación manual del
+3-sep-2026 y decía `completed`.
+
+**Lo arregló el J9 el mismo día**, y no de tapadillo: el usuario decidió que
+fallar un nivel **también escribe progreso**, así que había que filtrar. Hoy
+`loadStats` exige `completionStatus === 'completed'`, que es el criterio que la
+lista de niveles **de dentro** de un mundo ya aplicaba desde el J7.1 — eran dos
+pantallas contando lo mismo de dos maneras distintas.
+
+**Medido sobre los mismos datos, con una fila `in_progress` del mundo 3 en la
+base:** el contador viejo decía **1**, el nuevo dice **0**, y en pantalla «Costa
+de Bugs» se quedó en 0/3 con un nivel fallado dentro — y pasó a **1/3** en cuanto
+ese mismo nivel se superó. Ver §2.7.
+
+### 4.13 Al bajar, el personaje atraviesa la esquina del cubo
+
+Pedido por el usuario el 17-sep-2026, al ver el mundo 3 jugándose. **No es un
+fallo funcional**: bajar cuesta un paso, como andar, y el recuento es correcto.
+Es el dibujo.
+
+La causa: un descenso es un paso de andar normal —`runProgram` le pone
+`motion: 'walk'`— y la escena interpola las tres coordenadas a la vez, así que el
+personaje viaja en línea recta entre las dos casillas y corta el bloque por la
+esquina. `Motion` es `'walk' | 'takeoff' | 'landing' | 'hop'` y ninguno dice
+«esto es una caída».
+
+**El arreglo, con sus palabras:** «que en las bajadas el personaje haga un paso en
+el aire a la altura donde estaba y caiga hacia la casilla donde se posicionaría en
+la actualidad, algo parecido al coyote y el correcaminos». Mantiene la altura
+durante la primera parte del paso y sólo entonces cae.
+
+**Y es PURAMENTE VISUAL, que es la restricción que decide**: no puede tocar
+`countSteps`, ni el recuento que se le enseña al niño, ni `stepLimit`, ni el
+número que el servidor recalculará en el J10. Un descenso cuesta un paso, antes y
+después. Una solución que necesite cambiar el recuento es la solución equivocada.
+
+**Dos cosas sin decidir**, y las decide el usuario: si aplica también a un
+descenso **dentro de un salto** —que ya dibuja un arco de por sí—, y si una caída
+de varios niveles de golpe cae entera o el aire mide siempre lo mismo.
 
 ## 5. Estado verificado
 

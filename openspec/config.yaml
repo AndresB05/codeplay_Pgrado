@@ -365,8 +365,17 @@ context: |
      unica version del formato es grid-blockly-2. Ver
      docs/CONTRATO-DE-INTEGRACION.md 3, 4.2, 4.3 y 4.4. La lista
      NO bloquea ningun nivel hasta la prueba preliminar, decidido por el
-     usuario: el candado se decide despues (docs/CONTEXT.md 4.11). Queda
-     escribir el resultado (J9).
+     usuario: el candado se decide despues (docs/CONTEXT.md 4.11).
+     EL RESULTADO YA SE ESCRIBE, desde el 17-sep-2026 (J9, mandar-el-intento):
+     cada partida terminada guarda intento y progreso por
+     components/dashboard/student/submitAttempt.ts, dos llamadas, con el programa
+     entero en su sobre, la duracion y las observaciones. FALLAR TAMBIEN ESCRIBE
+     PROGRESO, in_progress, decidido por el usuario; superar escribe completed y
+     concede el xp_reward del nivel. Por eso el contador de mundos pasa a exigir
+     completion_status completed (deuda 4.12, resuelta ahi). score y best_score
+     se escriben EN CERO a proposito: la puntuacion la calcula el servidor
+     leyendo el programa, y eso es el J10, que ademas cambia el XP a marca de
+     agua y SI necesita migracion.
   El apartado gráfico queda FUERA de este hito a propósito.
 
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO

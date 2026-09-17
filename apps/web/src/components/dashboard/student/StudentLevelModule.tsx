@@ -10,6 +10,7 @@ import { worldsService } from '../../../services/worlds.service';
 import { HaltedLock } from './HaltedLock';
 import { LevelCompleteDialog } from './LevelCompleteDialog';
 import { nextLevelId } from './nextLevel';
+import { submitAttempt } from './submitAttempt';
 
 /* El rótulo de la caja: tres piezas encajadas, que es lo que se hace con los bloques. */
 const BlocksIcon = () => (
@@ -128,6 +129,34 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
 
   const [halted, setHalted] = useState(false);
   const [finish, setFinish] = useState<LevelFinish | null>(null);
+
+  /*
+   * Que la ÚLTIMA partida no se pudiera guardar. Se dice en la ventana y no se
+   * espera por ello: el contrato §7 prohíbe bloquear al niño esperando
+   * confirmación, así que la felicitación sale igual y el aviso llega detrás.
+   */
+  const [saveFailed, setSaveFailed] = useState(false);
+
+  /*
+   * EL INTENTO SE MANDA AQUÍ, en el manejador y nunca en un efecto: con
+   * `React.StrictMode` un efecto corre dos veces en desarrollo, y aquí eso
+   * serían dos filas en `level_attempts` y dos llamadas contadas en
+   * `user_progress.attempt_count` por una sola partida. La escena ya avisa una
+   * vez por recorrido terminado, y este camino no añade otra ocasión.
+   *
+   * La ventana sale sólo al llegar a la meta; el guardado ocurre siempre, que es
+   * lo que separa «el niño superó el nivel» de «el niño jugó».
+   */
+  const handleFinish = useCallback(
+    (result: LevelFinish) => {
+      if (result.success) {
+        setFinish(result);
+      }
+
+      void submitAttempt(levelId, result).then((saved) => setSaveFailed(!saved));
+    },
+    [levelId]
+  );
 
   /*
    * «Volver a intentar» MONTA LA ESCENA DE NUEVO, y es lo que devuelve personaje,
@@ -314,7 +343,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
             controlsHost={controlsHost}
             messageHost={messageHost}
             onHaltedChange={setHalted}
-            onFinish={setFinish}
+            onFinish={handleFinish}
             freeHeight={trayTop}
           />
 
@@ -424,6 +453,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
           steps={finish.steps}
           optimalSteps={finish.optimalSteps}
           xpReward={state.xpReward}
+          saveFailed={saveFailed}
           onExit={backToLevels}
           onNext={
             state.nextLevelId === null

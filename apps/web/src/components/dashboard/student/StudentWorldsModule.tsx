@@ -220,7 +220,17 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
           const levelsResult = await worldsService.getLevelsByWorld(world.id);
           const levels = levelsResult.data ?? [];
           const levelIds = levels.map((level) => level.id);
-          const completed = progress.filter((item) => levelIds.includes(item.levelId)).length;
+
+          /*
+           * SUPERADOS, no «con fila de progreso». Desde que el J9 escribe
+           * `in_progress` al fallar hay filas de niveles que el niño no ha
+           * resuelto, y sin este filtro cada intento fallido subiría el
+           * contador del mundo. Es el mismo criterio que la lista de niveles
+           * de dentro del mundo, que ya lo aplicaba.
+           */
+          const completed = progress.filter(
+            (item) => levelIds.includes(item.levelId) && item.completionStatus === 'completed'
+          ).length;
           return { id: world.id, total: levels.length, completed };
         })
       );

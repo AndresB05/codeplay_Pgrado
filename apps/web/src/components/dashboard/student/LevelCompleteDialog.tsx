@@ -5,6 +5,8 @@ interface LevelCompleteDialogProps {
   optimalSteps: number;
   /* La `xp_reward` de la fila. Se enseña, pero todavía no se concede. */
   xpReward: number;
+  /* La partida no se pudo guardar. Se dice sin alarmar: el nivel está superado igual. */
+  saveFailed: boolean;
   onExit: () => void;
   /* Sin nivel siguiente en el mundo no llega, y el botón no se pinta. */
   onNext?: () => void;
@@ -34,6 +36,7 @@ export const LevelCompleteDialog = ({
   steps,
   optimalSteps,
   xpReward,
+  saveFailed,
   onExit,
   onNext,
   onRetry,
@@ -79,6 +82,17 @@ export const LevelCompleteDialog = ({
           <span className="chip chip-mint">Mejor solución: {optimalSteps}</span>
           <span className="chip chip-sun">+{xpReward} XP</span>
         </div>
+
+        {/*
+         * El guardado falló y se dice, porque si no el niño vuelve al mundo y
+         * no encuentra el nivel que acaba de superar. No se le pide que haga
+         * nada: volver a jugarlo lo guarda, y repetir no le quita nada (§6).
+         */}
+        {saveFailed && (
+          <p className="mt-4 text-[14px] font-semibold text-ink-soft">
+            No pudimos guardar esta partida. Vuelve a intentarlo cuando quieras y se guardará.
+          </p>
+        )}
 
         <div className="mt-7 flex flex-wrap gap-3">
           <button type="button" onClick={onExit} className="btn btn-ghost flex-1">

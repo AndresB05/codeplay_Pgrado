@@ -104,7 +104,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | J7.2 | Nivel 2, igual — **el primero con giros y huecos, montado y enseñado en el laboratorio antes de sembrarlo, con su `optimalSteps` comprobado por un test** | Se juega el nivel 2 desde la base | ✅ |
 | J7.3 | Nivel 3, igual — **sin «repetir», por decisión del usuario: la escalera del centro se escribe con los tres bloques de siempre** | Se juega el nivel 3 desde la base | ✅ |
 | **J8** | ~~Conectar la pantalla de nivel al backend y montar el juego dentro~~ — **lo hizo el J7.1**, por decisión del usuario: montar la pantalla dos veces era hacerlo dos veces. Le queda **mandar el intento**, que es lo que el J9 escribe | Se elige un nivel en la web y arranca el que se eligió | ✅ |
-| **J9** | Mandar el intento al servidor con el programa | La partida aparece guardada en la base | ⬜ |
+| **J9** | Mandar el intento al servidor con el programa — **y arreglar el contador de mundos**, que contaba las filas de progreso sin mirar si el nivel estaba superado (`docs/CONTEXT.md` §4.12) | La partida aparece guardada en la base: intento, progreso y XP, con éxito y sin él (`mandar-el-intento`) | ✅ |
 | **J10** | La migración del XP: contar pasos y conceder por marca de agua | El XP sube 80, y 20 al mejorar. Nunca más de 100 | ⬜ |
 | **J11** | La barra de XP por tramos de 300 | El niño sube de nivel al terminar un mundo | ⬜ |
 | **J12** | **Mundos 2 y 3** — partido en siete, con el mismo patrón que el J7 | Hay nueve niveles jugables | ✅ |
@@ -471,6 +471,14 @@ nivel funcionando antes de diseñar el siguiente.
   perfecto suma cero. Hay que pasar a conceder por diferencia de marca, y a
   calcular la puntuación contando el programa en vez de creerse la que llegue.
 
+  **El J9 le dejó el terreno medido y el campo a cero.** Cada partida ya guarda
+  su programa entero en `submitted_code`, dentro del sobre con su versión, así
+  que el recuento del servidor tiene qué leer desde el primer día. Y `score` y
+  `best_score` se escriben **en cero a propósito**: estrenar aquí un número que
+  este paso viene a cambiar habría sido peor que dejarlo vacío. En `metadata`
+  queda el recuento **del cliente**, que es contra lo que el del servidor se puede
+  contrastar.
+
 ### Qué comparte con el roadmap principal
 
 Tres pasos de aquí son la cara «juego» de pasos que ya existen allí. **No son
@@ -505,7 +513,9 @@ Escrito para que no se descubra a mitad:
 - **El juego debe cargarse sólo en la pantalla de nivel**, con importación
   dinámica. El bundle ya avisa de que pasa de 500 kB y el motor 3D más Blockly
   suman bastante más. Es una línea, y se pone en el J1 o no se pone nunca.
-- **Nada de lo escrito hoy en `apps/web` llama a `create_level_attempt` ni a
-  `upsert_my_progress`.** Las dos funciones existen y están medidas contra la
-  base real, pero desde la aplicación no las usa nadie: el J9 es la primera vez.
-  El detalle está en el apéndice del contrato.
+- ~~**Nada de lo escrito hoy en `apps/web` llama a `create_level_attempt` ni a
+  `upsert_my_progress`.**~~ **Dejó de ser cierto el 17-sep-2026**, con el J9: las
+  llama `components/dashboard/student/submitAttempt.ts`, dos por partida, con los
+  seis parámetros. La verificación contra la base está en `docs/CONTEXT.md` §2.7.
+  Lo que aquel aviso quería decir sigue valiendo para el **J10**, que va a ser la
+  primera vez que alguien toque esas funciones **por migración**.

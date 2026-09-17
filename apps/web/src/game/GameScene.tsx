@@ -24,7 +24,7 @@ import {
   type RunStep,
 } from './interpreter';
 import { TILE_SIZE, type Direction, type LevelConfig, type Pose } from './level';
-import { openProgram, type Program } from './program';
+import { openProgram, sealProgram, type Program } from './program';
 
 /*
  * Los únicos hexadecimales del juego, y van aquí por lo mismo que en los iconos
@@ -134,14 +134,25 @@ const MAX_DISTANCE = 18;
  */
 const BackIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M15 5l-7 7 7 7"
+      stroke="currentColor"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
 const ViewCubeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z" fill="currentColor" opacity="0.35" />
-    <path d="M4 7.5L12 12l8-4.5M12 12v9" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    <path
+      d="M4 7.5L12 12l8-4.5M12 12v9"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -238,20 +249,20 @@ const Board = ({ config }: { config: LevelConfig }) => {
           return (
             <group key={`${row}-${column}`} position={[x, 0, z]}>
               {/*
-                * LA CASILLA ES UNA COLUMNA DE CUBOS, uno por nivel, apoyada en el
-                * suelo del tablero: el usuario fijó que nada flota. Cada cubo mide
-                * lo que ocupa —el paso de la rejilla es 1,0—, así que no hay una
-                * segunda medida que mantener.
-                *
-                * El de más abajo se hunde media altura porque la cara de arriba de
-                * una columna de UN cubo es el plano de pisar de siempre, `y = 0`.
-                *
-                * EL DAMERO SE EXTIENDE A LOS NIVELES, y no es adorno por lo mismo
-                * que no lo es en el suelo: dos cubos apilados del mismo color se
-                * leen como uno alto, y entonces no se cuentan los niveles que hay
-                * que subir. Sólo el de arriba lleva el color de la salida o la
-                * meta, que es la casilla que se pisa.
-                */}
+               * LA CASILLA ES UNA COLUMNA DE CUBOS, uno por nivel, apoyada en el
+               * suelo del tablero: el usuario fijó que nada flota. Cada cubo mide
+               * lo que ocupa —el paso de la rejilla es 1,0—, así que no hay una
+               * segunda medida que mantener.
+               *
+               * El de más abajo se hunde media altura porque la cara de arriba de
+               * una columna de UN cubo es el plano de pisar de siempre, `y = 0`.
+               *
+               * EL DAMERO SE EXTIENDE A LOS NIVELES, y no es adorno por lo mismo
+               * que no lo es en el suelo: dos cubos apilados del mismo color se
+               * leen como uno alto, y entonces no se cuentan los niveles que hay
+               * que subir. Sólo el de arriba lleva el color de la salida o la
+               * meta, que es la casilla que se pisa.
+               */}
               {Array.from({ length: height }, (_, level) => (
                 <mesh key={level} position={[0, (level - 0.5) * TILE_SIZE, 0]}>
                   <boxGeometry args={[TILE_SIZE, TILE_SIZE, TILE_SIZE]} />
@@ -275,7 +286,7 @@ const Board = ({ config }: { config: LevelConfig }) => {
               )}
             </group>
           );
-        }),
+        })
       )}
     </>
   );
@@ -508,7 +519,12 @@ interface GameSceneProps {
    * la escena. Sube un booleano y nada del intento.
    */
   onHaltedChange?: (halted: boolean) => void;
-  /* Un recorrido terminado que llegó a la meta, con lo que costó y lo que costaba. */
+  /*
+   * Un recorrido TERMINADO, haya llegado a la meta o no. Desde el J9 también
+   * sube el fallido, porque el intento se guarda igual (contrato §3: el mensaje
+   * sale «con éxito o sin él»). Quien decide qué se enseña por haber llegado es
+   * el anfitrión, no la escena.
+   */
   onFinish?: (result: LevelFinish) => void;
   /*
    * El alto del juego que la bandeja del lienzo deja libre al abrir, en píxeles
@@ -518,9 +534,26 @@ interface GameSceneProps {
   freeHeight?: number | null;
 }
 
+/*
+ * Lo que la escena sabe de una partida terminada. Es la MATERIA PRIMA del
+ * mensaje del contrato §3, no el mensaje: aquí no hay `levelId` ni nada del
+ * servidor, porque la escena no sabe contra qué fila se está jugando.
+ *
+ * `program` es el sobre de §4.3 con el programa QUE SE EJECUTÓ, congelado al
+ * pulsar «Ejecutar»: mover un bloque después no lo cambia, que es la misma
+ * regla que ya protegía a la ejecución.
+ */
 export interface LevelFinish {
   steps: number;
   optimalSteps: number;
+  success: boolean;
+  /* Se acabó el máximo de pasos del nivel. Con `success`, la meta se pisó antes. */
+  outOfSteps: boolean;
+  /* Quedaron montones de bloques fuera del que se ejecutó (§4.3). */
+  looseBlocks: boolean;
+  program: Program;
+  /* De «Ejecutar» a la llegada, en reloj de pared. Incluye lo que durase detenido. */
+  runtimeMs: number;
 }
 
 /*
@@ -534,14 +567,23 @@ export interface LevelFinish {
 type Attempt =
   | { kind: 'unreadable' }
   | { kind: 'empty' }
-  | { kind: 'run'; run: Run; steps: number; rootCount: number };
+  | {
+      kind: 'run';
+      run: Run;
+      steps: number;
+      rootCount: number;
+      /* Lo que se ejecutó y cuándo empezó, que es lo que el J9 manda al servidor. */
+      program: Program;
+      startedAt: number;
+    };
 
 const stepsLabel = (count: number): string => (count === 1 ? '1 paso' : `${count} pasos`);
 
 const OUTCOME_MESSAGES = {
   idle: 'Coloca bloques y pulsa «Ejecutar» para ver al personaje moverse.',
   running: 'Ejecutando el programa…',
-  stopped: 'Has detenido el recorrido. Pulsa «Ejecutar» para seguir o «Reiniciar» para cambiar los bloques.',
+  stopped:
+    'Has detenido el recorrido. Pulsa «Ejecutar» para seguir o «Reiniciar» para cambiar los bloques.',
   empty: 'No hay bloques que ejecutar. Arrastra alguno al lienzo.',
   unreadable: 'Ese programa no se puede leer.',
 };
@@ -698,7 +740,12 @@ export const GameScene = ({
     setIndex(0);
     setHalted(false);
 
-    if (reading === null) {
+    /*
+     * Las dos van juntas porque acaban igual —un sobre que no es de esta versión
+     * y un montón de bloques que no se entiende son «no se puede leer»—, y así
+     * `workspace` queda con qué sellar el programa del intento más abajo.
+     */
+    if (workspace === null || reading === null) {
       setAttempt({ kind: 'unreadable' });
 
       return;
@@ -723,6 +770,8 @@ export const GameScene = ({
       run: runProgram(config, reading.orders),
       steps: countSteps(reading.orders),
       rootCount: reading.rootCount,
+      program: sealProgram(workspace),
+      startedAt: Date.now(),
     });
   }, [config, halted, run]);
 
@@ -747,21 +796,37 @@ export const GameScene = ({
   }, [halted, onHaltedChange]);
 
   /*
-   * LA LLEGADA SE AVISA UNA VEZ POR RECORRIDO TERMINADO. La referencia guarda el
+   * EL FINAL SE AVISA UNA VEZ POR RECORRIDO TERMINADO. La referencia guarda el
    * recorrido ya avisado: sin ella, cualquier repintado con el recorrido
    * terminado volvería a abrir la ventana que el niño acaba de cerrar, y con
    * `React.StrictMode` el efecto avisaría dos veces.
+   *
+   * Desde el J9 eso ya no es sólo una ventana: es UN INTENTO GUARDADO, así que
+   * la referencia dejó de proteger una molestia para proteger una fila
+   * duplicada. Se marca ANTES de avisar, no después, por el mismo motivo.
+   *
+   * Y avisa llegue o no a la meta. Lo que NO avisa sigue igual: un recorrido
+   * detenido por el niño no ha terminado, y un lienzo vacío o ilegible no
+   * llegó a ejecutarse — no hay partida que guardar.
    */
   const reported = useRef<Run | null>(null);
   const finished = run !== null && !halted && index >= run.steps.length;
 
   useEffect(() => {
-    if (!finished || active === null || !active.run.success || reported.current === active.run) {
+    if (!finished || active === null || reported.current === active.run) {
       return;
     }
 
     reported.current = active.run;
-    onFinish?.({ steps: active.steps, optimalSteps: config.optimalSteps });
+    onFinish?.({
+      steps: active.steps,
+      optimalSteps: config.optimalSteps,
+      success: active.run.success,
+      outOfSteps: active.run.outOfSteps,
+      looseBlocks: active.rootCount > 1,
+      program: active.program,
+      runtimeMs: Math.max(0, Date.now() - active.startedAt),
+    });
   }, [finished, active, config.optimalSteps, onFinish]);
 
   const reset = useCallback(() => {
@@ -907,7 +972,7 @@ export const GameScene = ({
               </p>
             )}
           </div>,
-          messageHost,
+          messageHost
         )}
 
       {/*
@@ -946,7 +1011,7 @@ export const GameScene = ({
               Reiniciar
             </button>
           </div>,
-          controlsHost,
+          controlsHost
         )}
     </div>
   );
