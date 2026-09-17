@@ -130,7 +130,7 @@ solo mensaje**. No dos, no uno por logro: uno.
 | `levelId` | texto | Sí | El mismo que recibió. Si no existe o no está publicado, el servidor responde con error |
 | `program` | JSON | Sí | El programa de bloques que el niño construyó, serializado. Ver §4 |
 | `success` | booleano | Sí | Si el niño resolvió el nivel |
-| `score` | entero 0–100 | **No, y mejor no lo mande** | Ver el aviso de abajo: desde el 3-sep-2026 **lo calcula el servidor** leyendo el programa |
+| `score` | entero 0–100 | **No, y ya no hay dónde** | Ver el aviso de abajo. Desde el J10 (17-sep-2026) **lo calcula el servidor** leyendo el programa, y la llamada que guarda una partida **no tiene ese parámetro** |
 | `runtimeMs` | entero ≥ 0 | No | Cuánto duró la partida |
 | `metadata` | objeto JSON | No | Observaciones del juego que no encajan en los campos de arriba |
 
@@ -166,8 +166,17 @@ Para quien construye el juego eso simplifica: **mande el programa y no se
 preocupe de puntuar.** Puede mostrar en pantalla su propia estimación de lo bien
 que lo ha hecho el niño, pero la que cuenta es la del servidor.
 
-El campo sigue existiendo por compatibilidad y el servidor lo acota entre 0 y
-100, guardando siempre la mejor marca histórica del niño en ese nivel.
+**Y el campo ya no existe en el camino de una partida.** Hasta el J10 la
+puntuación se mandaba en cero y el servidor la guardaba tal cual; desde entonces
+la llamada que guarda una partida no la acepta y la calcula ella. La regla es
+`redondeo(100 × pasos de la mejor solución ÷ pasos usados)`, acotada de 1 a 100
+para una partida con éxito y **cero** para una que no resolvió el nivel
+(`DISENO-DEL-JUEGO.md` §3). De la mejor marca histórica sigue ocupándose el
+servidor, y de ella sale la experiencia que se concede.
+
+**Lo que el juego SÍ puede mandar es su propia puntuación entre las
+observaciones**, y conviene que lo haga: es lo que permite cotejarla con la del
+servidor sin creérsela.
 
 **No mande estrellas.** El servidor todavía acepta un campo de estrellas por
 nivel, pero es herencia de un diseño anterior, ninguna pantalla lo muestra y está
@@ -703,11 +712,21 @@ se enterará, porque el juego no sabe qué logros existen.
 
 Todo esto está medido contra la base real, no razonado:
 
-- **La experiencia se concede una sola vez por nivel.** Completar un nivel ya
-  completado no vuelve a darla, así que reintentar nunca perjudica al niño. Sí
-  deja registrado otro intento: ver §7.
+- **La experiencia de un nivel nunca pasa de su tope.** Se completa hasta él en
+  vez de acumularse: una partida concede lo que su puntuación mejore la mejor
+  marca anterior, así que mejorar paga la diferencia y **empeorar no paga ni
+  quita nada**. Reintentar nunca perjudica al niño. Sí deja registrado otro
+  intento: ver §7.
+
+  *Hasta el J10 (17-sep-2026) esto decía «se concede una sola vez por nivel»,
+  medido: el tope entero al completar y cero después. Cambió con la migración
+  `202606030033`, y lo que lo sustituye está medido igual —87 al superar flojo,
+  13 al mejorarlo a perfecto, cero al volver a empeorar—.*
 - **La puntuación nunca baja.** Se guarda la mejor histórica del niño en ese
   nivel.
+- **La puntuación la calcula el servidor leyendo el programa**, y sale de la
+  eficiencia: los pasos de la mejor solución sobre los usados. Resolver el nivel
+  nunca puntúa cero, y no resolverlo nunca puntúa más.
 - **La fecha de finalización no se mueve.** Queda la del primer éxito.
 - **Cada intento se guarda entero**, con su programa, su duración y sus
   observaciones. Nada se pierde ni se sobrescribe.
@@ -800,7 +819,7 @@ Esta sección sí supone conocimiento del repositorio.
 | `formatVersion` del nivel | `levels.programming_language`, reaprovechado. Hoy `'grid-blockly-2'` en las filas ya rediseñadas y `'javascript'` en las demás, sin `check` que lo ate |
 | `formatVersion` del intento | **Dentro** de `level_attempts.submitted_code`, en el sobre de §4.3. No tiene columna |
 | `program` | `level_attempts.submitted_code` (`text`, **sin `check`**) |
-| `metadata` | `level_attempts.metadata` (`jsonb`) |
+| `metadata` | `level_attempts.metadata` (`jsonb`), donde viaja además la puntuación del cliente |
 
 **Por qué el sobre y no `metadata`.** No es preferencia de diseño: `level_attempts`
 **no tiene columna** para la versión y `create_level_attempt` **no tiene
@@ -811,10 +830,16 @@ fase A del roadmap del juego no escribe migración. Quedaba `metadata`, que es
 solo —el J10, al puntuar— se queda sin saber qué formato está leyendo. El sobre
 no cuesta ni migración ni columna.
 
-**`createAttempt` llama con cuatro de los seis parámetros.** Hoy pasa
-`input_level_id`, `input_submitted_code`, `input_is_success` e `input_score`:
-**ni `input_runtime_ms` ni `input_metadata`**. Vaya donde vaya lo que haya que
-mandar además del programa, el J9 tiene que ampliar esa llamada.
+**Y el J10 lo cobró.** `count_program_steps` lee exactamente eso: abre el sobre,
+comprueba la versión y cuenta. Un sobre con otra versión no puntúa en vez de
+puntuar mal, que es lo que este apartado compró.
+
+~~**`createAttempt` llama con cuatro de los seis parámetros.**~~ **Dejó de ser
+cierto con el J9**, que la amplió a los seis, y **dejó de ser el camino con el
+J10**: una partida se guarda hoy con `submitAttempt`, que llama a
+`submit_level_attempt`. `createAttempt` sigue existiendo porque la RPC sigue
+existiendo —la nueva se apoya en ella—, pero guarda el intento con la puntuación
+que se le pase, así que usarla para una partida escribiría un cero.
 
 **Los valores por defecto de las tres columnas no son instancias válidas de §4**,
 y ninguno se arregla en la fase A, que no escribe migración:
@@ -835,15 +860,21 @@ y con `starter_code` en texto JavaScript. **Las reescribe el J7**, una migració
 por nivel, y hasta entonces ningún nivel de la base se puede cargar en el juego.
 Por §7 eso es un nivel que no carga, no un fallo que perseguir.
 
-**Un mensaje del juego son dos llamadas.** El anfitrión traduce cada mensaje a
-`create_level_attempt` y, si procede, `upsert_my_progress`. Son independientes:
-`user_progress.attempt_count` cuenta llamadas a la segunda, no filas de
-`level_attempts`. No se sincronizan solas.
+**Un mensaje del juego es UNA llamada**, desde el J10: `submit_level_attempt`
+escribe el intento, el progreso y la experiencia dentro de la misma operación, y
+devuelve la puntuación, la marca y la experiencia concedida.
 
-**Nada de esto se había ejecutado nunca.** Ambas RPC están ahora medidas por
-`curl` contra la base real y funcionan, pero desde la aplicación siguen sin
-consumidor: `createAttempt` no lo tiene, y ningún componente desestructura
-`upsertProgress`.
+Eran dos —`create_level_attempt` y, si procedía, `upsert_my_progress`— y dejaron
+de serlo porque la puntuación sale de contar el programa: la llamada que concede
+la experiencia tiene que tener el programa delante, y la segunda **no lo recibe**.
+Con una sola llamada, `user_progress.attempt_count` **cuenta partidas** y
+coincide con las filas de `level_attempts` de ese nivel; antes eran dos
+contadores que nada sincronizaba.
+
+~~**Nada de esto se había ejecutado nunca.**~~ Las llama la aplicación desde el
+J9 y están medidas jugando. `upsertProgress` sigue sin consumidor propio en la
+interfaz: quien escribe progreso es la RPC nueva, que delega en ella dentro del
+servidor.
 
 **Falta cable para §2.** `mapLevelRow` no mapea `starter_code` ni
 `validation_rules`, y el tipo `Level` no los declara, aunque el `select('*')` los

@@ -456,13 +456,19 @@ que hay que saber aquí es qué trabajo implica:
 - **La XP de un nivel se completa hasta su tope, no se acumula.** 80 al primer
   intento y 20 al segundo si lo mejora, nunca más de 100. Con tres niveles por
   mundo salen 300 por mundo y **900 en total**, que es el máximo del juego.
-- **Eso exige una migración**, y es la primera consecuencia dura de esta reunión:
-  `upsert_my_progress` concede la XP **una sola vez**, en la transición a
-  completado, así que hoy un segundo intento perfecto suma cero. Está medido en
-  el SQL, no supuesto.
+- ~~**Eso exige una migración**~~ — **hecha en el J10**, la `202606030033`
+  (17-sep-2026). `upsert_my_progress` concedía la XP una sola vez, en la
+  transición a completado, así que un segundo intento perfecto sumaba cero; ahora
+  concede la diferencia de marca. Medido jugando: 87, +13 y cero.
 - **La pieza que lo resuelve ya existe:** `best_score` está acotado de 0 a 100 y
   nunca baja, así que la regla es conceder
   `(marca nueva − marca anterior) × tope ÷ 100`. Sin columnas nuevas.
+- **Y faltaba el eslabón de en medio, que no estaba escrito en ninguna parte:**
+  cómo un número de pasos se vuelve una puntuación de 0 a 100. Lo eligió el
+  usuario el 17-sep-2026 después de ver qué daba cada candidata a los nueve
+  programas resueltos a mano: **`redondeo(100 × óptimo ÷ pasos)`**, con suelo de
+  uno para que resolver siempre pague algo. La tabla de las tres está en
+  `DISENO-DEL-JUEGO.md` §3.
 - ~~**Hay que igualar `levels.xp_reward` a 100**~~ — **hecho en el J7.1**, con la
   migración `202606030023`. Estaban sembrados con **100, 120 y 140** en la Selva,
   **180, 200 y 240** en la Cordillera y **150, 210 y 260** en la Costa; los nueve
@@ -480,6 +486,11 @@ que hay que saber aquí es qué trabajo implica:
 recibe, no creyéndose una que le manden. No es desconfianza: el servidor ya tiene
 que leer ese programa para conceder logros, así que puntuar ahí evita escribir la
 misma lógica dos veces.
+
+**Hecho en el J10**, con dos funciones de SQL sobre el `jsonb` del programa. El
+cliente calcula además la suya para poder enseñarla al instante, y la guarda en
+`metadata` al lado de la del servidor: en las cinco partidas de la verificación
+coincidieron.
 
 **Los logros no son por avanzar, son por hacer cosas.** No se ganan por completar
 un nivel —salvo alguno concreto—, sino por comportamientos dentro del juego: por

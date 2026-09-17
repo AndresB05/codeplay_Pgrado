@@ -1,7 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppError } from '../../../errors/AppError';
 import type { LevelFinish } from '../../../game/GameScene';
 import { PROGRAM_FORMAT_VERSION } from '../../../game/program';
-import { attemptRecord } from './submitAttempt';
+import type { AttemptOutcome } from '../../../types/progress.types';
+import { attemptRecord, submitAttempt } from './submitAttempt';
+
+const mocks = vi.hoisted(() => ({ submit: vi.fn() }));
+
+vi.mock('../../../services/attempts.service', () => ({
+  attemptsService: { submitAttempt: mocks.submit },
+}));
 
 const finish = (over: Partial<LevelFinish> = {}): LevelFinish => ({
   steps: 12,
@@ -14,24 +22,37 @@ const finish = (over: Partial<LevelFinish> = {}): LevelFinish => ({
   ...over,
 });
 
+const outcome = (over: Partial<AttemptOutcome> = {}): AttemptOutcome => ({
+  attemptId: 'attempt-1',
+  score: 100,
+  steps: 12,
+  bestScore: 100,
+  completionStatus: 'completed',
+  attemptCount: 1,
+  awardedXp: 100,
+  totalXp: 400,
+  ...over,
+});
+
 describe('attemptRecord', () => {
-  it('el nivel superado va como `completed`', () => {
-    expect(attemptRecord(finish()).completionStatus).toBe('completed');
+  it('el nivel superado va con éxito', () => {
+    expect(attemptRecord(finish()).success).toBe(true);
   });
 
   /*
-   * La decisión del usuario del 17-sep-2026, y la que obliga al filtro del
-   * contador de mundos: fallar TAMBIÉN escribe progreso.
+   * La decisión del usuario del 17-sep-2026: fallar TAMBIÉN se guarda, y el
+   * servidor lo deja `in_progress`. El estado ya no se manda desde aquí, así
+   * que lo que queda por comprobar es que el fallo sube como fallo.
    */
-  it('el nivel fallado va como `in_progress`, no se queda sin escribir', () => {
-    expect(attemptRecord(finish({ success: false })).completionStatus).toBe('in_progress');
+  it('el nivel fallado va sin éxito, no se queda sin mandar', () => {
+    expect(attemptRecord(finish({ success: false })).success).toBe(false);
   });
 
   it('quedarse sin pasos es fallar, no una tercera cosa', () => {
     const record = attemptRecord(finish({ success: false, outOfSteps: true }));
 
-    expect(record.completionStatus).toBe('in_progress');
     expect(record.success).toBe(false);
+    expect(record.metadata).toMatchObject({ outOfSteps: true, score: 0 });
   });
 
   /*
@@ -39,12 +60,12 @@ describe('attemptRecord', () => {
    * `outOfSteps` no puede degradar un éxito.
    */
   it('llegar y luego agotar el máximo sigue siendo superarlo', () => {
-    expect(attemptRecord(finish({ outOfSteps: true })).completionStatus).toBe('completed');
+    expect(attemptRecord(finish({ outOfSteps: true })).success).toBe(true);
   });
 
   /*
-   * El sobre entero, no el interior: quien lea `submitted_code` en el J10 tiene
-   * que saber qué formato está leyendo sin mirar otra columna (§4.3).
+   * El sobre entero, no el interior: quien lea `submitted_code` para puntuarlo
+   * tiene que saber qué formato está leyendo sin mirar otra columna (§4.3).
    */
   it('manda el programa dentro de su sobre, con la versión', () => {
     const record = attemptRecord(finish());
@@ -55,9 +76,70 @@ describe('attemptRecord', () => {
     });
   });
 
-  it('las observaciones llevan los pasos que se le enseñaron al niño', () => {
+  it('las observaciones llevan los pasos y la puntuación que se le enseñaron al niño', () => {
     expect(
       attemptRecord(finish({ steps: 15, optimalSteps: 12, looseBlocks: true })).metadata
-    ).toEqual({ steps: 15, optimalSteps: 12, outOfSteps: false, looseBlocks: true });
+    ).toEqual({
+      steps: 15,
+      optimalSteps: 12,
+      outOfSteps: false,
+      looseBlocks: true,
+      score: 80,
+    });
+  });
+
+  /*
+   * La puntuación de una partida que no resolvió el nivel es cero, no la que
+   * daría su eficiencia: es lo mismo que guarda el servidor, y las dos cifras
+   * de la fila tienen que poder compararse sin excepciones.
+   */
+  it('una partida fallida no lleva puntuación, por eficiente que sea su programa', () => {
+    expect(attemptRecord(finish({ success: false, steps: 12, optimalSteps: 12 })).metadata).toMatchObject(
+      { score: 0 }
+    );
+  });
+});
+
+describe('submitAttempt', () => {
+  beforeEach(() => {
+    mocks.submit.mockReset();
+  });
+
+  it('manda una sola llamada con el programa, la duración y las observaciones', async () => {
+    mocks.submit.mockResolvedValue({ data: outcome(), error: null });
+
+    await submitAttempt('level-1', finish());
+
+    expect(mocks.submit).toHaveBeenCalledTimes(1);
+    expect(mocks.submit).toHaveBeenCalledWith(
+      'level-1',
+      true,
+      JSON.stringify(finish().program),
+      8400,
+      expect.objectContaining({ steps: 12, score: 100 })
+    );
+  });
+
+  it('devuelve lo que el servidor concedió', async () => {
+    mocks.submit.mockResolvedValue({ data: outcome({ score: 80, awardedXp: 80 }), error: null });
+
+    await expect(submitAttempt('level-1', finish())).resolves.toMatchObject({
+      score: 80,
+      awardedXp: 80,
+    });
+  });
+
+  /*
+   * Un guardado que falla no puede quitarle la partida al niño (§7), así que
+   * esto NO lanza: devuelve que no hay nada que enseñar y la pantalla lo dice
+   * en una línea.
+   */
+  it('un fallo del servidor devuelve nada, y no lanza', async () => {
+    mocks.submit.mockResolvedValue({
+      data: null,
+      error: new AppError('No se pudo guardar la partida.', 'attempt_submit_error'),
+    });
+
+    await expect(submitAttempt('level-1', finish())).resolves.toBeNull();
   });
 });

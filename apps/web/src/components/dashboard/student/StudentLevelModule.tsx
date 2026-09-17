@@ -6,7 +6,9 @@ import type { LevelFinish } from '../../../game/GameScene';
 import { GameSceneLoader } from '../../../game/GameSceneLoader';
 import { openLevel, type PlayableLevel } from '../../../game/levelConfig';
 import type { Program } from '../../../game/program';
+import { scoreForSteps } from '../../../game/score';
 import { worldsService } from '../../../services/worlds.service';
+import type { AttemptOutcome } from '../../../types/progress.types';
 import { HaltedLock } from './HaltedLock';
 import { LevelCompleteDialog } from './LevelCompleteDialog';
 import { nextLevelId } from './nextLevel';
@@ -89,7 +91,6 @@ type LevelState =
       instructions: string;
       level: PlayableLevel;
       nextLevelId: string | null;
-      xpReward: number;
     };
 
 type StudentLevelModuleProps = {
@@ -138,6 +139,14 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
   const [saveFailed, setSaveFailed] = useState(false);
 
   /*
+   * Lo que el servidor concedió por la ÚLTIMA partida: la puntuación que
+   * calculó, la marca que queda y la XP que sumó. Nace vacío en cada partida
+   * porque la ventana sale antes de que llegue, y enseñar lo de la anterior
+   * sería peor que no enseñar nada.
+   */
+  const [outcome, setOutcome] = useState<AttemptOutcome | null>(null);
+
+  /*
    * EL INTENTO SE MANDA AQUÍ, en el manejador y nunca en un efecto: con
    * `React.StrictMode` un efecto corre dos veces en desarrollo, y aquí eso
    * serían dos filas en `level_attempts` y dos llamadas contadas en
@@ -153,7 +162,13 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         setFinish(result);
       }
 
-      void submitAttempt(levelId, result).then((saved) => setSaveFailed(!saved));
+      setOutcome(null);
+      setSaveFailed(false);
+
+      void submitAttempt(levelId, result).then((saved) => {
+        setOutcome(saved);
+        setSaveFailed(saved === null);
+      });
     },
     [levelId]
   );
@@ -227,7 +242,6 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         instructions: row.narrative,
         level,
         nextLevelId: siblings.data === null ? null : nextLevelId(siblings.data, row.orderIndex),
-        xpReward: row.xpReward,
       });
     };
 
@@ -452,7 +466,8 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         <LevelCompleteDialog
           steps={finish.steps}
           optimalSteps={finish.optimalSteps}
-          xpReward={state.xpReward}
+          score={scoreForSteps(finish.steps, finish.optimalSteps)}
+          outcome={outcome}
           saveFailed={saveFailed}
           onExit={backToLevels}
           onNext={

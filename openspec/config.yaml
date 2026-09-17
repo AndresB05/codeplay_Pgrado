@@ -358,7 +358,11 @@ context: |
      reanuda; y el contador se da la vuelta a "Pasos restantes: N", que contradice
      a proposito la regla de no anunciar lo que falta porque ahi el nivel ya es un
      problema de optimizacion. Un stepLimit por debajo de optimalSteps rechaza el
-     nivel entero. El XP del mundo 3 —pasar se lleva el entero— lo escribe el J10.
+     nivel entero. El XP del mundo 3 lo escribio el J10, y NO es "pasar se lleva
+     el entero" como se penso: el recuento es del programa leido y el corte del
+     limite llega despues de pisar la meta, asi que pasar dejando bloques detras
+     cuenta esos pasos y puntua menos (medido: 15 pasos y 93 en muchos-caminos,
+     de optimo y limite 14).
      EL TABLERO TIENE ALTURAS Y HAY UN BLOQUE CON CUERPO desde salto-y-alturas:
      config gana heights (hueco 0, lo demas 1 o mas), el bloque saltar ejecuta
      saltando lo que lleva dentro y cuesta el doble de su cuerpo (vacio, 1), y la
@@ -368,14 +372,26 @@ context: |
      usuario: el candado se decide despues (docs/CONTEXT.md 4.11).
      EL RESULTADO YA SE ESCRIBE, desde el 17-sep-2026 (J9, mandar-el-intento):
      cada partida terminada guarda intento y progreso por
-     components/dashboard/student/submitAttempt.ts, dos llamadas, con el programa
-     entero en su sobre, la duracion y las observaciones. FALLAR TAMBIEN ESCRIBE
-     PROGRESO, in_progress, decidido por el usuario; superar escribe completed y
-     concede el xp_reward del nivel. Por eso el contador de mundos pasa a exigir
-     completion_status completed (deuda 4.12, resuelta ahi). score y best_score
-     se escriben EN CERO a proposito: la puntuacion la calcula el servidor
-     leyendo el programa, y eso es el J10, que ademas cambia el XP a marca de
-     agua y SI necesita migracion.
+     components/dashboard/student/submitAttempt.ts, con el programa entero en su
+     sobre, la duracion y las observaciones. FALLAR TAMBIEN ESCRIBE PROGRESO,
+     in_progress, decidido por el usuario; superar escribe completed. Por eso el
+     contador de mundos pasa a exigir completion_status completed (deuda 4.12,
+     resuelta ahi).
+     Y SE PUNTUA Y SE CONCEDE XP POR MARCA DE AGUA, desde el mismo dia (J10,
+     migracion-del-xp, migracion 202606030033): eran dos llamadas y ahora es UNA,
+     submit_level_attempt, porque la puntuacion sale de contar el programa y
+     upsert_my_progress no lo recibe; con eso attempt_count cuenta partidas y
+     coincide con las filas de level_attempts. La puntuacion la calcula la base
+     leyendo el programa —count_program_steps sobre el jsonb del sobre— con la
+     regla redondeo(100 x optimalSteps / pasos), suelo de uno para que resolver
+     siempre pague algo y CERO si la partida no tuvo exito o el programa no se
+     puede leer. El XP concedido es (marca nueva - marca anterior) x xp_reward /
+     100, asi que superar flojo paga la partida, mejorar paga la diferencia y
+     empeorar paga cero. El cliente calcula la MISMA puntuacion en
+     game/score.ts para enseñarla sin esperar al servidor y la guarda en
+     metadata al lado de la del servidor, para poder cotejarlas. La ventana de
+     nivel superado enseña puntuacion y XP concedida, no la xp_reward de la fila.
+     La barra por tramos de 300 es el J11 y sigue pendiente.
   El apartado gráfico queda FUERA de este hito a propósito.
 
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO

@@ -87,6 +87,48 @@ cabe en una línea:
 Primer intento al 80 % → 80. Segundo al 100 % → 20. Tercero al 60 % → 0. Nunca
 se pasa del tope, y no hace falta ninguna columna nueva.
 
+**Aplicado el 17-sep-2026 por el J10**, con la migración `202606030033`. La regla
+la concede `upsert_my_progress`, que hasta ese día daba el tope entero al pasar a
+completado y cero después.
+
+### De pasos a puntuación, el eslabón de en medio
+
+**Esto faltaba, y es lo que decide cuánta XP da cada partida.** La marca de agua
+dice qué se hace con una puntuación; lo que no estaba escrito en ninguna parte era
+de dónde sale esa puntuación. Decidido el 17-sep-2026:
+
+> **puntuación = redondeo(100 × pasos de la mejor solución ÷ pasos usados)**
+
+Los pasos justos dan **100**, y cada paso de más resta tanto más cuanto más corto
+sea el nivel — en el primero, que se resuelve en cuatro, un bloque olvidado cuesta
+20 puntos; en uno de veinticinco, cinco—. Y hay un **suelo de uno**: resolver el
+nivel nunca puntúa cero, porque cero es lo que vale no haberlo resuelto y las dos
+cosas no pueden decirse con el mismo número.
+
+**Se eligió tras medir tres reglas** contra los nueve programas resueltos a mano
+y sus excesos —un giro olvidado detrás de la meta, dos, un «avanzar 3» de sobra y
+el programa duplicado, todos comprobados con el intérprete para confirmar que
+siguen superando el nivel—:
+
+| Regla | Nivel de óptimo 4 | Nivel de óptimo 10 | Nivel de óptimo 25 |
+| --- | --- | --- | --- |
+| **Proporcional**, la elegida | 100 · 80 · 67 · 57 · 50 | 100 · 91 · 83 · 77 · 50 | 100 · 96 · 93 · 89 · 50 |
+| Lineal, cero al doble | 100 · 75 · 50 · 25 · 0 | 100 · 90 · 80 · 70 · 0 | 100 · 96 · 92 · 88 · 0 |
+| Diez por paso | 100 · 90 · 80 · 70 · 60 | 100 · 90 · 80 · 70 · 0 | 100 · 90 · 80 · 70 · 0 |
+
+*(exacta, +1 paso, +2, +3, programa duplicado)*
+
+Gana la proporcional porque **es literalmente la eficiencia** que este apartado
+dice premiar, porque **superar siempre paga algo** —que para el niño más pequeño
+importa más que castigar el bloque olvidado— y porque reproduce sola el ejemplo de
+arriba: 80 en la primera pasada y 20 al mejorarla. Su precio, aceptado a
+sabiendas: es la más dura con el primer nivel, donde el óptimo son cuatro pasos.
+
+**Sólo puntúan las partidas con éxito.** Fallar puntúa cero por eficiente que sea
+el programa, porque la puntuación mide cómo se resolvió el nivel y no cómo se
+falló. Con la regla anterior eso lo garantizaba la transición a completado; con la
+marca de agua hay que decirlo aparte.
+
 ### Qué cuenta como «un paso»
 
 **Un paso es una casilla recorrida o un giro.** El terreno es una cuadrícula:
@@ -118,6 +160,13 @@ No es desconfianza hacia el niño: es que **el servidor ya tiene que leer ese
 programa de todos modos** para conceder logros, y contando ahí no se escribe la
 misma lógica dos veces. Que además cierre la puerta a que alguien se ponga la XP
 que quiera desde la consola del navegador es un efecto secundario, no el motivo.
+
+**Cumplido el 17-sep-2026, y cuesta dos funciones de SQL.** `count_program_steps`
+recorre el JSON del programa y `score_for_steps` aplica la regla, las dos dentro
+de la base. El juego **sí** enseña su propia puntuación al terminar —la ventana no
+espera al guardado—, con la misma regla y el mismo recuento, y la suya se guarda
+con el intento al lado de la del servidor: el día que dejen de coincidir, queda
+con qué darse cuenta. La que cuenta sigue siendo la del servidor.
 
 ### La barra de XP cambia
 

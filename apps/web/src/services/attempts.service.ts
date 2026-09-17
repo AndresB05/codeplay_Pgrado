@@ -2,9 +2,57 @@ import { createAppError } from '../errors/createAppError';
 import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
 import type { Database, Json } from '../types/database.types';
-import type { LevelAttempt } from '../types/progress.types';
+import type { AttemptOutcome, LevelAttempt } from '../types/progress.types';
 
 type LevelAttemptRow = Database['public']['Tables']['level_attempts']['Row'];
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const numberField = (source: Record<string, unknown>, key: string): number | null =>
+  typeof source[key] === 'number' ? (source[key] as number) : null;
+
+/*
+ * La RPC devuelve un `jsonb`, así que llega como `Json` y no tipado: se estrecha
+ * aquí una vez en vez de dejar que la pantalla adivine. Un campo que no sea el
+ * número que se espera deja la respuesta por ilegible, y quien la llama lo trata
+ * como un guardado que falló — que es lo que fue, aunque la fila exista.
+ */
+const readAttemptOutcome = (value: unknown): AttemptOutcome | null => {
+  if (!isObject(value)) {
+    return null;
+  }
+
+  const score = numberField(value, 'score');
+  const bestScore = numberField(value, 'best_score');
+  const attemptCount = numberField(value, 'attempt_count');
+  const awardedXp = numberField(value, 'awarded_xp');
+  const totalXp = numberField(value, 'total_xp');
+
+  if (
+    typeof value.attempt_id !== 'string' ||
+    typeof value.completion_status !== 'string' ||
+    score === null ||
+    bestScore === null ||
+    attemptCount === null ||
+    awardedXp === null ||
+    totalXp === null
+  ) {
+    return null;
+  }
+
+  return {
+    attemptId: value.attempt_id,
+    score,
+    /* `null` es un programa que el servidor no pudo leer, y es un valor legítimo. */
+    steps: numberField(value, 'steps'),
+    bestScore,
+    completionStatus: value.completion_status,
+    attemptCount,
+    awardedXp,
+    totalXp,
+  };
+};
 
 const mapLevelAttemptRow = (attempt: LevelAttemptRow): LevelAttempt => {
   return {
@@ -29,10 +77,11 @@ export const attemptsService = {
    * intento se guardaba sin duración ni observaciones, que son dos de las tres
    * cosas que el contrato §3 deja mandar al juego.
    *
-   * `score` sigue en cero a propósito: el contrato lo retiró del mensaje el
-   * 3-sep-2026 —lo calcula el servidor leyendo el programa— y quien lo calcule
-   * es el J10. Mandarlo desde aquí sería estrenar el número que aquel paso
-   * viene a quitar.
+   * NO ES EL CAMINO DE UNA PARTIDA desde el J10: ése es `submitAttempt`, que
+   * guarda intento y progreso juntos y deja que el servidor puntúe. Esta sigue
+   * existiendo porque la RPC sigue existiendo —`submit_level_attempt` se apoya
+   * en ella—, y guarda el intento **con la puntuación que se le pase**, así que
+   * llamarla para una partida escribiría el cero que este paso vino a quitar.
    */
   async createAttempt(
     levelId: string,
@@ -65,5 +114,51 @@ export const attemptsService = {
     }
 
     return { data: mapLevelAttemptRow(data), error: null };
+  },
+
+  /**
+   * UNA PARTIDA TERMINADA, EN UNA LLAMADA. El intento, el progreso y la
+   * experiencia se escriben dentro de la misma operación del servidor, que es
+   * quien puntúa contando el programa (contrato §3).
+   *
+   * No se le pasa la puntuación: no la acepta. La del cliente viaja dentro de
+   * `metadata`, para poder cotejarla con la que el servidor calculó.
+   *
+   * Tampoco se le pasa el estado del progreso. Sale de `success` en el
+   * servidor, que es lo que impide que una partida con éxito acabe guardada
+   * como empezada.
+   */
+  async submitAttempt(
+    levelId: string,
+    success: boolean,
+    code: string,
+    runtimeMs?: number,
+    metadata: Json = {}
+  ): ServiceResult<AttemptOutcome> {
+    const { data, error } = await supabase.rpc('submit_level_attempt', {
+      input_level_id: levelId,
+      input_submitted_code: code,
+      input_is_success: success,
+      ...(runtimeMs === undefined ? {} : { input_runtime_ms: runtimeMs }),
+      input_metadata: metadata,
+    });
+
+    if (error) {
+      return {
+        data: null,
+        error: createAppError(error, 'No se pudo guardar la partida.', 'attempt_submit_error'),
+      };
+    }
+
+    const outcome = readAttemptOutcome(data);
+
+    if (outcome === null) {
+      return {
+        data: null,
+        error: createAppError(null, 'No se pudo guardar la partida.', 'attempt_submit_error'),
+      };
+    }
+
+    return { data: outcome, error: null };
   },
 };

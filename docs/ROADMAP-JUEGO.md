@@ -105,7 +105,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | J7.3 | Nivel 3, igual — **sin «repetir», por decisión del usuario: la escalera del centro se escribe con los tres bloques de siempre** | Se juega el nivel 3 desde la base | ✅ |
 | **J8** | ~~Conectar la pantalla de nivel al backend y montar el juego dentro~~ — **lo hizo el J7.1**, por decisión del usuario: montar la pantalla dos veces era hacerlo dos veces. Le queda **mandar el intento**, que es lo que el J9 escribe | Se elige un nivel en la web y arranca el que se eligió | ✅ |
 | **J9** | Mandar el intento al servidor con el programa — **y arreglar el contador de mundos**, que contaba las filas de progreso sin mirar si el nivel estaba superado (`docs/CONTEXT.md` §4.12) | La partida aparece guardada en la base: intento, progreso y XP, con éxito y sin él (`mandar-el-intento`) | ✅ |
-| **J10** | La migración del XP: contar pasos y conceder por marca de agua | El XP sube 80, y 20 al mejorar. Nunca más de 100 | ⬜ |
+| **J10** | La migración del XP: contar pasos y conceder por marca de agua — **y la regla que faltaba, de pasos a puntuación**, que el usuario eligió el 17-sep-2026 tras ver los números de tres candidatas | Medido jugando: **87** al superar «La escalera» con 23 pasos contra 20, **+13** al mejorarlo a perfecto y **cero** al volver a empeorarlo. Nunca más de 100 (`migracion-del-xp`) | ✅ |
 | **J11** | La barra de XP por tramos de 300 | El niño sube de nivel al terminar un mundo | ⬜ |
 | **J12** | **Mundos 2 y 3** — partido en siete, con el mismo patrón que el J7 | Hay nueve niveles jugables | ✅ |
 | J12.1 · .2 · .3 | Los tres niveles del mundo 2 — **empezó por el 2**, `salta-y-sube`, el primero con subidas, que trajo el bloque «saltar» y las alturas (`salto-y-alturas`). **Y se cerraron juntos en `mundo-2-completo`**, por decisión del usuario: `salta-y-sube` bajó al 1, y el 2 y el 3 —`el-gran-rodeo` y `la-torre`— entraron en la misma migración, la 0029 | Los tres niveles del mundo 2 se juegan desde la base | ✅ |
@@ -227,6 +227,11 @@ contrato ya tiene el campo de versión precisamente para sobrevivir a este tipo 
 cambios, y escribir un traductor antes de que exista el primer nivel es trabajo
 sin evidencia. Si el JSON de Blockly resulta incómodo de recorrer desde SQL en el
 J10, ahí se cambia, y con casos reales delante.
+
+**Con los casos delante, el 17-sep-2026: no hubo que cambiarlo.** El JSON nativo
+de Blockly se recorre desde SQL con dos funciones recursivas y los operadores
+`->` y `->>`, así que el nativo aguantó y el traductor propio sigue sin
+escribirse.
 
 **Lo que el J3 dejó escrito**, todo en `CONTRATO-DE-INTEGRACION.md` §4:
 
@@ -466,10 +471,10 @@ nivel funcionando antes de diseñar el siguiente.
   una fila corta se juega como borde del tablero y no como hueco, y al niño se le
   dice otra cosa.
 - **J12** repite el patrón seis veces más, una por nivel de los mundos 2 y 3.
-- **J10** es la de fondo, y la que `ROADMAP.md` §3.2 ya describe: hoy
-  `upsert_my_progress` concede el XP **una sola vez**, así que un segundo intento
-  perfecto suma cero. Hay que pasar a conceder por diferencia de marca, y a
-  calcular la puntuación contando el programa en vez de creerse la que llegue.
+- **J10** era la de fondo, y **está hecho** (17-sep-2026, migración `202606030033`):
+  `upsert_my_progress` concede por diferencia de marca, la puntuación la calcula
+  el servidor contando el programa, y una partida es **una sola llamada**
+  —`submit_level_attempt`—, con lo que `attempt_count` pasó a contar partidas.
 
   **El J9 le dejó el terreno medido y el campo a cero.** Cada partida ya guarda
   su programa entero en `submitted_code`, dentro del sobre con su versión, así
@@ -517,5 +522,6 @@ Escrito para que no se descubra a mitad:
   `upsert_my_progress`.**~~ **Dejó de ser cierto el 17-sep-2026**, con el J9: las
   llama `components/dashboard/student/submitAttempt.ts`, dos por partida, con los
   seis parámetros. La verificación contra la base está en `docs/CONTEXT.md` §2.7.
-  Lo que aquel aviso quería decir sigue valiendo para el **J10**, que va a ser la
-  primera vez que alguien toque esas funciones **por migración**.
+  Y el **J10** ya las tocó **por migración**, el 17-sep-2026: la 0033 reescribe
+  `upsert_my_progress` y añade `submit_level_attempt` encima de
+  `create_level_attempt`, que sigue donde estaba.

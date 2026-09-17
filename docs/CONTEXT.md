@@ -951,12 +951,14 @@ progreso conseguido.
 seguras del backend.
 
 **Estado global: aplicado.** El proyecto de Supabase existe, está enlazado con la
-CLI y **las 29 migraciones** se ejecutaron contra la base real. Las quince
+CLI y **las 33 migraciones** se ejecutaron contra la base real —contadas en
+`supabase/migrations`, 0001 a 0033 sin huecos—. Las quince
 primeras entraron con `backend-supabase-real` (25-ago-2026) y `tablas-salones`
-(26-ago-2026); las catorce restantes las fueron añadiendo los pasos 15, 16, 18, 19
+(26-ago-2026); las dieciocho restantes las fueron añadiendo los pasos 15, 16, 18, 19
 y 28, el J7.1 —la 0023 y la 0024—, el J7.2 —la 0025—, el J7.3 —la 0026—,
-`salto-y-alturas` —la 0027—, el nivel 2 del mundo 2 —la 0028— y
-`mundo-2-completo` —la 0029—. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
+`salto-y-alturas` —la 0027—, el nivel 2 del mundo 2 —la 0028—,
+`mundo-2-completo` —la 0029—, el mundo 3 —la 0030, la 0031 y la 0032— y el J10
+—la **0033**, la de la puntuación y el XP por marca de agua—. Verificado por HTTP: ninguna tabla devuelve `PGRST205`, `worlds` y `levels`
 responden con los 3 mundos y los 9 niveles de la siembra, y las cuatro tablas de
 salones responden 401 a la clave anónima.
 
@@ -1231,6 +1233,7 @@ la primera.
 | **Los tres niveles del mundo 1, pasados a la versión 2 del formato con alturas a 1** | ✅ aplicado | `…0027_world_1_levels_format_2.sql` |
 | **El nivel 2 del mundo 2, el primero con subidas** | ✅ aplicado | `…0028_seed_level_2_world_2.sql` |
 | **Los tres niveles del mundo 2: «Salta y sube» baja al 1, y el 2 y el 3 sembrados desde boceto** | ✅ aplicado | `…0029_world_2_levels.sql` |
+| **La puntuación contando el programa, el XP por marca de agua y `submit_level_attempt`** | ✅ aplicado | `…0033_score_by_steps.sql` |
 | Cliente y 8 servicios tipados contra el esquema real | ✅ | `lib/supabase.ts`, `services/*.ts` |
 | `database.types.ts` generado con la CLI | ✅ | `types/database.types.ts` |
 
@@ -1295,11 +1298,68 @@ desde la pantalla y consultando las dos tablas después de cada caso. Con
 | Una partida, ¿una fila? | **Sí en los siete casos.** Ninguno escribió por duplicado |
 | La lista de mundos | «Selva Algorítmica» 1/3 → **2/3** al superar; «Costa de Bugs» **0/3** con su fila `in_progress` dentro, y **1/3** sólo cuando ese nivel se superó de verdad |
 
-**Lo que este paso NO estrena, a propósito:** `score` y `best_score` se quedan en
-**cero** en todo lo que escribe. El contrato le quitó la puntuación al juego el
-3-sep-2026 —la calcula el servidor leyendo el programa— y quien la calcule es el
-**J10**, que además cambia cómo se concede el XP. Estrenar aquí un número que
-aquel paso va a cambiar habría sido peor que dejarlo a cero.
+~~**Lo que este paso NO estrena, a propósito:** `score` y `best_score` se quedan
+en cero.~~ **Los estrenó el J10 el 17-sep-2026**, con la migración 0033. Lo que
+sigue es de ese paso.
+
+**LA PUNTUACIÓN LA CALCULA LA BASE, Y EL XP SALE DE LA MARCA (J10).** La 0033
+añade tres funciones de lectura —`count_block_chain` y `count_program_steps`, que
+recorren el JSON del programa guardado, y `score_for_steps`, la regla—, la RPC
+`submit_level_attempt`, y cambia la concesión de XP de `upsert_my_progress`.
+
+**La regla, decidida por el usuario tras medir tres candidatas:**
+`redondeo(100 × optimalSteps ÷ pasos)`, acotada de 1 a 100 con éxito y **cero sin
+él**. El detalle y la tabla de las tres están en `DISENO-DEL-JUEGO.md` §3.
+
+**Una partida es UNA llamada**, y eso cierra la consecuencia que este apartado
+arrastraba desde el 2-sep-2026: `attempt_count` **ya cuenta partidas** y coincide
+con las filas de `level_attempts` de ese nivel. Las dos RPC viejas siguen ahí
+—`submit_level_attempt` se apoya en `create_level_attempt` y delega el progreso en
+`upsert_my_progress`—, y la concesión del tope entero por completar **ya no existe
+en ninguna de las dos**: si no, la base se quedaría con dos reglas y la vieja
+seguiría regalando 100.
+
+**Lo que hizo con los datos que ya había.** Decisión del usuario: recalcular. Las
+marcas pasaron a ser la mejor puntuación de los intentos con éxito **legibles**, y
+`total_xp` quedó cuadrado con la suma de las marcas más los logros. Medido antes y
+después:
+
+| Nivel | Marca antes | Marca después | Por qué |
+| --- | --- | --- | --- |
+| Siempre adelante (M1N1) | 90 | **90** | su único intento con éxito es del `curl` viejo y su programa no es el sobre del contrato: no hay nada que leer |
+| Camino con curvas (M1N2) | 0 | **100** | 12 pasos contra 12 |
+| Dos caminos (M3N1) | 0 | **100** | 10 contra 10 |
+| Salta y sube (M2N1) | 0 | **100** | 15 contra 15, **con dos saltos**: es el primer programa con salto que cuenta el SQL |
+| La torre (M2N3) | 0 | **0** | nueve intentos, ninguno con éxito |
+| `total_xp` | 400 | **390** | la suma de las marcas |
+
+**Cuidado con ese 400: no está medido.** Lo medido son **300** —antes de una
+partida que se jugó entre la medición y el `push`, «Salta y sube» superado
+perfecto con el cliente viejo— y **390** después del recálculo. El 400 intermedio
+sale de que la regla vieja concedía el tope entero al completar, y cuadra con el
+390 final, pero nadie lo leyó.
+
+**No se reescribió el `score` de los intentos viejos**, aunque los 14 del J9 sean
+legibles: la puntuación de un intento es de cuando se jugó, y reescribirla
+borraría la única señal de que aquellas partidas se jugaron sin puntuación.
+
+**Verificado jugando el 17-sep-2026**, cinco partidas con la cuenta `userkid2` y
+las dos tablas consultadas después de cada una:
+
+| Comprobado | Resultado |
+| --- | --- |
+| Superar «La escalera» (óptimo 20) con **23 pasos** | Puntuación **87**, marca 87, XP **390 → 477** |
+| Volver a superarlo **perfecto**, 20 pasos | Puntuación 100, marca 100, XP **477 → 490**: sólo los **13** que faltaban |
+| Volver a superarlo **peor**, otra vez 23 | Puntuación 87, marca **sigue en 100**, XP **sin moverse**. La ventana lo dice con palabras y sin chip de XP |
+| ¿Una partida, una fila? | **Sí en las cinco.** Tres filas para «La escalera», `attempt_count` 3, y el XP se movió una vez por partida con `React.StrictMode` puesto |
+| La puntuación del servidor contra la del cliente | **Iguales en las cinco**, `score` contra `metadata.score` |
+| Bloques sueltos: programa perfecto de «El gran rodeo» (25) **más un montón aparte de 5 pasos** | Puntuación **100**, no 83: el servidor cuenta el montón que se ejecuta, igual que el juego |
+| Mundo 3, «Muchos caminos» (óptimo y máximo **14**) con un giro de sobra detrás | **15 pasos contados**, éxito con `outOfSteps: true` y puntuación **93**: el giro que no se ejecutó se paga igual |
+| El XP total contra la suma de las marcas | **683 = 90 + 100×5 + 93**, a la unidad |
+| **El guardado que falla**, provocado tirando la llamada desde el navegador | La ventana sale igual, con la puntuación del cliente —100— y **sin número de XP**, más el aviso de que no se pudo guardar. En la base, **cero filas nuevas** y el XP quieto |
+| `submit_level_attempt` con la clave anónima | **`42501 permission denied for function`** |
+| `count_program_steps` con la clave anónima **y autenticado** | `42501` las dos veces: las tres funciones de recuento no se conceden a nadie, y sólo las llama la RPC `security definer` |
+| `submit_level_attempt` con un nivel inexistente | `P0002 Level not found or unavailable`, y no escribe ni intento ni progreso |
 
 **Decisiones de diseño**
 
@@ -1484,7 +1544,7 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/game/levelConfig.test.ts` | 18 casos. **Lee el `config` de los niveles 1 y 2 de sus propios archivos `.sql`** con `?raw`, así que si la migración y el test se separan el test cae — comprobado rompiéndolo |
 | `apps/web/src/game/levelSolutions.test.ts` | **Nuevo en el J7.2.** El `optimalSteps` de cada nivel sembrado, **comprobado en las dos direcciones** y leído de su migración: la solución a mano llega a la meta con ese número, y una búsqueda del mínimo sobre (casilla, orientación) no encuentra ningún programa más corto. Es lo único del sistema que valida ese número. Desde `salto-y-alturas` la búsqueda **salta a coste 2**, así que es Dijkstra y no anchura. **Y ya cazó un error de verdad**: el nivel 2 del mundo 2 se contó a mano en 17 y tenía un atajo de 15, antes de sembrarse |
 | `apps/web/src/components/dashboard/student/StudentLevelModule.tsx` | **Nuevo en el J7.1.** La pantalla de nivel, la primera de producto que monta el juego: lee la fila por su id, la comprueba con `openLevel`, y o monta el juego o enseña el rechazo del §7 **con palabras de niño**. Las instrucciones salen de la `narrative` de la fila. Posee la misma composición que el J6.3 ensayó en el laboratorio. **Desde `reanudar-encuadre-y-felicitaciones`**: mide dónde empieza la bandeja para el encuadre, **bloquea el lienzo y la caja** con el recorrido detenido, busca **el nivel siguiente del mundo** y abre **la ventana de felicitaciones** al llegar a la meta |
-| `apps/web/src/components/dashboard/student/LevelCompleteDialog.tsx` | **Nuevo en `reanudar-encuadre-y-felicitaciones`.** La felicitación al llegar a la meta, **siempre**, con los pasos usados y los de la mejor solución: «¡Nivel perfecto!» o «¡Nivel completado!» con un reto de menos pasos. **«Salir al mundo»**, **«Volver a intentar»** —la pantalla vuelve a montar la escena y los bloques se quedan— y **«Siguiente nivel»**, que no se pinta en el último del mundo. **Enseña la `xp_reward` de la fila, pero no la concede**: es un recordatorio del usuario, y el número de verdad lo dará el J10. Sin mascota. Escape la cierra |
+| `apps/web/src/components/dashboard/student/LevelCompleteDialog.tsx` | **Nuevo en `reanudar-encuadre-y-felicitaciones`.** La felicitación al llegar a la meta, **siempre**, con los pasos usados y los de la mejor solución: «¡Nivel perfecto!» o «¡Nivel completado!» con un reto de menos pasos. **«Salir al mundo»**, **«Volver a intentar»** —la pantalla vuelve a montar la escena y los bloques se quedan— y **«Siguiente nivel»**, que no se pinta en el último del mundo. **Enseña la puntuación de la partida y el XP concedido**, desde el J10: la puntuación al instante —el cliente la calcula con la misma regla que el servidor— y el XP cuando llega la respuesta, sin número ninguno si el guardado falló. Volver a superar sin mejorar la marca lo dice con palabras en vez de con un «+0». Sin mascota. Escape la cierra |
 | `apps/web/src/components/dashboard/student/HaltedLock.tsx` | **Nuevo en `reanudar-encuadre-y-felicitaciones`.** La capa que se come el puntero sobre el lienzo y la caja con el recorrido detenido. No pasa Blockly a sólo lectura porque eso se decide al inyectar |
 | `apps/web/src/components/dashboard/student/nextLevel.ts` | **Nuevo en `reanudar-encuadre-y-felicitaciones`. Puro.** `nextLevelId`: el nivel de orden inmediatamente mayor del mismo mundo, o `null`. Con su test de 4 casos |
 | `apps/web/src/components/dashboard/student/submitAttempt.ts` | **Nuevo en el J9.** La traducción del anfitrión: de una partida terminada a las **dos** llamadas del apéndice del contrato. `attemptRecord` es puro y decide el estado —`completed` al superar, **`in_progress` al fallar**, decisión del usuario del 17-sep-2026— y arma el sobre y las observaciones; `submitAttempt` dispara las dos escrituras y **hace las dos aunque la primera falle**. Vive aquí y no en `game/` porque el juego no habla con el servidor |
@@ -3080,9 +3140,9 @@ que esta mecánica fuera antes que los tableros del mundo 3.
 
 **Cuatro decisiones que no se deducen del código:**
 
-1. **La regla vive en `runProgram` y no en la escena**, porque el servidor tendrá
-   que reproducirla al puntuar (J10). En el componente, los dos lados dirían cosas
-   distintas del mismo intento.
+1. **La regla vive en `runProgram` y no en la escena**, porque el servidor tenía
+   que reproducirla al puntuar — y la reprodujo: la 0033 del J10 la tiene en SQL.
+   En el componente, los dos lados dirían cosas distintas del mismo intento.
 2. **Un salto es atómico.** Cuesta dos pasos, así que con **uno solo** de sobra no
    se ejecuta y el recorrido se corta antes. Partirlo dejaría al personaje a media
    parábola. Consecuencia: **el contador puede quedarse en uno y no en cero.**
@@ -3101,9 +3161,14 @@ meta y sigue hasta agotar el máximo **resuelve el nivel** (§4.4, pasarse de la
 es ineficiencia), y el recuento que se enseña sigue siendo el del programa entero.
 Es el único sitio donde «pasos contados» y «pasos dados» dejan de coincidir.
 
-**El XP del mundo 3, decidido y sin escribir.** Como el límite será el óptimo,
-pasar el nivel y ser óptimo son lo mismo, así que **pasar se lleva el XP entero**
-en vez de repartirlo entre las dos marcas. Lo escribe el **J10**, que no existe.
+**El XP del mundo 3: escrito por el J10, y no es exactamente lo que este párrafo
+decía.** Decía que, como el límite es el óptimo, pasar el nivel y ser óptimo son
+lo mismo, así que pasar se llevaría el XP entero. **Medido el 17-sep-2026:
+sólo si no sobra nada.** El recuento es del programa **leído** y el corte del
+límite llega **después** de pisar la meta, así que un programa que llega en el
+paso 14 y trae un giro detrás cuenta **15** y puntúa **93**, con `outOfSteps` y
+todo. Pasar con el programa justo sí se lleva el tope; pasar dejando bloques
+detrás se paga como en cualquier otro mundo.
 
 **Verificado en el navegador** con un nivel de pega de máximo 10 en el
 laboratorio: en reposo «Pasos restantes: 10», sin moverse al colocar bloques; con
@@ -3287,10 +3352,10 @@ cerró `CONTRATO-DE-INTEGRACION.md`. **Y la 3 la cerró el J9 el 17-sep-2026**: 
 partida terminada se escribe por `attemptsService` y `progressService`, con el
 programa entero, y el XP ya se concede al superar un nivel. Ver §2.7.
 
-**De este apartado ya no queda nada.** Lo que sigue pendiente del paso 21 es la
-otra mitad, el **J10**: contar los pasos en el servidor para puntuar, y conceder
-el XP por marca de agua en vez de una sola vez por nivel. Ésa sí necesita
-migración.
+**De este apartado ya no queda nada, y el paso 21 está entero.** Su otra mitad,
+el **J10**, la cerró la migración `202606030033` el 17-sep-2026: el servidor
+cuenta los pasos leyendo el programa, puntúa por eficiencia y concede el XP por
+diferencia de marca. Ver §2.7.
 
 **Descripción.** Dejar montado el hueco donde entrará el juego: la pantalla de
 nivel con el contenedor del build de WebGL, el paso de parámetros al juego y la
@@ -3330,7 +3395,7 @@ obliguen a nadie, ni build que copiar. Ver `DISENO-DEL-JUEGO.md` §5.
 | Envío real de invitaciones (**mitad B del paso 19**) | Elegir servicio de correo (Resend, SendGrid…) y enviarlo. Hoy el tutor comparte el enlace a mano, que es lo que hace la mitad A | P1 + **servicio contratado** |
 | Editar o archivar un salón | No existe | P1 |
 | Exportar reportes | No existe | P1 |
-| Progreso, XP y rachas reales | **El progreso y el XP ya se escriben**, desde el J9 (17-sep-2026): cada partida guarda intento y progreso, y superar un nivel concede su `xp_reward`. Lo que falta es **la racha**, que no la escribe nadie, y el XP por marca de agua del J10 | P4 |
+| Progreso, XP y rachas reales | **El progreso y el XP están hechos**: el J9 escribe cada partida y el J10 (17-sep-2026) puntúa contando el programa y concede por marca de agua. Lo que falta es **la racha**, que no la escribe nadie, y la **barra por tramos de 300**, que es el J11 | P4 |
 | Recursos educativos con destino | Hoy son tarjetas informativas sin enlace | Contenido |
 | Abrir los cambios en OpenSpec | Convertir P1–P4 en `openspec/changes/` con `/opsx:propose` | Ninguna |
 

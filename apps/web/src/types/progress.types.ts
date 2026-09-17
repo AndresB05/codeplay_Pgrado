@@ -30,6 +30,27 @@ export interface LevelAttempt {
   userId: LevelAttemptRow['user_id'];
 }
 
+/*
+ * Lo que el servidor devuelve al guardar una partida, que es lo único de la
+ * base que la pantalla de nivel necesita después de jugar.
+ *
+ * `score` es la puntuación QUE CUENTA —la del servidor, contando el programa— y
+ * `awardedXp` lo que de verdad se sumó: la diferencia de marca, que puede ser
+ * cero si la partida no mejoró la anterior. Ninguno de los dos se puede deducir
+ * en el cliente, porque el segundo depende de la marca que ya había.
+ */
+export interface AttemptOutcome {
+  attemptId: string;
+  score: number;
+  /** Los pasos que contó el servidor, o `null` si no pudo leer el programa. */
+  steps: number | null;
+  bestScore: number;
+  completionStatus: string;
+  attemptCount: number;
+  awardedXp: number;
+  totalXp: number;
+}
+
 /** Las columnas de la vista son nullable: se construye con `left join`. */
 export interface LeaderboardEntry {
   avatarKey: LeaderboardRow['avatar_key'];

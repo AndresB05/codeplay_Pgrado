@@ -332,6 +332,29 @@ migración 0012 y se aplica como todo lo demás.
     - Un `update` por `(world_id, sort_order)`. De datos, no de esquema. **Los
       tests del juego leen este archivo, no la 0031.**
 
+33. `202606030033_score_by_steps.sql`
+    - **La puntuación y el XP por marca de agua (J10).** No crea ni altera
+      ninguna tabla, ninguna política ni ningún `grant` de tabla.
+    - **Tres funciones de lectura**, sin acceso a tablas y sin `execute` para
+      nadie: `count_block_chain` y `count_program_steps` recorren el `jsonb` del
+      programa guardado —el sobre del contrato §4.3— y devuelven sus pasos, o
+      `null` si no lo pueden leer; `score_for_steps` aplica la regla,
+      `redondeo(100 × optimalSteps ÷ pasos)` con suelo de uno.
+    - **`submit_level_attempt`**, la única concedida a `authenticated`: guarda el
+      intento con la puntuación que ella calcula, escribe el progreso delegando
+      en `upsert_my_progress` y devuelve puntuación, pasos, marca, XP concedida y
+      total. **Una partida es una llamada**, así que `attempt_count` pasa a
+      contar partidas y coincide con las filas de `level_attempts`.
+    - **`upsert_my_progress` cambia una sola cosa:** concede
+      `(marca nueva − marca anterior) × xp_reward ÷ 100` en vez del `xp_reward`
+      entero al pasar a completado. Se cambia ahí y no sólo en la nueva para que
+      la base no quede con dos reglas.
+    - **Y dos actualizaciones de datos**, que son la parte que no se deshace
+      sola: las marcas pasan a ser la mejor puntuación de los intentos con éxito
+      **legibles** —sin bajar nunca— y `total_xp` queda cuadrado con la suma de
+      las marcas más los logros. Los valores anteriores están en
+      `docs/CONTEXT.md` §2.7.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI. **Va con `npx`**: la CLI
@@ -342,8 +365,8 @@ hay ninguna instalada en el PATH, así que el comando a secas no corre.
 npx supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las treinta y dos migraciones —siembra
-incluida—:
+Para reiniciar en local, aplicando de nuevo las treinta y tres migraciones
+—siembra incluida—:
 
 ```sh
 npx supabase db reset

@@ -596,6 +596,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      count_block_chain: {
+        Args: { input_block: Json; input_inside_jump: boolean }
+        Returns: number
+      }
+      count_program_steps: {
+        Args: { input_submitted_code: string }
+        Returns: number
+      }
       create_level_attempt: {
         Args: {
           input_is_success?: boolean
@@ -649,6 +657,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      score_for_steps: {
+        Args: { input_optimal_steps: number; input_steps: number }
+        Returns: number
+      }
       set_my_role: {
         Args: { input_role: string }
         Returns: {
@@ -671,6 +683,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      submit_level_attempt: {
+        Args: {
+          input_is_success?: boolean
+          input_level_id: string
+          input_metadata?: Json
+          input_runtime_ms?: number
+          input_submitted_code: string
+        }
+        Returns: Json
       }
       update_my_profile: {
         Args: {

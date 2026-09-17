@@ -1,10 +1,13 @@
 import { useEffect } from 'react';
+import type { AttemptOutcome } from '../../../types/progress.types';
 
 interface LevelCompleteDialogProps {
   steps: number;
   optimalSteps: number;
-  /* La `xp_reward` de la fila. Se enseña, pero todavía no se concede. */
-  xpReward: number;
+  /* La puntuación que el juego calcula al terminar, para no dejar el hueco vacío. */
+  score: number;
+  /* Lo que el servidor concedió. `null` mientras viaja, y si el guardado falló. */
+  outcome: AttemptOutcome | null;
   /* La partida no se pudo guardar. Se dice sin alarmar: el nivel está superado igual. */
   saveFailed: boolean;
   onExit: () => void;
@@ -22,10 +25,16 @@ const stepsLabel = (count: number): string => (count === 1 ? '1 paso' : `${count
  * el usuario: con pasos de más también se felicita, y lo que sobra se dice como
  * un reto y no como un fallo.
  *
- * LA XP QUE ENSEÑA NO SE CONCEDE TODAVÍA. El usuario la pidió en la ventana el
- * 14-sep-2026 para no olvidarla, y es la `xp_reward` de la fila tal cual. Lo que
- * de verdad se gana lo calculará el servidor en el J10 —80 al completar y 20 al
- * mejorar, nunca más de 100—, y ese día este número tiene que salir de ahí.
+ * LA XP QUE ENSEÑA ES LA QUE SE CONCEDIÓ, desde el J10. Hasta entonces enseñaba
+ * la `xp_reward` de la fila —«+100 XP» siempre—, que era un recordatorio pedido
+ * por el usuario y dejó de ser verdad el día que la puntuación empezó a decidir
+ * cuánta se gana.
+ *
+ * Y por eso el número va en dos tiempos: la PUNTUACIÓN se enseña al instante,
+ * porque el juego la calcula con la misma regla que el servidor (§3), y la XP
+ * espera a la respuesta. Cuánta se gana depende de la marca anterior, que aquí
+ * no se conoce, así que inventarla sería volver al problema que este paso
+ * arregla. Mientras viaja no se enseña nada en su lugar: aparece cuando llega.
  *
  * No lleva mascota: su hueco espera a las ilustraciones definitivas.
  *
@@ -35,7 +44,8 @@ const stepsLabel = (count: number): string => (count === 1 ? '1 paso' : `${count
 export const LevelCompleteDialog = ({
   steps,
   optimalSteps,
-  xpReward,
+  score,
+  outcome,
   saveFailed,
   onExit,
   onNext,
@@ -80,8 +90,23 @@ export const LevelCompleteDialog = ({
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           <span className="chip chip-grape">Tus pasos: {steps}</span>
           <span className="chip chip-mint">Mejor solución: {optimalSteps}</span>
-          <span className="chip chip-sun">+{xpReward} XP</span>
+          <span className="chip chip-sky">Puntuación: {score}</span>
+          {outcome !== null && outcome.awardedXp > 0 && (
+            <span className="chip chip-sun">+{outcome.awardedXp} XP</span>
+          )}
         </div>
+
+        {/*
+         * Volver a superarlo sin mejorar no gana nada, y eso se dice entero:
+         * que no hay XP nueva y por qué, con la marca que ya tenía delante. Sin
+         * el motivo parecería que el juego se olvidó de pagar.
+         */}
+        {outcome !== null && outcome.awardedXp === 0 && (
+          <p className="mt-4 text-[14px] font-semibold text-ink-soft">
+            Tu mejor marca en este nivel sigue siendo {outcome.bestScore}, así que esta vez no
+            ganaste XP nueva. ¡Supérala y te llevas la diferencia!
+          </p>
+        )}
 
         {/*
          * El guardado falló y se dice, porque si no el niño vuelve al mundo y
