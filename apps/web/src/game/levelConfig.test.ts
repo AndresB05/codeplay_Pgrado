@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import migration from '../../../../supabase/migrations/202606030027_world_1_levels_format_2.sql?raw';
 import world2Migration from '../../../../supabase/migrations/202606030029_world_2_levels.sql?raw';
 import world3Migration from '../../../../supabase/migrations/202606030030_world_3_levels_1_2.sql?raw';
+import world3Level3Migration from '../../../../supabase/migrations/202606030032_world_3_level_3_retune.sql?raw';
 import { debugLevel } from './debugLevel';
 import { openLevel, readLevelConfig } from './levelConfig';
 import { PROGRAM_FORMAT_VERSION } from './program';
@@ -300,13 +301,40 @@ describe('readLevelConfig', () => {
   });
 
   /*
+   * El último de los nueve. Lo sembró la 0031 y lo retocó la 0032 subiendo UNA
+   * altura: se lee de la 0032, que es la que manda, porque una migración aplicada
+   * no se edita y la 0031 queda en el historial con el tablero de antes.
+   */
+  it('acepta el nivel 3 del mundo 3 tal y como lo retoca la 0032', () => {
+    const config = readLevelConfig(seededConfig(world3Level3Migration, 3));
+
+    expect(config?.heights).toEqual([
+      [0, 0, 0, 4, 0],
+      [0, 4, 3, 3, 3],
+      [2, 2, 2, 4, 2],
+      [1, 2, 3, 3, 1],
+      [1, 2, 1, 1, 1],
+    ]);
+    expect(config?.start).toEqual({ cell: { row: 4, column: 0 }, facing: 'east' });
+    expect(config?.goal).toEqual({ row: 0, column: 3 });
+    expect(config?.optimalSteps).toBe(14);
+    expect(config?.stepLimit).toBe(14);
+  });
+
+  /*
    * DECISIÓN DE SIEMBRA, no del formato: el formato admite un máximo con margen.
    * En el mundo 3 el usuario los ató —pasar el nivel ES resolverlo del todo—, y
    * de eso cuelga el XP que el J10 escribirá, así que se comprueba.
    */
-  it('los dos del mundo 3 conceden justo los pasos de su mejor solución', () => {
-    [1, 2].forEach((sortOrder) => {
-      const config = readLevelConfig(seededConfig(world3Migration, sortOrder));
+  it('los tres del mundo 3 conceden justo los pasos de su mejor solución', () => {
+    const delMundo3 = [
+      seededConfig(world3Migration, 1),
+      seededConfig(world3Migration, 2),
+      seededConfig(world3Level3Migration, 3),
+    ];
+
+    delMundo3.forEach((rules) => {
+      const config = readLevelConfig(rules);
 
       expect(config?.stepLimit).toBe(config?.optimalSteps);
     });

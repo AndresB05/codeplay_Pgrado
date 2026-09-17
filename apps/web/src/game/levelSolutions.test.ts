@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import world1Migration from '../../../../supabase/migrations/202606030027_world_1_levels_format_2.sql?raw';
 import world2Migration from '../../../../supabase/migrations/202606030029_world_2_levels.sql?raw';
 import world3Migration from '../../../../supabase/migrations/202606030030_world_3_levels_1_2.sql?raw';
+import world3Level3Migration from '../../../../supabase/migrations/202606030032_world_3_level_3_retune.sql?raw';
 import { countSteps, runProgram, type Order } from './interpreter';
 import type { LevelConfig, Pose } from './level';
 import { readLevelConfig } from './levelConfig';
@@ -222,6 +223,31 @@ const levels: { name: string; config: LevelConfig; solution: Order[] }[] = [
       { kind: 'turn', side: 'left' },
       { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
       { kind: 'turn', side: 'left' },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+    ],
+  },
+  /*
+   * EL ÚLTIMO DE LOS NUEVE, con el tablero que le dejó la 0032. Catorce pasos, y
+   * lo que de verdad decide este mundo: hay DOS programas distintos de catorce
+   * de entre 48 recorridos posibles, y dos de esos 48 se quedan a un solo paso.
+   * El usuario rechazó a propósito las variantes de un único camino correcto
+   * —«es como darle una línea recta entre caminos curvados»—.
+   *
+   * La solución de aquí PASA DE LARGO HACIA ARRIBA: sube al escalón de altura 4,
+   * baja andando al de 3 y salta a la meta. Es el movimiento que la 0032 añadió.
+   */
+  {
+    name: 'nivel 3 del mundo 3',
+    config: seededConfig(world3Level3Migration, 3),
+    solution: [
+      { kind: 'turn', side: 'left' },
+      { kind: 'advance', steps: 1 },
+      { kind: 'turn', side: 'right' },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 2 }] },
+      { kind: 'advance', steps: 1 },
+      { kind: 'turn', side: 'left' },
+      { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
+      { kind: 'advance', steps: 1 },
       { kind: 'jump', body: [{ kind: 'advance', steps: 1 }] },
     ],
   },

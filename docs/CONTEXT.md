@@ -3345,7 +3345,7 @@ se edita a mano**.
 npx supabase gen types typescript --linked > apps/web/src/types/database.types.ts
 ```
 
-### 4.2b Tres de los nueve niveles sembrados siguen siendo de otro juego
+### 4.2b Los nueve niveles sembrados eran de otro juego — RESUELTO
 
 Descubierto el 4-sep-2026 leyendo la migración 0012. Las nueve filas de `levels`
 llevan `validation_rules` del concepto anterior —el de escribir JavaScript—:
@@ -3378,32 +3378,59 @@ barato rodearlo, 10 pasos contra 11— y `el-faro` en el 2 —una torre de altur
 la que sólo se entra desde arriba, 17 pasos—. En los dos `stepLimit` vale lo
 mismo que `optimalSteps`.
 
-**Queda uno**: el nivel 3 del mundo 3, que sigue siendo `tormenta-final` y que el
-juego rechaza. **No es un descuido**: el usuario diseñó sobre boceto el 1 y el 2
-el 16-sep-2026 y decidió sembrarlos ya en vez de esperar al tercero, que llegará
-con su propia migración, la **0031**.
+**Y EL MUNDO 3 ESTÁ ENTERO desde el 17-sep-2026**, con `muchos-caminos` en el 3
+—la 0031, retocada por la **0032**—. **Con eso se cierra esta deuda y el J12: los
+NUEVE niveles se juegan desde su fila**, y el J13 —la pasada de gráficos, que
+exige los nueve puzles jugándose— deja de estar bloqueado.
 
-**Las dos salidas miran al camino MALO**, decidido por el usuario y en los dos
-niveles: en el 1 al borde de los pilares —que tiene un giro menos y aun así cuesta
-uno más— y en el 2 al borde que se acaba a dos casillas. Lo eligió **viendo los
-tableros montados**: las dos salidas tienen dos vecinas alcanzables, la regla de
+**La 0032 existe porque el usuario retocó el nivel con la 0031 ya aplicada**, y
+la razón es la decisión de producto más importante de este mundo. Se le ofreció
+subir una altura para dejar **un único camino correcto** —12 pasos, 204
+recorridos posibles— y lo rechazó: «es como darle una línea recta entre caminos
+curvados, hace la elección muy obvia». Prefirió **14 pasos, dos caminos correctos
+entre 48 recorridos**, con dos que se quedan a un solo paso.
+
+**Eso corrige dos lecturas equivocadas de su criterio**, y conviene tenerlo
+delante antes de «mejorar» cualquier nivel de este mundo:
+
+1. **Más caminos óptimos no es más difícil**: es más perdonar. Hay varias
+   respuestas buenas.
+2. **Un único camino correcto tampoco es difícil por sí solo**, si ese camino es
+   recto y los demás son curvos: se ve venir. Lo que el mundo 3 busca es que los
+   caminos que valen **no se distingan a ojo** de los que no.
+
+| | Pasos | Caminos correctos | Recorridos posibles | Fallan por 1 paso |
+| --- | --- | --- | --- | --- |
+| Nivel 1 — Dos caminos | 10 | 1 | — | — |
+| Nivel 2 — El faro | 17 | 2 | — | — |
+| Nivel 3 — Muchos caminos | 14 | 2 | 48 | 2 |
+
+Lo que el escalón de la 0032 añade al puzle: la casilla que da a la meta mide 3 y
+la de al lado pasa a medir 4, así que hay que **subir, bajar andando y volver a
+saltar**. Pasar de largo hacia arriba para poder llegar.
+
+**Las TRES salidas miran al camino MALO**, decidido por el usuario nivel a nivel:
+en el 1 al borde de los pilares —que tiene un giro menos y aun así cuesta uno
+más—, en el 2 al borde que se acaba a dos casillas, y en el 3 contra una casilla
+un escalón más alta, de modo que el primer «avanzar» choca y la primera orden
+buena es un salto. Lo eligió **viendo los tableros montados**: las dos salidas tienen dos vecinas alcanzables, la regla de
 «mira a su única vecina» no decidía, y él no podía contestar en términos de norte y
 sur —«no sé cuáles son tu norte y tu sur»—. Se le renderizó el tablero desde
 cinco ángulos y dos imágenes del mismo sitio con el personaje mirando a cada
 lado, y eligió señalando. **Es el método que funciona cuando la pregunta es
 espacial**, y es la tercera vez que sus mapas vienen girados respecto al boceto.
 
-**Verificado contra la base real tras el `push`**: las catorce columnas de las dos
-filas coinciden campo a campo con el `.sql` —comparadas por hash, con las claves
-del `jsonb` ordenadas—, la fila 3 sigue intacta y `xp_reward` no cambió en
-ninguna. Los dos niveles se juegan desde la lista: el 1 termina con «¡Perfecto!
-…con 10 pasos» y el contador clavado en **0**, el 2 con 17, y el camino malo del 1
-**congela al personaje una casilla por debajo de la meta**.
+**Verificado contra la base real tras cada `push`**: las columnas de las tres
+filas coinciden campo a campo con su `.sql` —comparadas por hash, con las claves
+del `jsonb` ordenadas— y `xp_reward` no cambió en ninguna. Los tres se juegan
+desde la lista y terminan con «¡Perfecto!» y el contador clavado en **0**: 10, 17
+y 14 pasos. Y el camino malo del 1 **congela al personaje una casilla por debajo
+de la meta**, que es la mecánica del mundo vista funcionando.
 
-**Lo que eso significa hoy para quien abra cualquiera de los otros tres**: el
-juego los **rechaza enteros** por el camino del contrato §7 —`levelConfig.ts`— y
-la pantalla se lo dice al niño con palabras suyas, sin dibujar tablero a medias.
-No es un fallo: es el estado esperado hasta que cada uno se siembre.
+**El camino de rechazo del contrato §7 ya no lo recorre ningún nivel sembrado**,
+así que hoy sólo lo ejercitan los tests —`levelConfig.test.ts`—. Sigue siendo la
+frontera: un `config` que no describa un tablero se rechaza entero y la pantalla
+se lo dice al niño con palabras suyas.
 
 ### 4.2 No hay catálogo de logros
 

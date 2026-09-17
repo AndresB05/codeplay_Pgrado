@@ -340,11 +340,16 @@ context: |
      YA EXISTE, hecha en el J7.1 —ruta /dashboard/worlds/:worldId/:levelId, la
      lista de niveles leyendo de la base y el juego montado dentro—. Los tres
      niveles del mundo 1 y los tres del mundo 2 se juegan desde su fila (J7 y
-     J12.1 a J12.3 cerrados). DEL MUNDO 3 YA HAY DOS, sembrados por la 0030
-     (mundo-3-niveles-1-y-2): dos-caminos en el 1 y el-faro en el 2, los
-     primeros con stepLimit. El nivel 3 sigue siendo tormenta-final, del juego
-     anterior, y el juego lo rechaza: el usuario no ha pasado su boceto y va en
-     la 0031.
+     J12.1 a J12.3 cerrados). Y EL MUNDO 3 TAMBIEN, desde el 17-sep-2026:
+     dos-caminos y el-faro por la 0030 (mundo-3-niveles-1-y-2) y muchos-caminos
+     por la 0031, retocada por la 0032 (mundo-3-nivel-3). LOS NUEVE NIVELES SE
+     JUEGAN DESDE SU FILA, asi que el J12 esta cerrado y el J13 —la pasada de
+     graficos— ya no esta bloqueado. Los tres del mundo 3 llevan stepLimit igual
+     a optimalSteps. LA DIFICULTAD DEL MUNDO 3 SE MIDE EN CAMINOS Y NO EN PASOS,
+     decidido por el usuario: mas caminos OPTIMOS es mas perdonar, y un unico
+     camino correcto tampoco es dificil si es recto y los demas son curvos. Lo
+     que se busca es que los caminos que valen no se distingan a ojo de los que
+     no. Ver docs/CONTEXT.md 4.2b antes de retocar ningun nivel de ese mundo.
      EL MUNDO 3 SE JUEGA CONTRA UN MAXIMO DE PASOS, mecanica construida por
      limite-de-pasos (J12.4): config gana stepLimit, OPCIONAL —ausente es sin
      limite, que es como se juegan los seis ya sembrados—; al agotarlo runProgram

@@ -107,11 +107,11 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J9** | Mandar el intento al servidor con el programa | La partida aparece guardada en la base | ⬜ |
 | **J10** | La migración del XP: contar pasos y conceder por marca de agua | El XP sube 80, y 20 al mejorar. Nunca más de 100 | ⬜ |
 | **J11** | La barra de XP por tramos de 300 | El niño sube de nivel al terminar un mundo | ⬜ |
-| **J12** | **Mundos 2 y 3** — partido en seis, con el mismo patrón que el J7 | Hay nueve niveles jugables | ⬜ |
+| **J12** | **Mundos 2 y 3** — partido en siete, con el mismo patrón que el J7 | Hay nueve niveles jugables | ✅ |
 | J12.1 · .2 · .3 | Los tres niveles del mundo 2 — **empezó por el 2**, `salta-y-sube`, el primero con subidas, que trajo el bloque «saltar» y las alturas (`salto-y-alturas`). **Y se cerraron juntos en `mundo-2-completo`**, por decisión del usuario: `salta-y-sube` bajó al 1, y el 2 y el 3 —`el-gran-rodeo` y `la-torre`— entraron en la misma migración, la 0029 | Los tres niveles del mundo 2 se juegan desde la base | ✅ |
 | J12.4 | **El máximo de pasos**, la mecánica del mundo 3: `stepLimit` en `config`, el recorrido que se corta al agotarlo y el contador en cuenta atrás (`limite-de-pasos`). Va antes que los tableros porque el lector descartaba en silencio los campos que no conocía | Un nivel con máximo congela al personaje al llegar a cero y le pide reiniciar | ✅ |
 | J12.5 · .6 | Los niveles 1 y 2 del mundo 3, **los primeros con máximo de pasos**: `dos-caminos` —anillo llano con dos pilares que deciden por qué lado rodearlo, 10 pasos contra 11— y `el-faro` —torre de altura 5 con una sola entrada, 17—. Los dos en la 0030 (`mundo-3-niveles-1-y-2`) | Los dos se juegan desde la base, con el contador en cuenta atrás | ✅ |
-| J12.7 | El nivel 3 del mundo 3. **Sin boceto todavía**: el usuario diseñó el 1 y el 2 el 16-sep-2026 y decidió sembrarlos sin esperar al tercero, que va en la 0031 | Igual que arriba | ⬜ |
+| J12.7 | El nivel 3 del mundo 3, `muchos-caminos` (la 0031, retocada por la **0032**). **Cierra el J12 y con él la deuda de los nueve puzles.** El retoque subió una altura para pasar de 13 pasos con cuatro caminos correctos a **14 con dos**, entre 48 recorridos posibles: el usuario rechazó a propósito las variantes de un único camino, «una línea recta entre caminos curvados» | Los nueve niveles se juegan desde la base | ✅ |
 | **J13** | **Assets y diseño de los tres mundos**, en una sola pasada y con los nueve puzles jugándose | Los nueve niveles dejan los cubos: suelo, decorado, cámara y luz, y por último el personaje | ⬜ |
 
 ### El apartado gráfico va al final, en una sola pasada

@@ -313,6 +313,25 @@ migración 0012 y se aplica como todo lo demás.
       tocar `xp_reward` ni `difficulty`. Los tests del juego leen los dos
       tableros de este archivo.
 
+31. `202606030031_world_3_level_3.sql`
+    - Siembra **el nivel 3 de la Costa de Bugs**, `muchos-caminos`, y con él
+      cierra los nueve. Una colina compacta con la meta a altura 4 en el borde
+      norte; la salida, en la esquina suroeste, **mira al este contra una casilla
+      un escalón más alta**, así que el primer «avanzar» choca. `optimalSteps` 13.
+    - Un `update` por `(world_id, sort_order)`. De datos, no de esquema.
+
+32. `202606030032_world_3_level_3_retune.sql`
+    - **Retoca UNA altura del nivel anterior**, con la 0031 ya aplicada: la
+      casilla de la fila 3, columna 4 sube de 3 a 4, y `optimalSteps` y
+      `stepLimit` pasan de 13 a **14**. La 0031 no se edita — mismo caso que la
+      0024 sobre la 0023.
+    - **El porqué, que es diseño de producto**: con la altura a 3 el nivel tenía
+      cuatro caminos correctos de entre 113 recorridos; el usuario rechazó las
+      variantes que dejaban uno solo —«una línea recta entre caminos curvados»— y
+      eligió **dos caminos correctos entre 48**, con dos que fallan por un paso.
+    - Un `update` por `(world_id, sort_order)`. De datos, no de esquema. **Los
+      tests del juego leen este archivo, no la 0031.**
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI. **Va con `npx`**: la CLI
@@ -323,7 +342,7 @@ hay ninguna instalada en el PATH, así que el comando a secas no corre.
 npx supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las treinta migraciones —siembra
+Para reiniciar en local, aplicando de nuevo las treinta y dos migraciones —siembra
 incluida—:
 
 ```sh
