@@ -1,7 +1,7 @@
 # CodePlay — Hoja de ruta
 
 > **En qué orden se construye el proyecto y quién hace cada parte.**
-> Última actualización: **2 de septiembre de 2026**.
+> Última actualización: **18 de septiembre de 2026**.
 
 **El juego tiene su propia hoja de ruta:**
 [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md), en cuatro fases. Aquí sólo aparece como
@@ -133,18 +133,19 @@ escrito en §2.1.
 | 18 | ★ Sincronización en vivo (Supabase Realtime) — **no eran «notificaciones»**: no hay campana, ni lista de avisos, ni no leídos, ni nada que persista un aviso. Son tres pantallas que ya existían y ahora se actualizan solas: la bandeja del tutor, la pertenencia del niño y sus misiones. La migración 0021 publica tres tablas en `supabase_realtime`, que existía con las cuatro operaciones activas y **cero tablas**. De paso cerró el defecto del `loading` que el paso 13 dejó a medias: **una recarga disparada desde fuera no declara espera, pero sí la apaga**, en los dos hooks. Verificado con dos sesiones y con los tres negativos emparejados; cierra además el caso «tutor contra salón ajeno» del paso 16 | ✅ | `sincronizacion-en-vivo` |
 | 23 | ★ **PARTIDO EN DOS, ver §2.1.** **23.1 — Preparar el terreno y escribir el contrato: HECHO.** Cerró las tres decisiones —cómo se verifica un logro (§3.2), si las misiones necesitan tabla propia (§3), y dónde vive la configuración de un nivel (§3.3)— y escribió [`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md). **Ninguna exigió migración.** De paso midió por primera vez `create_level_attempt` y `upsert_my_progress`, escritas hacía ocho días y nunca ejecutadas: ver `CONTEXT.md` §2.7. **No entró el puente ni el contenedor del build** —dependen de un WebGL que no existe y no se verifican de punta a punta—: siguen en el paso 20. **23.2 — Construir el juego: REPLANTEADO EL 3-SEP-2026 y CASI CERRADO.** Se descartó Unity en favor de librerías de JavaScript, así que ya no hay que instalar nada ni activar Git LFS ni generar un build de WebGL: **el juego pasa a ser parte de la aplicación web**. Con eso, 23.2 dejó de depender de una persona y de ser lo único ajeno a este repositorio. Del roadmap del juego están **hechos el J1 al J12** —los nueve niveles se juegan desde la base, se guardan y se puntúan— y **queda el J13**, los assets y el diseño de los tres mundos, que el usuario dejó **para después de la prueba preliminar** (17-sep-2026). El diseño está en [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) y el detalle paso a paso en [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md) | 🔄 | 23.1 directo · 23.2 salvo el J13 |
 | 17 | ~~Reportes de habilidades~~ **sobre progreso real — HECHO el 18-sep-2026, y el nombre dejó de describirlo.** El panel no enseñaba datos de ejemplo: enseñaba **ceros**, y no por falta de cálculo sino de permiso —con sesión de tutor, `user_progress` y `level_attempts` devolvían **cero filas**—. Se midió algo que no estaba escrito en ningún sitio y que cambió el alcance: **el juego tiene cuatro bloques** —avanzar, dos giros y saltar—, sin bucle, sin condicional y sin función, así que de las cinco competencias que el panel pintaba **sólo «secuencias» tiene con qué entrenarse**. El usuario decidió **retirar las cinco barras** y enseñar lo que el dato sostiene: niveles superados, mundos terminados, eficiencia media, y por explorador **los intentos de cada nivel y los pasos de cada partida**. Decidió además que **el tutor ve el historial completo, también el anterior al ingreso** (cierra §3.1) y que **el resumen se ve entre compañeros, el detalle no**. Migraciones `0034` y `0035`; la segunda por una trampa que conviene no repetir: **una vista sin `security_invoker` sortea los permisos de las TABLAS, no el `execute` de una FUNCIÓN**. Verificado contra la base con la cuenta de `.env`. **Deja fuera** la navegación mundo a mundo por alumno, que es el 31 | ✅ | `reportes-de-progreso-real` |
-| 31 | ★ **Seguimiento por alumno en el panel del tutor.** Pedido por el usuario el 3-sep-2026: desde el apartado de salones, el tutor selecciona a un alumno y ve **su avance por mundos** —qué niveles ha completado y qué mundos ha terminado—. Hoy no existe: la tabla de seguimiento enseña una fila por alumno con datos de ejemplo, y no hay ninguna vista de detalle. **Va detrás del 21 por la misma razón que el 17**: sin progreso real escrito no hay nada que mostrar que no sea inventado. **La decisión de §3.1 ya está tomada y aplicada por el 17**: el tutor ve también lo que el niño jugó antes de entrar al salón, sin acotar por `joined_at`. Lo que este paso añade es la navegación mundo a mundo, que el 17 dejó fuera a propósito | ⬜ | — |
+| 31 | ★ **Seguimiento por alumno en el panel del tutor — ALCANCE REDUCIDO POR EL PASO 17, reescrito el 18-sep-2026.** Pedido por el usuario el 3-sep-2026. **Lo que esta fila decía ya no es cierto:** decía que «la tabla de seguimiento enseña una fila por alumno con datos de ejemplo y no hay ninguna vista de detalle», y el paso 17 metió la ficha del explorador —una fila por nivel, con su mundo, su marca, cuántos intentos le costó y los pasos de cada partida—. **Lo que queda es la navegación mundo a mundo como pantalla propia**, que el 17 dejó fuera a propósito para no invadir este paso. Antes de empezarlo conviene mirar la ficha que ya existe y decidir si esto es una pantalla nueva o un crecimiento de aquélla. La decisión de §3.1 ya está tomada y aplicada: el tutor ve también lo que el niño jugó antes de entrar al salón | ⬜ | — |
 | 20 | ~~Pantalla de nivel con contenedor, y el puente hacia el juego~~ — **HECHO en el J7.1**, por decisión del usuario de montarla donde va en vez de ensayarla otra vez: la ruta `/dashboard/worlds/:worldId/:levelId`, la pantalla con el juego dentro, la selección de niveles **leyendo de la base** —fuera los diez títulos inventados y el `find ?? studentWorlds[0]` que metía cualquier uuid real en el primer mundo de maqueta— y `mapLevelRow` trayendo ya `narrative`, `starter_code` y `validation_rules`. **Le queda mandar el intento**, que es el paso 21. Ver `ROADMAP-JUEGO.md` §3 | ✅ | P4 |
 | 21 | Escritura de progreso y XP desde el juego — **HECHO el 17-sep-2026, en tres pasos del roadmap del juego**: el **J9** guarda cada partida terminada con su programa, con éxito o sin él; el **J10** estrena la puntuación —la calcula el servidor contando el programa, migración `202606030033`— y cambia la concesión a la marca de agua; y el **J11** pone la barra por tramos de 300 con el **Nivel Explorador** y refresca el XP sin recargar. Los tres verificados jugando contra la base real: ver `CONTEXT.md` §2.7. **Deja fuera la racha**, que es del 22 | ✅ | `mandar-el-intento` + `migracion-del-xp` + `nivel-explorador` |
 | 22 | Diseñar e implementar rachas y logros — **no existe nada**, incluye el catálogo y retirar las estrellas. **Ver §3.2** | ⬜ | P4 |
-| — | 🔬 **PRUEBA PRELIMINAR** — la hacen el usuario y gente cercana con cuentas de prueba, **sin menores de fuera**. Por eso el 14 puede ir detrás: ver §2.1 | ⬜ | — |
+| 27.1 | ★ **Despliegue provisional para la prueba — AÑADIDO EL 18-SEP-2026.** Montaje **simple y desechable** sobre Supabase, sólo para que la prueba preliminar exista: no es el despliegue bueno, que va al servidor de la universidad detrás del 30. Aparece aquí porque la prueba dejó de ser local: ver §2.1 | ⬜ | **usuario** |
+| — | 🔬 **PRUEBA PRELIMINAR — REPLANTEADA EL 18-SEP-2026: ya no es local ni con gente cercana.** La hace **un salón de estudiantes universitarios** sobre el despliegue provisional del 27.1, con sus propias cuentas. Siguen sin entrar menores de fuera —son mayores de edad—, así que el **consentimiento del acudiente** del paso 14 sigue sin aplicar y el 14 puede seguir detrás. **Lo que sí cambia es que habrá datos personales de terceros en un despliegue público**, y eso queda anotado en §2.1 como riesgo asumido, no como descuido | ⬜ | — |
 | 14 | ★ Consentimiento del acudiente y política de privacidad — **adelantado en parte y el resto DETRÁS de la prueba preliminar, ver §2.1 y §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó el único sitio donde se guardaban datos de terceros. Lo que falta **se retoma después de la prueba preliminar, y en todo caso antes del primer usuario real**. Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los compañeros se ven entre sí nombre, XP y racha (§3.2) | 🔄 | `invitaciones-sin-correo` + §3.4 |
 | 19 | Invitaciones por correo reales y enlace canjeable — **PARTIDO EN DOS, ver §2.1.** **Mitad A hecha:** el tutor genera un enlace canjeable, lo comparte por donde quiera, y quien lo abre entra al salón **sin pasar por la bandeja**; el token sobrevive el registro, incluida la vuelta por Google. La purga por `expires_at` entró desde el primer día, y **ninguna tabla ganó columna de correo**: por eso esta mitad esquiva entera la decisión de privacidad de §3.4. **Mitad B pendiente:** el envío real, que necesita **servicio de correo contratado** (§2.2) | 🔄 | `enlace-de-invitacion` + servicio |
 | 24 | Retirar la sesión de invitado | ⬜ | — |
 | 26 | Ilustraciones con Higgsfield — **va ANTES del 25, ver §2.1**: hacer responsive un diseño que el apartado gráfico va a cambiar es hacerlo dos veces | ⬜ | P6 |
 | 25 | ★ Responsive, accesibilidad y `ErrorBoundary` — **detrás del 26 a propósito.** **Medido**: cero clases `sm:`/`md:`/`lg:` en las pantallas clave, `w-[262px] shrink-0` duplicado en `Sidebar.tsx:134` y `TeacherSidebar.tsx:66`, y **ningún `ErrorBoundary` en todo `apps/web/src`**. Hereda además `/invite/:token` del paso 19, que es la pantalla con más probabilidad de abrirse en un móvil. Ver `CONTEXT.md` §4.4 | ⬜ | — |
 | 30 | ★ Migración al servidor de la universidad — **alcance por decidir, ver §2.1.** Supabase fue para probar funcionalidades con usuarios; lo definitivo va al servidor de la universidad. **Qué se mueve depende de lo que ofrezcan**, y eso se pregunta antes de planificarlo | ⬜ | — |
-| 27 | ★ Despliegue y URL de demo | ⬜ | — |
+| 27.2 | ★ **Despliegue definitivo y URL de demo.** Va detrás del 30 porque el destino bueno es el servidor de la universidad, no Supabase. Lo que el 27.1 monte para la prueba es desechable y no condiciona a éste | ⬜ | — |
 
 ### 2.1 Decisiones de orden que conviene no deshacer
 
@@ -182,6 +183,58 @@ cómo verifica el servidor que un logro se consiguió. Antes esa pregunta colgab
 del paso 20; con el 23 delante, le toca al 23.1 y con `/opsx:explore`, que es la
 vía que §3.2 ya señalaba.
 
+**LA PRUEBA PRELIMINAR DEJÓ DE SER LOCAL, y con ella se mueve el despliegue.
+Decisión del usuario del 18 de septiembre de 2026.** La prueba la hará **un salón
+de estudiantes universitarios**, con sus propias cuentas, sobre una aplicación
+desplegada. No es lo que esta sección daba por hecho cuando escribió que la hacen
+«el usuario y gente cercana con cuentas de prueba».
+
+**El 27 se parte en dos, y la primera mitad sube hasta antes de la prueba.** El
+27.1 es un montaje **simple y desechable** sobre Supabase, cuyo único propósito
+es que la prueba pueda ocurrir; el 27.2 es el despliegue bueno y sigue detrás del
+30, sobre el servidor de la universidad. Partirlo es lo que deja avanzar sin
+esperar a nadie.
+
+**Eso obliga a aceptar lo que esta sección evitaba: se despliega dos veces.** El
+argumento original —«desplegar sobre Supabase y volver a desplegar sobre otra
+cosa es hacer el 27 dos veces»— sigue siendo cierto, y se paga a propósito: el 30
+depende de una respuesta que la universidad todavía no ha dado, y hacer que la
+prueba espere a esa respuesta es peor que montar dos veces. **Lo que hace barato
+el precio es que el 27.1 sea desechable**: si se monta pensando que va a durar,
+se paga dos veces de verdad.
+
+**El 14 puede seguir detrás, y el motivo cambió.** Antes era que no había
+aplicación desplegada ni datos de terceros. Ahora habrá las dos cosas; lo que
+sostiene el orden es sólo una parte del argumento anterior: **son estudiantes
+universitarios, mayores de edad**, así que el consentimiento del acudiente —que
+es el corazón del paso 14— no aplica.
+
+> **Queda anotado como riesgo asumido, no como descuido.** En la prueba habrá
+> **datos personales de terceros** —correo y nombre de gente que no es cercana—
+> en una aplicación desplegada, y la política de privacidad no estará publicada.
+> De la lista de §3.4, lo que ese escenario haría exigible son los puntos **1**
+> (la política y los cuatro enlaces muertos del footer) y **2** (la tabla de
+> consentimientos); los puntos 3 y 4 siguen siendo de menores y no se tocan. El
+> usuario lo decidió con esto delante el 18-sep-2026. **Si entrara un menor en la
+> prueba, esto deja de ser una decisión y pasa a ser una parada.**
+
+**El 25 y el J13 se quedan detrás, y también es decisión suya con la medición
+delante.** Lo medido el 18-sep-2026: `StudentRosterTable`, `TeacherSidebar` y
+`Sidebar` tienen **cero** clases responsive, **no hay ningún `ErrorBoundary`** en
+todo `apps/web/src`, y jugar un nivel descarga **2,1 MB** —634 kB de aplicación
+más 1468 kB de editor y escena—. Con un salón entrando desde sus móviles, eso es
+lo que la prueba va a encontrarse. **La prueba medirá la mecánica y el panel, no
+el acabado**, y conviene decirlo antes y no después de leer los comentarios de
+quien la use.
+
+**Lo que NO cambia: el 31 y el 22 siguen antes de la prueba**, donde la secuencia
+ya los tenía. Confirmado por el usuario el 18-sep-2026.
+
+**Y una que el despliegue no mueve porque ya estaba resuelta:** el paso 24
+—retirar la sesión de invitado— no es un riesgo para el despliegue. Medido sobre
+el bundle de producción: el texto «Sin login» **no aparece**, así que la poda por
+`import.meta.env.DEV` hace su trabajo y esos botones no llegan a producción.
+
 **El 26 pasa por delante del 25, y el motivo es no pagar dos veces.** El 25 hace
 responsive el diseño actual; el 26 lo cambia. Hacerlos en ese orden significaría
 replegar pantallas que van a dejar de existir. El 26 baja del final porque ya no
@@ -204,8 +257,10 @@ la RLS y las siete RPC son suyas—, si dan **HTTPS con certificado**, si dejan
 **Realtime** y a la **autenticación con OAuth**. Según la respuesta, el 30 va de
 mover una URL a reimplementar medio backend, y por eso no lleva estimación.
 
-Va delante del 27 porque desplegar sobre Supabase y volver a desplegar sobre otra
-cosa es hacer el 27 dos veces.
+Va delante del **27.2** porque desplegar sobre Supabase y volver a desplegar
+sobre otra cosa es hacer el despliegue bueno dos veces. **Lo que ya no impide es
+el 27.1**, que es un montaje desechable para que la prueba preliminar exista: ver
+arriba.
 
 
 **El paso 11 se adelanta al 10, y valió la pena a la primera.** La primera
@@ -285,9 +340,22 @@ prueba, y ya no se recogen datos de nadie que no se haya dado de alta él mismo.
 falta se retoma después de la prueba preliminar y en todo caso antes de que
 entre alguien de fuera. Ver §3.4, que dice exactamente qué falta.
 
-Redactar ahora una política sobre un esquema que todavía va a cambiar —el paso
-17 conecta el progreso real, el 20 y el 21 traen el juego— significaría
-reescribirla dos veces. Google OAuth (15), en cambio, no depende de nada de eso.
+**ESA PREMISA CADUCA CON EL 27.1, y el usuario lo decidió con ello delante el
+18-sep-2026.** La prueba preliminar será un despliegue con un salón de
+universitarios dándose de alta con sus propios correos: habrá aplicación
+desplegada y datos de terceros, así que lo único que sostiene el orden es que
+**son mayores de edad** y el consentimiento del acudiente no les aplica. Lo que
+sí quedaría exigible —la política de privacidad y la prueba del consentimiento,
+puntos 1 y 2 de §3.4— se asume como riesgo, no como olvido. Ver §2.1.
+
+**CADUCADO, y se corrige el 18-sep-2026.** Este párrafo decía que redactar la
+política ahora sería hacerlo sobre un esquema que todavía va a cambiar, «el paso
+17 conecta el progreso real, el 20 y el 21 traen el juego». **Los tres están
+hechos.** El esquema que la política tendría que describir ya existe: el
+progreso, los intentos con su programa, y las tres vistas que abren el progreso
+de un alumno a quien lo tutela. Lo que sostiene el orden hoy es sólo lo de
+arriba —que en la prueba no entran menores—, no que el esquema esté a medias.
+Google OAuth (15) tampoco dependía de eso y ya está.
 
 **El paso 28 se adelanta al 16 porque sus tres primeras partes eran fallos que
 se veían hoy con una cuenta real, y ninguna dependía de nada.** No es una mejora
@@ -337,7 +405,8 @@ introducir credenciales:
 | ~~23.2~~ | ~~Instalar Unity y crear el proyecto~~ — **YA NO REQUIERE A NADIE, desde el 3-sep-2026.** Se descartó Unity: el juego se construye con librerías dentro de la aplicación web, así que no hay instalación, ni Git LFS, ni build que generar. La otra pregunta que colgaba de aquí —si el juego vivía en un repositorio propio— también quedó cerrada: **se queda en el monorepo** |
 | 17 | `npx supabase db push` de la `0034` y de la `0035`, y el `gen types` detrás — piden credenciales por consola. **Fueron dos pushes y no uno**: el segundo lo obligó un `42501` que sólo se ve consultando la columna `steps` (§2.10 de `CONTEXT.md`). **Aviso para el siguiente `gen types`:** con `>` de PowerShell el archivo sale en **UTF-16**, y hay que reconvertirlo a UTF-8 |
 | 30 | **Preguntar a la universidad qué ofrece su servidor** —Postgres y su versión, HTTPS, si dejan correr procesos, si hay algo como Realtime y como OAuth— y conseguir los accesos. Sin esa respuesta el paso no se puede ni planificar (§2.1) |
-| 27 | Configurar el despliegue |
+| 27.1 | Montar el despliegue provisional para la prueba preliminar — simple y desechable, sobre Supabase |
+| 27.2 | Configurar el despliegue definitivo |
 
 Fuera de la secuencia, siguen pendientes dos tareas de cuenta que dejó anotadas
 el commit `7c84a93`: borrar los secretos `AZUREAPPSERVICE_*` en los ajustes de
@@ -797,8 +866,21 @@ seguir sembrando por migración.
 usuario como persona natural** —lo que además le exime del Registro Nacional de
 Bases de Datos, que desde el Decreto 090 de 2018 sólo alcanza a sociedades y
 entidades con activos sobre 100.000 UVT y a entidades públicas—; el **plazo de
-conservación** está en `CONTEXT.md` §2.7; el historial que ve el tutor se cuenta
-desde `joined_at` (§3.1); y la comparación entre compañeros se queda (§3.2).
+conservación** está en `CONTEXT.md` §2.7; y la comparación entre compañeros se
+queda (§3.2).
+
+**CORREGIDO EL 18-SEP-2026: el historial que ve el tutor NO se cuenta desde
+`joined_at`.** Esta lista decía lo contrario, y se escribió antes de que la
+decisión se tomara de verdad. El paso 17 la cerró y el usuario eligió lo opuesto:
+**el tutor ve el historial completo**, incluido lo anterior al ingreso, sin
+recortar por esa fecha (§3.1). Es más de lo que esta lista daba por hecho, así
+que **la política tendrá que decirlo**, no darlo por acotado.
+
+**Y el punto 4 gana un dato del paso 17:** entre compañeros ya no se ven sólo
+nombre, XP y racha, sino también **el mundo en el que anda cada uno y cuándo jugó
+por última vez** —decisión del usuario del 18-sep-2026, con el precedente de la
+0015—. El detalle por nivel e intento sigue siendo sólo del tutor. Lo que la
+proyección doble tenga que esconder incluye ahora esas dos columnas.
 
 **Por decidir antes de redactar:** el **correo de contacto y el domicilio** que
 figurarán en la política. **No pueden ser los personales**: este repositorio es

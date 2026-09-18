@@ -3530,6 +3530,13 @@ datos de nadie que no se haya dado de alta él mismo. **La obligación nace con 
 primer usuario real.** Se retoma después de la prueba preliminar y en todo caso
 antes de que entre alguien de fuera.
 
+**Ojo: esa premisa caduca en la prueba preliminar.** Desde el 18-sep-2026 esa
+prueba es un **despliegue** con un salón de **universitarios** usando sus
+propios correos, así que habrá aplicación desplegada y datos de terceros. Lo que
+sostiene el aplazamiento es sólo que son mayores de edad y el consentimiento del
+acudiente no les aplica; el resto se asume como riesgo, decidido por el usuario
+con la lista delante. El razonamiento entero está en `ROADMAP.md` §2.1.
+
 **Qué falta exactamente, y qué está ya decidido, está en `ROADMAP.md` §3.4**, en
 una lista que sirve de encargo sin releer nada más. De lo decidido, lo que toca
 a este documento: el **responsable del tratamiento es el usuario como persona

@@ -406,6 +406,19 @@ context: |
      celebra la subida de tramo cuando ocurre.
   El apartado gráfico queda FUERA de este hito a propósito.
 
+  LA PRUEBA PRELIMINAR NO ES LOCAL, replanteada el 18-sep-2026: la hace un
+  salon de estudiantes universitarios, con sus propias cuentas, sobre un
+  despliegue. Por eso el paso 27 se partio en dos: el 27.1 es un montaje
+  simple y DESECHABLE sobre Supabase para que la prueba exista, y va ANTES de
+  ella; el 27.2 es el despliegue bueno y sigue detras del 30, en el servidor
+  de la universidad. Se despliega dos veces a proposito: el 30 depende de una
+  respuesta que la universidad no ha dado.
+  El 31 y el 22 siguen ANTES de la prueba, donde ya estaban.
+  El 14 puede seguir detras SOLO porque son mayores de edad y el
+  consentimiento del acudiente no les aplica; que haya datos de terceros en un
+  despliegue sin politica de privacidad publicada es un riesgo asumido por el
+  usuario, no un descuido. Ver docs/ROADMAP.md 2.1.
+
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO
   - types/database.types.ts se GENERA con la CLI y nunca se edita a mano:
     `npx supabase gen types typescript --linked`. Describe el esquema real.
@@ -440,7 +453,7 @@ context: |
     entere —su politica solo alcanza al dueno— y el panel se pone al dia al
     abrirse y al volver la pestana (`hooks/useFreshClassrooms.ts` y el oyente de
     `visibilitychange` del provider). Tiempo real ahi exige
-    `realtime.broadcast_changes()` desde disparadores, que es el paso 27.
+    `realtime.broadcast_changes()` desde disparadores, que es el paso 27.2.
   - Las lecturas que cruzan pertenencias se conceden por VISTA con el filtro
     dentro, nunca ampliando políticas: una política que consulta la tabla que
     protege recursa, y eso aparece antes al escribir que al leer.
