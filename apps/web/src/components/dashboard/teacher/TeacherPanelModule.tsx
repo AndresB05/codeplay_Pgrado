@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { useFreshClassrooms } from '../../../hooks/useFreshClassrooms';
 import { useMissionAssignments } from '../../../hooks/useMissionAssignments';
 import { useStudentProgress } from '../../../hooks/useStudentProgress';
 import {
   studentProgressService,
-  type CatalogSize,
+  type CatalogWorld,
 } from '../../../services/studentProgress.service';
 import type {
   ClassGroup,
@@ -17,11 +19,15 @@ import type { AppError } from '../../../errors/AppError';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { StatCard } from '../shared/StatCard';
 import {
+  buildWorldProgress,
   formatLastActivity,
   getClassroomProgressSummary,
   getSkillLabel,
+  isWorldFinished,
   missionCatalog,
   teacherResources,
+  type StudentLevelProgress,
+  type StudentWorldProgress,
 } from './classroomsData';
 import {
   BookIcon,
@@ -36,14 +42,32 @@ import {
 
 interface TeacherPanelModuleProps {
   groups: ClassGroup[];
-  /** Salón preseleccionado al llegar desde "Ver progreso detallado". */
-  initialGroupId: string | null;
+  /** Alcance elegido, leído de la dirección. `null` es «Todos». */
+  groupId: string | null;
+  /** Explorador elegido, leído de la dirección. */
+  studentId: string | null;
 }
 
 const ALL_GROUPS = 'all';
 
 /* Hasta que el catálogo llegue no hay denominador, y sin él no se pinta ninguna fracción. */
-const EMPTY_CATALOG: CatalogSize = { levels: 0, worlds: 0 };
+const EMPTY_CATALOG: CatalogWorld[] = [];
+
+/**
+ * La dirección del panel para un alcance y, si lo hay, un explorador.
+ *
+ * `all` representa «Todos», que es el valor que el panel ya usaba por dentro
+ * para eso; los identificadores de salón son UUID, así que ninguno puede
+ * valer `all`. Sin explorador, «Todos» no necesita tramo: la dirección se
+ * queda en `/teacher/panel` a secas, que es la que ya existía.
+ */
+const panelPath = (groupId: string, studentId?: string): string => {
+  if (!studentId) {
+    return groupId === ALL_GROUPS ? ROUTES.TEACHER_PANEL : `${ROUTES.TEACHER_PANEL}/${groupId}`;
+  }
+
+  return `${ROUTES.TEACHER_PANEL}/${groupId}/${studentId}`;
+};
 
 const MissionCard = ({
   mission,
@@ -110,24 +134,36 @@ const MissionCard = ({
 };
 
 /**
- * La ficha de un explorador: una fila por nivel, y en cada una la tira de pasos
- * de sus partidas.
+ * La ficha de un explorador: el catálogo entero agrupado por mundo, y encima lo
+ * que lleva jugado.
  *
- * La tira va sin desplegable a propósito. Con tres niveles por mundo cabe en la
- * fila, y el dato que el tutor viene a ver —si resolvió a la primera o llegó
- * probando— se lee de un vistazo en vez de tras un clic.
+ * Se recorre el CATÁLOGO y no el progreso, y ahí está el paso 31: un nivel que
+ * el alumno nunca empezó no tiene fila en el servidor, así que enseñar sólo lo
+ * jugado dejaba a quien llevaba dos niveles de nueve con el mismo aspecto que a
+ * quien los tenía todos, y un mundo sin tocar no aparecía en ninguna parte.
+ *
+ * La tira de pasos va sin desplegable a propósito. Con tres niveles por mundo
+ * cabe en la fila, y el dato que el tutor viene a ver —si resolvió a la primera
+ * o llegó probando— se lee de un vistazo en vez de tras un clic.
  */
 const StudentProgressCard = ({
   student,
+  catalog,
   detail,
   loading,
   error,
 }: {
   student: ClassroomStudent;
+  catalog: CatalogWorld[];
   detail: StudentProgressDetail | null;
   loading: boolean;
   error: AppError | null;
 }) => {
+  const worlds = useMemo(
+    () => (detail ? buildWorldProgress(catalog, detail) : []),
+    [catalog, detail]
+  );
+
   if (error) {
     return (
       <div className="mt-4">
@@ -144,24 +180,38 @@ const StudentProgressCard = ({
     );
   }
 
-  if (detail.levels.length === 0) {
-    return (
-      <p className="mt-4 rounded-[18px] border-2 border-line bg-cream px-5 py-4 text-[15px] font-bold text-ink-faint">
-        {student.name} todavía no ha jugado ningún nivel.
-      </p>
-    );
-  }
+  const totalLevels = worlds.reduce((total, world) => total + world.totalLevels, 0);
+  const completedLevels = worlds.reduce((total, world) => total + world.completedLevels, 0);
+  const finishedWorlds = worlds.filter(isWorldFinished).length;
 
   return (
     <section className="card mt-4 overflow-x-auto">
       <div className="border-b-[3px] border-ink bg-grape-soft px-5 py-4">
         <h3 className="font-display text-[19px] text-grape-dark">{student.name}</h3>
+        {/*
+         * La última actividad se calla cuando no la hay: «última actividad Sin
+         * actividad» es lo que salía, y de quien no ha jugado ya lo dice el aviso
+         * de debajo.
+         */}
         <p className="text-[14px] font-semibold text-grape-dark">
-          {student.completedLevels} superados de {detail.levels.length} empezados ·{' '}
-          {student.totalAttempts} partidas · última actividad{' '}
-          {formatLastActivity(student.hoursSinceLastActivity)}
+          {completedLevels} de {totalLevels} niveles superados · {finishedWorlds} de{' '}
+          {worlds.length} mundos terminados · {student.totalAttempts} partidas
+          {student.hoursSinceLastActivity === null
+            ? null
+            : ` · última actividad ${formatLastActivity(student.hoursSinceLastActivity)}`}
         </p>
       </div>
+
+      {/*
+       * El aviso va ENCIMA del catálogo y no en su lugar: sin él, nueve filas sin
+       * una sola marca se leen como un fallo de carga en vez de como el mapa que
+       * al explorador le espera entero.
+       */}
+      {detail.levels.length === 0 ? (
+        <p className="border-b-2 border-line bg-cream px-5 py-3 text-[15px] font-bold text-ink-faint">
+          {student.name} todavía no ha jugado ningún nivel.
+        </p>
+      ) : null}
 
       <table className="w-full min-w-[640px] border-collapse text-left">
         <thead>
@@ -172,47 +222,82 @@ const StudentProgressCard = ({
             <th className="px-5 py-3 font-display text-[14px] text-ink">Pasos de cada partida</th>
           </tr>
         </thead>
-        <tbody>
-          {detail.levels.map((level, index) => (
-            <tr
-              key={level.levelId}
-              className={`border-b-2 border-line last:border-b-0 ${
-                index % 2 === 1 ? 'bg-cream' : 'bg-white'
-              }`}
-            >
-              <td className="px-5 py-3">
-                <span className="font-bold text-ink">{level.levelTitle}</span>
-                <span className="block text-[13px] font-semibold text-ink-faint">
-                  {level.worldTitle}
-                </span>
-              </td>
 
-              <td className="px-5 py-3">
-                {level.completed ? (
-                  <span className="chip chip-mint">{level.bestScore}/100</span>
-                ) : (
-                  <span className="chip chip-sun">Sin superar</span>
-                )}
-              </td>
-
-              <td className="px-5 py-3">
-                <AttemptCount
-                  attemptCount={level.attemptCount}
-                  storedAttempts={(detail.attemptsByLevel[level.levelId] ?? []).length}
-                />
-              </td>
-
-              <td className="px-5 py-3">
-                <AttemptSteps
-                  attempts={detail.attemptsByLevel[level.levelId] ?? []}
-                  optimalSteps={level.optimalSteps}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
+        {worlds.map((world) => (
+          <WorldSection key={world.worldId} world={world} />
+        ))}
       </table>
     </section>
+  );
+};
+
+/**
+ * Un mundo y sus niveles. La cabecera lleva el recuento para que el tutor sepa
+ * por dónde va sin recorrer las filas, y es lo que hace visible un mundo
+ * intacto: sale con su nombre y su cero en vez de no salir.
+ */
+const WorldSection = ({ world }: { world: StudentWorldProgress }) => (
+  <tbody>
+    <tr className="border-b-2 border-line bg-grape-soft">
+      <th colSpan={4} scope="colgroup" className="px-5 py-2.5 text-left">
+        <span className="font-display text-[16px] text-grape-dark">{world.title}</span>
+        <span className={`chip ml-2 ${isWorldFinished(world) ? 'chip-mint' : 'chip-sky'}`}>
+          {world.completedLevels} de {world.totalLevels}
+        </span>
+      </th>
+    </tr>
+
+    {world.levels.map((level, index) => (
+      <LevelRow key={level.levelId} level={level} striped={index % 2 === 1} />
+    ))}
+  </tbody>
+);
+
+/**
+ * Una fila de nivel.
+ *
+ * «Sin empezar» y «Sin superar» se distinguen por las palabras y no sólo por el
+ * color, porque son dos cosas distintas y el tutor hace algo distinto con cada
+ * una: no haber ido nunca, y haber ido y no haber podido.
+ */
+const LevelRow = ({ level, striped }: { level: StudentLevelProgress; striped: boolean }) => {
+  const { progress } = level;
+
+  return (
+    <tr className={`border-b-2 border-line ${striped ? 'bg-cream' : 'bg-white'}`}>
+      <td className="px-5 py-3">
+        <span className={`font-bold ${progress ? 'text-ink' : 'text-ink-faint'}`}>
+          {level.title}
+        </span>
+      </td>
+
+      <td className="px-5 py-3">
+        {!progress ? (
+          <span className="inline-flex rounded-full border-2 border-line bg-white px-3 py-0.5 font-display text-[13px] text-ink-faint">
+            Sin empezar
+          </span>
+        ) : progress.completed ? (
+          <span className="chip chip-mint">{progress.bestScore}/100</span>
+        ) : (
+          <span className="chip chip-sun">Sin superar</span>
+        )}
+      </td>
+
+      <td className="px-5 py-3">
+        {progress ? (
+          <AttemptCount
+            attemptCount={progress.attemptCount}
+            storedAttempts={level.attempts.length}
+          />
+        ) : (
+          <span className="text-[15px] font-semibold text-ink-faint">—</span>
+        )}
+      </td>
+
+      <td className="px-5 py-3">
+        <AttemptSteps attempts={level.attempts} optimalSteps={progress?.optimalSteps ?? null} />
+      </td>
+    </tr>
   );
 };
 
@@ -295,20 +380,29 @@ const AttemptSteps = ({
  * Panel de Información del tutor: progreso real del salón, asignación de
  * misiones y recursos educativos.
  */
-export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModuleProps) => {
+export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelModuleProps) => {
   useFreshClassrooms();
 
-  const [selectedGroupId, setSelectedGroupId] = useState<string>(initialGroupId ?? ALL_GROUPS);
-  const [busyMissionId, setBusyMissionId] = useState<string | null>(null);
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const [catalog, setCatalog] = useState<CatalogSize>(EMPTY_CATALOG);
+  const navigate = useNavigate();
 
   /*
-   * El catálogo se lee una vez y no se refresca: es el denominador del panel, y
-   * sólo cambia cuando entra contenido nuevo, que hoy pasa por una migración.
+   * El alcance y el explorador elegidos viven en la DIRECCIÓN, no en estado: así
+   * recargar no pierde la ficha que el tutor estaba mirando y el enlace se puede
+   * pasar a quien ya podía verla. Quien la escribe es este panel; quien la lee,
+   * `TeacherDashboard`.
+   */
+  const selectedGroupId = groupId ?? ALL_GROUPS;
+
+  const [busyMissionId, setBusyMissionId] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<CatalogWorld[]>(EMPTY_CATALOG);
+
+  /*
+   * El catálogo se lee una vez y no se refresca: es el denominador del panel y
+   * el esqueleto de la ficha, y sólo cambia cuando entra contenido nuevo, que
+   * hoy pasa por una migración.
    */
   useEffect(() => {
-    void studentProgressService.getCatalogSize().then((result) => {
+    void studentProgressService.getCatalog().then((result) => {
       if (result.data) {
         setCatalog(result.data);
       }
@@ -336,11 +430,12 @@ export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModul
   );
 
   /*
-   * El explorador elegido se guarda por identificador y no por objeto: el store
-   * repone `students` en cada refresco de Realtime, y guardar el objeto dejaría
-   * abierta la ficha de una copia vieja.
+   * Un explorador que no esté en el alcance —una dirección vieja, o la de un
+   * salón ajeno— simplemente no abre ficha. El filtro de verdad no está aquí
+   * sino dentro de las vistas de la 0034, que a un identificador ajeno
+   * responden vacío.
    */
-  const selectedStudent = scopedStudents.find((student) => student.id === selectedStudentId) ?? null;
+  const selectedStudent = scopedStudents.find((student) => student.id === studentId) ?? null;
 
   const { detail, loading: detailLoading, error: detailError } = useStudentProgress(
     selectedStudent?.id ?? null
@@ -451,9 +546,14 @@ export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModul
           Salón
         </span>
 
+        {/*
+         * Cambiar de alcance SUELTA al explorador: un alumno pertenece a un
+         * solo salón, así que mantenerlo elegido dejaría abierta la ficha de
+         * alguien que ya no está en la lista de chips de debajo.
+         */}
         <button
           type="button"
-          onClick={() => setSelectedGroupId(ALL_GROUPS)}
+          onClick={() => navigate(panelPath(ALL_GROUPS))}
           className={chipClass(selectedGroupId === ALL_GROUPS)}
         >
           Todos
@@ -463,7 +563,7 @@ export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModul
           <button
             key={group.id}
             type="button"
-            onClick={() => setSelectedGroupId(group.id)}
+            onClick={() => navigate(panelPath(group.id))}
             className={chipClass(selectedGroupId === group.id)}
           >
             {group.name}
@@ -530,10 +630,15 @@ export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModul
                   key={student.id}
                   type="button"
                   onClick={() =>
-                    setSelectedStudentId(student.id === selectedStudentId ? null : student.id)
+                    navigate(
+                      panelPath(
+                        selectedGroupId,
+                        student.id === studentId ? undefined : student.id
+                      )
+                    )
                   }
-                  aria-pressed={student.id === selectedStudentId}
-                  className={chipClass(student.id === selectedStudentId)}
+                  aria-pressed={student.id === studentId}
+                  className={chipClass(student.id === studentId)}
                 >
                   {student.name}
                 </button>
@@ -543,6 +648,7 @@ export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModul
             {selectedStudent ? (
               <StudentProgressCard
                 student={selectedStudent}
+                catalog={catalog}
                 detail={detail}
                 loading={detailLoading}
                 error={detailError}

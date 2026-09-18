@@ -413,7 +413,8 @@ context: |
   ella; el 27.2 es el despliegue bueno y sigue detras del 30, en el servidor
   de la universidad. Se despliega dos veces a proposito: el 30 depende de una
   respuesta que la universidad no ha dado.
-  El 31 y el 22 siguen ANTES de la prueba, donde ya estaban.
+  El 31 y el 22 siguen ANTES de la prueba, donde ya estaban; el 31 se cerro el
+  18-sep-2026, asi que de ese par queda el 22.
   El 14 puede seguir detras SOLO porque son mayores de edad y el
   consentimiento del acudiente no les aplica; que haya datos de terceros en un
   despliegue sin politica de privacidad publicada es un riesgo asumido por el
@@ -444,6 +445,17 @@ context: |
   - EL TUTOR VE EL HISTORIAL COMPLETO DEL NINO, tambien el anterior a su ingreso
     al salon: decision del usuario del 18-sep-2026. joined_at sigue guardado y no
     recorta nada. Lo hereda el paso 14 (consentimiento del acudiente).
+  - UN NIVEL QUE EL ALUMNO NUNCA EMPEZO NO TIENE FILA DE PROGRESO, y por eso
+    classroom_level_progress solo sabe de lo jugado. Cualquier pantalla que
+    quiera ensenar lo que FALTA tiene que cruzar con el catalogo publicado:
+    studentProgressService.getCatalog() lo trae entero (mundos con sus niveles,
+    en orden) y buildWorldProgress() en teacher/classroomsData.ts los cruza.
+    getCatalogSize() ya no existe. Asi lo resolvio el paso 31, sin migracion.
+  - UN MUNDO TERMINADO SE CALCULA EN DOS SITIOS con la misma regla —superados
+    >= niveles publicados—: classroom_student_activity en el servidor para el
+    resumen, isWorldFinished() en el cliente para la ficha. Si cambia, cambia en
+    los dos. Y un mundo publicado SIN niveles publicados queda fuera del
+    catalogo: el servidor tampoco lo cuenta.
   - Con `>` de PowerShell, `gen types` escribe el archivo en UTF-16. Hay que
     reconvertirlo a UTF-8 o el repositorio se lleva un archivo que nada mas lee.
   - REALTIME ENTREGA UN CAMBIO A QUIEN LA POLITICA DE ESA TABLA LE DEJA LEER LA

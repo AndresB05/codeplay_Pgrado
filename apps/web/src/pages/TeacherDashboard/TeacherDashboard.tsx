@@ -12,7 +12,7 @@ import { FALLBACK_TEACHER_NAME } from '../../services/classrooms.service';
 
 export const TeacherDashboard = () => {
   const location = useLocation();
-  const { groupId } = useParams();
+  const { groupId, studentId } = useParams();
   const { loading: authLoading, user } = useAuth();
   const { groups, loading: classroomsLoading } = useClassrooms();
 
@@ -39,7 +39,13 @@ export const TeacherDashboard = () => {
   const renderModule = () => {
     switch (activeSection) {
       case ROUTES.TEACHER_PANEL:
-        return <TeacherPanelModule groups={groups} initialGroupId={groupId ?? null} />;
+        return (
+          <TeacherPanelModule
+            groups={groups}
+            groupId={groupId ?? null}
+            studentId={studentId ?? null}
+          />
+        );
       case ROUTES.TEACHER_SETTINGS:
         return <TeacherSettingsModule user={user} groups={groups} />;
       default:

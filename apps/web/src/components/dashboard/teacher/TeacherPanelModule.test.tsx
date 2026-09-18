@@ -1,14 +1,17 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CatalogWorld } from '../../../services/studentProgress.service';
 import type { MissionAssignment } from '../../../services/missions.service';
-import type { ClassGroup } from '../../../types/classroom.types';
+import type { ClassGroup, ClassroomStudent } from '../../../types/classroom.types';
 import { ClassroomsContext } from '../../../context/ClassroomsContext';
 import { buildClassroomsValue } from '../../../test/buildClassroomsValue';
 import { TeacherPanelModule } from './TeacherPanelModule';
 
 const mocks = vi.hoisted(() => ({
   listAssignments: vi.fn(),
-  getCatalogSize: vi.fn(),
+  getCatalog: vi.fn(),
   getDetail: vi.fn(),
   /* Guarda al oyente para poder disparar un cambio como haría la base. */
   emit: null as null | (() => void),
@@ -34,7 +37,7 @@ vi.mock('../../../hooks/useAuth', () => ({
  */
 vi.mock('../../../services/studentProgress.service', () => ({
   studentProgressService: {
-    getCatalogSize: mocks.getCatalogSize,
+    getCatalog: mocks.getCatalog,
     getDetail: mocks.getDetail,
   },
 }));
@@ -59,6 +62,85 @@ const buildGroup = (id: string, name: string): ClassGroup => ({
   students: [],
   pendingRequests: [],
 });
+
+const buildStudent = (overrides: Partial<ClassroomStudent> = {}): ClassroomStudent => ({
+  id: 'kid-1',
+  name: 'Axoluk',
+  initials: 'AX',
+  avatarTone: 'bg-grape',
+  currentWorld: 'Selva Algorítmica',
+  hoursSinceLastActivity: 1,
+  streakDays: null,
+  xp: 0,
+  attemptedLevels: 2,
+  completedLevels: 2,
+  completedWorlds: 0,
+  totalAttempts: 2,
+  averageBestScore: 100,
+  ...overrides,
+});
+
+/* El catálogo sembrado que hay contra la base: tres mundos de tres niveles. */
+const CATALOG: CatalogWorld[] = [
+  {
+    worldId: 'w1',
+    title: 'Selva Algorítmica',
+    levels: [
+      { levelId: 'w1-l1', title: 'Siempre adelante' },
+      { levelId: 'w1-l2', title: 'Camino con curvas' },
+      { levelId: 'w1-l3', title: 'La escalera' },
+    ],
+  },
+  {
+    worldId: 'w2',
+    title: 'Cordillera Binaria',
+    levels: [
+      { levelId: 'w2-l1', title: 'Salta y sube' },
+      { levelId: 'w2-l2', title: 'El gran rodeo' },
+      { levelId: 'w2-l3', title: 'La torre' },
+    ],
+  },
+  {
+    worldId: 'w3',
+    title: 'Costa de Bugs',
+    levels: [
+      { levelId: 'w3-l1', title: 'Dos caminos' },
+      { levelId: 'w3-l2', title: 'El faro' },
+      { levelId: 'w3-l3', title: 'Muchos caminos' },
+    ],
+  },
+];
+
+/* Lo que Axoluk lleva jugado, medido contra la base: dos mundos por el nivel 1. */
+const AXOLUK_DETAIL = {
+  levels: [
+    {
+      levelId: 'w1-l1',
+      levelTitle: 'Siempre adelante',
+      worldId: 'w1',
+      worldTitle: 'Selva Algorítmica',
+      worldSortOrder: 1,
+      levelSortOrder: 1,
+      completed: true,
+      bestScore: 100,
+      attemptCount: 1,
+      optimalSteps: 4,
+    },
+    {
+      levelId: 'w3-l1',
+      levelTitle: 'Dos caminos',
+      worldId: 'w3',
+      worldTitle: 'Costa de Bugs',
+      worldSortOrder: 3,
+      levelSortOrder: 1,
+      completed: true,
+      bestScore: 100,
+      attemptCount: 1,
+      optimalSteps: 10,
+    },
+  ],
+  attemptsByLevel: {},
+};
 
 const buildAssignment = (groupId: string, missionKey: string): MissionAssignment => ({
   id: `${groupId}-${missionKey}`,
@@ -93,15 +175,29 @@ const missionButton = (): HTMLButtonElement => {
  * que el store se ponga al día, y eso exige el proveedor. Montarlo suelto
  * describía un componente que ya no existe.
  */
+/* Deja leer en el DOM la dirección a la que el panel navega. */
+const CurrentPath = () => <span data-testid="path">{useLocation().pathname}</span>;
+
+const currentPath = (): string => screen.getByTestId('path').textContent ?? '';
+
+/*
+ * El alcance y el explorador llegan como props porque los lee `TeacherDashboard`
+ * de la dirección; el panel sólo la ESCRIBE, y eso es lo que el enrutador de
+ * aquí permite comprobar.
+ */
 const renderPanel = (
   groups: ClassGroup[],
-  initialGroupId: string | null,
-  store = buildClassroomsValue({ groups })
+  groupId: string | null,
+  store = buildClassroomsValue({ groups }),
+  studentId: string | null = null
 ) =>
   render(
-    <ClassroomsContext.Provider value={store}>
-      <TeacherPanelModule groups={groups} initialGroupId={initialGroupId} />
-    </ClassroomsContext.Provider>
+    <MemoryRouter initialEntries={['/teacher/panel']}>
+      <ClassroomsContext.Provider value={store}>
+        <TeacherPanelModule groups={groups} groupId={groupId} studentId={studentId} />
+        <CurrentPath />
+      </ClassroomsContext.Provider>
+    </MemoryRouter>
   );
 
 describe('TeacherPanelModule', () => {
@@ -109,7 +205,7 @@ describe('TeacherPanelModule', () => {
     vi.clearAllMocks();
     /* Por defecto, sin misiones asignadas: quien necesite otra cosa lo redefine. */
     mocks.listAssignments.mockResolvedValue({ data: [], error: null });
-    mocks.getCatalogSize.mockResolvedValue({ data: { levels: 9, worlds: 3 }, error: null });
+    mocks.getCatalog.mockResolvedValue({ data: CATALOG, error: null });
     mocks.getDetail.mockResolvedValue({ data: { levels: [], attemptsByLevel: {} }, error: null });
   });
 
@@ -255,6 +351,131 @@ describe('TeacherPanelModule', () => {
 
       expect(await screen.findByText(/todavía no tiene exploradores inscritos/i)).toBeInTheDocument();
       expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('ficha del explorador', () => {
+    const GROUP_WITH_AXOLUK: ClassGroup = {
+      ...buildGroup('g1', 'Salón A'),
+      memberCount: 2,
+      students: [buildStudent(), buildStudent({ id: 'kid-2', name: 'Invitada Prueba', attemptedLevels: 0, completedLevels: 0, totalAttempts: 0, averageBestScore: null, hoursSinceLastActivity: null, currentWorld: null })],
+    };
+
+    beforeEach(() => {
+      mocks.getDetail.mockImplementation((studentId: string) =>
+        Promise.resolve({
+          data: studentId === 'kid-1' ? AXOLUK_DETAIL : { levels: [], attemptsByLevel: {} },
+          error: null,
+        })
+      );
+    });
+
+    it('nombra los tres mundos, también el que el explorador no ha tocado', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-1');
+
+      expect(await screen.findByText('Cordillera Binaria')).toBeInTheDocument();
+      expect(screen.getByText('Selva Algorítmica')).toBeInTheDocument();
+      expect(screen.getByText('Costa de Bugs')).toBeInTheDocument();
+    });
+
+    it('nombra los niveles que nunca empezó, y los dice sin empezar', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-1');
+
+      expect(await screen.findByText('La torre')).toBeInTheDocument();
+      expect(screen.getByText('El faro')).toBeInTheDocument();
+      /* Siete de los nueve: los dos que jugó llevan su marca. */
+      expect(screen.getAllByText('Sin empezar')).toHaveLength(7);
+    });
+
+    it('cuenta sobre el catálogo y no sobre lo empezado', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-1');
+
+      expect(await screen.findByText(/2 de 9 niveles superados/)).toBeInTheDocument();
+      expect(screen.getByText(/0 de 3 mundos terminados/)).toBeInTheDocument();
+    });
+
+    it('da el recuento de cada mundo en su cabecera', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-1');
+
+      await screen.findByText('Cordillera Binaria');
+
+      expect(screen.getAllByText('1 de 3')).toHaveLength(2);
+      expect(screen.getByText('0 de 3')).toBeInTheDocument();
+    });
+
+    it('a quien no ha jugado nada le enseña el catálogo entero y se lo dice', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-2');
+
+      expect(
+        await screen.findByText(/Invitada Prueba todavía no ha jugado ningún nivel/)
+      ).toBeInTheDocument();
+      expect(screen.getAllByText('Sin empezar')).toHaveLength(9);
+    });
+
+    /* «última actividad Sin actividad» era lo que salía, y no dice nada. */
+    it('no habla de la última actividad de quien no tiene ninguna', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-2');
+
+      expect(await screen.findByText(/0 de 9 niveles superados/)).toBeInTheDocument();
+      expect(screen.queryByText(/última actividad/)).not.toBeInTheDocument();
+    });
+
+    it('una dirección con alguien que no está en el alcance no abre ficha', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'de-otro-salón');
+
+      await screen.findByText('La ruta del leopardo');
+
+      expect(screen.queryByText('Cordillera Binaria')).not.toBeInTheDocument();
+      expect(mocks.getDetail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('el alcance y el explorador viven en la dirección', () => {
+    const GROUP_WITH_AXOLUK: ClassGroup = {
+      ...buildGroup('g1', 'Salón A'),
+      memberCount: 1,
+      students: [buildStudent()],
+    };
+
+    it('elegir un explorador lo escribe en la dirección', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1');
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Axoluk' }));
+
+      expect(currentPath()).toBe('/teacher/panel/g1/kid-1');
+    });
+
+    /* Con «Todos» hace falta un hueco que rellenar antes del explorador. */
+    it('usa `all` en el tramo de salón cuando el alcance es todos', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], null);
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Axoluk' }));
+
+      expect(currentPath()).toBe('/teacher/panel/all/kid-1');
+    });
+
+    it('volver a pulsarlo lo quita de la dirección', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-1');
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Axoluk' }));
+
+      expect(currentPath()).toBe('/teacher/panel/g1');
+    });
+
+    it('cambiar de alcance suelta al explorador', async () => {
+      renderPanel([GROUP_WITH_AXOLUK, buildGroup('g2', 'Salón B')], 'g1', undefined, 'kid-1');
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Salón B' }));
+
+      expect(currentPath()).toBe('/teacher/panel/g2');
+    });
+
+    it('volver a «Todos» deja la dirección en el panel a secas', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-1');
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Todos' }));
+
+      expect(currentPath()).toBe('/teacher/panel');
     });
   });
 });

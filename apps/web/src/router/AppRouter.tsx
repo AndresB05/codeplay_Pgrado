@@ -233,6 +233,19 @@ export const AppRouter = () => {
                 </PrivateRoute>
               }
             />
+            {/*
+             * El panel con un explorador elegido. El tramo de salón vale `all`
+             * cuando el alcance es «Todos»; los identificadores de salón son
+             * UUID, así que ninguno choca con él.
+             */}
+            <Route
+              path={`${ROUTES.TEACHER_PANEL}/:groupId/:studentId`}
+              element={
+                <PrivateRoute role="tutor">
+                  <TeacherDashboard />
+                </PrivateRoute>
+              }
+            />
             <Route
               path={ROUTES.TEACHER_SETTINGS}
               element={

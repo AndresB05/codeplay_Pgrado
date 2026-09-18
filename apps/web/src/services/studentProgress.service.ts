@@ -7,14 +7,21 @@ import type { LevelAttempt, LevelProgress, StudentProgressDetail } from '../type
 type ProgressRow = Database['public']['Views']['classroom_level_progress']['Row'];
 type AttemptRow = Database['public']['Views']['classroom_level_attempts']['Row'];
 
-/** Cuántos niveles y mundos publicados hay, que es el denominador del panel. */
-export interface CatalogSize {
-  levels: number;
-  worlds: number;
+/** Un nivel publicado, tal cual está en el catálogo y sin nadie que lo haya jugado. */
+export interface CatalogLevel {
+  levelId: string;
+  title: string;
+}
+
+/** Un mundo publicado con sus niveles publicados, en el orden en que se juegan. */
+export interface CatalogWorld {
+  worldId: string;
+  title: string;
+  levels: CatalogLevel[];
 }
 
 export interface StudentProgressService {
-  getCatalogSize: () => ServiceResult<CatalogSize>;
+  getCatalog: () => ServiceResult<CatalogWorld[]>;
   getDetail: (studentId: string) => ServiceResult<StudentProgressDetail>;
 }
 
@@ -56,6 +63,7 @@ const progressError = (error: unknown): AppError => {
 const mapProgressRow = (row: ProgressRow): LevelProgress => ({
   levelId: row.level_id ?? '',
   levelTitle: row.level_title ?? '',
+  worldId: row.world_id ?? '',
   worldTitle: row.world_title ?? '',
   worldSortOrder: row.world_sort_order ?? 0,
   levelSortOrder: row.level_sort_order ?? 0,
@@ -76,24 +84,60 @@ const mapAttemptRow = (row: AttemptRow): LevelAttempt => ({
 
 export const studentProgressService: StudentProgressService = {
   /**
-   * El tamaño del catálogo publicado. Se lee en vez de escribirse a mano porque
-   * los nueve niveles de hoy son una siembra, no una constante: el día que entre
-   * un mundo más, el denominador del panel sube solo.
+   * El catálogo publicado entero: los mundos con sus niveles, en orden. Se lee
+   * en vez de escribirse a mano porque los nueve niveles de hoy son una siembra,
+   * no una constante, y se lee ENTERO y no sólo su tamaño porque un nivel que el
+   * alumno nunca empezó no tiene fila de progreso: sin la lista no hay forma de
+   * nombrar lo que le falta.
+   *
+   * Son dos consultas y no una con anidado para que el filtro de publicación se
+   * aplique explícitamente a cada tabla: un mundo despublicado no debe aparecer
+   * aunque sus niveles sigan publicados.
    */
-  async getCatalogSize(): ServiceResult<CatalogSize> {
-    const { data, error } = await supabase
-      .from('levels')
-      .select('world_id')
-      .eq('is_published', true);
+  async getCatalog(): ServiceResult<CatalogWorld[]> {
+    const [worlds, levels] = await Promise.all([
+      supabase.from('worlds').select('id, title').eq('is_published', true).order('sort_order'),
+      supabase
+        .from('levels')
+        .select('id, world_id, title')
+        .eq('is_published', true)
+        .order('sort_order'),
+    ]);
 
-    if (error) {
-      return { data: null, error: progressError(error) };
+    const readError = worlds.error ?? levels.error;
+
+    if (readError) {
+      return { data: null, error: progressError(readError) };
     }
 
-    const rows = data ?? [];
+    const levelsByWorld: Record<string, CatalogLevel[]> = {};
 
+    (levels.data ?? []).forEach((level) => {
+      const bucket = levelsByWorld[level.world_id];
+      const entry = { levelId: level.id, title: level.title };
+
+      if (bucket) {
+        bucket.push(entry);
+      } else {
+        levelsByWorld[level.world_id] = [entry];
+      }
+    });
+
+    /*
+     * Un mundo publicado SIN niveles publicados se queda fuera. No es contenido
+     * todavía, y contarlo subiría el denominador del panel por encima de lo que
+     * el servidor cuenta: `classroom_student_activity` decide qué mundo está
+     * terminado cruzando con los niveles publicados, así que un mundo sin
+     * ninguno nunca podría terminarse.
+     */
     return {
-      data: { levels: rows.length, worlds: new Set(rows.map((row) => row.world_id)).size },
+      data: (worlds.data ?? [])
+        .filter((world) => (levelsByWorld[world.id] ?? []).length > 0)
+        .map((world) => ({
+          worldId: world.id,
+          title: world.title,
+          levels: levelsByWorld[world.id] ?? [],
+        })),
       error: null,
     };
   },

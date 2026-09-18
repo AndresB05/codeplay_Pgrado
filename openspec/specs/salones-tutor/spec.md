@@ -128,9 +128,18 @@ Lo que SHALL informar, para el alcance elegido:
 - cuántos mundos se han terminado, sobre los que el alcance podría terminar;
 - la **marca media de eficiencia** de lo superado.
 
-Y por explorador con actividad, SHALL informar **cuántos intentos le costó cada
-nivel** y **cuántos pasos tuvo cada intento**, porque es lo que distingue a quien
-resolvió a la primera de quien llegó al mismo sitio probando.
+Y por explorador elegido, SHALL informar su avance **sobre el catálogo completo
+de mundos y niveles publicados**, no sólo sobre lo que ha jugado. Para cada
+mundo SHALL decir cuántos de sus niveles lleva superados, y dentro de él SHALL
+nombrar **todos** sus niveles, incluidos los que no ha empezado, que SHALL
+distinguirse de los empezados y no superados.
+
+De cada nivel jugado SHALL informar **cuántos intentos le costó** y **cuántos
+pasos tuvo cada intento**, porque es lo que distingue a quien resolvió a la
+primera de quien llegó al mismo sitio probando.
+
+Un nivel con progreso guardado que ya no esté en el catálogo publicado NO SHALL
+desaparecer de la ficha.
 
 Un explorador sin actividad SHALL aparecer, dicho como ausencia y no como mal
 resultado: no aporta a la marca media, y se le nombra sin cifra.
@@ -150,6 +159,24 @@ ceros que se lean como un problema de aprendizaje.
 - **WHEN** abre el detalle de un explorador con actividad
 - **THEN** ve, nivel a nivel, cuántos intentos hizo y su marca
 - **AND** ve cada intento con los pasos que tuvo, y con cuántos se resolvía ese nivel
+
+#### Scenario: Un explorador que empezó dos mundos y no terminó ninguno
+
+- **WHEN** el tutor abre la ficha de un alumno que sólo ha superado el primer nivel de dos mundos, de tres que hay
+- **THEN** los tres mundos aparecen, cada uno con cuántos de sus niveles lleva superados
+- **AND** el mundo que no ha tocado aparece con su nombre y su recuento en cero
+- **AND** los niveles que no ha empezado aparecen nombrados y marcados como no empezados
+
+#### Scenario: Un explorador que no ha jugado nada
+
+- **WHEN** el tutor abre la ficha de un alumno sin ningún intento
+- **THEN** se le dice que todavía no ha jugado
+- **AND** el catálogo completo aparece igualmente, con todos sus niveles sin empezar
+
+#### Scenario: Un nivel que se despublicó después de jugarse
+
+- **WHEN** el tutor abre la ficha de un alumno que tiene progreso en un nivel que ya no está publicado
+- **THEN** ese nivel sigue apareciendo con sus intentos y su marca
 
 #### Scenario: Un salón donde nadie ha jugado todavía
 
@@ -218,6 +245,14 @@ métricas, los reportes y también **el destino de las misiones que el tutor
 asigna**. Un selector que se ignora al escribir es peor que no tenerlo, porque el
 tutor cree haber elegido algo que no se tuvo en cuenta.
 
+El alcance elegido y el explorador elegido SHALL vivir en la dirección de la
+pantalla. Volver a abrir esa dirección SHALL devolver la misma vista, y quien ya
+tenga permiso para ver ese avance SHALL poder llegar a él por el enlace.
+
+Cambiar de alcance SHALL soltar al explorador elegido, porque un alumno
+pertenece a un solo salón. Una dirección que nombre a un explorador fuera del
+alcance NO SHALL abrir su ficha ni producir error.
+
 #### Scenario: El tutor elige un salón
 
 - **WHEN** selecciona un salón en el selector de alcance
@@ -232,6 +267,18 @@ tutor cree haber elegido algo que no se tuvo en cuenta.
 
 - **WHEN** el tutor cambia de un salón a otro en el selector
 - **THEN** lo que aparece como asignado corresponde al salón elegido, no al anterior
+- **AND** deja de haber un explorador elegido
+
+#### Scenario: El tutor recarga con una ficha abierta
+
+- **WHEN** recarga la pantalla mientras mira la ficha de un explorador
+- **THEN** vuelve a ver la misma ficha del mismo explorador
+
+#### Scenario: La dirección nombra a alguien que no está en el alcance
+
+- **WHEN** el tutor abre una dirección que nombra a un explorador que no pertenece al alcance
+- **THEN** la pantalla se comporta como si no hubiera ninguno elegido
+- **AND** no se muestra ningún error
 
 ### Requirement: El tutor suma alumnos compartiendo el ID público
 El sistema SHALL ofrecer al tutor, en su pantalla de salón, la vía por la que un

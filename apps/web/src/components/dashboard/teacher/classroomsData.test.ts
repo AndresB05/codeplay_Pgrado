@@ -1,16 +1,25 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildInitials,
+  buildWorldProgress,
   formatLastActivity,
   formatRelativeTime,
   generatePublicId,
   getClassGroupStats,
   getClassroomProgressSummary,
   isExactIdSearch,
+  isWorldFinished,
   matchesGroupSearch,
   pickAvatarTone,
 } from './classroomsData';
-import type { ClassGroup, ClassroomStudent } from '../../../types/classroom.types';
+import type { CatalogWorld } from '../../../services/studentProgress.service';
+import type {
+  ClassGroup,
+  ClassroomStudent,
+  LevelAttempt,
+  LevelProgress,
+  StudentProgressDetail,
+} from '../../../types/classroom.types';
 
 const buildTestStudent = (overrides: Partial<ClassroomStudent> = {}): ClassroomStudent => ({
   id: 's-test',
@@ -26,6 +35,65 @@ const buildTestStudent = (overrides: Partial<ClassroomStudent> = {}): ClassroomS
   completedWorlds: 0,
   totalAttempts: 5,
   averageBestScore: 80,
+  ...overrides,
+});
+
+/*
+ * El catálogo sembrado que hay contra la base real el 18-sep-2026: tres mundos
+ * de tres niveles cada uno. Los tests que cuentan denominadores se apoyan en
+ * él, así que las cifras que verifican son las mismas que se ven en pantalla.
+ */
+const buildTestCatalog = (): CatalogWorld[] => [
+  {
+    worldId: 'w1',
+    title: 'Selva Algorítmica',
+    levels: [
+      { levelId: 'w1-l1', title: 'Siempre adelante' },
+      { levelId: 'w1-l2', title: 'Camino con curvas' },
+      { levelId: 'w1-l3', title: 'La escalera' },
+    ],
+  },
+  {
+    worldId: 'w2',
+    title: 'Cordillera Binaria',
+    levels: [
+      { levelId: 'w2-l1', title: 'Salta y sube' },
+      { levelId: 'w2-l2', title: 'El gran rodeo' },
+      { levelId: 'w2-l3', title: 'La torre' },
+    ],
+  },
+  {
+    worldId: 'w3',
+    title: 'Costa de Bugs',
+    levels: [
+      { levelId: 'w3-l1', title: 'Dos caminos' },
+      { levelId: 'w3-l2', title: 'El faro' },
+      { levelId: 'w3-l3', title: 'Muchos caminos' },
+    ],
+  },
+];
+
+const buildTestProgress = (overrides: Partial<LevelProgress> = {}): LevelProgress => ({
+  levelId: 'w1-l1',
+  levelTitle: 'Siempre adelante',
+  worldId: 'w1',
+  worldTitle: 'Selva Algorítmica',
+  worldSortOrder: 1,
+  levelSortOrder: 1,
+  completed: true,
+  bestScore: 100,
+  attemptCount: 1,
+  optimalSteps: 4,
+  ...overrides,
+});
+
+const buildTestAttempt = (overrides: Partial<LevelAttempt> = {}): LevelAttempt => ({
+  attemptId: 'a1',
+  levelId: 'w1-l1',
+  isSuccess: true,
+  score: 100,
+  steps: 4,
+  createdAtIso: '2026-09-18T01:00:00.000Z',
   ...overrides,
 });
 
@@ -208,7 +276,7 @@ describe('getClassGroupStats', () => {
 });
 
 describe('getClassroomProgressSummary', () => {
-  const CATALOG = { levels: 9, worlds: 3 };
+  const CATALOG = buildTestCatalog();
 
   it('cuenta el catálogo entero por cada inscrito, también por los que no han jugado', () => {
     const group = buildTestGroup({
@@ -300,10 +368,176 @@ describe('getClassroomProgressSummary', () => {
   it('no inventa denominador mientras el catálogo no ha llegado', () => {
     const group = buildTestGroup({ students: [buildTestStudent({ completedLevels: 2 })] });
 
-    const summary = getClassroomProgressSummary([group], { levels: 0, worlds: 0 });
+    const summary = getClassroomProgressSummary([group], []);
 
     expect(summary.reachableLevels).toBe(0);
     expect(summary.reachableWorlds).toBe(0);
+  });
+});
+
+describe('buildWorldProgress', () => {
+  const sinJugar: StudentProgressDetail = { levels: [], attemptsByLevel: {} };
+
+  /*
+   * El caso que motivó el paso 31, medido contra la base con la segunda cuenta
+   * del salón de pruebas: dos mundos empezados por su primer nivel, ninguno
+   * terminado, y un tercero sin tocar que antes no salía en ninguna parte.
+   */
+  it('saca los tres mundos aunque el explorador sólo haya jugado dos niveles', () => {
+    const detail: StudentProgressDetail = {
+      levels: [
+        buildTestProgress({ levelId: 'w1-l1' }),
+        buildTestProgress({
+          levelId: 'w3-l1',
+          levelTitle: 'Dos caminos',
+          worldId: 'w3',
+          worldTitle: 'Costa de Bugs',
+          worldSortOrder: 3,
+        }),
+      ],
+      attemptsByLevel: {},
+    };
+
+    const worlds = buildWorldProgress(buildTestCatalog(), detail);
+
+    expect(worlds.map((world) => world.title)).toEqual([
+      'Selva Algorítmica',
+      'Cordillera Binaria',
+      'Costa de Bugs',
+    ]);
+    expect(worlds.map((world) => `${world.completedLevels} de ${world.totalLevels}`)).toEqual([
+      '1 de 3',
+      '0 de 3',
+      '1 de 3',
+    ]);
+    expect(worlds.every((world) => world.levels.length === 3)).toBe(true);
+    expect(worlds.some(isWorldFinished)).toBe(false);
+  });
+
+  it('deja en null el progreso de los niveles que nunca empezó', () => {
+    const detail: StudentProgressDetail = {
+      levels: [buildTestProgress({ levelId: 'w1-l1' })],
+      attemptsByLevel: { 'w1-l1': [buildTestAttempt()] },
+    };
+
+    const selva = buildWorldProgress(buildTestCatalog(), detail)[0];
+
+    expect(selva?.levels[0]?.progress).not.toBeNull();
+    expect(selva?.levels[0]?.attempts).toHaveLength(1);
+    expect(selva?.levels[1]?.progress).toBeNull();
+    expect(selva?.levels[1]?.attempts).toEqual([]);
+    /* El título sale del catálogo: sin fila de progreso no hay de dónde sacarlo. */
+    expect(selva?.levels[1]?.title).toBe('Camino con curvas');
+  });
+
+  it('con el catálogo entero superado da los tres mundos terminados', () => {
+    const catalog = buildTestCatalog();
+    const detail: StudentProgressDetail = {
+      levels: catalog.flatMap((world) =>
+        world.levels.map((level) =>
+          buildTestProgress({
+            levelId: level.levelId,
+            levelTitle: level.title,
+            worldId: world.worldId,
+            worldTitle: world.title,
+          })
+        )
+      ),
+      attemptsByLevel: {},
+    };
+
+    const worlds = buildWorldProgress(catalog, detail);
+
+    expect(worlds.filter(isWorldFinished)).toHaveLength(3);
+  });
+
+  it('sin nada jugado devuelve el catálogo entero en cero', () => {
+    const worlds = buildWorldProgress(buildTestCatalog(), sinJugar);
+
+    expect(worlds).toHaveLength(3);
+    expect(worlds.every((world) => world.completedLevels === 0)).toBe(true);
+    expect(worlds.flatMap((world) => world.levels)).toHaveLength(9);
+    expect(worlds.some(isWorldFinished)).toBe(false);
+  });
+
+  /*
+   * Despublicar un nivel borraría de la vista del profesor el historial de un
+   * niño, y sin ningún error que lo delate. Por eso lo jugado no se pierde.
+   */
+  it('conserva un nivel jugado que ya no está en el catálogo', () => {
+    const detail: StudentProgressDetail = {
+      levels: [
+        buildTestProgress({
+          levelId: 'w1-retirado',
+          levelTitle: 'El nivel que se retiró',
+        }),
+      ],
+      attemptsByLevel: { 'w1-retirado': [buildTestAttempt({ levelId: 'w1-retirado' })] },
+    };
+
+    const selva = buildWorldProgress(buildTestCatalog(), detail)[0];
+
+    expect(selva?.levels).toHaveLength(4);
+    expect(selva?.levels[3]?.title).toBe('El nivel que se retiró');
+    expect(selva?.levels[3]?.attempts).toHaveLength(1);
+  });
+
+  it('conserva un nivel jugado cuyo mundo tampoco está en el catálogo', () => {
+    const detail: StudentProgressDetail = {
+      levels: [
+        buildTestProgress({
+          levelId: 'w9-l1',
+          levelTitle: 'Nivel de un mundo retirado',
+          worldId: 'w9',
+          worldTitle: 'Mundo retirado',
+          worldSortOrder: 9,
+        }),
+      ],
+      attemptsByLevel: {},
+    };
+
+    const worlds = buildWorldProgress(buildTestCatalog(), detail);
+
+    expect(worlds).toHaveLength(4);
+    expect(worlds[3]?.title).toBe('Mundo retirado');
+    expect(worlds[3]?.levels).toHaveLength(1);
+  });
+
+  it('sin catálogo se queda con lo jugado en vez de no enseñar nada', () => {
+    const detail: StudentProgressDetail = {
+      levels: [buildTestProgress({ levelId: 'w1-l1' })],
+      attemptsByLevel: {},
+    };
+
+    const worlds = buildWorldProgress([], detail);
+
+    expect(worlds).toHaveLength(1);
+    expect(worlds[0]?.levels).toHaveLength(1);
+  });
+});
+
+describe('isWorldFinished', () => {
+  it('exige todos los niveles superados', () => {
+    const worlds = buildWorldProgress(buildTestCatalog(), {
+      levels: [
+        buildTestProgress({ levelId: 'w1-l1' }),
+        buildTestProgress({ levelId: 'w1-l2', completed: false }),
+      ],
+      attemptsByLevel: {},
+    });
+
+    expect(worlds.filter(isWorldFinished)).toHaveLength(0);
+  });
+
+  /* Un mundo sin niveles no está terminado: el servidor tampoco lo cuenta. */
+  it('no da por terminado un mundo sin niveles', () => {
+    const vacio = buildWorldProgress([{ worldId: 'w0', title: 'Mundo vacío', levels: [] }], {
+      levels: [],
+      attemptsByLevel: {},
+    });
+
+    expect(vacio).toHaveLength(1);
+    expect(vacio.filter(isWorldFinished)).toHaveLength(0);
   });
 });
 

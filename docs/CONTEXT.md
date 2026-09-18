@@ -3244,7 +3244,10 @@ planta en **columna 3, fila 1**, con «Te quedaste sin pasos…»; el lienzo sig
 editable y «Ejecutar» vuelve a empezar desde 10. Sin `stepLimit`, la píldora
 vuelve a decir **«Pasos: 0»**. El apaño del laboratorio se revirtió.
 
-### 2.10 `reportes-de-progreso-real` — El panel del tutor, sobre progreso real (paso 17)
+### 2.10 El panel del tutor, sobre progreso real (pasos 17 y 31)
+
+Dos cambios: `reportes-de-progreso-real` (paso 17) y `avance-por-mundos`
+(paso 31), el segundo encima del primero.
 
 **Propósito.** Que el panel del tutor deje de enseñar ceros y cuente lo que los
 exploradores llevan jugado de verdad.
@@ -3285,7 +3288,7 @@ suerte la decide el 22.
 | Superficie | Qué dice |
 | --- | --- |
 | Panel de información | Cuántos han jugado sobre el total, niveles superados sobre los posibles, mundos terminados sobre los posibles, y la marca media de eficiencia |
-| Ficha del explorador elegido | Una fila por nivel: su mundo, su marca, cuántos intentos le costó y **los pasos de cada partida en una tira**, con el óptimo del nivel al lado |
+| Ficha del explorador elegido | **El catálogo entero agrupado por mundo** (paso 31): cada mundo con su recuento de superados, y dentro una fila por nivel con su marca, cuántos intentos le costó y **los pasos de cada partida en una tira**, con el óptimo al lado |
 | Tabla de seguimiento | «Mundo actual» y «Última actividad» con lo que dice el servidor, en las dos vistas |
 
 La tira de pasos va **sin desplegable**: con tres niveles por mundo cabe en la
@@ -3346,15 +3349,76 @@ sólo la de fuera dejaba el mismo `42501` una llamada más adentro. Se conceden 
 vez de elevarlas a `security definer` porque no hay nada que proteger: reciben un
 texto y devuelven un número, y el cliente ya calcula lo mismo en JavaScript.
 
+#### El catálogo manda el orden, y así se ve lo que FALTA (paso 31)
+
+Lo que el paso 17 dejó fuera a propósito, y lo que el 31 arregló el 18-sep-2026.
+**`classroom_level_progress` sale de `user_progress`, así que un nivel que el
+alumno nunca empezó no tiene fila y no aparecía en ninguna parte.** Medido
+contra la base con la cuenta de tutor de `.env`, sobre un catálogo de 3 mundos
+× 3 niveles:
+
+| Explorador | Filas de progreso | Qué decía la ficha |
+| --- | --- | --- |
+| six seven | 9 de 9 | «9 superados de 9 empezados» |
+| Axoluk | 2 de 9 | **«2 superados de 2 empezados»**, y Cordillera Binaria sin salir |
+| Invitada Prueba | 0 | «todavía no ha jugado ningún nivel», y nada más |
+
+El denominador era lo empezado, no el catálogo: la frase era cierta y no
+informaba. **La ficha se pinta ahora recorriendo el CATÁLOGO**, y el progreso se
+le monta encima; un nivel sin fila sale como **«Sin empezar»**, que no es lo
+mismo que **«Sin superar»** —no haber ido nunca, y haber ido y no haber podido—
+y por eso se distinguen con palabras y no sólo con el color. La de Axoluk dice
+hoy «2 de 9 niveles superados · 0 de 3 mundos terminados», con Selva 1 de 3,
+Cordillera 0 de 3 y Costa 1 de 3.
+
+**`getCatalogSize()` ya no existe**: la sustituye `getCatalog()`, que trae los
+mundos publicados con sus niveles publicados, en orden. Son **dos consultas y no
+una con anidado**, para que el filtro de publicación se aplique explícitamente a
+cada tabla. **Un mundo publicado sin niveles publicados se queda fuera**, porque
+`classroom_student_activity` decide qué mundo está terminado cruzando con los
+niveles publicados: uno sin ninguno nunca podría terminarse, y contarlo subiría
+el denominador del panel por encima de lo que el servidor cuenta.
+
+**Lo jugado que el catálogo ya no nombra no se pierde.** `buildWorldProgress`
+añade al final de su mundo un nivel con progreso que esté despublicado, y al
+final de la lista un mundo entero que lo esté. Hoy no hay ningún caso; se
+escribió igual porque el fallo que evita es del peor tipo: despublicar un nivel
+borraría de la vista del profesor el historial de un niño **sin ningún error que
+lo delate**.
+
+**«Mundo terminado» se calcula en dos sitios con la misma regla** —superados
+`>=` los que la ficha lista—: el servidor para el resumen del salón, el cliente
+para la ficha. Si la regla cambia, cambia en los dos.
+
+#### El alcance y el explorador viven en la dirección (paso 31)
+
+`/teacher/panel/:groupId/:studentId`, y **`all` en el tramo de salón cuando el
+alcance es «Todos»**, que es el valor que el panel ya usaba por dentro; los
+identificadores de salón son UUID, así que ninguno choca con él. Sin explorador
+elegido, «Todos» se queda en `/teacher/panel` a secas.
+
+Antes el explorador vivía en `useState`: recargar lo perdía y no había forma de
+pasarle a nadie un enlace a la ficha de un alumno. **El alcance entró con él y no
+por simetría**: con el salón en estado y el alumno en la dirección, elegir salón
+dejaba en la barra un tramo que ya no correspondía.
+
+Quien **lee** la dirección sigue siendo `TeacherDashboard`, que ya lo hacía;
+quien la **escribe** es el panel. **Cambiar de alcance suelta al explorador**
+—un alumno pertenece a un solo salón— y **un explorador fuera del alcance no
+abre ficha ni produce error**: el filtro de verdad no está en el cliente sino
+dentro de las vistas de la `0034`, que a un identificador ajeno responden vacío.
+
 #### Dónde vive
 
 | Pieza | Archivo |
 | --- | --- |
 | Las tres vistas | `supabase/migrations/202606030034_create_classroom_progress_views.sql` |
 | El `execute` y el filtro ancho del resumen | `supabase/migrations/202606030035_fix_progress_view_access.sql` |
-| El detalle y el tamaño del catálogo | `services/studentProgress.service.ts` |
+| El detalle y el catálogo publicado | `services/studentProgress.service.ts` |
 | El hook, que sólo monta el panel del tutor | `hooks/useStudentProgress.ts` |
 | Las cifras del alcance | `getClassroomProgressSummary()` en `teacher/classroomsData.ts` |
+| El cruce de catálogo y progreso | `buildWorldProgress()` e `isWorldFinished()`, en el mismo archivo |
+| La ruta con explorador | `router/AppRouter.tsx` y `pages/TeacherDashboard/TeacherDashboard.tsx` |
 | La pantalla y la ficha del explorador | `teacher/TeacherPanelModule.tsx` |
 | Las dos columnas que dejaron de estar cableadas | `services/classrooms.service.ts` + `shared/StudentRosterTable.tsx` |
 

@@ -130,23 +130,72 @@ describe('studentProgressService.getDetail', () => {
   });
 });
 
-describe('studentProgressService.getCatalogSize', () => {
-  it('cuenta los niveles publicados y cuántos mundos distintos los agrupan', async () => {
-    mocks.from.mockImplementation(() =>
-      respondWith({
-        data: [
-          { world_id: 'w1' },
-          { world_id: 'w1' },
-          { world_id: 'w1' },
-          { world_id: 'w2' },
-          { world_id: 'w2' },
-        ],
-        error: null,
-      })
+describe('studentProgressService.getCatalog', () => {
+  const stubCatalog = (worlds: unknown[], levels: unknown[]): void => {
+    mocks.from.mockImplementation((table: string) =>
+      table === 'worlds'
+        ? respondWith({ data: worlds, error: null })
+        : respondWith({ data: levels, error: null })
+    );
+  };
+
+  it('devuelve los mundos publicados con sus niveles, en el orden en que llegan', async () => {
+    stubCatalog(
+      [
+        { id: 'w1', title: 'Selva Algorítmica' },
+        { id: 'w2', title: 'Cordillera Binaria' },
+      ],
+      [
+        { id: 'w1-l1', world_id: 'w1', title: 'Siempre adelante' },
+        { id: 'w2-l1', world_id: 'w2', title: 'Salta y sube' },
+        { id: 'w1-l2', world_id: 'w1', title: 'Camino con curvas' },
+      ]
     );
 
-    const { data } = await studentProgressService.getCatalogSize();
+    const { data } = await studentProgressService.getCatalog();
 
-    expect(data).toEqual({ levels: 5, worlds: 2 });
+    expect(data).toEqual([
+      {
+        worldId: 'w1',
+        title: 'Selva Algorítmica',
+        levels: [
+          { levelId: 'w1-l1', title: 'Siempre adelante' },
+          { levelId: 'w1-l2', title: 'Camino con curvas' },
+        ],
+      },
+      { worldId: 'w2', title: 'Cordillera Binaria', levels: [{ levelId: 'w2-l1', title: 'Salta y sube' }] },
+    ]);
+  });
+
+  /*
+   * Contarlo subiría el denominador del panel por encima de lo que el servidor
+   * cuenta: un mundo sin niveles publicados no puede terminarse.
+   */
+  it('deja fuera un mundo publicado que todavía no tiene niveles', async () => {
+    stubCatalog(
+      [
+        { id: 'w1', title: 'Selva Algorítmica' },
+        { id: 'w9', title: 'Mundo en preparación' },
+      ],
+      [{ id: 'w1-l1', world_id: 'w1', title: 'Siempre adelante' }]
+    );
+
+    const { data } = await studentProgressService.getCatalog();
+
+    expect(data).toHaveLength(1);
+    expect(data?.[0]?.worldId).toBe('w1');
+  });
+
+  it('devuelve el error si falla cualquiera de las dos lecturas', async () => {
+    mocks.from.mockImplementation((table: string) =>
+      table === 'worlds'
+        ? respondWith({ data: [{ id: 'w1', title: 'Selva Algorítmica' }], error: null })
+        : respondWith({ data: null, error: { code: '42501', message: 'permission denied' } })
+    );
+
+    const { data, error } = await studentProgressService.getCatalog();
+
+    expect(data).toBeNull();
+    expect(error?.code).toBe('42501');
   });
 });

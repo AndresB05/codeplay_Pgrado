@@ -43,6 +43,7 @@ export interface ClassroomStudent {
 export interface LevelProgress {
   levelId: string;
   levelTitle: string;
+  worldId: string;
   worldTitle: string;
   worldSortOrder: number;
   levelSortOrder: number;

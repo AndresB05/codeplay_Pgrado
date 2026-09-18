@@ -1,9 +1,13 @@
+import type { CatalogWorld } from '../../../services/studentProgress.service';
 import type {
   ClassGroup,
   ClassGroupStats,
   ClassroomStudent,
+  LevelAttempt,
+  LevelProgress,
   Mission,
   SkillKey,
+  StudentProgressDetail,
   TeacherResource,
 } from '../../../types/classroom.types';
 
@@ -115,8 +119,9 @@ export interface ClassroomProgressSummary {
  */
 export const getClassroomProgressSummary = (
   groups: ClassGroup[],
-  catalog: { levels: number; worlds: number }
+  catalog: CatalogWorld[]
 ): ClassroomProgressSummary => {
+  const catalogLevels = catalog.reduce((total, world) => total + world.levels.length, 0);
   const students = groups.flatMap((group) => group.students);
   const scored = students.filter((student) => student.averageBestScore !== null);
 
@@ -125,8 +130,8 @@ export const getClassroomProgressSummary = (
     activeStudents: students.filter((student) => student.attemptedLevels > 0).length,
     completedLevels: students.reduce((total, student) => total + student.completedLevels, 0),
     completedWorlds: students.reduce((total, student) => total + student.completedWorlds, 0),
-    reachableLevels: students.length * catalog.levels,
-    reachableWorlds: students.length * catalog.worlds,
+    reachableLevels: students.length * catalogLevels,
+    reachableWorlds: students.length * catalog.length,
     averageBestScore:
       scored.length === 0
         ? null
@@ -136,6 +141,104 @@ export const getClassroomProgressSummary = (
           ),
   };
 };
+
+/** Un nivel en la ficha del explorador: el del catálogo, con lo que haya jugado. */
+export interface StudentLevelProgress {
+  levelId: string;
+  title: string;
+  /**
+   * `null` mientras no lo haya empezado. No es un hueco: `user_progress` no
+   * tiene fila hasta la primera partida, y ese vacío es justo lo que el tutor
+   * viene a ver.
+   */
+  progress: LevelProgress | null;
+  attempts: LevelAttempt[];
+}
+
+/** Un mundo en la ficha del explorador, con sus niveles y cuántos lleva. */
+export interface StudentWorldProgress {
+  worldId: string;
+  title: string;
+  completedLevels: number;
+  /** Los que esta ficha lista, que son los publicados salvo el caso de abajo. */
+  totalLevels: number;
+  levels: StudentLevelProgress[];
+}
+
+/**
+ * Cruza el catálogo publicado con lo que el explorador lleva jugado.
+ *
+ * Recorre el CATÁLOGO y no el progreso, que es lo que hace aparecer los niveles
+ * que nunca empezó y los mundos que no ha tocado. Un mundo intacto sale con su
+ * nombre y su cero, no desaparece.
+ */
+export const buildWorldProgress = (
+  catalog: CatalogWorld[],
+  detail: StudentProgressDetail
+): StudentWorldProgress[] => {
+  const progressByLevel = new Map(detail.levels.map((level) => [level.levelId, level]));
+  const placed = new Set<string>();
+
+  const buildLevel = (levelId: string, title: string): StudentLevelProgress => {
+    placed.add(levelId);
+
+    return {
+      levelId,
+      title,
+      progress: progressByLevel.get(levelId) ?? null,
+      attempts: detail.attemptsByLevel[levelId] ?? [],
+    };
+  };
+
+  const worlds = catalog.map((world) => ({
+    worldId: world.worldId,
+    title: world.title,
+    levels: world.levels.map((level) => buildLevel(level.levelId, level.title)),
+  }));
+
+  /*
+   * Lo jugado que el catálogo ya no nombra no se pierde: despublicar un nivel
+   * borraría de la vista del profesor el historial de un niño, y sin ningún
+   * error que lo delate. Va al final de su mundo, y si el mundo tampoco está
+   * publicado, a un grupo propio al final de la lista.
+   */
+  const worldsById = new Map(worlds.map((world) => [world.worldId, world]));
+
+  detail.levels.forEach((level) => {
+    if (placed.has(level.levelId)) {
+      return;
+    }
+
+    const orphan = buildLevel(level.levelId, level.levelTitle);
+    const world = worldsById.get(level.worldId);
+
+    if (world) {
+      world.levels.push(orphan);
+
+      return;
+    }
+
+    const added = { worldId: level.worldId, title: level.worldTitle, levels: [orphan] };
+
+    worlds.push(added);
+    worldsById.set(added.worldId, added);
+  });
+
+  return worlds.map((world) => ({
+    ...world,
+    completedLevels: world.levels.filter((level) => level.progress?.completed).length,
+    totalLevels: world.levels.length,
+  }));
+};
+
+/**
+ * Un mundo terminado es aquel cuyos niveles están todos superados, la misma
+ * regla que `classroom_student_activity` aplica en el servidor. Se calcula aquí
+ * porque aquella vista da un número por alumno y la ficha lo necesita por mundo;
+ * si la regla cambia, cambia en los dos sitios.
+ */
+export const isWorldFinished = (world: StudentWorldProgress): boolean =>
+  world.totalLevels > 0 && world.completedLevels >= world.totalLevels;
 
 /*
  * Con qué rótulo se le enseña al tutor cada clave de `Mission.skill`. Fue la
