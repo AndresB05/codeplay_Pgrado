@@ -1,4 +1,5 @@
 import { useClassrooms } from '../../../hooks/useClassrooms';
+import { useFreshClassrooms } from '../../../hooks/useFreshClassrooms';
 import { AssignedMissionsPanel } from '../shared/AssignedMissionsPanel';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
@@ -31,6 +32,9 @@ const HourglassIcon = () => (
 export const StudentClassroomModule = () => {
   const { groups, membership, currentGroup, error, loading, requestJoin, cancelJoinRequest } =
     useClassrooms();
+
+  /* Antes de cualquier `return`: esta pantalla tiene varios y son condicionales. */
+  useFreshClassrooms();
 
   /*
    * Mientras se consulta, la pertenencia todavía es `none`: pintar el buscador

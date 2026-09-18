@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { useClassrooms } from '../../../hooks/useClassrooms';
+import { useFreshClassrooms } from '../../../hooks/useFreshClassrooms';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
@@ -30,6 +31,9 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
   const navigate = useNavigate();
   const { groups, acceptRequest, deleteGroup, error, rejectRequest, removeStudent } =
     useClassrooms();
+
+  /* Antes de cualquier `return`: esta pantalla tiene varios y son condicionales. */
+  useFreshClassrooms();
   const [addStudentsOpen, setAddStudentsOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 

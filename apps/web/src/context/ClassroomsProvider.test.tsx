@@ -675,6 +675,129 @@ describe('Historial de solicitudes acumulado', () => {
  * igual que el servicio real: quien escucha vuelve a consultar, y ahí es donde
  * la base decide qué ve.
  */
+/**
+ * VOLVER A MIRAR VALE COMO AVISO, y existe porque la suscripción no alcanza a
+ * todo lo que estas pantallas enseñan: `user_progress` no puede publicarse
+ * —Realtime entrega un cambio a quien la política de esa tabla deja leer la
+ * fila, y la suya sólo alcanza a su dueño—, así que el tutor nunca recibiría el
+ * aviso de que un alumno suyo jugó.
+ */
+describe('El store se pone al día al volver la pestaña', () => {
+  /** Lo que hace el navegador al volver a la pestaña. */
+  const showTab = (state: 'visible' | 'hidden' = 'visible'): void => {
+    Object.defineProperty(document, 'visibilityState', { value: state, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  };
+
+  it('vuelve a leer y la solicitud que entró mientras tanto aparece', async () => {
+    const { store, server } = await renderClassrooms({ user: currentTutor, seed: seedTwoGroups });
+
+    expect(findGroup(store(), SALON_2B).pendingRequests).toHaveLength(0);
+
+    server.seedRequest(SALON_2B, CURRENT_STUDENT_ID);
+
+    await act(async () => {
+      showTab();
+    });
+
+    expect(findGroup(store(), SALON_2B).pendingRequests).toHaveLength(1);
+  });
+
+  /**
+   * El aserto cae MIENTRAS la relectura está en vuelo, por lo mismo que en la
+   * sincronización en vivo: con una lectura que resuelve al instante, React
+   * agrupa el `loading` intermedio y nadie llega a verlo.
+   */
+  it('no declara espera mientras relee, para no blanquear la pantalla', async () => {
+    const { store, server } = await renderClassrooms({ user: currentTutor, seed: seedTwoGroups });
+
+    server.seedRequest(SALON_2B, CURRENT_STUDENT_ID);
+
+    const releaseRead = server.holdReads();
+
+    act(() => {
+      showTab();
+    });
+
+    expect(store().loading).toBe(false);
+
+    await act(async () => {
+      releaseRead();
+    });
+
+    expect(store().loading).toBe(false);
+    expect(findGroup(store(), SALON_2B).pendingRequests).toHaveLength(1);
+  });
+
+  it('esconder la pestaña no consulta nada', async () => {
+    const { server } = await renderClassrooms({ user: currentTutor, seed: seedTwoGroups });
+
+    const before = server.readCount();
+
+    await act(async () => {
+      showTab('hidden');
+    });
+
+    expect(server.readCount()).toBe(before);
+  });
+
+  /*
+   * ESTE TEST NO DISTINGUE CUÁL DE LAS DOS DEFENSAS ACTÚA, y se comprobó
+   * rompiéndolas: el guard del oyente evita registrarlo sin sesión, pero
+   * `runLoad` también sale sin consultar cuando no hay `userId`, así que
+   * quitando el guard el test sigue pasando. Protege el comportamiento, no la
+   * pieza; si alguna vez `runLoad` deja de cubrirlo, aquí saltará.
+   */
+  it('sin usuario no se consulta al volver la pestaña', async () => {
+    const { server } = await renderClassrooms({ user: null, seed: seedTwoGroups });
+
+    const before = server.readCount();
+
+    await act(async () => {
+      showTab();
+    });
+
+    expect(server.readCount()).toBe(before);
+  });
+
+  /**
+   * Quien mira se queda con lo que ya tenía. Vaciar la pantalla porque una
+   * relectura de fondo falló castiga a quien no hizo nada: el dato anterior
+   * sigue siendo el último bueno.
+   */
+  it('si la relectura falla, lo que ya se mostraba sigue y el motivo se declara', async () => {
+    const { store, server } = await renderClassrooms({ user: currentTutor, seed: seedTwoGroups });
+
+    expect(store().groups).toHaveLength(2);
+
+    server.failReads('la base no responde');
+
+    await act(async () => {
+      showTab();
+    });
+
+    expect(store().groups).toHaveLength(2);
+    expect(store().error?.message).toBeTruthy();
+  });
+
+  it('al desmontar no queda ningún oyente que recargue', async () => {
+    const { server, unmount } = await renderClassrooms({
+      user: currentTutor,
+      seed: seedTwoGroups,
+    });
+
+    unmount();
+
+    const before = server.readCount();
+
+    await act(async () => {
+      showTab();
+    });
+
+    expect(server.readCount()).toBe(before);
+  });
+});
+
 describe('Sincronización en vivo', () => {
   it('una solicitud que entra aparece en el panel del tutor sin volver a montar', async () => {
     const { store, server } = await renderClassrooms({ user: currentTutor, seed: seedTwoGroups });

@@ -433,6 +433,14 @@ context: |
     recorta nada. Lo hereda el paso 14 (consentimiento del acudiente).
   - Con `>` de PowerShell, `gen types` escribe el archivo en UTF-16. Hay que
     reconvertirlo a UTF-8 o el repositorio se lleva un archivo que nada mas lee.
+  - REALTIME ENTREGA UN CAMBIO A QUIEN LA POLITICA DE ESA TABLA LE DEJA LEER LA
+    FILA, y no sabe nada de vistas. Medido el 18-sep-2026 con tres sesiones y una
+    escritura real: recibio el evento exactamente quien tambien podia leer la
+    fila por REST. Por eso publicar `user_progress` NO sirve para que el tutor se
+    entere —su politica solo alcanza al dueno— y el panel se pone al dia al
+    abrirse y al volver la pestana (`hooks/useFreshClassrooms.ts` y el oyente de
+    `visibilitychange` del provider). Tiempo real ahi exige
+    `realtime.broadcast_changes()` desde disparadores, que es el paso 27.
   - Las lecturas que cruzan pertenencias se conceden por VISTA con el filtro
     dentro, nunca ampliando políticas: una política que consulta la tabla que
     protege recursa, y eso aparece antes al escribir que al leer.

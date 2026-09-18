@@ -134,6 +134,37 @@ export const ClassroomsProvider = ({
     });
   }, [refreshSilently, service, userId]);
 
+  /*
+   * QUIEN VUELVE A MIRAR VE LO DE AHORA. La suscripción no alcanza a todo lo que
+   * estas pantallas enseñan —el progreso no puede publicarse, ver
+   * `ClassroomsContext`—, así que volver a la pestaña vale como aviso.
+   *
+   * Se escucha `visibilitychange` y no `focus`: aquél describe lo que importa
+   * —la pestaña estuvo oculta y ha vuelto— mientras que `focus` dispara también
+   * al volver de un cuadro de diálogo o al pinchar dentro de la propia ventana,
+   * que son recargas que nadie pidió.
+   *
+   * Sin sesión no se consulta: `runLoad` sabe tratar ese caso, pero llamarlo al
+   * volver a la pestaña de acceso sería trabajo para nada.
+   */
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    const onVisible = (): void => {
+      if (document.visibilityState === 'visible') {
+        void refreshSilently();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [refreshSilently, userId]);
+
   /** Ejecuta una escritura y recarga si salió bien. */
   const runWrite = useCallback(
     async (write: () => Promise<{ error: AppError | null }>): Promise<void> => {
@@ -270,6 +301,7 @@ export const ClassroomsProvider = ({
       loading,
       membership,
       redeemInvitation,
+      refreshSilently,
       rejectRequest,
       removeStudent,
       requestJoin,
@@ -286,6 +318,7 @@ export const ClassroomsProvider = ({
       loading,
       membership,
       redeemInvitation,
+      refreshSilently,
       rejectRequest,
       removeStudent,
       requestJoin,

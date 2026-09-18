@@ -840,6 +840,7 @@ desde el paso 18 le llega **sin que el tutor recargue**.
 | Identidad del niño y del tutor tomada de la sesión | ✅ | `ClassroomsProvider.tsx` (se fue `CURRENT_STUDENT_ID`) |
 | Se recarga por **quién** está dentro, no por cada evento de sesión | ✅ | `ClassroomsProvider.tsx` — los callbacks dependen de `userId` y `userRole` |
 | Carga declarada y error **mostrado** a quien hizo la acción | ✅ | `loading` y `error` del contexto + `shared/StoreErrorNotice.tsx` en las tres vistas que escriben |
+| Puesta al día al abrir una pantalla y al volver la pestaña | ✅ | `hooks/useFreshClassrooms.ts` + el oyente de `visibilitychange` en `ClassroomsProvider.tsx` — **desde `panel-al-dia`**, porque el progreso no puede llegar por la suscripción |
 | Motivos de la base traducidos al español | ✅ | `ERROR_MESSAGES` en `services/classrooms.service.ts` |
 | Guarda de «un alumno, un salón» antes de escribir | ✅ | `requestJoin()` en `ClassroomsProvider.tsx` |
 | Acceso único desde componentes | ✅ | `hooks/useClassrooms.ts` |
@@ -1067,6 +1068,38 @@ importa, es `realtime.broadcast_changes()` desde disparadores.
 Mientras la base tenga un salón de pruebas eso es ruido; desplegada y con salones
 reales pasa a ser telemetría de uso visible para cualquiera, porque la clave es
 pública por diseño. Anotado como cabo suelto del paso 27 en `ROADMAP.md` §3.
+
+#### Publicar una tabla NO basta para que el tutor se entere: medido el 18-sep-2026
+
+La salida evidente para que el panel del tutor se mueva solo era publicar
+`user_progress`, como el paso 18 hizo con las tablas de salones. **No habría
+funcionado, y se comprobó antes de escribir la migración.**
+
+Realtime entrega un cambio **exactamente a quien la política de lectura de esa
+tabla le deja leer la fila**. La de `user_progress` es `auth.uid() = user_id`, y
+el tutor no la pasa para las filas de sus alumnos: eso es justo lo que el paso 17
+dejó intacto, concediendo la lectura por vista. Publicar la tabla le habría dado
+eventos de su propio progreso y de nada más.
+
+La medición, con tres sesiones escuchando a la vez una tabla ya publicada y una
+escritura real —una solicitud de ingreso, retirada después—:
+
+| Quién escucha | ¿Recibe el evento? | ¿Puede leer la fila por REST? |
+| --- | --- | --- |
+| El tutor del salón | Sí | Sí |
+| Un tutor sin salones | No | No |
+| Un niño del mismo salón, que no es el solicitante | No | No |
+
+Las dos columnas coinciden en los tres casos. **Realtime no sabe nada de
+vistas**: sólo mira las políticas de la tabla publicada.
+
+> **Cuidado al repetir esta medición.** El primer intento dijo que el compañero
+> **sí** recibía el evento, y parecía una fuga. Era el lector del `.env`, que
+> tomaba también las líneas comentadas: `VITE_DEV_CHILD_*` aparece dos veces —una
+> comentada y otra no, apuntando a **cuentas distintas**— y el «compañero» acabó
+> siendo el propio solicitante. Un falso positivo que sólo se vio al imprimir las
+> identidades antes de los asertos. **Leer sólo las líneas activas, y comprobar
+> que las dos cuentas son distintas antes de medir nada.**
 
 **Los tres casos del paso 18, verificados desde la interfaz con dos sesiones.**
 El tutor con el panel abierto ve entrar la solicitud; el niño ve que lo aceptan,

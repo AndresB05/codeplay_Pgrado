@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useFreshClassrooms } from '../../../hooks/useFreshClassrooms';
 import { useMissionAssignments } from '../../../hooks/useMissionAssignments';
 import { useStudentProgress } from '../../../hooks/useStudentProgress';
 import {
@@ -295,6 +296,8 @@ const AttemptSteps = ({
  * misiones y recursos educativos.
  */
 export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModuleProps) => {
+  useFreshClassrooms();
+
   const [selectedGroupId, setSelectedGroupId] = useState<string>(initialGroupId ?? ALL_GROUPS);
   const [busyMissionId, setBusyMissionId] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);

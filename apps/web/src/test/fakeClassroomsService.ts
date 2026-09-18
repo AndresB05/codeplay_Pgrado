@@ -73,6 +73,8 @@ export interface FakeClassrooms {
   actAs: (studentId: string) => void;
   /** Escrituras recibidas. Es lo que delata una mutación duplicada. */
   writeCount: () => number;
+  /** Consultas hechas al servidor, para poder afirmar que algo NO consultó. */
+  readCount: () => number;
   /**
    * Dispara un cambio como lo haría la base. Es lo que permite probar la
    * sincronización en vivo sin red: el servicio real entrega la noticia de que
@@ -111,12 +113,22 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
 
   let sequence = 0;
   let writes = 0;
+  let reads = 0;
   let nextWriteError: string | null = null;
   let readError: string | null = null;
   let readGate: Promise<void> | null = null;
 
-  /** La espera que imita el viaje a la base. Sin retención, no espera nada. */
+  /**
+   * La espera que imita el viaje a la base. Sin retención, no espera nada.
+   *
+   * Cuenta además la lectura, porque pasa por aquí toda consulta: es lo que
+   * permite comprobar que algo **no** consultó, que de otro modo sólo se puede
+   * afirmar mirando que el estado no cambió, cosa que también pasa cuando la
+   * consulta ocurre y devuelve lo mismo.
+   */
   const awaitGate = async (): Promise<void> => {
+    reads += 1;
+
     if (readGate) {
       await readGate;
     }
@@ -518,6 +530,8 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
     },
 
     writeCount: () => writes,
+
+    readCount: () => reads,
 
     emit: () => {
       listeners.forEach((listener) => {
