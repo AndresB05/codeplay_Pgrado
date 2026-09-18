@@ -410,9 +410,29 @@ context: |
   - types/database.types.ts se GENERA con la CLI y nunca se edita a mano:
     `npx supabase gen types typescript --linked`. Describe el esquema real.
   - El progreso NO conoce los salones: ninguna tabla de progreso referencia a
-    uno. Por eso la tabla de seguimiento del tutor muestra «Sin actividad» y los
-    reportes de habilidades 0 %. Conectarlo es el paso 17, y tiene arista de
-    privacidad.
+    uno. RESUELTO EN EL PASO 17 sin cambiar eso: se cruza por vista, no por
+    columna. Las migraciones 0034 y 0035 abren classroom_student_activity
+    (una fila por alumno), classroom_level_progress (alumno x nivel) y
+    classroom_level_attempts (una fila por intento), cada una con su filtro
+    dentro. Las politicas de user_progress y level_attempts NO se tocaron.
+  - UNA VISTA SIN security_invoker SORTEA LOS PERMISOS DE LAS TABLAS, NO EL
+    `execute` DE UNA FUNCION. Ese permiso se comprueba contra quien lanza la
+    consulta. Costo la migracion 0035: la vista de intentos llama a
+    count_program_steps y respondia 42501 a todo el mundo en cuanto se pedia la
+    columna `steps`. Y la primera comprobacion no lo vio porque no pedia esa
+    columna: una comprobacion que sale bien en el caso roto.
+  - EL JUEGO TIENE CUATRO BLOQUES: avanzar, dos giros y saltar. No hay bucle, ni
+    condicional, ni funcion. Medido en game/blockTypes.ts, en FLYOUT_BLOCKS y en
+    los 28 intentos guardados. Por eso el paso 17 RETIRO los reportes de las
+    cinco habilidades: cuatro de las cinco no tenian con que entrenarse. SkillKey
+    y getSkillLabel siguen en el codigo solo porque Mission.skill los usa de
+    rotulo, y el paso 22 decide su suerte — y hereda la misma frontera: no puede
+    premiar comportamientos que los cuatro bloques no permiten.
+  - EL TUTOR VE EL HISTORIAL COMPLETO DEL NINO, tambien el anterior a su ingreso
+    al salon: decision del usuario del 18-sep-2026. joined_at sigue guardado y no
+    recorta nada. Lo hereda el paso 14 (consentimiento del acudiente).
+  - Con `>` de PowerShell, `gen types` escribe el archivo en UTF-16. Hay que
+    reconvertirlo a UTF-8 o el repositorio se lleva un archivo que nada mas lee.
   - Las lecturas que cruzan pertenencias se conceden por VISTA con el filtro
     dentro, nunca ampliando políticas: una política que consulta la tabla que
     protege recursa, y eso aparece antes al escribir que al leer.

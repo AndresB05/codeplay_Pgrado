@@ -5,6 +5,7 @@ import {
   formatRelativeTime,
   generatePublicId,
   getClassGroupStats,
+  getClassroomProgressSummary,
   isExactIdSearch,
   matchesGroupSearch,
   pickAvatarTone,
@@ -20,7 +21,11 @@ const buildTestStudent = (overrides: Partial<ClassroomStudent> = {}): ClassroomS
   hoursSinceLastActivity: 3,
   streakDays: 4,
   xp: 0,
-  skills: { sequences: 50, loops: 50, conditionals: 50, debugging: 50, decomposition: 50 },
+  attemptedLevels: 3,
+  completedLevels: 2,
+  completedWorlds: 0,
+  totalAttempts: 5,
+  averageBestScore: 80,
   ...overrides,
 });
 
@@ -199,6 +204,106 @@ describe('getClassGroupStats', () => {
       averageWorldLabel: '-',
       bestStreak: 0,
     });
+  });
+});
+
+describe('getClassroomProgressSummary', () => {
+  const CATALOG = { levels: 9, worlds: 3 };
+
+  it('cuenta el catálogo entero por cada inscrito, también por los que no han jugado', () => {
+    const group = buildTestGroup({
+      students: [
+        buildTestStudent({
+          id: 's1',
+          attemptedLevels: 9,
+          completedLevels: 9,
+          completedWorlds: 3,
+          totalAttempts: 29,
+          averageBestScore: 100,
+        }),
+        buildTestStudent({
+          id: 's2',
+          attemptedLevels: 0,
+          completedLevels: 0,
+          completedWorlds: 0,
+          totalAttempts: 0,
+          averageBestScore: null,
+        }),
+        buildTestStudent({
+          id: 's3',
+          attemptedLevels: 0,
+          completedLevels: 0,
+          completedWorlds: 0,
+          totalAttempts: 0,
+          averageBestScore: null,
+        }),
+      ],
+    });
+
+    const summary = getClassroomProgressSummary([group], CATALOG);
+
+    expect(summary.totalStudents).toBe(3);
+    expect(summary.activeStudents).toBe(1);
+    expect(summary.completedLevels).toBe(9);
+    expect(summary.completedWorlds).toBe(3);
+    expect(summary.reachableLevels).toBe(27);
+    expect(summary.reachableWorlds).toBe(9);
+  });
+
+  it('promedia la eficiencia sólo entre quienes han superado algo', () => {
+    const group = buildTestGroup({
+      students: [
+        buildTestStudent({ id: 's1', attemptedLevels: 2, averageBestScore: 100 }),
+        buildTestStudent({ id: 's2', attemptedLevels: 2, averageBestScore: 60 }),
+        buildTestStudent({ id: 's3', attemptedLevels: 0, averageBestScore: null }),
+      ],
+    });
+
+    /* Con el tercero dentro saldría 53, que diría que el salón va mal y no es verdad. */
+    expect(getClassroomProgressSummary([group], CATALOG).averageBestScore).toBe(80);
+  });
+
+  it('deja la eficiencia en null cuando nadie ha superado nada', () => {
+    const group = buildTestGroup({
+      students: [buildTestStudent({ attemptedLevels: 0, completedLevels: 0, averageBestScore: null })],
+    });
+
+    expect(getClassroomProgressSummary([group], CATALOG).averageBestScore).toBeNull();
+  });
+
+  it('suma los alumnos de todos los salones del alcance', () => {
+    const uno = buildTestGroup({
+      id: 'g1',
+      students: [buildTestStudent({ id: 's1', completedLevels: 4, completedWorlds: 1 })],
+    });
+    const dos = buildTestGroup({
+      id: 'g2',
+      students: [buildTestStudent({ id: 's2', completedLevels: 3, completedWorlds: 1 })],
+    });
+
+    const summary = getClassroomProgressSummary([uno, dos], CATALOG);
+
+    expect(summary.completedLevels).toBe(7);
+    expect(summary.completedWorlds).toBe(2);
+    expect(summary.reachableLevels).toBe(18);
+  });
+
+  it('devuelve el caso vacío sin dividir entre cero', () => {
+    const summary = getClassroomProgressSummary([], CATALOG);
+
+    expect(summary.totalStudents).toBe(0);
+    expect(summary.activeStudents).toBe(0);
+    expect(summary.reachableLevels).toBe(0);
+    expect(summary.averageBestScore).toBeNull();
+  });
+
+  it('no inventa denominador mientras el catálogo no ha llegado', () => {
+    const group = buildTestGroup({ students: [buildTestStudent({ completedLevels: 2 })] });
+
+    const summary = getClassroomProgressSummary([group], { levels: 0, worlds: 0 });
+
+    expect(summary.reachableLevels).toBe(0);
+    expect(summary.reachableWorlds).toBe(0);
   });
 });
 

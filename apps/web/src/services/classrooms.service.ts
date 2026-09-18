@@ -13,12 +13,12 @@ import type {
   ClassroomStudent,
   CreateGroupInput,
   JoinRequest,
-  SkillKey,
   StudentMembership,
 } from '../types/classroom.types';
 
 type DirectoryRow = Database['public']['Views']['class_group_directory']['Row'];
 type RosterRow = Database['public']['Views']['classroom_roster']['Row'];
+type ActivityRow = Database['public']['Views']['classroom_student_activity']['Row'];
 type JoinRequestRow = Database['public']['Tables']['join_requests']['Row'];
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
@@ -44,14 +44,6 @@ export interface ClassroomsService {
 }
 
 const EMPTY_MEMBERSHIP: StudentMembership = { status: 'none', groupId: null };
-
-const EMPTY_SKILLS: Record<SkillKey, number> = {
-  sequences: 0,
-  loops: 0,
-  conditionals: 0,
-  debugging: 0,
-  decomposition: 0,
-};
 
 /** Cuántas veces se reintenta un ID público antes de rendirse. */
 const PUBLIC_ID_ATTEMPTS = 3;
@@ -131,12 +123,25 @@ const mapDirectoryRow = (row: DirectoryRow): ClassGroup => ({
   pendingRequests: [],
 });
 
+/** Horas desde una marca de tiempo, o `null` si no la hay. */
+const hoursSince = (iso: string | null): number | null => {
+  if (!iso) {
+    return null;
+  }
+
+  const elapsedMs = Date.now() - new Date(iso).getTime();
+
+  return Math.max(elapsedMs, 0) / (1000 * 60 * 60);
+};
+
 /*
- * El mundo actual, la última actividad y el dominio por habilidad no existen en
- * la base: ninguna tabla de progreso está asociada a un salón. Viajan vacíos a
- * propósito, y es el paso 17 quien decide qué historial ve el tutor.
+ * El mundo y la última actividad no salen del roster sino de
+ * `classroom_student_activity`, que es lo que la 0034 abrió al tutor: hasta
+ * entonces viajaban cableados a `null` y la tabla decía «Sin actividad» a quien
+ * acababa de jugar. Un alumno sin ninguna partida no tiene fila ahí, y sus dos
+ * huecos siguen siendo el dato.
  */
-const mapRosterRow = (row: RosterRow): ClassroomStudent => {
+const mapRosterRow = (row: RosterRow, activity: ActivityRow | undefined): ClassroomStudent => {
   const name = row.full_name || FALLBACK_STUDENT_NAME;
   const id = row.student_id ?? '';
 
@@ -145,13 +150,18 @@ const mapRosterRow = (row: RosterRow): ClassroomStudent => {
     name,
     initials: buildInitials(name),
     avatarTone: pickAvatarTone(id),
-    currentWorld: null,
-    hoursSinceLastActivity: null,
+    currentWorld: activity?.current_world_title ?? null,
+    hoursSinceLastActivity: hoursSince(activity?.last_attempt_at ?? null),
     streakDays: row.current_streak ?? 0,
     xp: row.total_xp ?? 0,
-    skills: { ...EMPTY_SKILLS },
+    attemptedLevels: activity?.attempted_levels ?? 0,
+    completedLevels: activity?.completed_levels ?? 0,
+    completedWorlds: activity?.completed_worlds ?? 0,
+    totalAttempts: activity?.total_attempts ?? 0,
+    averageBestScore: activity?.average_best_score ?? null,
   };
 };
+
 
 const mapJoinRequestRow = (row: JoinRequestRow, profile: ProfileRow | undefined): JoinRequest => {
   const name = profile?.full_name || FALLBACK_STUDENT_NAME;
@@ -165,6 +175,9 @@ const mapJoinRequestRow = (row: JoinRequestRow, profile: ProfileRow | undefined)
     requestedAtIso: row.requested_at,
   };
 };
+
+const activityById = (rows: ActivityRow[]): Map<string, ActivityRow> =>
+  new Map(rows.map((row) => [row.student_id ?? '', row]));
 
 const groupById = <T>(rows: T[], key: (row: T) => string): Map<string, T[]> => {
   const grouped = new Map<string, T[]>();
@@ -209,7 +222,7 @@ export const classroomsService: ClassroomsService = {
       return { data: { groups, membership: EMPTY_MEMBERSHIP }, error: null };
     }
 
-    const [roster, requests] = await Promise.all([
+    const [roster, requests, activity] = await Promise.all([
       supabase.from('classroom_roster').select('*').in('group_id', groupIds),
       supabase
         .from('join_requests')
@@ -217,9 +230,15 @@ export const classroomsService: ClassroomsService = {
         .in('group_id', groupIds)
         .eq('status', 'pending')
         .order('requested_at'),
+      /*
+       * Sin filtro de salón: la vista ya sólo devuelve alumnos que este tutor
+       * alcanza, y filtrar por `group_id` dejaría fuera al alumno cuya fila de
+       * progreso es anterior a que nadie lo metiera en un salón.
+       */
+      supabase.from('classroom_student_activity').select('*'),
     ]);
 
-    const readError = roster.error ?? requests.error;
+    const readError = roster.error ?? requests.error ?? activity.error;
 
     if (readError) {
       return {
@@ -258,10 +277,13 @@ export const classroomsService: ClassroomsService = {
     const profilesById = new Map((profiles.data ?? []).map((row) => [row.id, row]));
     const rosterByGroup = groupById(roster.data ?? [], (row) => row.group_id ?? '');
     const requestsByGroup = groupById(requestRows, (row) => row.group_id);
+    const activityByStudent = activityById(activity.data ?? []);
 
     const composed = groups.map((group) => ({
       ...group,
-      students: (rosterByGroup.get(group.id) ?? []).map(mapRosterRow),
+      students: (rosterByGroup.get(group.id) ?? []).map((row) =>
+        mapRosterRow(row, activityByStudent.get(row.student_id ?? ''))
+      ),
       pendingRequests: (requestsByGroup.get(group.id) ?? []).map((row) =>
         mapJoinRequestRow(row, profilesById.get(row.student_id))
       ),
@@ -315,25 +337,32 @@ export const classroomsService: ClassroomsService = {
       return { data: { groups, membership: studentMembership }, error: null };
     }
 
-    const roster = await supabase
-      .from('classroom_roster')
-      .select('*')
-      .eq('group_id', studentMembership.groupId);
+    const [roster, activity] = await Promise.all([
+      supabase.from('classroom_roster').select('*').eq('group_id', studentMembership.groupId),
+      supabase.from('classroom_student_activity').select('*'),
+    ]);
 
-    if (roster.error) {
+    if (roster.error || activity.error) {
       return {
         data: null,
         error: classroomError(
-          roster.error,
+          roster.error ?? activity.error,
           'No se pudieron cargar tus compañeros de salón.',
           'classrooms_get_error'
         ),
       };
     }
 
+    const activityByStudent = activityById(activity.data ?? []);
+
     const composed = groups.map((group) =>
       group.id === studentMembership.groupId
-        ? { ...group, students: (roster.data ?? []).map(mapRosterRow) }
+        ? {
+            ...group,
+            students: (roster.data ?? []).map((row) =>
+              mapRosterRow(row, activityByStudent.get(row.student_id ?? ''))
+            ),
+          }
         : group
     );
 

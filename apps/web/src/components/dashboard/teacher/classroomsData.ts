@@ -4,7 +4,6 @@ import type {
   ClassroomStudent,
   Mission,
   SkillKey,
-  SkillReport,
   TeacherResource,
 } from '../../../types/classroom.types';
 
@@ -88,73 +87,71 @@ export const getClassGroupStats = (group: ClassGroup): ClassGroupStats => {
   };
 };
 
-/** Umbral a partir del cual se considera que un niño domina la habilidad. */
-const MASTERY_THRESHOLD = 70;
-
-const SKILL_DEFINITIONS: { key: SkillKey; label: string; description: string }[] = [
-  {
-    key: 'sequences',
-    label: 'Secuencias',
-    description: 'Ordenar pasos en el orden correcto para llegar a una meta.',
-  },
-  {
-    key: 'loops',
-    label: 'Bucles',
-    description: 'Repetir acciones sin escribirlas una y otra vez.',
-  },
-  {
-    key: 'conditionals',
-    label: 'Condicionales',
-    description: 'Tomar decisiones distintas según lo que pasa en el juego.',
-  },
-  {
-    key: 'debugging',
-    label: 'Depuración',
-    description: 'Encontrar el error en una solución y corregirlo.',
-  },
-  {
-    key: 'decomposition',
-    label: 'Descomposición',
-    description: 'Partir un problema grande en pedazos manejables.',
-  },
-];
+/** Lo que el panel del tutor cuenta de un alcance: un salón, o todos. */
+export interface ClassroomProgressSummary {
+  /** Exploradores inscritos en el alcance. */
+  totalStudents: number;
+  /** Los que tienen alguna partida. */
+  activeStudents: number;
+  completedLevels: number;
+  completedWorlds: number;
+  /** Niveles que el alcance entero podría superar. */
+  reachableLevels: number;
+  /** Mundos que el alcance entero podría terminar. */
+  reachableWorlds: number;
+  /** Marca media de eficiencia de lo superado. `null` si no hay nada superado. */
+  averageBestScore: number | null;
+}
 
 /**
- * Promedia el dominio de cada habilidad entre los niños que ya han jugado.
- * Los niños sin actividad quedan fuera: si contaran, hundirían el promedio y
- * el tutor leería un problema de aprendizaje donde solo hay ausencia.
+ * Cuenta el progreso de un alcance. El denominador es el catálogo entero por
+ * cada explorador inscrito —también por los que no han jugado—, porque la
+ * pregunta que contesta es cuánto le queda al salón, no cuánto le queda a quien
+ * ya empezó.
+ *
+ * La marca media, en cambio, promedia sólo entre quienes han superado algo: un
+ * cero por no haber jugado no habla de eficiencia, y hundiría el número hasta
+ * hacerlo decir lo contrario de lo que pasa.
  */
-export const getSkillReports = (groups: ClassGroup[]): SkillReport[] => {
-  const evaluatedStudents = groups
-    .flatMap((group) => group.students)
-    .filter((student) => student.hoursSinceLastActivity !== null);
+export const getClassroomProgressSummary = (
+  groups: ClassGroup[],
+  catalog: { levels: number; worlds: number }
+): ClassroomProgressSummary => {
+  const students = groups.flatMap((group) => group.students);
+  const scored = students.filter((student) => student.averageBestScore !== null);
 
-  return SKILL_DEFINITIONS.map((definition) => {
-    if (evaluatedStudents.length === 0) {
-      return { ...definition, mastery: 0, studentsMastered: 0, studentsEvaluated: 0 };
-    }
-
-    const total = evaluatedStudents.reduce(
-      (sum, student) => sum + student.skills[definition.key],
-      0
-    );
-
-    const studentsMastered = evaluatedStudents.filter(
-      (student) => student.skills[definition.key] >= MASTERY_THRESHOLD
-    ).length;
-
-    return {
-      ...definition,
-      mastery: Math.round(total / evaluatedStudents.length),
-      studentsMastered,
-      studentsEvaluated: evaluatedStudents.length,
-    };
-  });
+  return {
+    totalStudents: students.length,
+    activeStudents: students.filter((student) => student.attemptedLevels > 0).length,
+    completedLevels: students.reduce((total, student) => total + student.completedLevels, 0),
+    completedWorlds: students.reduce((total, student) => total + student.completedWorlds, 0),
+    reachableLevels: students.length * catalog.levels,
+    reachableWorlds: students.length * catalog.worlds,
+    averageBestScore:
+      scored.length === 0
+        ? null
+        : Math.round(
+            scored.reduce((total, student) => total + (student.averageBestScore ?? 0), 0) /
+              scored.length
+          ),
+  };
 };
 
-export const getSkillLabel = (skill: SkillKey): string => {
-  return SKILL_DEFINITIONS.find((definition) => definition.key === skill)?.label ?? skill;
+/*
+ * Con qué rótulo se le enseña al tutor cada clave de `Mission.skill`. Fue la
+ * tabla de los reportes de habilidades hasta que se retiraron el 18-sep-2026;
+ * lo único que sobrevive es el nombre, porque el catálogo de misiones sigue
+ * etiquetando con él. Las descripciones se fueron con las barras.
+ */
+const SKILL_LABELS: Record<SkillKey, string> = {
+  sequences: 'Secuencias',
+  loops: 'Bucles',
+  conditionals: 'Condicionales',
+  debugging: 'Depuración',
+  decomposition: 'Descomposición',
 };
+
+export const getSkillLabel = (skill: SkillKey): string => SKILL_LABELS[skill] ?? skill;
 
 export const missionCatalog: Mission[] = [
   {

@@ -1,4 +1,10 @@
-/** Habilidades de pensamiento computacional que sigue el tutor. */
+/*
+ * Con qué etiqueta el catálogo de misiones cada reto. Dejó de medir nada el
+ * 18-sep-2026, cuando se retiraron los reportes de habilidades: el juego tiene
+ * cuatro bloques de movimiento y ninguno de bucle, condicional o función, así
+ * que cuatro de estas cinco no tienen con qué entrenarse. Sobrevive porque las
+ * misiones siguen usándola de rótulo, y su suerte la decide el paso 22.
+ */
 export type SkillKey = 'sequences' | 'loops' | 'conditionals' | 'debugging' | 'decomposition';
 
 export type DifficultyLabel = 'Fácil' | 'Intermedio' | 'Difícil';
@@ -11,16 +17,60 @@ export interface ClassroomStudent {
   initials: string;
   /** Clases de Tailwind para el color del avatar. */
   avatarTone: string;
-  /** Mundo en el que está jugando ahora mismo. `null` si nunca ha entrado. */
+  /** Mundo del último nivel intentado. `null` si nunca ha jugado. */
   currentWorld: string | null;
-  /** Horas transcurridas desde la última sesión. `null` si nunca ha entrado. */
+  /** Horas transcurridas desde el último intento. `null` si nunca ha jugado. */
   hoursSinceLastActivity: number | null;
   /** Días consecutivos jugando. `null` si nunca ha entrado. */
   streakDays: number | null;
-  /** Experiencia acumulada. Vale 0 hasta que el juego escriba progreso. */
+  /** Experiencia acumulada. */
   xp: number;
-  /** Dominio de 0 a 100 por habilidad. */
-  skills: Record<SkillKey, number>;
+  /** Niveles con alguna partida, se hayan superado o no. */
+  attemptedLevels: number;
+  completedLevels: number;
+  completedWorlds: number;
+  /** Partidas sumadas de todos sus niveles. */
+  totalAttempts: number;
+  /**
+   * Marca media de eficiencia de lo superado, de 0 a 100. `null` mientras no
+   * haya superado nada: promediar lo empezado y no terminado mezclaría ceros
+   * que no hablan de eficiencia sino de partidas que no llegaron al final.
+   */
+  averageBestScore: number | null;
+}
+
+/** Cómo le fue a un explorador en un nivel concreto. */
+export interface LevelProgress {
+  levelId: string;
+  levelTitle: string;
+  worldTitle: string;
+  worldSortOrder: number;
+  levelSortOrder: number;
+  completed: boolean;
+  bestScore: number;
+  attemptCount: number;
+  /** Pasos con los que el nivel se resuelve. `null` si el nivel no lo declara. */
+  optimalSteps: number | null;
+}
+
+/** Una partida suelta, con lo que costó. */
+export interface LevelAttempt {
+  attemptId: string;
+  levelId: string;
+  isSuccess: boolean;
+  score: number;
+  /**
+   * Pasos que contó el servidor leyendo el programa. `null` cuando no supo
+   * leerlo: un cero diría que se resolvió sin hacer nada.
+   */
+  steps: number | null;
+  createdAtIso: string;
+}
+
+/** El detalle de un explorador: sus niveles y las partidas de cada uno. */
+export interface StudentProgressDetail {
+  levels: LevelProgress[];
+  attemptsByLevel: Record<string, LevelAttempt[]>;
 }
 
 /** Solicitud de un niño para entrar a un salón, a la espera del tutor. */
@@ -70,18 +120,6 @@ export interface ClassGroupStats {
   averageWorldLabel: string;
   /** Racha más alta del salón. */
   bestStreak: number;
-}
-
-export interface SkillReport {
-  key: SkillKey;
-  label: string;
-  description: string;
-  /** Promedio de dominio del salón, de 0 a 100. */
-  mastery: number;
-  /** Niños que superan el umbral de dominio. */
-  studentsMastered: number;
-  /** Niños evaluados en la habilidad. */
-  studentsEvaluated: number;
 }
 
 export interface Mission {

@@ -4,7 +4,6 @@ import type { ClassroomsService, ClassroomsSnapshot } from '../services/classroo
 import type {
   ClassGroup,
   ClassroomStudent,
-  SkillKey,
   StudentMembership,
 } from '../types/classroom.types';
 
@@ -43,14 +42,6 @@ interface InvitationRow {
   status: 'pending' | 'accepted';
   expiresAt: string;
 }
-
-const EMPTY_SKILLS: Record<SkillKey, number> = {
-  sequences: 0,
-  loops: 0,
-  conditionals: 0,
-  debugging: 0,
-  decomposition: 0,
-};
 
 const EMPTY_MEMBERSHIP: StudentMembership = { status: 'none', groupId: null };
 
@@ -158,7 +149,11 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
       hoursSinceLastActivity: null,
       streakDays: 0,
       xp: 0,
-      skills: { ...EMPTY_SKILLS },
+      attemptedLevels: 0,
+      completedLevels: 0,
+      completedWorlds: 0,
+      totalAttempts: 0,
+      averageBestScore: null,
     };
   };
 

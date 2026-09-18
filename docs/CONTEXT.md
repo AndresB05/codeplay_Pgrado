@@ -724,12 +724,13 @@ con las del tutor.
 | Crear salón (nombre, grado, profesor, cupos 1–60) con validación en cliente | ✅ | `teacher/CreateGroupForm.tsx` |
 | ID público único por salón (`CP-XXXX`) | ✅ | `generatePublicId()` en `teacher/classroomsData.ts` |
 | Detalle del salón con estadísticas | ✅ | `teacher/TeacherGroupDetailModule.tsx` |
-| Tabla de seguimiento (mundo, última actividad, racha) | ✅ | `shared/StudentRosterTable.tsx` |
+| Tabla de seguimiento (mundo, última actividad, racha) | ✅ | `shared/StudentRosterTable.tsx` — **con dato real desde el paso 17**: el mundo y la actividad salían cableados a `null` |
 | Eliminar alumno con confirmación en línea | ✅ | `shared/StudentRosterTable.tsx` |
 | Eliminar salón con diálogo y recuento de afectados | ✅ | `shared/ConfirmDialog.tsx` |
 | Bandeja «Alumnos en espera» | ✅ | `teacher/PendingRequestsSection.tsx` |
 | Aceptar o rechazar solicitud; aceptar se bloquea sin cupos | ✅ | `context/ClassroomsProvider.tsx` |
-| Reportes de 5 competencias con semáforo de dominio | ✅ | `getSkillReports()` en `classroomsData.ts` |
+| ~~Reportes de 5 competencias con semáforo de dominio~~ | ❌ | **RETIRADO en el paso 17**, ver §2.10 |
+| Progreso real del salón, con intentos por nivel y pasos por partida | ✅ | `getClassroomProgressSummary()` en `classroomsData.ts` + `teacher/TeacherPanelModule.tsx` + `services/studentProgress.service.ts` + `hooks/useStudentProgress.ts` |
 | Selector de alcance: todos los salones o uno | ✅ | `teacher/TeacherPanelModule.tsx` |
 | Asignación de misiones | ✅ | `teacher/TeacherPanelModule.tsx` + `services/missions.service.ts` — persiste en la base y obedece al selector de alcance. La capacidad entera está en §2.8, **incluida la advertencia de que una misión todavía no se puede jugar** |
 | Sumar alumnos compartiendo el ID público del salón | ✅ | `teacher/AddStudentsPanel.tsx` |
@@ -767,11 +768,11 @@ con las del tutor.
   caducada habría salido como «Aceptada»; estaba dormido porque nada escribía
   filas. `status` admite `expired` desde la 0013 pero **nada lo escribe ni va a
   escribirlo**, así que la caducidad la decide la fecha.
-- `classroomsData.ts` reúne los datos de ejemplo **y las funciones puras de
-  cálculo** (`getSkillReports`, `buildGroup`, `generatePublicId`…). Al conectar
-  el backend, los datos se van y las funciones puras se quedan.
-- Semáforo de dominio de habilidades: ≥ 70 % `lime` (dominado), 45–69 % `sun`
-  (en camino), < 45 % `coral` (a reforzar).
+- `classroomsData.ts` reúne el catálogo de misiones **y las funciones puras de
+  cálculo** (`getClassroomProgressSummary`, `generatePublicId`,
+  `formatLastActivity`…).
+- **El semáforo de dominio ya no existe.** Era ≥ 70 % `lime`, 45–69 % `sun`,
+  < 45 % `coral`, y se fue con las barras en el paso 17: ver §2.10.
 - `StudentRosterTable` sólo muestra la columna de acciones si recibe
   `onRemoveStudent`. Así la reutiliza la vista del alumno sin poder borrar a nadie.
 
@@ -1456,13 +1457,20 @@ hasta llegar al máximo del juego:
   `(student_id, group_id)` puede tener varias. No hay `unique (group_id,
   student_id)` a propósito: impedía tanto reintentar tras un rechazo como volver
   a un salón que el niño había dejado.
-- **`class_memberships` guarda `joined_at`.** Guardar la fecha no decide qué
-  historial ve el tutor de un niño que ya jugaba antes de entrar —eso es del
-  paso 17 del roadmap y tiene arista de privacidad—; sólo evita tener que
-  inventarla después.
+- **`class_memberships` guarda `joined_at`, y el paso 17 decidió NO usarlo para
+  recortar.** El tutor ve el historial completo del niño, también el anterior a
+  su ingreso: decisión del usuario del 18-sep-2026, detallada en §2.10. La fecha
+  sigue ahí, así que acotar más tarde no exigirá migrar nada.
 - `profiles` tiene **dos** políticas de lectura: la propia y
   `profiles_select_own_students`, que deja al tutor leer el perfil de los niños
   de sus salones. Sin ella la lista del salón saldría sin nombres.
+- **El progreso sigue siendo ilegible tabla a tabla para quien no es su dueño.**
+  `user_progress_select_own` y `level_attempts_select_own` no se tocaron en el
+  paso 17: lo que se abrió son **tres vistas**, `classroom_student_activity`,
+  `classroom_level_progress` y `classroom_level_attempts` (migraciones `0034` y
+  `0035`), con el filtro de alcance escrito dentro y sin `security_invoker`, como
+  las dos de la `0015`. Ver §2.10, **incluida la trampa del `execute` de una
+  función dentro de una vista**, que costó la `0035`.
 
 
 ### 2.8 `misiones-asignadas` — Misiones especiales del salón
@@ -3203,6 +3211,131 @@ planta en **columna 3, fila 1**, con «Te quedaste sin pasos…»; el lienzo sig
 editable y «Ejecutar» vuelve a empezar desde 10. Sin `stepLimit`, la píldora
 vuelve a decir **«Pasos: 0»**. El apaño del laboratorio se revirtió.
 
+### 2.10 `reportes-de-progreso-real` — El panel del tutor, sobre progreso real (paso 17)
+
+**Propósito.** Que el panel del tutor deje de enseñar ceros y cuente lo que los
+exploradores llevan jugado de verdad.
+
+**No enseñaba datos de ejemplo: enseñaba CEROS**, y no por falta de cálculo sino
+de permiso. `getSkillReports` filtraba por `hoursSinceLastActivity !== null` y
+`classrooms.service.ts` rellenaba siempre `EMPTY_SKILLS` a cero y esa marca a
+`null`, así que el conjunto de evaluados estaba vacío pase lo que pase y las
+cinco barras decían **0 %, 0 de 0 evaluados**. La columna «Última actividad»
+decía «Sin actividad» por lo mismo, **incluso para un niño con los nueve niveles
+al 100 y 900 XP**, comprobado con la cuenta de `.env`.
+
+#### La medición que decidió el alcance: el juego tiene CUATRO bloques
+
+Y ninguno es de bucle, de condicional ni de función. Son `codeplay_advance`,
+`codeplay_turn_left`, `codeplay_turn_right` y `codeplay_jump`, y están en
+`game/blockTypes.ts`, en `FLYOUT_BLOCKS` de `game/blocks.ts` y —medido, no
+deducido— en los **28 intentos guardados**, donde no aparece ningún otro tipo.
+
+De las cinco competencias que el panel pintaba, **sólo «secuencias» tiene hoy con
+qué entrenarse**. Bucles, condicionales, depuración y descomposición no medirían
+nada aunque el progreso llegara: no existe el bloque. Y `levels` tampoco tiene
+columna que diga qué habilidad entrena un nivel —las cinco claves vivían sólo en
+el cliente—, así que ningún dato decía que «La torre» entrenara descomposición.
+
+**Decisión del usuario del 18-sep-2026: se retiran las cinco barras.** Un 0 %
+donde no hay instrumento se lee como un problema de aprendizaje, y no lo es. En
+su sitio va lo que el dato sostiene.
+
+**Esto condiciona al paso 22**, y por eso queda escrito: el catálogo de logros y
+misiones que aquel paso tiene que diseñar no puede premiar comportamientos que
+los cuatro bloques no permiten. Las cinco claves **siguen en el código**
+—`SkillKey` y `getSkillLabel`— porque `Mission.skill` las usa de rótulo, y su
+suerte la decide el 22.
+
+#### Qué enseña ahora
+
+| Superficie | Qué dice |
+| --- | --- |
+| Panel de información | Cuántos han jugado sobre el total, niveles superados sobre los posibles, mundos terminados sobre los posibles, y la marca media de eficiencia |
+| Ficha del explorador elegido | Una fila por nivel: su mundo, su marca, cuántos intentos le costó y **los pasos de cada partida en una tira**, con el óptimo del nivel al lado |
+| Tabla de seguimiento | «Mundo actual» y «Última actividad» con lo que dice el servidor, en las dos vistas |
+
+La tira de pasos va **sin desplegable**: con tres niveles por mundo cabe en la
+fila, y el dato que el tutor viene a ver —si resolvió a la primera o llegó
+probando— se lee de un vistazo. Una partida cuyo programa el servidor no supo
+leer sale como **«?»**, nunca como cero: un cero diría que se resolvió sin hacer
+nada.
+
+El denominador **se lee del catálogo**, no se escribe a mano: los nueve niveles
+de hoy son una siembra, así que el día que entre un mundo más sube solo.
+
+#### El tutor ve el historial completo, también el anterior al ingreso
+
+Decisión del usuario del 18-sep-2026, y cierra lo que `ROADMAP.md` §3.1 dejaba
+abierto. **El salón de pruebas ya contenía el caso**: el niño se unió el 4-sep y
+su primer intento fue el 3-sep, así que **1 de sus 9 niveles y 2 de sus 28
+intentos son anteriores al ingreso**, y cuentan.
+
+`class_memberships.joined_at` sigue guardado y no se usa para recortar nada, así
+que acotar más tarde no exigirá migrar. **Lo que hereda el paso 14** es esto
+mismo: un niño que juegue meses por su cuenta entrega ese historial entero a su
+profesor al unirse, y es lo que el consentimiento del acudiente tendrá que
+recoger.
+
+Se midió además algo que conviene saber si alguna vez se decide acotar: **el XP y
+la racha son contadores sin fecha** en `profiles`, así que un corte por
+`joined_at` dejaría «900 XP» junto a «8 niveles» mientras no se recalculen desde
+`user_progress`.
+
+#### El resumen se ve entre compañeros; el detalle, no
+
+Decisión del usuario del 18-sep-2026, y sigue el precedente de la `0015`: el
+roster ya expone el XP y la racha de un niño a sus compañeros, «la forma acotada
+del ranking». El mundo en el que anda y cuándo jugó son del mismo orden, y la
+alternativa dejaba dos columnas vacías al lado de un XP que sí se ve.
+
+**Nivel a nivel e intento a intento se queda para el tutor**, porque es material
+del informe del profesor y no del ranking del recreo. Por eso las dos vistas de
+detalle conservan el filtro estrecho y la de resumen lleva el suyo, más ancho.
+
+#### La trampa que costó una migración de más
+
+La `0034` llamaba a `count_program_steps` desde la vista de intentos dando por
+hecho que una vista sin `security_invoker` ejecutaría la función como su dueño.
+**Es falso**: una vista así sortea la RLS y los permisos de las **tablas**, pero
+el `execute` de una **función** se comprueba contra quien lanza la consulta.
+
+Medido después de aplicarla: pedir la columna `steps` respondía `42501` a tutor y
+a niño por igual, mientras cualquier otra columna de la misma vista respondía
+200. **La primera comprobación no lo vio** porque el niño consultaba
+`select=student_id` y la función nunca llegaba a evaluarse — una comprobación que
+sale bien en el caso roto.
+
+Lo arregla la `202606030035` concediendo el `execute` a `authenticated` sobre las
+**dos** funciones de conteo: `count_program_steps` no es `security definer`, así
+que llama a `count_block_chain` con los permisos de quien la invocó, y conceder
+sólo la de fuera dejaba el mismo `42501` una llamada más adentro. Se conceden en
+vez de elevarlas a `security definer` porque no hay nada que proteger: reciben un
+texto y devuelven un número, y el cliente ya calcula lo mismo en JavaScript.
+
+#### Dónde vive
+
+| Pieza | Archivo |
+| --- | --- |
+| Las tres vistas | `supabase/migrations/202606030034_create_classroom_progress_views.sql` |
+| El `execute` y el filtro ancho del resumen | `supabase/migrations/202606030035_fix_progress_view_access.sql` |
+| El detalle y el tamaño del catálogo | `services/studentProgress.service.ts` |
+| El hook, que sólo monta el panel del tutor | `hooks/useStudentProgress.ts` |
+| Las cifras del alcance | `getClassroomProgressSummary()` en `teacher/classroomsData.ts` |
+| La pantalla y la ficha del explorador | `teacher/TeacherPanelModule.tsx` |
+| Las dos columnas que dejaron de estar cableadas | `services/classrooms.service.ts` + `shared/StudentRosterTable.tsx` |
+
+**Tres vistas y no una**, porque hay tres granularidades con tres consumidores:
+`classroom_student_activity` (una fila por alumno) la lee el snapshot de salones
+para las dos columnas de la tabla; `classroom_level_progress` (alumno × nivel) y
+`classroom_level_attempts` (una fila por intento) las lee sólo el panel, y sólo
+con un explorador elegido. Con una sola vista al detalle, abrir la lista del
+salón se habría llevado el historial entero de todos para pintar dos columnas.
+
+**Ninguna expone `submitted_code`.** El tutor necesita cuántos pasos tuvo cada
+partida, no el programa que el niño escribió; exponerlo abriría además la
+solución de cada nivel a cualquiera que tutele a alguien que la haya resuelto.
+
 ---
 
 ## 3. Especificaciones por aplicar
@@ -3423,8 +3556,8 @@ obliguen a nadie, ni build que copiar. Ver `DISENO-DEL-JUEGO.md` §5.
 | --- | --- | --- |
 | Envío real de invitaciones (**mitad B del paso 19**) | Elegir servicio de correo (Resend, SendGrid…) y enviarlo. Hoy el tutor comparte el enlace a mano, que es lo que hace la mitad A | P1 + **servicio contratado** |
 | Editar o archivar un salón | No existe | P1 |
-| Exportar reportes | No existe | P1 |
-| Progreso, XP y rachas reales | **El progreso y el XP están hechos**: el J9 escribe cada partida, el J10 puntúa contando el programa y concede por marca de agua, y el J11 (17-sep-2026) pone la barra por tramos de 300 con el **Nivel Explorador** y refresca el XP sin recargar. Lo que falta es **la racha**, que no la escribe nadie | P4 |
+| Exportar reportes | No existe. **El dato ya está** desde el paso 17: lo que falta es sacarlo del navegador | P1 |
+| Progreso, XP y rachas reales | **El progreso y el XP están hechos**: el J9 escribe cada partida, el J10 puntúa contando el programa y concede por marca de agua, y el J11 (17-sep-2026) pone la barra por tramos de 300 con el **Nivel Explorador** y refresca el XP sin recargar. **Y desde el paso 17 el tutor los ve** (§2.10). Lo que falta es **la racha**, que no la escribe nadie: la columna «Racha» de la tabla de seguimiento enseña un cero verdadero, pero es un cero que no se va a mover hasta el paso 22 | P4 |
 | Recursos educativos con destino | Hoy son tarjetas informativas sin enlace | Contenido |
 | Abrir los cambios en OpenSpec | Convertir P1–P4 en `openspec/changes/` con `/opsx:propose` | Ninguna |
 
@@ -4043,6 +4176,39 @@ que uno normal. Es lo que se pidió, y quien quiera otra cosa tiene un solo núm
 que mover.
 
 ## 5. Estado verificado
+
+**Última pasada: 18 de septiembre de 2026** (paso 17). `npm run lint` sin
+warnings, `npm run test:run` con **334 tests en 28 archivos** —eran 321 antes de
+este paso, que añadió 13 y **no retiró ninguno**, comparados por el nombre de
+cada `it(` y no por el total— y `npm run build` correcto.
+
+| Comprobación del paso 17 | Resultado |
+| --- | --- |
+| Las tres vistas, con las cuatro sesiones y pidiendo **todas** las columnas | ✅ El tutor del salón obtiene 1, 9 y 28 filas; el segundo tutor, que no tutela a nadie, **cero** en las tres; el niño obtiene las suyas y ninguna de un compañero; sin sesión, `42501` en las tres |
+| Que el panel cuadre con la base **para la misma cuenta** | ✅ Fila a fila: «1 de 3 han jugado, 9 de 27 niveles, 3 de 9 mundos, 100/100» en pantalla y lo mismo consultando; y la ficha del explorador coincide nivel a nivel en marca, intentos, tira de pasos y óptimo |
+| Que la tabla deje de mentir | ✅ De «Sin actividad» y «—» a «Selva Algorítmica» y «hace 13 horas» para el niño que jugó a las 01:43 UTC; «ACTIVOS HOY» de 0 a 1 de 3, y «MUNDO MÁS COMÚN» de «-» a «Selva Algorítmica» |
+| El historial anterior al ingreso cuenta | ✅ El niño se unió el 4-sep y su primer intento es del 3-sep: ese nivel aparece y suma, que es la decisión de §2.10 |
+| El programa que el servidor no sabe leer | ✅ Dos partidas salen con **«?»** y no con cero. Son reales: una en un formato anterior a `grid-blockly-2` y otra que es literalmente `'x'`, la que el `curl` del 2-sep metió a mano |
+| Los tests nuevos tienen dientes | ✅ Comprobado rompiendo el código, no supuesto: promediar también a quien no superó nada tumba 2; contar el denominador sólo sobre quien jugó tumba 1; y convertir en cero el `null` de pasos o el de óptimo tumba 1 cada uno |
+| El resumen alcanza al compañero y el detalle no | ✅ Con la partida real de la segunda cuenta: 2 filas en el resumen, 0 filas ajenas en progreso y en intentos |
+| Los tests pasan **sin `.env`**, como en CI | ✅ Comprobado apartando el archivo. Importaba: el paso `test:run` del workflow **no** declara las `VITE_*` —sólo el de `build`—, así que el doble de `studentProgress.service` en el test del panel no es aislamiento sino la diferencia entre CI verde y CI rojo |
+
+**El filtro entre compañeros, cerrado con datos de verdad.** La primera pasada no
+pudo verificarlo —ningún compañero del salón tenía una sola fila de progreso, así
+que el cero que devolvía la consulta no distinguía «el filtro no alcanza» de «no
+hay nada que ver»—, y se dejó escrito como hueco en vez de darlo por bueno. El
+usuario jugó un nivel con la segunda cuenta del salón y entonces sí: el niño ve
+**dos** filas en el resumen —la suya y la de su compañero, con su mundo y su
+nivel— y sigue viendo **cero** filas ajenas en progreso y en intentos. El tutor
+ve a los dos; el tutor que no tutela a nadie sigue en cero en las tres.
+
+**Un desajuste que el panel destapó y que no es suyo:** `user_progress.attempt_count`
+puede ir por delante de las filas de `level_attempts` —en la cuenta de pruebas,
+29 contra 28, todo en el mismo nivel—, porque `upsert_my_progress` sigue siendo
+llamable sin intento y así quedó alguna prueba vieja. La ficha lo dice en vez de
+esconderlo: «5» y debajo «4 con programa guardado».
+
+---
 
 Comprobado el **2 de septiembre de 2026** ejecutando los comandos:
 

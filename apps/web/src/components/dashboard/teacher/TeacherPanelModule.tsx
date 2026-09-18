@@ -1,9 +1,37 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMissionAssignments } from '../../../hooks/useMissionAssignments';
-import type { ClassGroup, Mission } from '../../../types/classroom.types';
+import { useStudentProgress } from '../../../hooks/useStudentProgress';
+import {
+  studentProgressService,
+  type CatalogSize,
+} from '../../../services/studentProgress.service';
+import type {
+  ClassGroup,
+  ClassroomStudent,
+  LevelAttempt,
+  Mission,
+  StudentProgressDetail,
+} from '../../../types/classroom.types';
+import type { AppError } from '../../../errors/AppError';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
-import { getSkillLabel, getSkillReports, missionCatalog, teacherResources } from './classroomsData';
-import { BookIcon, CheckIcon, ChartIcon, TargetIcon } from './TeacherIcons';
+import { StatCard } from '../shared/StatCard';
+import {
+  formatLastActivity,
+  getClassroomProgressSummary,
+  getSkillLabel,
+  missionCatalog,
+  teacherResources,
+} from './classroomsData';
+import {
+  BookIcon,
+  CheckIcon,
+  ChartIcon,
+  MedalIcon,
+  ProgressIcon,
+  PulseIcon,
+  StudentsIcon,
+  TargetIcon,
+} from './TeacherIcons';
 
 interface TeacherPanelModuleProps {
   groups: ClassGroup[];
@@ -13,17 +41,8 @@ interface TeacherPanelModuleProps {
 
 const ALL_GROUPS = 'all';
 
-const getMasteryTone = (mastery: number): { bar: string; text: string } => {
-  if (mastery >= 70) {
-    return { bar: 'bg-lime', text: 'text-lime-dark' };
-  }
-
-  if (mastery >= 45) {
-    return { bar: 'bg-sun', text: 'text-sun-dark' };
-  }
-
-  return { bar: 'bg-coral', text: 'text-coral-dark' };
-};
+/* Hasta que el catálogo llegue no hay denominador, y sin él no se pinta ninguna fracción. */
+const EMPTY_CATALOG: CatalogSize = { levels: 0, worlds: 0 };
 
 const MissionCard = ({
   mission,
@@ -90,12 +109,208 @@ const MissionCard = ({
 };
 
 /**
- * Panel de Información del tutor: reportes de habilidades, asignación de
+ * La ficha de un explorador: una fila por nivel, y en cada una la tira de pasos
+ * de sus partidas.
+ *
+ * La tira va sin desplegable a propósito. Con tres niveles por mundo cabe en la
+ * fila, y el dato que el tutor viene a ver —si resolvió a la primera o llegó
+ * probando— se lee de un vistazo en vez de tras un clic.
+ */
+const StudentProgressCard = ({
+  student,
+  detail,
+  loading,
+  error,
+}: {
+  student: ClassroomStudent;
+  detail: StudentProgressDetail | null;
+  loading: boolean;
+  error: AppError | null;
+}) => {
+  if (error) {
+    return (
+      <div className="mt-4">
+        <StoreErrorNotice error={error} />
+      </div>
+    );
+  }
+
+  if (loading || !detail) {
+    return (
+      <p className="mt-4 rounded-[18px] border-2 border-line bg-cream px-5 py-4 text-[15px] font-bold text-ink-faint">
+        Cargando el avance de {student.name}…
+      </p>
+    );
+  }
+
+  if (detail.levels.length === 0) {
+    return (
+      <p className="mt-4 rounded-[18px] border-2 border-line bg-cream px-5 py-4 text-[15px] font-bold text-ink-faint">
+        {student.name} todavía no ha jugado ningún nivel.
+      </p>
+    );
+  }
+
+  return (
+    <section className="card mt-4 overflow-x-auto">
+      <div className="border-b-[3px] border-ink bg-grape-soft px-5 py-4">
+        <h3 className="font-display text-[19px] text-grape-dark">{student.name}</h3>
+        <p className="text-[14px] font-semibold text-grape-dark">
+          {student.completedLevels} superados de {detail.levels.length} empezados ·{' '}
+          {student.totalAttempts} partidas · última actividad{' '}
+          {formatLastActivity(student.hoursSinceLastActivity)}
+        </p>
+      </div>
+
+      <table className="w-full min-w-[640px] border-collapse text-left">
+        <thead>
+          <tr className="border-b-2 border-line">
+            <th className="px-5 py-3 font-display text-[14px] text-ink">Nivel</th>
+            <th className="px-5 py-3 font-display text-[14px] text-ink">Marca</th>
+            <th className="px-5 py-3 font-display text-[14px] text-ink">Intentos</th>
+            <th className="px-5 py-3 font-display text-[14px] text-ink">Pasos de cada partida</th>
+          </tr>
+        </thead>
+        <tbody>
+          {detail.levels.map((level, index) => (
+            <tr
+              key={level.levelId}
+              className={`border-b-2 border-line last:border-b-0 ${
+                index % 2 === 1 ? 'bg-cream' : 'bg-white'
+              }`}
+            >
+              <td className="px-5 py-3">
+                <span className="font-bold text-ink">{level.levelTitle}</span>
+                <span className="block text-[13px] font-semibold text-ink-faint">
+                  {level.worldTitle}
+                </span>
+              </td>
+
+              <td className="px-5 py-3">
+                {level.completed ? (
+                  <span className="chip chip-mint">{level.bestScore}/100</span>
+                ) : (
+                  <span className="chip chip-sun">Sin superar</span>
+                )}
+              </td>
+
+              <td className="px-5 py-3">
+                <AttemptCount
+                  attemptCount={level.attemptCount}
+                  storedAttempts={(detail.attemptsByLevel[level.levelId] ?? []).length}
+                />
+              </td>
+
+              <td className="px-5 py-3">
+                <AttemptSteps
+                  attempts={detail.attemptsByLevel[level.levelId] ?? []}
+                  optimalSteps={level.optimalSteps}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+};
+
+/**
+ * Las partidas de un nivel. Son DOS números cuando no coinciden, y eso es a
+ * propósito: `user_progress.attempt_count` cuenta las partidas que la base
+ * registró, y `level_attempts` guarda las que dejaron programa. Pueden separarse
+ * —`upsert_my_progress` sigue siendo llamable sin intento, y así quedó alguna de
+ * las pruebas viejas—, y entonces la tira de al lado enseña menos números que
+ * este contador. Decirlo cuesta seis palabras; que el tutor cuente los chips y
+ * no le cuadren, cuesta su confianza en la pantalla.
+ */
+const AttemptCount = ({
+  attemptCount,
+  storedAttempts,
+}: {
+  attemptCount: number;
+  storedAttempts: number;
+}) => (
+  <>
+    <span className="font-display text-[16px] text-ink">{attemptCount}</span>
+    {storedAttempts < attemptCount ? (
+      <span className="block text-[12px] font-semibold text-ink-faint">
+        {storedAttempts} con programa guardado
+      </span>
+    ) : null}
+  </>
+);
+
+/**
+ * Los pasos de cada partida, en orden. Una partida cuyo programa el servidor no
+ * supo leer sale como «?» y no como cero: un cero diría que se resolvió sin
+ * hacer nada.
+ */
+const AttemptSteps = ({
+  attempts,
+  optimalSteps,
+}: {
+  attempts: LevelAttempt[];
+  optimalSteps: number | null;
+}) => {
+  if (attempts.length === 0) {
+    return <span className="text-[15px] font-semibold text-ink-faint">—</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {attempts.map((attempt) => (
+        <span
+          key={attempt.attemptId}
+          aria-label={`${attempt.steps ?? 'pasos sin contar'}, ${
+            attempt.isSuccess ? 'llegó a la meta' : 'no llegó a la meta'
+          }`}
+          className={`rounded-full border-2 px-2.5 py-0.5 font-display text-[14px] ${
+            attempt.isSuccess
+              ? 'border-mint-dark bg-mint-soft text-mint-dark'
+              : 'border-line bg-white text-ink-faint'
+          }`}
+        >
+          {/*
+           * La cruz no es decoración: una partida que no llega a la meta puede
+           * tener MENOS pasos que el óptimo —quedarse corto es la forma normal
+           * de fallar—, así que sin ella la tira se lee como si el explorador
+           * hubiera batido el récord una y otra vez. Y va además del color,
+           * porque el color solo no lo dice para quien no lo distingue.
+           */}
+          {attempt.isSuccess ? '' : '×'}
+          {attempt.steps ?? '?'}
+        </span>
+      ))}
+
+      {optimalSteps === null ? null : (
+        <span className="text-[13px] font-bold text-ink-faint">óptimo {optimalSteps}</span>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Panel de Información del tutor: progreso real del salón, asignación de
  * misiones y recursos educativos.
  */
 export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModuleProps) => {
   const [selectedGroupId, setSelectedGroupId] = useState<string>(initialGroupId ?? ALL_GROUPS);
   const [busyMissionId, setBusyMissionId] = useState<string | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<CatalogSize>(EMPTY_CATALOG);
+
+  /*
+   * El catálogo se lee una vez y no se refresca: es el denominador del panel, y
+   * sólo cambia cuando entra contenido nuevo, que hoy pasa por una migración.
+   */
+  useEffect(() => {
+    void studentProgressService.getCatalogSize().then((result) => {
+      if (result.data) {
+        setCatalog(result.data);
+      }
+    });
+  }, []);
 
   const { assignments, error: missionsError, assign, unassign } = useMissionAssignments();
 
@@ -107,15 +322,25 @@ export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModul
     [groups, selectedGroupId]
   );
 
-  const skillReports = useMemo(() => getSkillReports(scopedGroups), [scopedGroups]);
+  const scopedStudents = useMemo(
+    () => scopedGroups.flatMap((group) => group.students),
+    [scopedGroups]
+  );
 
-  const weakestSkill = useMemo(
-    () =>
-      skillReports.reduce(
-        (weakest, report) => (report.mastery < weakest.mastery ? report : weakest),
-        skillReports[0]
-      ),
-    [skillReports]
+  const summary = useMemo(
+    () => getClassroomProgressSummary(scopedGroups, catalog),
+    [scopedGroups, catalog]
+  );
+
+  /*
+   * El explorador elegido se guarda por identificador y no por objeto: el store
+   * repone `students` en cada refresco de Realtime, y guardar el objeto dejaría
+   * abierta la ficha de una copia vieja.
+   */
+  const selectedStudent = scopedStudents.find((student) => student.id === selectedStudentId) ?? null;
+
+  const { detail, loading: detailLoading, error: detailError } = useStudentProgress(
+    selectedStudent?.id ?? null
   );
 
   /*
@@ -196,6 +421,12 @@ export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModul
       ? 'todos tus salones'
       : (groups.find((group) => group.id === selectedGroupId)?.name ?? 'este salón');
 
+  /* El rótulo de alcance cabe en «para X», pero no detrás de «Cómo va». */
+  const progressTitle =
+    selectedGroupId === ALL_GROUPS
+      ? 'Cómo van tus salones'
+      : `Cómo va ${groups.find((group) => group.id === selectedGroupId)?.name ?? 'este salón'}`;
+
   const chipClass = (active: boolean) =>
     `rounded-full border-[3px] px-5 py-2 font-display text-[15px] transition-colors ${
       active
@@ -208,7 +439,7 @@ export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModul
       <section>
         <h1 className="title-xl">Panel de información</h1>
         <p className="subtitle mt-1">
-          Cómo avanza el pensamiento computacional y qué puedes hacer al respecto.
+          Cuánto llevan jugado tus exploradores y qué puedes hacer al respecto.
         </p>
       </section>
 
@@ -237,63 +468,85 @@ export const TeacherPanelModule = ({ groups, initialGroupId }: TeacherPanelModul
         ))}
       </section>
 
-      <section className="card mt-6 p-6">
+      <section className="mt-6">
         <div className="flex items-center gap-3">
           <ChartIcon />
-          <h2 className="title-lg">Reportes de habilidades</h2>
+          <h2 className="title-lg">{progressTitle}</h2>
         </div>
 
         <p className="subtitle mt-2">
-          Promedio de dominio en {scopeLabel}. Los niños que todavía no han entrado a la plataforma
-          no entran en el promedio.
+          Lo que los exploradores llevan jugado. Los que todavía no han entrado cuentan en el total,
+          pero no en el promedio de eficiencia.
         </p>
 
-        <div className="mt-6 space-y-5">
-          {skillReports.map((report) => {
-            const tone = getMasteryTone(report.mastery);
-
-            return (
-              <div key={report.key}>
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div>
-                    <h3 className="font-display text-[18px] text-ink">{report.label}</h3>
-                    <p className="text-[14px] font-semibold text-ink-faint">{report.description}</p>
-                  </div>
-
-                  <div className="text-right">
-                    <span className={`font-display text-[22px] ${tone.text}`}>
-                      {report.mastery}%
-                    </span>
-                    <p className="text-[13px] font-bold text-ink-faint">
-                      {report.studentsMastered} de {report.studentsEvaluated} lo dominan
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  className="mt-2 h-[20px] w-full overflow-hidden rounded-full border-[3px] border-ink bg-cream"
-                  role="progressbar"
-                  aria-valuenow={report.mastery}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={`Dominio de ${report.label}`}
-                >
-                  <div
-                    className={`h-full rounded-full ${tone.bar}`}
-                    style={{ width: `${report.mastery}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {weakestSkill ? (
-          <p className="mt-6 rounded-[18px] border-2 border-sun-dark bg-sun-soft px-5 py-4 text-[15px] font-bold text-sun-dark">
-            La habilidad más floja es {weakestSkill.label} ({weakestSkill.mastery}%). Abajo puedes
-            asignar una misión que la trabaje.
+        {summary.totalStudents === 0 ? (
+          <p className="mt-4 rounded-[18px] border-2 border-line bg-cream px-5 py-4 text-[15px] font-bold text-ink-faint">
+            Todavía no hay exploradores inscritos, así que no hay avance que contar.
           </p>
-        ) : null}
+        ) : summary.activeStudents === 0 ? (
+          <p className="mt-4 rounded-[18px] border-2 border-sun-dark bg-sun-soft px-5 py-4 text-[15px] font-bold text-sun-dark">
+            Ninguno de tus exploradores ha jugado todavía. En cuanto alguno empiece, aquí verás
+            cuánto lleva y cuánto le costó.
+          </p>
+        ) : (
+          <>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard
+                icon={<StudentsIcon />}
+                title="Han jugado"
+                value={`${summary.activeStudents} de ${summary.totalStudents}`}
+                tone="grape"
+              />
+              <StatCard
+                icon={<ProgressIcon />}
+                title="Niveles superados"
+                value={`${summary.completedLevels} de ${summary.reachableLevels}`}
+                tone="mint"
+              />
+              <StatCard
+                icon={<MedalIcon />}
+                title="Mundos terminados"
+                value={`${summary.completedWorlds} de ${summary.reachableWorlds}`}
+                tone="sky"
+              />
+              <StatCard
+                icon={<PulseIcon />}
+                title="Eficiencia media"
+                value={summary.averageBestScore === null ? '—' : `${summary.averageBestScore}/100`}
+                tone="sun"
+              />
+            </div>
+
+            <p className="subtitle mt-6">
+              Elige un explorador para ver cuánto le costó cada nivel.
+            </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {scopedStudents.map((student) => (
+                <button
+                  key={student.id}
+                  type="button"
+                  onClick={() =>
+                    setSelectedStudentId(student.id === selectedStudentId ? null : student.id)
+                  }
+                  aria-pressed={student.id === selectedStudentId}
+                  className={chipClass(student.id === selectedStudentId)}
+                >
+                  {student.name}
+                </button>
+              ))}
+            </div>
+
+            {selectedStudent ? (
+              <StudentProgressCard
+                student={selectedStudent}
+                detail={detail}
+                loading={detailLoading}
+                error={detailError}
+              />
+            ) : null}
+          </>
+        )}
       </section>
 
       <section className="mt-8">

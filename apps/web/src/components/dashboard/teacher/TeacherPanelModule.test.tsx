@@ -6,6 +6,8 @@ import { TeacherPanelModule } from './TeacherPanelModule';
 
 const mocks = vi.hoisted(() => ({
   listAssignments: vi.fn(),
+  getCatalogSize: vi.fn(),
+  getDetail: vi.fn(),
   /* Guarda al oyente para poder disparar un cambio como haría la base. */
   emit: null as null | (() => void),
   subscribeToAssignments: vi.fn((onChange: () => void) => {
@@ -19,6 +21,20 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../../../hooks/useAuth', () => ({
   useAuth: () => ({ user: { id: 'tutor-1' } }),
+}));
+
+/*
+ * Se dobla el servicio entero, y no sólo por aislar: sin esto el módulo arrastra
+ * `lib/supabase`, que valida las variables de entorno **al importarse**. En esta
+ * máquina pasaría por el `.env` de `apps/web`, pero el paso `test:run` de CI no
+ * las declara —sólo el de `build` lo hace—, así que el test rojo aparecería
+ * allí y no aquí.
+ */
+vi.mock('../../../services/studentProgress.service', () => ({
+  studentProgressService: {
+    getCatalogSize: mocks.getCatalogSize,
+    getDetail: mocks.getDetail,
+  },
 }));
 
 vi.mock('../../../services/missions.service', () => ({
@@ -72,6 +88,8 @@ const missionButton = (): HTMLButtonElement => {
 describe('TeacherPanelModule', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getCatalogSize.mockResolvedValue({ data: { levels: 9, worlds: 3 }, error: null });
+    mocks.getDetail.mockResolvedValue({ data: { levels: [], attemptsByLevel: {} }, error: null });
   });
 
   describe('asignación de misiones según el alcance', () => {
@@ -154,13 +172,11 @@ describe('TeacherPanelModule', () => {
             hoursSinceLastActivity: null,
             streakDays: null,
             xp: 0,
-            skills: {
-              sequences: 0,
-              loops: 0,
-              conditionals: 0,
-              debugging: 0,
-              decomposition: 0,
-            },
+            attemptedLevels: 0,
+            completedLevels: 0,
+            completedWorlds: 0,
+            totalAttempts: 0,
+            averageBestScore: null,
           },
         ],
       };

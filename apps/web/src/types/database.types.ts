@@ -538,6 +538,98 @@ export type Database = {
         }
         Relationships: []
       }
+      classroom_level_attempts: {
+        Row: {
+          attempt_id: string | null
+          created_at: string | null
+          group_id: string | null
+          is_success: boolean | null
+          level_id: string | null
+          optimal_steps: number | null
+          score: number | null
+          steps: number | null
+          student_id: string | null
+          world_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_memberships_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_group_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_memberships_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "level_attempts_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "levels_world_id_fkey"
+            columns: ["world_id"]
+            isOneToOne: false
+            referencedRelation: "worlds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classroom_level_progress: {
+        Row: {
+          attempt_count: number | null
+          best_score: number | null
+          completed_at: string | null
+          completion_status: string | null
+          group_id: string | null
+          last_attempt_at: string | null
+          level_id: string | null
+          level_sort_order: number | null
+          level_title: string | null
+          optimal_steps: number | null
+          student_id: string | null
+          world_id: string | null
+          world_sort_order: number | null
+          world_title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_memberships_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_group_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_memberships_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "levels_world_id_fkey"
+            columns: ["world_id"]
+            isOneToOne: false
+            referencedRelation: "worlds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_progress_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classroom_roster: {
         Row: {
           avatar_key: string | null
@@ -561,6 +653,43 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "class_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classroom_student_activity: {
+        Row: {
+          attempted_levels: number | null
+          average_best_score: number | null
+          completed_levels: number | null
+          completed_worlds: number | null
+          current_world_id: string | null
+          current_world_title: string | null
+          group_id: string | null
+          last_attempt_at: string | null
+          student_id: string | null
+          total_attempts: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_memberships_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_group_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_memberships_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "levels_world_id_fkey"
+            columns: ["current_world_id"]
+            isOneToOne: false
+            referencedRelation: "worlds"
             referencedColumns: ["id"]
           },
         ]
