@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PROVISIONAL_MAX_XP } from '../../../constants/progress';
+import { explorerLevel } from '../../../constants/progress';
 import type { ClassroomStudent } from '../../../types/classroom.types';
 import { XPBar } from '../../ui/XPBar';
 import { formatLastActivity } from '../teacher/classroomsData';
@@ -66,6 +66,23 @@ export const StudentRosterTable = ({
     ? 'grid-cols-[1.35fr_1fr_1fr_0.7fr_0.8fr_1.2fr]'
     : 'grid-cols-[1.35fr_1fr_1fr_0.8fr_0.7fr]';
 
+  /*
+   * LA CELDA DICE TRES COSAS, decidido por el usuario: la barra, el XP
+   * acumulado y el Nivel Explorador. La barra sola ORDENA MAL —se vacía al subir
+   * de tramo, así que un alumno recién ascendido se ve por detrás de otro que
+   * va peor y está a punto de subir—, y quien mira esta tabla es justo quien
+   * tiene que comparar. El número ordena; el nivel explica la barra.
+   */
+  const xpCell = (xp: number) => (
+    <div className="flex flex-col gap-1">
+      <span className="font-display text-[15px] text-ink">{xp} XP</span>
+      <XPBar xp={xp} showLabel={false} />
+      <span className="text-[12px] font-semibold text-ink-soft">
+        Nivel Explorador {explorerLevel(xp)}
+      </span>
+    </div>
+  );
+
   const handleRemove = (studentId: string) => {
     onRemoveStudent?.(studentId);
     setConfirmingId(null);
@@ -123,11 +140,7 @@ export const StudentRosterTable = ({
                 {formatLastActivity(student.hoursSinceLastActivity)}
               </div>
 
-              {onRemoveStudent ? null : (
-                <div>
-                  <XPBar currentXP={student.xp} maxXP={PROVISIONAL_MAX_XP} showLabel={false} />
-                </div>
-              )}
+              {onRemoveStudent ? null : <div>{xpCell(student.xp)}</div>}
 
               <div>
                 {student.streakDays !== null ? (
@@ -140,11 +153,7 @@ export const StudentRosterTable = ({
                 )}
               </div>
 
-              {onRemoveStudent ? (
-                <div>
-                  <XPBar currentXP={student.xp} maxXP={PROVISIONAL_MAX_XP} showLabel={false} />
-                </div>
-              ) : null}
+              {onRemoveStudent ? <div>{xpCell(student.xp)}</div> : null}
 
               {onRemoveStudent ? (
                 <div className="flex justify-end">

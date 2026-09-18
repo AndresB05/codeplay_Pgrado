@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { PROVISIONAL_MAX_XP } from '../../../constants/progress';
 import { ROUTES } from '../../../constants/routes';
 import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
@@ -201,7 +200,7 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
         </div>
 
         <div className="mt-3 w-full px-1">
-          <XPBar currentXP={user?.xp ?? 0} maxXP={PROVISIONAL_MAX_XP} />
+          <XPBar xp={user?.xp ?? 0} />
         </div>
       </div>
 

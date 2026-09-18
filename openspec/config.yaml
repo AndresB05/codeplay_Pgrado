@@ -43,8 +43,8 @@ context: |
   seis servicios); el panel dejo de inventar nombre, correo y racha en cinco
   archivos, con FALLBACK_STUDENT_NAME exportado desde classrooms.service.ts; y
   XPBar, retintada al tema de selva, se monta en la barra lateral, la barra
-  superior y la tabla de seguimiento en sus dos vistas, con el maximo
-  provisional PROVISIONAL_MAX_XP en constants/progress.ts.
+  superior y la tabla de seguimiento en sus dos vistas. El maximo provisional
+  PROVISIONAL_MAX_XP YA NO EXISTE: lo retiro el J11.
   EL PASO 29 (`nombre-editable`) hizo el nombre editable desde Ajustes. La
   accion `updateFullName` vive en AuthProvider y hace setUser con lo que
   devuelve update_my_profile, de modo que las siete superficies que leen
@@ -391,7 +391,19 @@ context: |
      game/score.ts para enseñarla sin esperar al servidor y la guarda en
      metadata al lado de la del servidor, para poder cotejarlas. La ventana de
      nivel superado enseña puntuacion y XP concedida, no la xp_reward de la fila.
-     La barra por tramos de 300 es el J11 y sigue pendiente.
+     LA BARRA YA MARCA TRAMOS, desde el mismo dia (J11, nivel-explorador, sin
+     migracion): 300 XP por tramo —lo que da un mundo entero perfecto— y el
+     numero que sube al llenarlo se llama NIVEL EXPLORADOR, decidido por el
+     usuario para no chocar con los niveles del juego; empieza en 1 con cero XP.
+     Las tres cuentas viven en constants/progress.ts y XPBar recibe solo el XP,
+     asi que ninguna llamada puede pintar un tramo distinto. La barra NO lleva
+     techo a proposito: los logros del paso 22 podran repartir XP sin tocarla.
+     El nino lo ve en la barra lateral, la superior y Ajustes; el tutor ve ademas
+     el XP acumulado en su tabla, porque la barra sola ordena mal —se vacia al
+     subir—. Y el XP SE REFRESCA SIN RECARGAR: AuthProvider.applyTotalXp aplica
+     el total que devuelve submit_level_attempt, que antes no lo aplicaba nadie
+     —medido: la base en 693 y la pantalla en 683—. La ventana de nivel superado
+     celebra la subida de tramo cuando ocurre.
   El apartado gráfico queda FUERA de este hito a propósito.
 
   DEUDA TÉCNICA QUE CONDICIONA EL DISEÑO

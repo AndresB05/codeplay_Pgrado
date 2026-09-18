@@ -106,7 +106,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | **J8** | ~~Conectar la pantalla de nivel al backend y montar el juego dentro~~ — **lo hizo el J7.1**, por decisión del usuario: montar la pantalla dos veces era hacerlo dos veces. Le queda **mandar el intento**, que es lo que el J9 escribe | Se elige un nivel en la web y arranca el que se eligió | ✅ |
 | **J9** | Mandar el intento al servidor con el programa — **y arreglar el contador de mundos**, que contaba las filas de progreso sin mirar si el nivel estaba superado (`docs/CONTEXT.md` §4.12) | La partida aparece guardada en la base: intento, progreso y XP, con éxito y sin él (`mandar-el-intento`) | ✅ |
 | **J10** | La migración del XP: contar pasos y conceder por marca de agua — **y la regla que faltaba, de pasos a puntuación**, que el usuario eligió el 17-sep-2026 tras ver los números de tres candidatas | Medido jugando: **87** al superar «La escalera» con 23 pasos contra 20, **+13** al mejorarlo a perfecto y **cero** al volver a empeorarlo. Nunca más de 100 (`migracion-del-xp`) | ✅ |
-| **J11** | La barra de XP por tramos de 300 | El niño sube de nivel al terminar un mundo | ⬜ |
+| **J11** | La barra de XP por tramos de 300, con el **Nivel Explorador** que sube al llenarse — y el XP al día sin recargar, que no lo estaba | Medido jugando: de 93/300 a 193, a 293, y al llegar a 900 la ventana dice «¡Subiste a Nivel Explorador 4!» (`nivel-explorador`) | ✅ |
 | **J12** | **Mundos 2 y 3** — partido en siete, con el mismo patrón que el J7 | Hay nueve niveles jugables | ✅ |
 | J12.1 · .2 · .3 | Los tres niveles del mundo 2 — **empezó por el 2**, `salta-y-sube`, el primero con subidas, que trajo el bloque «saltar» y las alturas (`salto-y-alturas`). **Y se cerraron juntos en `mundo-2-completo`**, por decisión del usuario: `salta-y-sube` bajó al 1, y el 2 y el 3 —`el-gran-rodeo` y `la-torre`— entraron en la misma migración, la 0029 | Los tres niveles del mundo 2 se juegan desde la base | ✅ |
 | J12.4 | **El máximo de pasos**, la mecánica del mundo 3: `stepLimit` en `config`, el recorrido que se corta al agotarlo y el contador en cuenta atrás (`limite-de-pasos`). Va antes que los tableros porque el lector descartaba en silencio los campos que no conocía | Un nivel con máximo congela al personaje al llegar a cero y le pide reiniciar | ✅ |
@@ -494,7 +494,7 @@ cerrarlos a la vez para que no se queden a medias:
 | --- | --- |
 | J8 | **20** — pantalla de nivel, ruta y conectar la selección al backend |
 | J9 y J10 | **21** — escritura de progreso y XP desde el juego |
-| J11 | Hereda del **28**, que puso la barra, y del **22**, que fija el máximo |
+| J11 | Hereda del **28**, que puso la barra. Del **22** ya no depende: la barra no lleva techo, así que el catálogo de logros puede repartir XP sin tocarla |
 
 Y lo que **no** entra aquí, aunque lo parezca: los **logros** y las **misiones**
 son el paso 22, y el juego no participa. No los nombra, no los reporta y no sabe

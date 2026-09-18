@@ -168,10 +168,11 @@ espera al guardado—, con la misma regla y el mismo recuento, y la suya se guar
 con el intento al lado de la del servidor: el día que dejen de coincidir, queda
 con qué darse cuenta. La que cuenta sigue siendo la del servidor.
 
-### La barra de XP cambia
+### La barra de XP cambia — hecho, y se llama «Nivel Explorador»
 
-Hoy la barra del panel del niño va contra un máximo provisional inventado
-(`PROVISIONAL_MAX_XP = 1000`). Pasa a marcar **tramos de 300 XP**:
+**Aplicado el 17-sep-2026 por el J11.** La barra iba contra un máximo provisional
+inventado (`PROVISIONAL_MAX_XP = 1000`), que ya no existe. Marca **tramos de 300
+XP**:
 
 ```
    nivel 1        nivel 2        nivel 3        …
@@ -191,10 +192,26 @@ calcula, no se enumera:
 
 > **tramo = parte entera de (XP total ÷ 300) + 1**
 
-Así la barra funciona hoy —con sólo los 900 de los niveles llega hasta el tramo
-3— y **sigue funcionando cuando los logros añadan XP**, sin volver a tocarla ni
-tener que inventar un techo. El máximo real saldrá de sumar el catálogo cuando
-exista, en vez de fijarse a dedo ahora.
+Así la barra funciona hoy y **sigue funcionando cuando los logros añadan XP**,
+sin volver a tocarla ni tener que inventar un techo. El máximo real saldrá de
+sumar el catálogo cuando exista, en vez de fijarse a dedo ahora.
+
+**Con los nueve niveles perfectos se estrena el tramo 4, no se termina el 3.** Los
+900 caen justo en el borde: `900 ÷ 300` es 3 y el tramo es el siguiente. Medido en
+pantalla el 17-sep-2026, con la cuenta de pruebas en 900: «Nivel Explorador 4,
+0 / 300 XP», con la barra vacía. Es lo que hay que esperar, no un fallo de
+redondeo — el tramo cuenta lo que llevas dentro, y de un mundo perfecto no sobra
+nada.
+
+**Se llama «Nivel Explorador», decidido por el usuario**, y no «nivel» a secas:
+en la misma pantalla hay «Nivel 3 - La escalera», que es otra cosa y también se
+numera. Empieza en **1** con cero XP, porque nadie está en el nivel cero.
+
+**Dónde se ve:** el niño, en la barra lateral, en la barra superior y en su
+pantalla de cuenta. El tutor, en la tabla de seguimiento, **con el XP acumulado
+al lado**: la barra sola ordena mal, porque se vacía al subir, y quien mira esa
+tabla es justo quien tiene que comparar. Y la ventana de nivel superado **celebra
+la subida** cuando ocurre.
 
 ## 4. Lo que el juego NO decide
 

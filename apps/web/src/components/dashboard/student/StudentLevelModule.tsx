@@ -4,6 +4,7 @@ import { ROUTES } from '../../../constants/routes';
 import { BlockEditorLoader } from '../../../game/BlockEditorLoader';
 import type { LevelFinish } from '../../../game/GameScene';
 import { GameSceneLoader } from '../../../game/GameSceneLoader';
+import { useAuth } from '../../../hooks/useAuth';
 import { openLevel, type PlayableLevel } from '../../../game/levelConfig';
 import type { Program } from '../../../game/program';
 import { scoreForSteps } from '../../../game/score';
@@ -115,6 +116,7 @@ type StudentLevelModuleProps = {
  */
 export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps) => {
   const navigate = useNavigate();
+  const { applyTotalXp } = useAuth();
   const [state, setState] = useState<LevelState>({ status: 'loading' });
 
   const [program, setProgram] = useState<Program | null>(null);
@@ -168,9 +170,19 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
       void submitAttempt(levelId, result).then((saved) => {
         setOutcome(saved);
         setSaveFailed(saved === null);
+
+        /*
+         * El XP del panel se pone al día AQUÍ, con el total que devuelve el
+         * servidor. Sin esto la barra lateral se queda diciendo lo de antes
+         * hasta recargar, que es lo que hacía antes del J11 — medido: la base en
+         * 693 y la pantalla en 683.
+         */
+        if (saved !== null) {
+          applyTotalXp(saved.totalXp);
+        }
       });
     },
-    [levelId]
+    [applyTotalXp, levelId]
   );
 
   /*

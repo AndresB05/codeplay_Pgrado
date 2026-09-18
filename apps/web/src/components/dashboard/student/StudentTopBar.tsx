@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { PROVISIONAL_MAX_XP } from '../../../constants/progress';
 import { ROUTES } from '../../../constants/routes';
 import type { User } from '../../../types/user.types';
 import { XPBar } from '../../ui/XPBar';
@@ -64,7 +63,7 @@ export const StudentTopBar = ({ user }: StudentTopBarProps) => {
       <div className="flex items-center gap-3">
         {/* Ancho fijo: sin acotarla, la barra crece con la cabecera y empuja el resto. */}
         <div className="hidden w-[150px] sm:block">
-          <XPBar currentXP={user?.xp ?? 0} maxXP={PROVISIONAL_MAX_XP} />
+          <XPBar xp={user?.xp ?? 0} />
         </div>
 
         <div className="flex h-[52px] items-center gap-2 rounded-full border-[3px] border-ink bg-sun-soft px-5 font-display text-[18px] text-sun-dark shadow-[0_4px_0_rgba(42,27,69,0.15)]">

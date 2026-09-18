@@ -1,18 +1,36 @@
+import {
+  XP_PER_EXPLORER_LEVEL,
+  explorerLevel,
+  xpIntoExplorerLevel,
+} from '../../constants/progress';
+
 interface XPBarProps {
-  currentXP: number;
-  maxXP: number;
+  xp: number;
   showLabel?: boolean;
 }
 
-export const XPBar = ({ currentXP, maxXP, showLabel = true }: XPBarProps) => {
-  const percentage = Math.min((currentXP / maxXP) * 100, 100);
+/*
+ * La barra del XP, que desde el J11 marca TRAMOS y no un techo: se llena, sube
+ * el Nivel Explorador y vuelve a empezar. Ver `constants/progress.ts`.
+ *
+ * Recibe el XP y nada más. Antes recibía también el máximo, y eso permitía que
+ * cada sitio pasara el suyo —el banner huérfano pasaba 1000 a mano—: con un solo
+ * dato, que las cuatro barras cuenten igual deja de depender de quien las monta.
+ */
+export const XPBar = ({ xp, showLabel = true }: XPBarProps) => {
+  const level = explorerLevel(xp);
+  const inLevel = xpIntoExplorerLevel(xp);
+  const percentage = (inLevel / XP_PER_EXPLORER_LEVEL) * 100;
 
   return (
     <div className="flex flex-col gap-1">
       {showLabel && (
-        <span className="text-sm font-medium text-ink-soft">
-          {currentXP} / {maxXP} XP
-        </span>
+        <div className="flex flex-col leading-tight">
+          <span className="font-display text-[14px] text-ink">Nivel Explorador {level}</span>
+          <span className="text-[12px] font-semibold text-ink-soft">
+            {inLevel} / {XP_PER_EXPLORER_LEVEL} XP
+          </span>
+        </div>
       )}
       <div className="h-3 w-full overflow-hidden rounded-full border-2 border-ink bg-jungle-soft">
         <div

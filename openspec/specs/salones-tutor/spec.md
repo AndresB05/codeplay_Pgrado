@@ -206,13 +206,18 @@ La **posición** de esa columna SHALL depender de quién mira: en la vista del n
 va entre la última actividad y la racha, y en la del tutor entre la racha y las
 acciones. Es una diferencia buscada, no un descuido de la reutilización.
 
-La barra de esa columna SHALL prescindir de la etiqueta numérica, que no cabe en
-el ancho de una columna.
+**La columna SHALL enseñar las tres cosas: la barra, el XP acumulado y el tramo.**
+Decidido por el usuario el 17-sep-2026, y no es adorno: **la barra sola ordena
+mal**. Como se vacía al subir de tramo, un alumno recién ascendido se ve casi
+vacío al lado de otro que va por detrás pero a punto de ascender, y quien mira la
+tabla es quien tiene que comparar. El número es lo que ordena y el tramo es lo que
+explica la barra.
 
 #### Scenario: El tutor abre el detalle de un salón
 
 - **WHEN** el tutor abre el detalle de un salón con alumnos
 - **THEN** la tabla muestra una columna de XP entre «Racha» y «Acciones»
+- **AND** cada alumno muestra su barra, su XP acumulado y su tramo
 
 #### Scenario: El niño mira la tabla de su salón
 
@@ -223,7 +228,12 @@ el ancho de una columna.
 #### Scenario: Alumno sin actividad
 
 - **WHEN** un alumno de la tabla tiene cero XP
-- **THEN** su barra se muestra vacía con el valor cero, sin etiqueta numérica
+- **THEN** su barra se muestra vacía, con cero XP y el primer tramo
+
+#### Scenario: Dos alumnos a distinto lado de un salto de tramo
+
+- **WHEN** un alumno acaba de subir de tramo y otro está a punto de subir con menos XP que él
+- **THEN** quien mira la tabla puede ver cuál de los dos va por delante
 
 ### Requirement: Enlace de invitación canjeable
 El sistema SHALL permitir al tutor generar, desde la pantalla de su salón, un

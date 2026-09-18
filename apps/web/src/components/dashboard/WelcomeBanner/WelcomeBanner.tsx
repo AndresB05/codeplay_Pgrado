@@ -32,7 +32,7 @@ export const WelcomeBanner = ({ user }: WelcomeBannerProps) => {
         <div className="flex items-center gap-6">
           <StreakBadge streakDays={user?.streakDays || 0} />
           <div className="w-48">
-            <XPBar currentXP={user?.xp || 0} maxXP={1000} showLabel={false} />
+            <XPBar xp={user?.xp || 0} showLabel={false} />
           </div>
         </div>
       </div>

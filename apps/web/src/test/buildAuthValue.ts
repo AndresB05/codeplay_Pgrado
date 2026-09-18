@@ -20,6 +20,7 @@ export const buildAuthValue = (
   user: User | null,
   session: Session | null = null
 ): AuthContextValue => ({
+  applyTotalXp: () => undefined,
   changePassword: async () => false,
   clearError: () => undefined,
   error: null,

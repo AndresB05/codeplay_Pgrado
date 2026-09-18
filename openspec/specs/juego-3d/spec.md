@@ -1677,6 +1677,12 @@ espera por el guardado; la experiencia concedida, en cambio, SHALL ser la que el
 servidor conceda, y hasta que llegue NO SHALL enseñarse ningún número en su
 lugar. Si el guardado falla, la ventana NO SHALL enseñar experiencia ninguna.
 
+**Y cuando esa experiencia haga subir de tramo, la ventana SHALL decirlo.** Es el
+momento en que ocurre y el único sitio donde se puede celebrar: el panel enseña en
+qué tramo está el niño, pero no que acaba de cambiar. NO SHALL anunciarse una
+subida que no ha ocurrido —una partida que no concede experiencia no sube a
+nadie— ni cuando el guardado haya fallado, porque entonces no se sabe.
+
 **Si la partida no se pudo guardar, la ventana SHALL decirlo** en una línea, sin
 pedirle nada al niño: volver a jugar el nivel lo guarda, y repetir no le quita
 nada. NO SHALL esperarse a la confirmación del guardado para abrirla.
@@ -1726,6 +1732,16 @@ mundo al que salir, y tampoco hay nada que guardar ni experiencia que conceder.
 
 - **WHEN** se vuelve a superar un nivel sin mejorar la marca anterior
 - **THEN** la ventana felicita igual y dice que esta vez no se ganó experiencia
+
+#### Scenario: La partida hace subir de tramo
+
+- **WHEN** la experiencia concedida por la partida completa el tramo en el que estaba el niño
+- **THEN** la ventana lo celebra y dice a qué tramo ha subido
+
+#### Scenario: La partida no hace subir de tramo
+
+- **WHEN** la experiencia concedida no llega a completar el tramo
+- **THEN** la ventana no anuncia ninguna subida
 
 #### Scenario: El guardado falla y no hay experiencia que enseñar
 

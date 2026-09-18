@@ -354,6 +354,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 
   /*
+   * EL XP QUE ACABA DE CONCEDER EL SERVIDOR, aplicado en el sitio. Misma forma
+   * que `updateFullName` —un `setUser` y las superficies que leen de aquí se
+   * enteran solas—, pero sin ida y vuelta: el total llega en la respuesta de la
+   * partida, así que volver a pedir el perfil sería una consulta de más y una
+   * copia más vieja de todo lo demás.
+   *
+   * NO suma: recibe el total que la base escribió. Sumar aquí sería rehacer una
+   * cuenta ya hecha, y con dos partidas seguidas sería rehacerla mal.
+   */
+  const applyTotalXp = useCallback((totalXp: number) => {
+    setUser((current) => (current === null ? current : { ...current, xp: totalXp }));
+  }, []);
+
+  /*
    * El rol se guarda ANTES de partir porque `signInWithOAuth` no admite
    * metadatos: no hay forma de que viaje con el alta, así que viaja por el
    * navegador y se aplica a la vuelta.
@@ -409,6 +423,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const value = useMemo<AuthContextValue>(
     () => ({
+      applyTotalXp,
       changePassword,
       clearError,
       error,
@@ -425,6 +440,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       user,
     }),
     [
+      applyTotalXp,
       changePassword,
       clearError,
       error,

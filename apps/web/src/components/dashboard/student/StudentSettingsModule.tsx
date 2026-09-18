@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { explorerLevel } from '../../../constants/progress';
 import { ROUTES } from '../../../constants/routes';
 import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
@@ -86,6 +87,8 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
                   <TropicalFlower size={16} />
                   {xp} XP
                 </span>
+                {/* El tramo, aquí sin barra: es la ficha del explorador, no su progreso. */}
+                <span className="chip chip-mint">Nivel Explorador {explorerLevel(xp)}</span>
               </div>
 
               <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">

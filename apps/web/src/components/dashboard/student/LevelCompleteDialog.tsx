@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { explorerLevel } from '../../../constants/progress';
 import type { AttemptOutcome } from '../../../types/progress.types';
 
 interface LevelCompleteDialogProps {
@@ -66,6 +67,18 @@ export const LevelCompleteDialog = ({
 
   const perfect = steps <= optimalSteps;
 
+  /*
+   * LA SUBIDA SE DEDUCE RESTANDO, y no hace falta que el servidor la anuncie: el
+   * total de después menos lo concedido es el de antes, y con los dos tramos
+   * delante se sabe si se cruzó uno.
+   *
+   * Una partida que no concede nada no sube a nadie, y con el guardado fallido
+   * no hay total, así que los dos casos salen solos de aquí.
+   */
+  const leveledUp =
+    outcome !== null &&
+    explorerLevel(outcome.totalXp) > explorerLevel(outcome.totalXp - outcome.awardedXp);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4 backdrop-blur-sm"
@@ -95,6 +108,16 @@ export const LevelCompleteDialog = ({
             <span className="chip chip-sun">+{outcome.awardedXp} XP</span>
           )}
         </div>
+
+        {/*
+         * La subida de Nivel Explorador se celebra aparte del «+N XP»: son dos
+         * cosas distintas y la segunda ocurre una vez cada 300.
+         */}
+        {leveledUp && outcome !== null && (
+          <p className="mt-4 font-display text-[19px] text-grape-dark">
+            ¡Subiste a Nivel Explorador {explorerLevel(outcome.totalXp)}!
+          </p>
+        )}
 
         {/*
          * Volver a superarlo sin mejorar no gana nada, y eso se dice entero:

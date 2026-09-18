@@ -27,6 +27,15 @@ export type UpdateRoleResult =
   | { status: 'error' };
 
 export interface AuthContextValue {
+  /**
+   * Deja el XP del perfil en el total que acaba de devolver el servidor, sin
+   * volver a consultarlo. Lo llama la pantalla de nivel al terminar una partida:
+   * sin esto, la barra del panel sigue diciendo lo de antes hasta recargar.
+   *
+   * NO suma: recibe el total, que es el que la base escribió. Sumar en el
+   * cliente sería inventarse una cuenta que ya está hecha.
+   */
+  applyTotalXp: (totalXp: number) => void;
   /** Cambia la contraseña verificando antes la actual. Ajustes, con sesión. */
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   clearError: () => void;

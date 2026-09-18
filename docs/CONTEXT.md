@@ -1361,6 +1361,32 @@ las dos tablas consultadas después de cada una:
 | `count_program_steps` con la clave anónima **y autenticado** | `42501` las dos veces: las tres funciones de recuento no se conceden a nadie, y sólo las llama la RPC `security definer` |
 | `submit_level_attempt` con un nivel inexistente | `P0002 Level not found or unavailable`, y no escribe ni intento ni progreso |
 
+**EL XP YA SE VE, Y SE VE AL DÍA (J11, 17-sep-2026).** Sin migración: este paso es
+todo pantalla, y lo que consume es el `total_xp` que `submit_level_attempt` ya
+devolvía sin consumidor.
+
+**Lo que se arregló, medido antes:** la barra iba contra un máximo inventado
+—`PROVISIONAL_MAX_XP = 1000`, que ya no existe— y **no se enteraba de lo que el
+niño acababa de ganar**: superado «Siempre adelante» con la ventana diciendo
+«+10 XP», la base pasó a 693 y la barra siguió en 683, también al volver a la
+lista de mundos. `user.xp` se leía al abrir la sesión y sólo lo reescribía el
+cambio de nombre; ahora `AuthProvider.applyTotalXp` lo pone al día con el total
+que devuelve la partida, sin volver a consultar el perfil.
+
+**Verificado jugando el 17-sep-2026**, cuatro partidas seguidas con `userkid2`
+hasta llegar al máximo del juego:
+
+| Comprobado | Resultado |
+| --- | --- |
+| La barra con 693 XP | «Nivel Explorador 3», **93 / 300**, en la barra lateral y en la superior |
+| Superar «La torre» (+100) **sin recargar** | La barra pasó sola a **193 / 300** al llegar la respuesta |
+| Superar «El faro» (+100) | **293 / 300**, a un paso del salto |
+| Superar «Muchos caminos» perfecto (**+7**, de 893 a **900**) | La ventana dijo **«¡Subiste a Nivel Explorador 4!»** y las dos barras pasaron a «Nivel Explorador 4, 0 / 300» |
+| Volver a jugarlo sin mejorar (**+0**) | **Ninguna subida anunciada**, ningún chip de XP y la barra quieta |
+| La tabla del salón, vista del niño | Cada compañero con su barra, su XP y su nivel: «0 XP · Nivel Explorador 1» y «900 XP · Nivel Explorador 4» |
+| La tabla del salón, vista del tutor | Lo mismo, con la columna entre «Racha» y «Acciones» |
+| El total contra las marcas | **900 = 100 × 9**: la cuenta de pruebas tiene los nueve niveles al máximo |
+
 **Decisiones de diseño**
 
 - **Plazo de conservación, decidido por el usuario el 28-ago-2026:** los datos
@@ -3319,8 +3345,11 @@ Tres fallos vivos cerrados y una superficie nueva, cambio `arreglos-y-barra-xp`
   puede sobrescribir. Sincronizarlo pisaría lo que hubiera escrito a mano.
 - **El XP tiene cuatro superficies**: `XPBar` retintada al tema de selva y
   montada en la barra lateral, la barra superior y la tabla de seguimiento en sus
-  dos vistas. El máximo es `PROVISIONAL_MAX_XP` en `constants/progress.ts`,
-  provisional hasta el paso 22.
+  dos vistas. ~~El máximo es `PROVISIONAL_MAX_XP`~~ — **lo retiró el J11** el
+  17-sep-2026: la barra marca **tramos de 300 XP** y el número que sube cada
+  tramo es el **Nivel Explorador**, que empieza en 1. Las tres cuentas viven en
+  `constants/progress.ts` y `XPBar` recibe sólo el XP, así que ninguna llamada
+  puede pintar un tramo distinto. Ver `DISENO-DEL-JUEGO.md` §3.
 
 ### Privacidad y consentimiento (paso 14): EN CURSO, el resto APLAZADO
 
@@ -3395,7 +3424,7 @@ obliguen a nadie, ni build que copiar. Ver `DISENO-DEL-JUEGO.md` §5.
 | Envío real de invitaciones (**mitad B del paso 19**) | Elegir servicio de correo (Resend, SendGrid…) y enviarlo. Hoy el tutor comparte el enlace a mano, que es lo que hace la mitad A | P1 + **servicio contratado** |
 | Editar o archivar un salón | No existe | P1 |
 | Exportar reportes | No existe | P1 |
-| Progreso, XP y rachas reales | **El progreso y el XP están hechos**: el J9 escribe cada partida y el J10 (17-sep-2026) puntúa contando el programa y concede por marca de agua. Lo que falta es **la racha**, que no la escribe nadie, y la **barra por tramos de 300**, que es el J11 | P4 |
+| Progreso, XP y rachas reales | **El progreso y el XP están hechos**: el J9 escribe cada partida, el J10 puntúa contando el programa y concede por marca de agua, y el J11 (17-sep-2026) pone la barra por tramos de 300 con el **Nivel Explorador** y refresca el XP sin recargar. Lo que falta es **la racha**, que no la escribe nadie | P4 |
 | Recursos educativos con destino | Hoy son tarjetas informativas sin enlace | Contenido |
 | Abrir los cambios en OpenSpec | Convertir P1–P4 en `openspec/changes/` con `/opsx:propose` | Ninguna |
 

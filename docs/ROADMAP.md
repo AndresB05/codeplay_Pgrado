@@ -422,9 +422,10 @@ niveles completados sobre el total y no tiene relación con el XP.
 Esto dejaba el paso 21 incompleto tal como estaba planteado: escribiría un número
 que el niño apenas puede ver. **Decidido y hecho en el paso 28**: el XP se ve en
 la barra lateral, en la barra superior y en la tabla de seguimiento, sin recuperar
-el banner. Lo que el paso 21 hereda ya no es dónde mostrarlo, sino el **máximo**:
-hoy es `PROVISIONAL_MAX_XP` en `constants/progress.ts`, un número inventado porque
-el esquema no tiene umbrales, y fijarlo de verdad es el paso 22.
+el banner. ~~Lo que el paso 21 hereda ya no es dónde mostrarlo, sino el
+**máximo**~~ — **lo cerró el J11**: no hay máximo, hay tramos de 300 y un **Nivel
+Explorador** que sube al llenarlos. `PROVISIONAL_MAX_XP` ya no existe, y el paso
+22 hereda el catálogo de logros, no el techo de la barra.
 
 **Los componentes huérfanos se rehacen, no se recuperan.** `WelcomeBanner`,
 `SidebarPlayerCard`, `LeaderBoard` y `WorldCard` usan los nombres de color
@@ -474,13 +475,18 @@ que hay que saber aquí es qué trabajo implica:
   **180, 200 y 240** en la Cordillera y **150, 210 y 260** en la Costa; los nueve
   valen 100, comprobado contra la base. *(Esta línea listaba siete valores para
   nueve filas: le faltaban el 150 y el 210.)*
-- **Y hay que rehacer la barra de XP del panel del niño**, que hoy va contra un
-  máximo inventado (`PROVISIONAL_MAX_XP = 1000`). Pasa a marcar **tramos de 300
-  XP** —lo que da un mundo entero perfecto—, calculados en vez de enumerados:
-  `tramo = parte entera de (XP ÷ 300) + 1`. **No lleva techo a propósito**: los
-  logros y las misiones también reparten XP y no se sabrá cuánta hasta que exista
-  el catálogo del paso 22, así que la barra tiene que seguir funcionando cuando
-  esa XP aparezca. El máximo real se calculará entonces, no se inventa ahora.
+- ~~**Y hay que rehacer la barra de XP del panel del niño**~~ — **hecha en el
+  J11** (17-sep-2026). Marca **tramos de 300 XP** —lo que da un mundo entero
+  perfecto—, calculados en vez de enumerados:
+  `tramo = parte entera de (XP ÷ 300) + 1`, y el tramo se llama **Nivel
+  Explorador** por decisión del usuario, para no chocar con los niveles del juego.
+  **No lleva techo a propósito**: los logros y las misiones también reparten XP y
+  no se sabrá cuánta hasta que exista el catálogo del paso 22, así que la barra
+  sigue funcionando cuando esa XP aparezca, sin volver a tocarla.
+
+  El J11 arregló además algo que no estaba escrito: **el XP no se refrescaba sin
+  recargar**. Medido antes de tocarlo —la base en 693 y la pantalla en 683—, y
+  hoy el panel se pone al día con el total que devuelve la partida.
 
 **La puntuación la calcula el servidor**, contando el programa de bloques que
 recibe, no creyéndose una que le manden. No es desconfianza: el servidor ya tiene
