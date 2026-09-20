@@ -3,6 +3,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useAchievements } from '../../../hooks/useAchievements';
 import { AchievementList } from '../AchievementList/AchievementList';
 import { MonsteraLeaf, TropicalFlower } from '../../decor/JungleDecor';
+import { trophyPercent, worldTrophyProgress } from '../../../lib/trophyProgress';
 
 const TrophyIcon = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
@@ -53,73 +54,22 @@ const MedalIcon = ({ color }: { color: string }) => (
   </svg>
 );
 
-const BlocksIcon = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <rect
-      x="4"
-      y="4"
-      width="6.5"
-      height="6.5"
-      rx="2"
-      fill="#D6F7F3"
-      stroke="#2A1B45"
-      strokeWidth="2.2"
-    />
-    <rect
-      x="13.5"
-      y="4"
-      width="6.5"
-      height="6.5"
-      rx="2"
-      fill="#FFF4D6"
-      stroke="#2A1B45"
-      strokeWidth="2.2"
-    />
-    <rect
-      x="8.75"
-      y="13.5"
-      width="6.5"
-      height="6.5"
-      rx="2"
-      fill="#F0E6FF"
-      stroke="#2A1B45"
-      strokeWidth="2.2"
-    />
-  </svg>
-);
-
-const InfinityIcon = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M9.5 9.5C8.2 8.2 6 8.2 4.7 9.5C3.4 10.8 3.4 13 4.7 14.3C6 15.6 8.2 15.6 9.5 14.3L14.5 9.7C15.8 8.4 18 8.4 19.3 9.7C20.6 11 20.6 13.2 19.3 14.5C18 15.8 15.8 15.8 14.5 14.5L9.5 9.5Z"
-      stroke="#2A1B45"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 type BigTrophyCardProps = {
   title: string;
   description: string;
   progressLabel: string;
   progressValue: number;
-  accent: 'grape' | 'sun';
+  accent: keyof typeof bigCardStyles;
 };
 
-type LogicCardProps = {
-  title: string;
-  description: string;
-  progressLabel: string;
-  progressValue: number;
-  accent: 'jungle' | 'muted';
-  badge?: string;
-  locked?: boolean;
-  icon: 'blocks' | 'infinity';
-};
 
 const bigCardStyles = {
+  jungle: {
+    gradient: 'linear-gradient(135deg, #7BE0A8 0%, #1F9D5B 100%)',
+    bar: '#1F9D5B',
+    chip: 'chip-leaf',
+    medal: '#FFC93C',
+  },
   grape: {
     gradient: 'linear-gradient(135deg, #A77BF3 0%, #7B3FE4 100%)',
     bar: '#7B3FE4',
@@ -132,20 +82,26 @@ const bigCardStyles = {
     chip: 'chip-sun',
     medal: '#FF8A3D',
   },
+  /* El tercero entra con el paso 22: los mundos son tres, y las tarjetas también. */
+  sky: {
+    gradient: 'linear-gradient(135deg, #8FD8F7 0%, #2BA7DD 100%)',
+    bar: '#2BA7DD',
+    chip: 'chip-sky',
+    medal: '#FFC93C',
+  },
 };
 
-const logicCardStyles = {
-  jungle: {
-    bubble: 'bg-jungle-soft',
-    bar: '#1F9D5B',
-    chip: 'chip-leaf',
-  },
-  muted: {
-    bubble: 'bg-cream',
-    bar: '#8B82A6',
-    chip: 'chip-grape',
-  },
-};
+/*
+ * UNA TARJETA GRANDE POR MUNDO, en el orden del catálogo. Las claves las fija la
+ * migración 0036 derivando del `sort_order` del mundo, así que esta lista y
+ * aquélla se leen juntas.
+ */
+const WORLD_TROPHIES: { key: string; order: number; accent: keyof typeof bigCardStyles }[] = [
+  { key: 'perfect_world_1', order: 1, accent: 'jungle' },
+  { key: 'perfect_world_2', order: 2, accent: 'grape' },
+  { key: 'perfect_world_3', order: 3, accent: 'sky' },
+];
+
 
 const BigTrophyCard = ({
   title,
@@ -204,48 +160,6 @@ const BigTrophyCard = ({
   );
 };
 
-const LogicCard = ({
-  title,
-  description,
-  progressLabel,
-  progressValue,
-  accent,
-  badge,
-  locked,
-  icon,
-}: LogicCardProps) => {
-  const style = logicCardStyles[accent];
-
-  return (
-    <article className={`card px-5 py-5 ${locked ? 'opacity-70' : ''}`}>
-      <div className="flex items-start justify-between gap-4">
-        <span
-          className={`flex h-[52px] w-[52px] items-center justify-center rounded-[18px] border-[3px] border-ink ${style.bubble}`}
-        >
-          {icon === 'blocks' ? <BlocksIcon /> : <InfinityIcon />}
-        </span>
-
-        {badge ? <span className={`chip ${style.chip}`}>{badge}</span> : null}
-        {locked ? <span className="chip chip-grape">🔒 Bloqueado</span> : null}
-      </div>
-
-      <h3 className="mt-4 font-display text-[19px] text-ink">{title}</h3>
-      <p className="mt-1 text-[15px] font-semibold leading-[1.6] text-ink-soft">{description}</p>
-
-      <div className="mt-5 h-[12px] w-full overflow-hidden rounded-full border-2 border-ink bg-cream">
-        <div
-          className="h-full rounded-full"
-          style={{ width: `${progressValue}%`, background: style.bar }}
-        />
-      </div>
-
-      <div className="mt-2 text-[13px] font-bold uppercase tracking-[0.04em] text-ink-faint">
-        {progressLabel}
-      </div>
-    </article>
-  );
-};
-
 const SectionTitle = ({ icon, title }: { icon: ReactNode; title: string }) => (
   <div className="flex items-center gap-3">
     <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft">
@@ -262,6 +176,9 @@ export const StudentTrophiesModule = () => {
     loading: achievementsLoading,
     error: achievementsError,
   } = useAchievements(user?.id ?? null);
+
+  /* Las tarjetas grandes buscan su logro por clave, no por posición. */
+  const byKey = new Map(achievements.map((achievement) => [achievement.key, achievement]));
 
   return (
     <div className="px-5 py-5">
@@ -294,53 +211,46 @@ export const StudentTrophiesModule = () => {
       <section className="mt-8">
         <SectionTitle icon={<CrownIcon />} title="Grandes trofeos" />
 
-        <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <BigTrophyCard
-            title="Maestro Explorador"
-            description="Completa todos los niveles del Mundo 1 sin cometer errores de sintaxis."
-            progressLabel="100% Completado"
-            progressValue={100}
-            accent="grape"
-          />
-
-          <BigTrophyCard
-            title="Cazador de Bugs"
-            description="Encuentra y corrige 50 errores lógicos en los desafíos de clase."
-            progressLabel="Desbloqueado"
-            progressValue={100}
-            accent="sun"
-          />
-        </div>
-      </section>
-
-      <section className="mt-8">
-        <SectionTitle icon={<BlocksIcon />} title="Lógica" />
+        <p className="subtitle mt-2">
+          Uno por mundo, y sólo con los tres niveles al 100.
+        </p>
 
         <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <LogicCard
-            title="Arquitecto de Variables"
-            description="Crea 10 variables correctamente nombradas y utilizadas."
-            progressLabel="4/10"
-            progressValue={40}
-            accent="jungle"
-            badge="En progreso"
-            icon="blocks"
-          />
+          {WORLD_TROPHIES.map((trophy) => {
+            const achievement = byKey.get(trophy.key);
 
-          <LogicCard
-            title="Señor de los Bucles"
-            description="Utiliza bucles de forma eficiente en 3 mundos distintos."
-            progressLabel="0/3 Mundos"
-            progressValue={0}
-            accent="muted"
-            locked
-            icon="infinity"
-          />
+            if (!achievement) {
+              return null;
+            }
+
+            const unlocked = achievement.unlockedAt !== null;
+            const progress = worldTrophyProgress(achievements, trophy.order);
+
+            return (
+              <BigTrophyCard
+                key={trophy.key}
+                title={achievement.title}
+                description={achievement.description}
+                /*
+                 * El recuento va SIEMPRE, también al desbloquearlo: «3/3» dice
+                 * de qué se ganó el trofeo, y «Desbloqueado» a secas deja al
+                 * niño sin saber cuántos niveles tenía este mundo.
+                 */
+                progressLabel={
+                  unlocked
+                    ? `Desbloqueado · ${progress.done}/${progress.total}`
+                    : `${progress.done}/${progress.total} niveles al 100`
+                }
+                progressValue={unlocked ? 100 : trophyPercent(progress)}
+                accent={trophy.accent}
+              />
+            );
+          })}
         </div>
       </section>
 
       <section className="mt-8 pb-4">
-        <SectionTitle icon={<CrownIcon />} title="Logros" />
+        <SectionTitle icon={<CrownIcon />} title="Todos los logros" />
 
         <div className="mt-5">
           {achievementsLoading ? (

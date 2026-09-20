@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { Group, PerspectiveCamera } from 'three';
+import { maxDrop } from './drop';
 import { heightAt, STEP_SECONDS, stepSeconds } from './fall';
 import { FOV, frameBoard } from './framing';
 import {
@@ -554,6 +555,13 @@ export interface LevelFinish {
   program: Program;
   /* De «Ejecutar» a la llegada, en reloj de pared. Incluye lo que durase detenido. */
   runtimeMs: number;
+  /*
+   * La caída más alta del recorrido, en casillas. Es una OBSERVACIÓN: el
+   * servidor no ejecuta nada, así que sin esto no hay forma de saber que el
+   * explorador se tiró de lo alto de «La torre». Viaja en `metadata`, con el
+   * mismo estatus que los pasos y la puntuación de aquí.
+   */
+  maxDrop: number;
 }
 
 /*
@@ -826,8 +834,9 @@ export const GameScene = ({
       looseBlocks: active.rootCount > 1,
       program: active.program,
       runtimeMs: Math.max(0, Date.now() - active.startedAt),
+      maxDrop: maxDrop(config, active.run.steps),
     });
-  }, [finished, active, config.optimalSteps, onFinish]);
+  }, [finished, active, config, onFinish]);
 
   const reset = useCallback(() => {
     setAttempt(null);

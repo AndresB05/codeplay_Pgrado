@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
 import type { Database } from '../types/database.types';
 import type { User, UserProfileUpdate, UserRole } from '../types/user.types';
+import { liveStreak } from '../lib/streak';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
@@ -45,7 +46,18 @@ const mapProfileRowToUser = (profile: ProfileRow, email: string | null = null): 
     id: profile.id,
     maxStreak: profile.max_streak,
     role: profile.role,
-    streakDays: profile.current_streak,
+    /*
+     * LA RACHA SE DERIVA AL LEER, no se copia. `current_streak` sólo se
+     * recalcula al jugar, así que quien lleve una semana sin entrar sigue
+     * teniendo escrito el 3 que dejó; enseñarlo diría que su racha sigue viva.
+     * Se hace AQUÍ y no en cada pantalla porque son cuatro las que la pintan y
+     * basta que una se olvide para que digan cosas distintas.
+     */
+    streakDays: liveStreak({
+      current: profile.current_streak,
+      max: profile.max_streak,
+      lastDay: profile.last_streak_day,
+    }),
     updatedAt: profile.updated_at,
     username: profile.username,
     xp: profile.total_xp,

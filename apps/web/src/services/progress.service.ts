@@ -16,7 +16,6 @@ const mapUserProgressRow = (progress: UserProgressRow): UserProgress => {
     id: progress.id,
     lastAttemptAt: progress.last_attempt_at,
     levelId: progress.level_id,
-    stars: progress.stars_earned,
     updatedAt: progress.updated_at,
     userId: progress.user_id,
   };
@@ -48,15 +47,13 @@ export const progressService = {
   async upsertProgress(
     levelId: string,
     completionStatus: string,
-    bestScore: number,
-    stars: number
+    bestScore: number
   ): ServiceResult<UserProgress> {
     const { data, error } = await supabase
       .rpc('upsert_my_progress', {
         input_level_id: levelId,
         input_completion_status: completionStatus,
         input_best_score: bestScore,
-        input_stars_earned: stars,
       })
       .single();
 

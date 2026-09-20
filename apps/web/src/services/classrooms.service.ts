@@ -8,6 +8,7 @@ import { invitationError } from './invitations.service';
 import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
 import type { Database } from '../types/database.types';
+import { liveStreak } from '../lib/streak';
 import type {
   ClassGroup,
   ClassroomStudent,
@@ -152,7 +153,12 @@ const mapRosterRow = (row: RosterRow, activity: ActivityRow | undefined): Classr
     avatarTone: pickAvatarTone(id),
     currentWorld: activity?.current_world_title ?? null,
     hoursSinceLastActivity: hoursSince(activity?.last_attempt_at ?? null),
-    streakDays: row.current_streak ?? 0,
+    /* Derivada, como en `profile.service.ts`: una racha muerta se lee como cero. */
+    streakDays: liveStreak({
+      current: row.current_streak ?? 0,
+      max: 0,
+      lastDay: row.last_streak_day,
+    }),
     xp: row.total_xp ?? 0,
     attemptedLevels: activity?.attempted_levels ?? 0,
     completedLevels: activity?.completed_levels ?? 0,

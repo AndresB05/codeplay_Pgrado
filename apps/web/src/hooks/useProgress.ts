@@ -10,7 +10,6 @@ interface UseProgressReturn {
   upsertProgress: (
     levelId: string,
     completionStatus: string,
-    stars: number,
     bestScore?: number
   ) => Promise<boolean>;
 }
@@ -47,7 +46,6 @@ export const useProgress = (userId: string | null): UseProgressReturn => {
   const upsertProgress = async (
     levelId: string,
     completionStatus: string,
-    stars: number,
     bestScore = 0
   ): Promise<boolean> => {
     if (!userId) {
@@ -57,12 +55,7 @@ export const useProgress = (userId: string | null): UseProgressReturn => {
     setLoading(true);
     setError(null);
 
-    const result = await progressService.upsertProgress(
-      levelId,
-      completionStatus,
-      bestScore,
-      stars
-    );
+    const result = await progressService.upsertProgress(levelId, completionStatus, bestScore);
 
     if (result.error || !result.data) {
       setError(result.error);

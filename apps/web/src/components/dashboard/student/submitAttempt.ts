@@ -55,6 +55,13 @@ export const attemptRecord = (finish: LevelFinish): AttemptRecord => ({
     outOfSteps: finish.outOfSteps,
     looseBlocks: finish.looseBlocks,
     score: finish.success ? scoreForSteps(finish.steps, finish.optimalSteps) : 0,
+    /*
+     * La única observación que el servidor USA para decidir algo: «¡Auch! mis
+     * rodillas» no se puede leer del programa, porque saber que el explorador
+     * se tiró de lo alto exige ejecutar el recorrido. Se cree al mismo nivel
+     * que `success`, y acotada por él.
+     */
+    maxDrop: finish.maxDrop,
   },
 });
 

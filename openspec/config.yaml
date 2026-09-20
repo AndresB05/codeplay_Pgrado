@@ -413,8 +413,8 @@ context: |
   ella; el 27.2 es el despliegue bueno y sigue detras del 30, en el servidor
   de la universidad. Se despliega dos veces a proposito: el 30 depende de una
   respuesta que la universidad no ha dado.
-  El 31 y el 22 siguen ANTES de la prueba, donde ya estaban; el 31 se cerro el
-  18-sep-2026, asi que de ese par queda el 22.
+  El 31 y el 22 estaban ANTES de la prueba y los dos se cerraron: el 31 el
+  18-sep-2026 y el 22 el 20-sep-2026. Ese tramo queda libre.
   El 14 puede seguir detras SOLO porque son mayores de edad y el
   consentimiento del acudiente no les aplica; que haya datos de terceros en un
   despliegue sin politica de privacidad publicada es un riesgo asumido por el
@@ -440,8 +440,28 @@ context: |
     los 28 intentos guardados. Por eso el paso 17 RETIRO los reportes de las
     cinco habilidades: cuatro de las cinco no tenian con que entrenarse. SkillKey
     y getSkillLabel siguen en el codigo solo porque Mission.skill los usa de
-    rotulo, y el paso 22 decide su suerte — y hereda la misma frontera: no puede
-    premiar comportamientos que los cuatro bloques no permiten.
+    rotulo. El paso 22 respeto esa frontera: de los veinte logros, ninguno pide
+    bucles, condicionales ni variables, y la seccion Logica de la Sala de Trofeos
+    —que premiaba variables y bucles— se retiro entera.
+  - LOS LOGROS Y LA RACHA YA EXISTEN (paso 22, 20-sep-2026). achievement_catalog
+    tiene veinte filas y award_achievements concede dentro de
+    submit_level_attempt; nadie mas puede escribir en achievements. La racha
+    cuenta dias de Colombia (UTC-5) sobre profiles.last_streak_day y SOLO se
+    recalcula al jugar, asi que la que se ENSENA se deriva al leer con
+    lib/streak.ts: vale lo guardado si el ultimo dia es hoy o ayer, y cero si no.
+    Las estrellas se retiraron de user_progress, levels y upsert_my_progress.
+  - ARRAY || 'LITERAL' ES AMBIGUO EN POSTGRESQL. Con una cadena sin tipo a la
+    derecha prefiere anyarray || anyarray e intenta leerla como array: 22P02
+    malformed array literal. Se usa array_append. Costo una migracion.
+  - UNA FUNCION QUE YA EXISTE SE REESCRIBE PARTIENDO DE SU TEXTO, no de memoria,
+    y se compara con el original antes de aplicar. Reescribir
+    submit_level_attempt de memoria metio dos diferencias que rompieron el
+    guardado de TODAS las partidas y costaron otra migracion.
+  - PROTEGER UNA OPERACION Y OCULTAR SU ERROR SON COSAS DISTINTAS. El
+    `exception when others` que impide que un logro roto tumbe la partida dejaba
+    el motivo invisible; ahora viaja en `achievements_error`. Y ese bloque abre
+    una SUBTRANSACCION: al fallar revierte lo que se escribio dentro, aunque las
+    variables de memoria digan lo contrario.
   - EL TUTOR VE EL HISTORIAL COMPLETO DEL NINO, tambien el anterior a su ingreso
     al salon: decision del usuario del 18-sep-2026. joined_at sigue guardado y no
     recorta nada. Lo hereda el paso 14 (consentimiento del acudiente).

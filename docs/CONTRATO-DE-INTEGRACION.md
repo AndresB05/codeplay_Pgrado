@@ -178,9 +178,9 @@ servidor, y de ella sale la experiencia que se concede.
 observaciones**, y conviene que lo haga: es lo que permite cotejarla con la del
 servidor sin creérsela.
 
-**No mande estrellas.** El servidor todavía acepta un campo de estrellas por
-nivel, pero es herencia de un diseño anterior, ninguna pantalla lo muestra y está
-previsto retirarlo.
+**Las estrellas YA NO EXISTEN.** El paso 22 las retiró: `user_progress.stars_earned`
+y `levels.stars_reward` se borraron en la migración `0036`, y `upsert_my_progress`
+perdió su parámetro. Un `select` sobre esas columnas responde `42703`.
 
 ### Lo que el juego NO manda
 
@@ -701,6 +701,15 @@ La mitigación que sí se aplica, y que cuesta una condición: **un logro que
 dependa de un nivel exige un intento con éxito de ese nivel.** Sube el listón de
 «manipular el navegador» a «jugar el nivel y además manipular el navegador».
 
+**Y desde el paso 22 hay una cuarta fila, con el mismo estatus que la tercera:
+una OBSERVACIÓN de la partida.** «¡Auch! mis rodillas» premia tirarse de lo alto
+de «La torre», y una caída no se lee del programa sin ejecutar la rejilla dentro
+del servidor. El juego la manda entre las observaciones —`metadata.maxDrop`— y el
+servidor la usa **sin poder comprobarla**, igual que `success` y acotada por él.
+
+No sube el listón de confianza: lo iguala. Y lo que el juego manda ahí sigue sin
+nombrar ningún logro, así que la frontera de §3 no se mueve.
+
 Lo importante para quien construye el juego se resume en una frase: **mande el
 programa completo y fiel.** Un programa recortado, normalizado o simplificado
 antes de enviarlo puede hacer que un logro legítimo no se conceda, y el juego no
@@ -798,8 +807,9 @@ Escrito a propósito, para que nadie lo dé por resuelto:
 - **Cuántos pasos son «perfectos» en cada nivel.** Dónde vive ese número ya está
   fijado —`optimalSteps`, §4.2—, pero el valor de cada nivel sale del diseño de
   su puzle, y los puzles están sin diseñar.
-- **El catálogo de logros**: cuáles hay, qué condición cumple cada uno y cuánta
-  experiencia da. Es diseño de producto y no afecta al juego, que no los nombra.
+- ~~**El catálogo de logros**~~ — **cerrado por el paso 22** (20-sep-2026). Son
+  veinte y viven en `achievement_catalog`; el juego sigue sin nombrarlos. Ver
+  `CONTEXT.md` §2.11.
 - **Cómo se relacionan las misiones que un profesor asigna con los niveles del
   juego.** Hoy son dos catálogos distintos y nada los une. Mientras no se unan,
   ninguna misión puede completarse. **No afecta al juego**, por §3.

@@ -38,7 +38,6 @@ export interface Level {
   narrative: LevelRow['narrative'];
   orderIndex: LevelRow['sort_order'];
   slug: LevelRow['slug'];
-  starsReward: LevelRow['stars_reward'];
   /** El sobre con la disposición inicial de bloques, sin abrir. */
   starterCode: LevelRow['starter_code'];
   worldId: LevelRow['world_id'];

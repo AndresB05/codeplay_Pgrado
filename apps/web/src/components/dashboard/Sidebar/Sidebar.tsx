@@ -6,6 +6,7 @@ import { FALLBACK_STUDENT_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
 import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
 import { XPBar } from '../../ui/XPBar';
+import { streakLabel } from '../../../lib/streak';
 
 type SidebarProps = {
   user: User | null;
@@ -196,7 +197,7 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
 
         <div className="mt-2 flex items-center gap-2 rounded-full border-2 border-ink bg-sun-soft px-4 py-1 font-display text-[16px] text-sun-dark">
           <FireIcon />
-          <span>{streakDays} días</span>
+          <span>{streakLabel(streakDays)}</span>
         </div>
 
         <div className="mt-3 w-full px-1">

@@ -3408,6 +3408,32 @@ quien la **escribe** es el panel. **Cambiar de alcance suelta al explorador**
 abre ficha ni produce error**: el filtro de verdad no está en el cliente sino
 dentro de las vistas de la `0034`, que a un identificador ajeno responden vacío.
 
+#### La barra del trofeo de mundo avanza, y dice cuánto
+
+Visto en pantalla el 20-sep-2026 por el usuario: con dos niveles del mundo al
+100, la tarjeta de «Dueño de la Selva» seguía con la barra vacía, porque el
+logro sólo se gana con los tres. Dos niveles perfectos y una barra a cero se leen
+como «no llevas nada».
+
+`worldTrophyProgress()` saca el avance **de los propios logros de nivel** y no de
+una consulta nueva: `perfect_w2_l3` es el tercer nivel del segundo mundo, así que
+el catálogo que la sala ya tiene dice a la vez cuántos niveles tiene el mundo y
+cuántos van. El rotulo lleva el recuento **también al desbloquearlo** —«Desbloqueado
+· 3/3»— porque «Desbloqueado» a secas no dice de qué se ganó.
+
+#### Un logro de un nivel que no acabas de jugar NO es un fallo
+
+También del 20-sep-2026, y conviene que quede escrito porque desconcierta:
+superar el nivel 1 de Selva concedió a la vez «Perfecto: Dos caminos», que es del
+mundo 3. Medido: esa cuenta tenía ese nivel al 100 **desde antes de que los
+logros existieran**, así que la partida de hoy le pagó lo que ya tenía ganado.
+
+Es el barrido del historial de la `0041` funcionando. **Ocurre una sola vez por
+cuenta** —la deuda del progreso anterior— y a partir de ahí cada logro llega en
+su partida. La alternativa —mirar sólo el nivel jugado— obligaría a rejugar lo
+ya perfecto para cobrarlo, y reproduce la incoherencia que la `0041` vino a
+cerrar.
+
 #### Dónde vive
 
 | Pieza | Archivo |
@@ -3432,6 +3458,145 @@ salón se habría llevado el historial entero de todos para pintar dos columnas.
 **Ninguna expone `submitted_code`.** El tutor necesita cuántos pasos tuvo cada
 partida, no el programa que el niño escribió; exponerlo abriría además la
 solución de cada nivel a cualquiera que tutele a alguien que la haya resuelto.
+
+---
+
+### 2.11 `logros-y-rachas` — Veinte logros y la racha, con quien los concede (paso 22)
+
+**Propósito.** Que volver al día siguiente cuente y que hacer una tontería con
+gracia tenga premio, sin que el juego pueda regalarse nada.
+
+**Lo que había, y llevaba semanas a medias.** Medido el 18-sep-2026 con la cuenta
+de niño de `.env`, que tenía 900 XP y los nueve niveles al 100: **cero filas en
+`achievements`, `current_streak` a cero y `max_streak` a cero**. La tabla existía
+desde la `0005` y las columnas desde la `0002`; lo que faltaba era quien
+escribiera en ellas.
+
+#### El catálogo vive en la base
+
+`achievement_catalog`, veinte filas sembradas por la `0036`:
+
+| Categoría | Cuántos | De qué salen | XP |
+| --- | --- | --- | --- |
+| Nivel perfecto | 9 | marca 100 en ese nivel | 50 |
+| Mundo perfecto | 3 | los tres niveles del mundo al 100 | 200 |
+| Todo perfecto | 1 | los nueve al 100 | 500 |
+| Acción | 4 | el programa enviado, y llegar a la meta | 100–150 |
+| Racha | 3 | tres, siete y treinta días | 75–600 |
+
+**Es tabla y no constante del cliente** porque la Sala de Trofeos tiene que
+pintar **lo que falta**, y eso exige la lista entera arriba. Con el catálogo en
+SQL para conceder y una copia en TypeScript para pintar, las dos se separan en
+cuanto alguien toque una — que es lo que ya le pasa a `missionCatalog`.
+
+**Las claves de nivel y mundo se derivan del ORDEN, no del UUID**:
+`perfect_w2_l3` es el tercer nivel del segundo mundo. Los identificadores de la
+siembra no son los mismos en otro proyecto de Supabase.
+
+`achievements` **copia** título y descripción al conceder, y por eso renombrar un
+logro no reescribe lo que un niño ya ganó.
+
+#### Todos exigen superar el nivel
+
+Decisión del usuario del 18-sep-2026: «todos se tienen que ejecutar para darte el
+logro». Cuatro giros o diez saltos sin llegar a la meta **no conceden nada**, y
+coincide con lo que el contrato §5 ya pedía para cualquier logro atado a un
+nivel.
+
+#### Qué se cree sin comprobar, y qué no
+
+| Se mira | ¿Falsificable? | Logros |
+| --- | --- | --- |
+| El historial | No: lo escribió el servidor | los 13 de nivel, mundo y racha |
+| El programa enviado | No: el servidor lo lee | `no_dizzy`, `trying_to_fly`, `unnecessary` |
+| `success` y la caída observada | **Sí** | los 4 atados a una partida |
+
+**La caída no sube el listón, lo iguala.** «¡Auch! mis rodillas» no se puede leer
+del programa: saber que el explorador se tiró de lo alto de «La torre» exige
+ejecutar el recorrido, y el servidor no ejecuta. El juego la observa
+(`game/drop.ts`) y la manda en `metadata`, y se cree igual que `success`, del que
+ya depende toda la experiencia.
+
+**Medida la rejilla de «La torre»:** la casilla de altura 6 en `(2,1)` es
+adyacente a una de altura 1 en `(3,1)`, así que la caída de cinco existe y es la
+mayor posible del nivel.
+
+#### La racha: el día de Colombia, y una fecha que hacía falta
+
+**El día va de medianoche a medianoche en UTC−5**, decisión del usuario con la
+medición delante: sobre los 28 intentos guardados, contar en UTC daba racha 2 y
+contar en hora local daba 0, porque las partidas de las 00:20 a la 01:43 UTC del
+18 son **la noche del 17** en Colombia.
+
+**Sube con una partida SUPERADA**, no con una fallida, y **una sola vez al día**
+— comprobado con once partidas seguidas: la racha quedó en 1.
+
+**LA RACHA GUARDADA CADUCA Y LA PANTALLA TIENE QUE SABERLO.** `current_streak`
+sólo se recalcula al jugar, así que quien lleve una semana sin entrar sigue
+teniendo escrito el 3 que dejó. Lo que se enseña **se deriva al leer**
+(`lib/streak.ts`): vale lo guardado si `last_streak_day` es hoy o ayer, y cero en
+cualquier otro caso. Se deriva **en los dos servicios** —el del perfil y el del
+salón— y no en cada pantalla, porque son cuatro las que la pintan.
+
+#### Lo que costó seis migraciones, y por qué
+
+El paso se aplicó en seis empujones y **cinco fueron por fallos propios**. Queda
+escrito porque el patrón se repite y tiene remedio:
+
+| Migración | Qué arregló |
+| --- | --- |
+| `0036` | El catálogo, la concesión, la racha y la retirada de las estrellas |
+| `0037` | `last_streak_day` en `classroom_roster`, que faltaba |
+| `0038` | `count_program_steps` recibe **text**, no `jsonb`; y el intento vuelve a escribirse por `create_level_attempt` |
+| `0039` | Que el fallo al conceder deje de ser mudo |
+| `0040` | `earned_keys \|\| 'clave'` es ambiguo; y la racha se revertía con los logros |
+| `0041` | Los logros de historial se miran sobre el historial entero |
+
+**Las tres lecciones:**
+
+1. **Una función que ya existe se reescribe PARTIENDO DE SU TEXTO**, no de
+   memoria, y se compara con el original antes de aplicar. La `0038` arregló dos
+   diferencias que estaban a la vista en un diff de treinta líneas.
+2. **`array || 'literal'` es ambiguo en PostgreSQL.** Con una cadena sin tipo a
+   la derecha prefiere `anyarray || anyarray` e intenta leerla como array:
+   `22P02 malformed array literal`. Se usa `array_append`.
+3. **Proteger una operación y ocultar su error son cosas distintas.** El
+   `exception when others` que impide que un logro roto tumbe la partida dejaba
+   el motivo invisible; ahora viaja en `achievements_error`.
+
+Y una trampa del `exception`: abre una **subtransacción**, así que al fallar los
+logros se revertía también la racha ya escrita — pero la variable en memoria
+tenía el valor nuevo y la respuesta mentía. Son dos bloques separados.
+
+#### Dónde vive
+
+| Pieza | Archivo |
+| --- | --- |
+| Catálogo, concesión, racha y fuera las estrellas | `supabase/migrations/202606030036_streaks_and_achievements.sql` |
+| La fecha en el roster | `…0037_roster_streak_day.sql` |
+| Los tres arreglos y el diagnóstico | `…0038`, `…0039`, `…0040`, `…0041` |
+| La caída observada | `game/drop.ts`, y de ahí a `metadata` en `student/submitAttempt.ts` |
+| La racha derivada y su rótulo | `lib/streak.ts` |
+| El avance de un trofeo de mundo | `lib/trophyProgress.ts` |
+| El aviso y su cola | `student/AchievementToast.tsx` |
+| El catálogo con lo conseguido | `services/achievements.service.ts` y `hooks/useAchievements.ts` |
+| La Sala de Trofeos | `student/StudentTrophiesModule.tsx` y `AchievementList/` |
+
+#### Lo verificado, y lo que no
+
+Jugado contra la base el 20-sep-2026 con la cuenta de `.env`: **17 de 20
+logros**, los tres de racha pendientes porque necesitan días reales. Los cuatro
+negativos también se comprobaron —9 saltos, 3 giros, caer 4 en «La torre», y caer
+5 en otro nivel— y ninguno concede. El XP cuadra exacto: 900 de niveles + 1450 de
+logros = 2350 en `profiles.total_xp`.
+
+**NO está verificado contra la base** que la racha pase de 1 a 2 al día siguiente
+ni que se reinicie tras un hueco: exige esperar días. La lógica SQL es la tabla
+de arriba y su gemela del cliente sí tiene tests.
+
+**El aviso no se ha visto disparándose jugando de verdad**, sólo en sus tests: el
+programa hay que construirlo en el editor de bloques y las partidas de prueba se
+mandaron por REST.
 
 ---
 
@@ -3849,13 +4014,15 @@ así que hoy sólo lo ejercitan los tests —`levelConfig.test.ts`—. Sigue sie
 frontera: un `config` que no describa un tablero se rechaza entero y la pantalla
 se lo dice al niño con palabras suyas.
 
-### 4.2 No hay catálogo de logros
+### 4.2 No hay catálogo de logros — RESUELTO
 
-La tabla `achievements` es el registro de logros **concedidos** a cada niño
-(`user_id`, `achievement_key`, `title`, `awarded_xp`, `unlocked_at`, con
-`unique (user_id, achievement_key)`). No existe la tabla que enumere los logros
-posibles con sus condiciones de desbloqueo, así que la sala de trofeos sólo puede
-listar lo conseguido. Diseñarla es el **paso 22** del roadmap.
+**Lo cerró el paso 22 el 20-sep-2026.** `achievement_catalog` existe desde la
+migración `0036` con sus veinte filas, la Sala de Trofeos enseña también lo que
+falta y `award_achievements` concede. Ver §2.11.
+
+Lo que decía esta deuda, y que ya no es cierto: la tabla `achievements` es el
+registro de logros **concedidos** a cada niño y no existía la que enumera los
+posibles, así que la sala sólo podía listar lo conseguido.
 
 **El paso 23.1 le dejó tres cosas decididas al 22**, para que ese catálogo no
 tenga que redescubrirlas:

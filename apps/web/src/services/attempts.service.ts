@@ -2,7 +2,12 @@ import { createAppError } from '../errors/createAppError';
 import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
 import type { Database, Json } from '../types/database.types';
-import type { AttemptOutcome, LevelAttempt } from '../types/progress.types';
+import type {
+  AchievementUnlock,
+  AttemptOutcome,
+  LevelAttempt,
+  StreakState,
+} from '../types/progress.types';
 
 type LevelAttemptRow = Database['public']['Tables']['level_attempts']['Row'];
 
@@ -51,6 +56,53 @@ const readAttemptOutcome = (value: unknown): AttemptOutcome | null => {
     attemptCount,
     awardedXp,
     totalXp,
+    unlockedAchievements: readUnlocked(value.unlocked_achievements),
+    streak: readStreak(value.streak),
+  };
+};
+
+/*
+ * LOS LOGROS Y LA RACHA SE LEEN BLANDOS, y el resto de la respuesta duro. No es
+ * incoherencia: sin ellos la partida se guardó igual y lo único que se pierde
+ * es un aviso, mientras que sin la puntuación no hay nada que enseñar. Dar la
+ * partida por perdida porque falte un logro sería cambiar algo importante por
+ * algo que no lo es.
+ */
+const readUnlocked = (value: unknown): AchievementUnlock[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((element) => {
+    if (
+      !isObject(element) ||
+      typeof element.key !== 'string' ||
+      typeof element.title !== 'string'
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        key: element.key,
+        title: element.title,
+        description: typeof element.description === 'string' ? element.description : '',
+        iconName: typeof element.icon_name === 'string' ? element.icon_name : 'trophy',
+        awardedXp: numberField(element, 'awarded_xp') ?? 0,
+      },
+    ];
+  });
+};
+
+const readStreak = (value: unknown): StreakState => {
+  if (!isObject(value)) {
+    return { current: 0, max: 0, lastDay: null };
+  }
+
+  return {
+    current: numberField(value, 'current') ?? 0,
+    max: numberField(value, 'max') ?? 0,
+    lastDay: typeof value.last_day === 'string' ? value.last_day : null,
   };
 };
 

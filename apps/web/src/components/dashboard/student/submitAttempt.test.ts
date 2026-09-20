@@ -19,6 +19,7 @@ const finish = (over: Partial<LevelFinish> = {}): LevelFinish => ({
   looseBlocks: false,
   program: { formatVersion: PROGRAM_FORMAT_VERSION, workspace: { blocks: {} } },
   runtimeMs: 8400,
+  maxDrop: 0,
   ...over,
 });
 
@@ -31,10 +32,26 @@ const outcome = (over: Partial<AttemptOutcome> = {}): AttemptOutcome => ({
   attemptCount: 1,
   awardedXp: 100,
   totalXp: 400,
+  unlockedAchievements: [],
+  streak: { current: 1, max: 1, lastDay: '2026-09-18' },
   ...over,
 });
 
 describe('attemptRecord', () => {
+  /*
+   * Es la única observación que el servidor USA para decidir algo —«¡Auch! mis
+   * rodillas»—, así que omitirla en una partida sin caídas dejaría al servidor
+   * sin poder distinguir «no se cayó» de «un juego viejo que no lo manda».
+   */
+  it('la caída viaja entre las observaciones, y en cero cuando no hubo ninguna', () => {
+    const sinCaida = attemptRecord(finish({ maxDrop: 0 })).metadata as Record<string, unknown>;
+    const conCaida = attemptRecord(finish({ maxDrop: 5 })).metadata as Record<string, unknown>;
+
+    expect(sinCaida.maxDrop).toBe(0);
+    expect(conCaida.maxDrop).toBe(5);
+  });
+
+
   it('el nivel superado va con éxito', () => {
     expect(attemptRecord(finish()).success).toBe(true);
   });
@@ -85,6 +102,7 @@ describe('attemptRecord', () => {
       outOfSteps: false,
       looseBlocks: true,
       score: 80,
+      maxDrop: 0,
     });
   });
 

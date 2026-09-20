@@ -8,6 +8,7 @@ import type { User } from '../../../types/user.types';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
 import { ChangeNamePanel } from '../shared/ChangeNamePanel';
 import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
+import { streakLabel } from '../../../lib/streak';
 
 type StudentSettingsModuleProps = {
   user: User | null;
@@ -81,7 +82,7 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="chip chip-sun">
                   <FireIcon />
-                  {streakDays} días de racha
+                  {streakLabel(streakDays)} de racha
                 </span>
                 <span className="chip chip-leaf">
                   <TropicalFlower size={16} />

@@ -14,7 +14,6 @@ export interface UserProgress {
   id: UserProgressRow['id'];
   lastAttemptAt: UserProgressRow['last_attempt_at'];
   levelId: UserProgressRow['level_id'];
-  stars: UserProgressRow['stars_earned'];
   updatedAt: UserProgressRow['updated_at'];
   userId: UserProgressRow['user_id'];
 }
@@ -49,6 +48,36 @@ export interface AttemptOutcome {
   attemptCount: number;
   awardedXp: number;
   totalXp: number;
+  /**
+   * Los logros que ESTA partida acaba de conceder, ya con su título. Vienen en
+   * la misma respuesta a propósito: la pantalla avisa sin volver a consultar, y
+   * así no hay carrera contra quien los escribió.
+   */
+  unlockedAchievements: AchievementUnlock[];
+  streak: StreakState;
+}
+
+/** Un logro recién conseguido, tal como el servidor lo devuelve. */
+export interface AchievementUnlock {
+  key: string;
+  title: string;
+  description: string;
+  iconName: string;
+  awardedXp: number;
+}
+
+/**
+ * La racha después de la partida.
+ *
+ * `lastDay` es el último día EN HORA DE COLOMBIA en que se superó algún nivel,
+ * y no es decorativo: `current` sólo se recalcula al jugar, así que sin esta
+ * fecha no hay forma de saber si la racha guardada sigue viva. Ver
+ * `liveStreak()`.
+ */
+export interface StreakState {
+  current: number;
+  max: number;
+  lastDay: string | null;
 }
 
 /** Las columnas de la vista son nullable: se construye con `left join`. */

@@ -43,7 +43,6 @@ const mapLevelRow = (level: LevelRow): Level => {
     narrative: level.narrative,
     orderIndex: level.sort_order,
     slug: level.slug,
-    starsReward: level.stars_reward,
     starterCode: level.starter_code,
     worldId: level.world_id,
     xpReward: level.xp_reward,

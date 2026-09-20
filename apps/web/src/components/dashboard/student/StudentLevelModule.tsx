@@ -9,13 +9,21 @@ import { openLevel, type PlayableLevel } from '../../../game/levelConfig';
 import type { Program } from '../../../game/program';
 import { scoreForSteps } from '../../../game/score';
 import { worldsService } from '../../../services/worlds.service';
-import type { AttemptOutcome } from '../../../types/progress.types';
+import type { AchievementUnlock, AttemptOutcome } from '../../../types/progress.types';
 import { HaltedLock } from './HaltedLock';
+import { AchievementToast } from './AchievementToast';
 import { LevelCompleteDialog } from './LevelCompleteDialog';
 import { nextLevelId } from './nextLevel';
 import { submitAttempt } from './submitAttempt';
 
 /* El rótulo de la caja: tres piezas encajadas, que es lo que se hace con los bloques. */
+/*
+ * Una referencia estable para la cola de avisos: `outcome?.x ?? []` construiría
+ * un array nuevo en cada pintado, y el efecto que vacía la cola depende de esa
+ * identidad —se reiniciaría sola y el aviso no se iría nunca—.
+ */
+const EMPTY_UNLOCKED: AchievementUnlock[] = [];
+
 const BlocksIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <rect x="2.5" y="12.5" width="8.5" height="8.5" rx="2.4" fill="#7B3FE4" />
@@ -494,6 +502,14 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
           onClose={closeFinish}
         />
       )}
+
+      {/*
+       * FUERA del diálogo a propósito: un logro se puede ganar en una partida
+       * que NO superó el nivel —los de racha y los de historial no dependen del
+       * éxito— y ahí el diálogo no se monta. Colgarlo de él habría dejado esos
+       * avisos sin enseñar sin que nada lo delate.
+       */}
+      <AchievementToast unlocked={outcome?.unlockedAchievements ?? EMPTY_UNLOCKED} />
     </div>
   );
 };

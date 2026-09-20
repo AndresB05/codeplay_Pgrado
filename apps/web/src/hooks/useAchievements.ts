@@ -1,20 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { AppError } from '../errors/AppError';
-import { achievementsService, type UnlockedAchievement } from '../services/achievements.service';
+import { achievementsService, type CatalogAchievement } from '../services/achievements.service';
 
 interface UseAchievementsReturn {
-  achievements: UnlockedAchievement[];
+  achievements: CatalogAchievement[];
   loading: boolean;
   error: AppError | null;
   refresh: () => Promise<void>;
 }
 
+/**
+ * El catálogo de logros con lo conseguido encima.
+ *
+ * Trae el catálogo ENTERO y no sólo lo ganado, que es lo que el paso 22 cambió:
+ * una sala que sólo lista lo conseguido no le dice a nadie qué puede intentar, y
+ * con veinte logros la mitad de la gracia está en leer los que faltan.
+ */
 export const useAchievements = (userId: string | null): UseAchievementsReturn => {
-  const [achievements, setAchievements] = useState<UnlockedAchievement[]>([]);
+  const [achievements, setAchievements] = useState<CatalogAchievement[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
 
-  const fetch = async (): Promise<void> => {
+  const fetch = useCallback(async (): Promise<void> => {
     if (!userId) {
       setAchievements([]);
       return;
@@ -23,7 +30,7 @@ export const useAchievements = (userId: string | null): UseAchievementsReturn =>
     setLoading(true);
     setError(null);
 
-    const result = await achievementsService.getUnlockedAchievements(userId);
+    const result = await achievementsService.getCatalogWithProgress(userId);
 
     if (result.error) {
       setError(result.error);
@@ -33,17 +40,11 @@ export const useAchievements = (userId: string | null): UseAchievementsReturn =>
 
     setAchievements(result.data ?? []);
     setLoading(false);
-  };
+  }, [userId]);
 
   useEffect(() => {
     void fetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [fetch]);
 
-  return {
-    achievements,
-    loading,
-    error,
-    refresh: fetch,
-  };
+  return { achievements, loading, error, refresh: fetch };
 };

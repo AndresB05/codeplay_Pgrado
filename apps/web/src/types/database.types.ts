@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievement_catalog: {
+        Row: {
+          achievement_key: string
+          awarded_xp: number
+          category: string
+          created_at: string
+          description: string
+          icon_name: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          achievement_key: string
+          awarded_xp?: number
+          category: string
+          created_at?: string
+          description: string
+          icon_name: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          achievement_key?: string
+          awarded_xp?: number
+          category?: string
+          created_at?: string
+          description?: string
+          icon_name?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
       achievements: {
         Row: {
           achievement_key: string
@@ -270,7 +303,6 @@ export type Database = {
           programming_language: string
           slug: string
           sort_order: number
-          stars_reward: number
           starter_code: string
           title: string
           updated_at: string
@@ -288,7 +320,6 @@ export type Database = {
           programming_language?: string
           slug: string
           sort_order: number
-          stars_reward?: number
           starter_code?: string
           title: string
           updated_at?: string
@@ -306,7 +337,6 @@ export type Database = {
           programming_language?: string
           slug?: string
           sort_order?: number
-          stars_reward?: number
           starter_code?: string
           title?: string
           updated_at?: string
@@ -372,6 +402,7 @@ export type Database = {
           full_name: string
           id: string
           is_role_declared: boolean
+          last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]
           total_xp: number
@@ -386,6 +417,7 @@ export type Database = {
           full_name?: string
           id: string
           is_role_declared?: boolean
+          last_streak_day?: string | null
           max_streak?: number
           role?: Database["public"]["Enums"]["user_role"]
           total_xp?: number
@@ -400,6 +432,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_role_declared?: boolean
+          last_streak_day?: string | null
           max_streak?: number
           role?: Database["public"]["Enums"]["user_role"]
           total_xp?: number
@@ -418,7 +451,6 @@ export type Database = {
           id: string
           last_attempt_at: string | null
           level_id: string
-          stars_earned: number
           updated_at: string
           user_id: string
         }
@@ -431,7 +463,6 @@ export type Database = {
           id?: string
           last_attempt_at?: string | null
           level_id: string
-          stars_earned?: number
           updated_at?: string
           user_id: string
         }
@@ -444,7 +475,6 @@ export type Database = {
           id?: string
           last_attempt_at?: string | null
           level_id?: string
-          stars_earned?: number
           updated_at?: string
           user_id?: string
         }
@@ -637,6 +667,7 @@ export type Database = {
           full_name: string | null
           group_id: string | null
           joined_at: string | null
+          last_streak_day: string | null
           student_id: string | null
           total_xp: number | null
         }
@@ -725,10 +756,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      award_achievements: {
+        Args: {
+          input_is_success: boolean
+          input_level_id: string
+          input_metadata: Json
+          input_streak: number
+          input_submitted_code: string
+          input_user_id: string
+        }
+        Returns: Json
+      }
       count_block_chain: {
         Args: { input_block: Json; input_inside_jump: boolean }
         Returns: number
       }
+      count_jump_blocks: { Args: { input_block: Json }; Returns: number }
       count_program_steps: {
         Args: { input_submitted_code: string }
         Returns: number
@@ -760,7 +803,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      executed_root_block: {
+        Args: { input_submitted_code: string }
+        Returns: Json
+      }
       is_visible_student_of: { Args: { profile_id: string }; Returns: boolean }
+      max_consecutive_right_turns: {
+        Args: { input_block: Json }
+        Returns: number
+      }
       preview_invitation: {
         Args: { input_token: string }
         Returns: {
@@ -800,6 +851,7 @@ export type Database = {
           full_name: string
           id: string
           is_role_declared: boolean
+          last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]
           total_xp: number
@@ -823,6 +875,30 @@ export type Database = {
         }
         Returns: Json
       }
+      touch_streak: {
+        Args: { input_user_id: string }
+        Returns: {
+          avatar_key: string
+          country_code: string
+          created_at: string
+          current_streak: number
+          full_name: string
+          id: string
+          is_role_declared: boolean
+          last_streak_day: string | null
+          max_streak: number
+          role: Database["public"]["Enums"]["user_role"]
+          total_xp: number
+          updated_at: string
+          username: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_my_profile: {
         Args: {
           input_avatar_key?: string
@@ -838,6 +914,7 @@ export type Database = {
           full_name: string
           id: string
           is_role_declared: boolean
+          last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]
           total_xp: number
@@ -857,7 +934,6 @@ export type Database = {
           input_completion_status?: string
           input_last_attempt_at?: string
           input_level_id: string
-          input_stars_earned?: number
         }
         Returns: {
           attempt_count: number
@@ -868,7 +944,6 @@ export type Database = {
           id: string
           last_attempt_at: string | null
           level_id: string
-          stars_earned: number
           updated_at: string
           user_id: string
         }
