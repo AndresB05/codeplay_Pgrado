@@ -114,7 +114,10 @@
       cuya condición no cumple.
 - [x] 5.6 Comprobar con la cuenta del segundo tutor, que no tiene salones, que
       `assign_mission_to_groups` contra el salón ajeno responde **42501**.
-- [ ] 5.7 **NO VERIFICADA, y se archiva así por decisión del usuario.** Jugar una
+- [x] 5.7 **VERIFICADA POR EL USUARIO el 21-sep-2026, después de archivar.** Jugó
+      con Axoluk, resolvió su tercer nivel al 100 y saltó «Ni un paso de más»;
+      contrastado en la base (`flawless_3`, 400 XP). Lo que sigue es cómo quedó
+      escrita al archivar, porque entonces no se había podido. Jugar una
       partida de verdad con una cuenta a la que le falte una misión, y ver el
       aviso «¡Misión cumplida!» disparándose. **Por qué no se pudo:** la única
       cuenta a la que entra el botón «Sin login» —`VITE_DEV_CHILD_*`— ya tiene

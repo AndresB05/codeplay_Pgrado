@@ -1722,11 +1722,14 @@ Contra la base el 20-sep-2026, con las cuentas de `.env`:
 - Una partida real por REST devuelve `completed_missions` y `missions_error`, con
   el motivo **nulo**: el tercer bloque corre sin error.
 
-**NO está verificado que el aviso «¡Misión cumplida!» se dispare jugando**, sólo
-sus tests. La única cuenta a la que entra el botón «Sin login» ya tiene las
-cuatro cumplidas, y las dos cuentas del salón a las que les faltan no tienen sus
-credenciales en `.env`. Es el mismo hueco que el paso 22 dejó con su propio
-aviso.
+**El aviso «¡Misión cumplida!» se vio disparándose jugando el 21-sep-2026**, y lo
+comprobó el usuario: no se podía desde aquí, porque la única cuenta a la que
+entra el botón «Sin login» ya tenía las cuatro cumplidas y las otras dos del
+salón no tienen credenciales en `.env`. Jugó con **Axoluk**, que tenía dos
+niveles al 100, resolvió un tercero con los pasos justos y saltó «Ni un paso de
+más». **Contrastado después contra la base**: `mission_completions` tiene su
+`flawless_3` con 400 XP. Cierra además el hueco equivalente que el paso 22 dejó
+con su propio aviso, porque es la misma cola.
 
 ### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques, su ejecución y el resultado (J1 a J6.4)
 
