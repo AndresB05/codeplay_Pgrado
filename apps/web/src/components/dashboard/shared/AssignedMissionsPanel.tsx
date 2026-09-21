@@ -1,10 +1,20 @@
 import { useAuth } from '../../../hooks/useAuth';
 import { useMissionAssignments } from '../../../hooks/useMissionAssignments';
+import { formatDueDate } from '../../../lib/missionDue';
 import type { Mission } from '../../../types/classroom.types';
 import { TargetIcon } from '../teacher/TeacherIcons';
 import { TropicalFlower } from '../../decor/JungleDecor';
 
-const MissionCard = ({ mission, isCompleted }: { mission: Mission; isCompleted: boolean }) => (
+const MissionCard = ({
+  mission,
+  isCompleted,
+  dueDate,
+}: {
+  mission: Mission;
+  isCompleted: boolean;
+  /** Último día para cumplirla; `null` es sin límite. */
+  dueDate: string | null;
+}) => (
   <article className="card flex flex-col p-5">
     <div className="flex items-start justify-between gap-3">
       <h3 className="font-display text-[19px] leading-tight text-ink">{mission.title}</h3>
@@ -17,6 +27,10 @@ const MissionCard = ({ mission, isCompleted }: { mission: Mission; isCompleted: 
 
     <div className="mt-4 flex flex-wrap items-center gap-2">
       <span className="chip chip-sun">+{mission.xpReward} XP</span>
+      {/* Cumplida, la fecha ya no le dice nada: lo ganado no caduca. */}
+      {dueDate !== null && !isCompleted ? (
+        <span className="chip chip-coral">Hasta el {formatDueDate(dueDate)}</span>
+      ) : null}
     </div>
 
     {/*
@@ -76,6 +90,21 @@ export const AssignedMissionsPanel = ({ hideCompleted = false }: { hideCompleted
    * ajena, toda asignación apunta a una misión que existe.
    */
   const assignedKeys = new Set(assignments.map((assignment) => assignment.missionKey));
+  /*
+   * El niño está en un solo salón, así que cada misión le llega con una sola
+   * fecha. Si algún día fueran varias, vale la más generosa: sin límite gana.
+   */
+  const dueByMission = new Map<string, string | null>();
+  assignments.forEach((assignment) => {
+    const current = dueByMission.get(assignment.missionKey);
+    const later =
+      current === null || assignment.dueDate === null
+        ? null
+        : current === undefined || assignment.dueDate > current
+          ? assignment.dueDate
+          : current;
+    dueByMission.set(assignment.missionKey, later);
+  });
   const missions = catalog.filter((mission) => assignedKeys.has(mission.key));
 
   if (missions.length === 0) {
@@ -125,6 +154,7 @@ export const AssignedMissionsPanel = ({ hideCompleted = false }: { hideCompleted
             key={mission.key}
             mission={mission}
             isCompleted={myCompletions.has(mission.key)}
+            dueDate={dueByMission.get(mission.key) ?? null}
           />
         ))}
       </div>

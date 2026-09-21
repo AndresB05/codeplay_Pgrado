@@ -358,6 +358,7 @@ export type Database = {
         Row: {
           assigned_at: string
           assigned_by: string
+          due_date: string | null
           group_id: string
           id: string
           mission_key: string
@@ -365,6 +366,7 @@ export type Database = {
         Insert: {
           assigned_at?: string
           assigned_by: string
+          due_date?: string | null
           group_id: string
           id?: string
           mission_key: string
@@ -372,6 +374,7 @@ export type Database = {
         Update: {
           assigned_at?: string
           assigned_by?: string
+          due_date?: string | null
           group_id?: string
           id?: string
           mission_key?: string
@@ -847,7 +850,11 @@ export type Database = {
         }
       }
       assign_mission_to_groups: {
-        Args: { input_group_ids: string[]; input_mission_key: string }
+        Args: {
+          input_due_date?: string
+          input_group_ids: string[]
+          input_mission_key: string
+        }
         Returns: Json
       }
       award_achievements: {
@@ -907,6 +914,10 @@ export type Database = {
       max_consecutive_right_turns: {
         Args: { input_block: Json }
         Returns: number
+      }
+      mission_assignment_is_active: {
+        Args: { input_due_date: string }
+        Returns: boolean
       }
       preview_invitation: {
         Args: { input_token: string }

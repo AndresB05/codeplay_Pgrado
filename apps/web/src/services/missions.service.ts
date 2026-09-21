@@ -18,6 +18,8 @@ export interface MissionAssignment {
   groupId: MissionAssignmentRow['group_id'];
   missionKey: MissionAssignmentRow['mission_key'];
   assignedAt: MissionAssignmentRow['assigned_at'];
+  /** Último día para cumplirla, en día de Colombia; `null` es sin límite. */
+  dueDate: MissionAssignmentRow['due_date'];
 }
 
 /**
@@ -37,7 +39,11 @@ export interface MissionsService {
   listCatalog: () => ServiceResult<Mission[]>;
   listAssignments: () => ServiceResult<MissionAssignment[]>;
   listCompletions: () => ServiceResult<MissionCompletion[]>;
-  assignMission: (missionKey: string, groupIds: string[]) => ServiceResult<null>;
+  assignMission: (
+    missionKey: string,
+    groupIds: string[],
+    dueDate: string | null
+  ) => ServiceResult<null>;
   unassignMission: (missionKey: string, groupIds: string[]) => ServiceResult<null>;
   subscribeToAssignments: (onChange: () => void) => () => void;
 }
@@ -52,6 +58,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   '23503': 'Ese salón ya no existe.',
   '42501': 'No tienes permiso para asignar misiones en ese salón.',
   '42P17': 'El servidor no pudo comprobar los permisos. Avisa a quien mantiene la plataforma.',
+  ZC020: 'Esa fecha ya pasó. Elige hoy o un día posterior.',
 };
 
 const readErrorCode = (error: unknown): string | undefined => {
@@ -80,6 +87,7 @@ const mapAssignmentRow = (assignment: MissionAssignmentRow): MissionAssignment =
     groupId: assignment.group_id,
     missionKey: assignment.mission_key,
     assignedAt: assignment.assigned_at,
+    dueDate: assignment.due_date,
   };
 };
 
@@ -202,7 +210,11 @@ export const missionsService: MissionsService = {
    * que hace imposible asignar en nombre de otro. Dentro sigue habiendo un
    * `on conflict do nothing`, así que mandar salones que ya la tienen no falla.
    */
-  async assignMission(missionKey: string, groupIds: string[]): ServiceResult<null> {
+  async assignMission(
+    missionKey: string,
+    groupIds: string[],
+    dueDate: string | null
+  ): ServiceResult<null> {
     if (groupIds.length === 0) {
       return { data: null, error: null };
     }
@@ -210,6 +222,7 @@ export const missionsService: MissionsService = {
     const { error } = await supabase.rpc('assign_mission_to_groups', {
       input_group_ids: groupIds,
       input_mission_key: missionKey,
+      input_due_date: dueDate ?? undefined,
     });
 
     if (error) {

@@ -173,6 +173,48 @@ conceder son dos operaciones, y la primera vale por sí sola.
 - **WHEN** asigna una misión a un salón en el que hay alumnos que ya satisfacen su condición
 - **THEN** esos alumnos aparecen como «Cumplida» sin haber vuelto a jugar
 
+### Requirement: Una misión puede tener fecha límite
+
+Al asignar una misión, el tutor SHALL elegir entre **dejarla sin fecha límite** o
+fijar el **último día** para cumplirla, que SHALL ser hoy o un día posterior.
+Una fecha pasada SHALL rechazarse también en el servidor, no sólo en el
+calendario. El día se cuenta en **hora de Colombia**, y la misión SHALL valer
+hasta el final de ese día.
+
+Pasada la fecha, la misión SHALL dejar de estar asignada **para todos a la vez**:
+el niño deja de verla, el tutor la ve como no asignada y NO SHALL concederse,
+sin depender de que ningún proceso la borre.
+
+El tutor SHALL poder **reasignar** una misión vencida con una fecha nueva o sin
+ella. Quien ya la cumplió NO SHALL cobrarla otra vez: el cumplimiento se guarda
+una sola vez en la vida. Reasignar a un salón que ya la tiene SHALL dejarle la
+fecha recién elegida.
+
+#### Scenario: El tutor asigna sin fecha límite
+
+- **WHEN** el tutor asigna una misión y deja marcada la opción «Sin fecha límite»
+- **THEN** la misión queda asignada y no vence nunca
+
+#### Scenario: El tutor asigna con fecha límite
+
+- **WHEN** el tutor elige un día en el calendario y asigna la misión
+- **THEN** el tutor ve hasta cuándo vale y el niño, mientras no la haya cumplido, también
+
+#### Scenario: Se intenta asignar con una fecha pasada
+
+- **WHEN** llega al servidor una asignación con un día anterior a hoy
+- **THEN** se rechaza y no se asigna nada
+
+#### Scenario: La misión vence
+
+- **WHEN** termina el último día de una misión asignada
+- **THEN** el niño deja de verla, el tutor la ve como no asignada y jugar ya no la concede
+
+#### Scenario: El tutor da una segunda oportunidad
+
+- **WHEN** el tutor reasigna una misión vencida
+- **THEN** vuelve a estar asignada, y quien ya la había cumplido la sigue viendo cumplida sin cobrarla otra vez
+
 ### Requirement: Sólo el tutor del salón asigna en él
 
 El sistema SHALL permitir asignar misiones a un salón únicamente al tutor de ese

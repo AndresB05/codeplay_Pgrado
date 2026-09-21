@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   listCatalog: vi.fn(),
   listAssignments: vi.fn(),
   listCompletions: vi.fn(),
+  assignMission: vi.fn(),
   getCatalog: vi.fn(),
   getDetail: vi.fn(),
   /* Guarda al oyente para poder disparar un cambio como haría la base. */
@@ -52,7 +53,7 @@ vi.mock('../../../services/missions.service', () => ({
     listCatalog: mocks.listCatalog,
     listAssignments: mocks.listAssignments,
     listCompletions: mocks.listCompletions,
-    assignMission: vi.fn(),
+    assignMission: mocks.assignMission,
     unassignMission: vi.fn(),
     subscribeToAssignments: mocks.subscribeToAssignments,
   },
@@ -154,6 +155,7 @@ const buildAssignment = (groupId: string, missionKey: string): MissionAssignment
   groupId,
   missionKey,
   assignedAt: '2026-08-29T10:00:00.000Z',
+  dueDate: null,
 });
 
 const TWO_GROUPS = [buildGroup('g1', 'Salón A'), buildGroup('g2', 'Salón B')];
@@ -244,6 +246,7 @@ describe('TeacherPanelModule', () => {
     mocks.listAssignments.mockResolvedValue({ data: [], error: null });
     mocks.listCatalog.mockResolvedValue({ data: CATALOGO, error: null });
     mocks.listCompletions.mockResolvedValue({ data: [], error: null });
+    mocks.assignMission.mockResolvedValue({ data: null, error: null });
     mocks.getCatalog.mockResolvedValue({ data: CATALOG, error: null });
     mocks.getDetail.mockResolvedValue({ data: { levels: [], attemptsByLevel: {} }, error: null });
   });
@@ -275,6 +278,65 @@ describe('TeacherPanelModule', () => {
       });
 
       expect(store.refreshSilently).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('fecha límite de las misiones', () => {
+    it('asignar pregunta hasta cuándo, y por defecto la deja sin límite', async () => {
+      renderPanel(TWO_GROUPS, null);
+
+      await waitFor(() => {
+        expect(missionButton()).toHaveTextContent('Asignar misión');
+      });
+
+      await userEvent.click(missionButton());
+
+      expect(mocks.assignMission).not.toHaveBeenCalled();
+      expect(screen.getByRole('radio', { name: 'Sin fecha límite' })).toBeChecked();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Asignar' }));
+
+      expect(mocks.assignMission).toHaveBeenCalledWith('clear_world_1', ['g1', 'g2'], null);
+    });
+
+    it('manda el día elegido en el calendario', async () => {
+      renderPanel(TWO_GROUPS, 'g1');
+
+      await waitFor(() => {
+        expect(missionButton()).toHaveTextContent('Asignar misión');
+      });
+
+      await userEvent.click(missionButton());
+      fireEvent.change(screen.getByLabelText('Último día para cumplirla'), {
+        target: { value: '2099-12-31' },
+      });
+      await userEvent.click(screen.getByRole('button', { name: 'Asignar' }));
+
+      expect(mocks.assignMission).toHaveBeenCalledWith('clear_world_1', ['g1'], '2099-12-31');
+    });
+
+    it('lo asignado dice hasta cuándo vale', async () => {
+      mocks.listAssignments.mockResolvedValue({
+        data: [{ ...buildAssignment('g1', 'clear_world_1'), dueDate: '2099-09-25' }],
+        error: null,
+      });
+
+      renderPanel(TWO_GROUPS, 'g1');
+
+      expect(await screen.findByText('Vence el 25 de septiembre.')).toBeInTheDocument();
+    });
+
+    it('una misión vencida cuenta como no asignada aunque la pantalla siga abierta', async () => {
+      mocks.listAssignments.mockResolvedValue({
+        data: [{ ...buildAssignment('g1', 'clear_world_1'), dueDate: '2000-01-01' }],
+        error: null,
+      });
+
+      renderPanel(TWO_GROUPS, 'g1');
+
+      await waitFor(() => {
+        expect(missionButton()).toHaveTextContent('Asignar misión');
+      });
     });
   });
 

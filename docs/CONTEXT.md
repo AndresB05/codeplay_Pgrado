@@ -1573,6 +1573,38 @@ niño si su tutor se la asignó, y premia más XP que un nivel.
 | El catálogo vive en la base, con clave ajena | ✅ | `migrations/…0044_playable_missions.sql`, `mission_catalog` |
 | Cumplir una misión, y cobrarla | ✅ | `award_missions()` dentro de `submit_level_attempt` |
 | El tutor ve quién la cumplió | ✅ | `mission_completions` + `teacher/TeacherPanelModule.tsx` |
+| Fecha límite al asignar, o sin límite; al vencer se retira sola | ✅ | `migrations/…0047_mission_due_date.sql`, `lib/missionDue.ts`, `teacher/TeacherPanelModule.tsx` |
+
+#### Fecha límite, y la segunda oportunidad (21-sep-2026)
+
+Pedido por el usuario tras la prueba del candado. Al pulsar «Asignar misión» la
+tarjeta pregunta «¿Hasta cuándo?»: **«Sin fecha límite»**, marcada por defecto
+porque es lo que la misión hacía siempre, u **«Hasta el»** con el calendario del
+navegador (`<input type="date" min=hoy>`). El tutor ve «Vence el 25 de
+septiembre.» y el niño, mientras no la cumpla, «Hasta el 25 de septiembre».
+
+- **`due_date` es un DÍA de Colombia, no un instante**, como la racha: la misión
+  vale hasta que ese día acaba. Un `timestamptz` obligaría a elegir una hora.
+- **Vencer es dejar de existir, no borrarse.** Nada corre a medianoche: la fila se
+  queda, pero `mission_assignment_is_active()` la oculta en la política de
+  lectura —también a Realtime— y `award_missions` no la mira. No hay ventana en
+  que siga viva por no haber pasado nadie a limpiarla. El cliente filtra lo mismo
+  con `isAssignmentActive`, para la pantalla que sigue abierta al cambiar el día.
+- **Reasignar es la segunda oportunidad**: `assign_mission_to_groups` pasa de `do
+  nothing` a `do update` y le pone la fecha nueva a la fila vencida. Quien ya la
+  cumplió no vuelve a cobrar, por el `unique (user_id, mission_key)` de la 0044.
+- **Queda a sabiendas:** la condición mira el historial, no el plazo. Quien
+  supere el mundo **después** de vencer la cobra al reasignarse, por la puesta al
+  día. Encaja con «segunda oportunidad»; contar sólo lo jugado en plazo sería
+  otra regla.
+- **La firma de la RPC gana `input_due_date date default null`**, y la vieja se
+  borra para que PostgREST no dude entre dos. **Medido**: la llamada sin fecha —la
+  del cliente ya desplegado— y la nueva llegan las dos a la función (`42501` sin
+  sesión, no `PGRST202`).
+- Las dos funciones se generaron **desde el texto de la 0044** y se diffearon
+  contra él: en `award_missions` sólo entra la vigencia, en dos líneas.
+- **Sin verificar con sesión**: asignar con fecha, vencer y reasignar se prueban
+  desde la interfaz con una cuenta de tutor.
 
 #### Ya se pueden cumplir, y qué cuenta como cumplirlas (20-sep-2026)
 

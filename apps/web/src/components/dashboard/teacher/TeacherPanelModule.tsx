@@ -4,6 +4,8 @@ import { ROUTES } from '../../../constants/routes';
 import { useFreshClassrooms } from '../../../hooks/useFreshClassrooms';
 import { useMissionAssignments } from '../../../hooks/useMissionAssignments';
 import { useStudentProgress } from '../../../hooks/useStudentProgress';
+import { formatDueDate } from '../../../lib/missionDue';
+import { bogotaDay } from '../../../lib/streak';
 import {
   studentProgressService,
   type CatalogWorld,
@@ -67,23 +69,65 @@ const panelPath = (groupId: string, studentId?: string): string => {
   return `${ROUTES.TEACHER_PANEL}/${groupId}/${studentId}`;
 };
 
+/*
+ * Lo que la tarjeta dice de la fecha límite de lo ya asignado. Con «Todos» cada
+ * salón puede tener la suya, y entonces no hay una sola que enseñar.
+ */
+const dueLabel = (dueDates: (string | null)[]): string | null => {
+  const distinct = new Set(dueDates);
+
+  if (distinct.size === 0) {
+    return null;
+  }
+
+  if (distinct.size > 1) {
+    return 'Con fechas límite distintas según el salón.';
+  }
+
+  const [only] = distinct;
+
+  return only === null ? 'Sin fecha límite.' : `Vence el ${formatDueDate(only)}.`;
+};
+
 const MissionCard = ({
   mission,
   assignedCount,
+  dueDates,
   scopeSize,
   busy,
-  onToggle,
+  onUnassign,
+  onAssign,
 }: {
   mission: Mission;
   /** Salones del alcance que ya la tienen. */
   assignedCount: number;
+  /** La fecha límite de cada salón del alcance que ya la tiene. */
+  dueDates: (string | null)[];
   /** Salones del alcance. Cero significa que el tutor no tiene ninguno. */
   scopeSize: number;
   busy: boolean;
-  onToggle: () => void;
+  onUnassign: () => void;
+  onAssign: (dueDate: string | null) => void;
 }) => {
   const assignedEverywhere = scopeSize > 0 && assignedCount === scopeSize;
   const assignedPartially = assignedCount > 0 && !assignedEverywhere;
+
+  /*
+   * Asignar ya no es un clic: primero se elige hasta cuándo. «Sin fecha límite»
+   * sale marcado porque es lo que la misión hacía siempre, y elegir un día lo
+   * desmarca. El calendario es el del navegador, que ya sabe impedir los días
+   * pasados con `min`; el servidor los rechaza igualmente.
+   */
+  const [choosingDate, setChoosingDate] = useState(false);
+  const [dueDate, setDueDate] = useState('');
+  const today = bogotaDay();
+  const due = dueLabel(dueDates);
+
+  const confirmAssign = () => {
+    onAssign(dueDate === '' ? null : dueDate);
+    setChoosingDate(false);
+    setDueDate('');
+  };
 
   return (
     <article className="card flex flex-col p-5">
@@ -106,25 +150,84 @@ const MissionCard = ({
         </p>
       ) : null}
 
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-pressed={assignedEverywhere}
-        disabled={scopeSize === 0 || busy}
-        title={scopeSize === 0 ? 'Primero crea un salón' : undefined}
-        className={`btn mt-4 w-full ${assignedEverywhere ? 'btn-mint' : 'btn-grape'} disabled:cursor-not-allowed disabled:opacity-50`}
-      >
-        {assignedEverywhere ? (
-          <>
-            <CheckIcon />
-            Asignada
-          </>
-        ) : assignedPartially ? (
-          'Asignar en los demás'
-        ) : (
-          'Asignar misión'
-        )}
-      </button>
+      {due ? <p className="mt-2 text-[14px] font-bold text-grape-dark">{due}</p> : null}
+
+      {choosingDate ? (
+        <div className="mt-4 rounded-[18px] border-2 border-line bg-cream p-4">
+          <p className="font-display text-[15px] text-ink">¿Hasta cuándo?</p>
+
+          <label className="mt-3 flex items-center gap-2 text-[15px] font-bold text-ink">
+            <input
+              type="radio"
+              name={`due-${mission.key}`}
+              checked={dueDate === ''}
+              onChange={() => setDueDate('')}
+              className="h-4 w-4 accent-grape"
+            />
+            Sin fecha límite
+          </label>
+
+          <label className="mt-2 flex flex-wrap items-center gap-2 text-[15px] font-bold text-ink">
+            <input
+              type="radio"
+              name={`due-${mission.key}`}
+              checked={dueDate !== ''}
+              onChange={() => setDueDate(today)}
+              className="h-4 w-4 accent-grape"
+            />
+            Hasta el
+            <input
+              type="date"
+              min={today}
+              value={dueDate}
+              onChange={(event) => setDueDate(event.target.value)}
+              aria-label="Último día para cumplirla"
+              className="rounded-[12px] border-2 border-line bg-white px-2 py-1 font-semibold text-ink"
+            />
+          </label>
+
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              onClick={confirmAssign}
+              disabled={busy || (dueDate !== '' && dueDate < today)}
+              className="btn btn-sm btn-grape flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Asignar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setChoosingDate(false);
+                setDueDate('');
+              }}
+              className="btn btn-sm btn-ghost"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={assignedEverywhere ? onUnassign : () => setChoosingDate(true)}
+          aria-pressed={assignedEverywhere}
+          disabled={scopeSize === 0 || busy}
+          title={scopeSize === 0 ? 'Primero crea un salón' : undefined}
+          className={`btn mt-4 w-full ${assignedEverywhere ? 'btn-mint' : 'btn-grape'} disabled:cursor-not-allowed disabled:opacity-50`}
+        >
+          {assignedEverywhere ? (
+            <>
+              <CheckIcon />
+              Asignada
+            </>
+          ) : assignedPartially ? (
+            'Asignar en los demás'
+          ) : (
+            'Asignar misión'
+          )}
+        </button>
+      )}
     </article>
   );
 };
@@ -190,8 +293,8 @@ const StudentProgressCard = ({
          * de debajo.
          */}
         <p className="text-[14px] font-semibold text-grape-dark">
-          {completedLevels} de {totalLevels} niveles superados · {finishedWorlds} de{' '}
-          {worlds.length} mundos terminados · {student.totalAttempts} partidas
+          {completedLevels} de {totalLevels} niveles superados · {finishedWorlds} de {worlds.length}{' '}
+          mundos terminados · {student.totalAttempts} partidas
           {student.hoursSinceLastActivity === null
             ? null
             : ` · última actividad ${formatLastActivity(student.hoursSinceLastActivity)}`}
@@ -440,9 +543,11 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
    */
   const selectedStudent = scopedStudents.find((student) => student.id === studentId) ?? null;
 
-  const { detail, loading: detailLoading, error: detailError } = useStudentProgress(
-    selectedStudent?.id ?? null
-  );
+  const {
+    detail,
+    loading: detailLoading,
+    error: detailError,
+  } = useStudentProgress(selectedStudent?.id ?? null);
 
   /*
    * El destino de la escritura es el alcance elegido, no el panel entero: con un
@@ -450,42 +555,47 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
    */
   const scopedGroupIds = useMemo(() => scopedGroups.map((group) => group.id), [scopedGroups]);
 
-  const groupIdsByMission = useMemo(() => {
-    const byMission = new Map<string, Set<string>>();
+  /* La fecha límite de cada salón que tiene la misión, por misión. */
+  const dueByMission = useMemo(() => {
+    const byMission = new Map<string, Map<string, string | null>>();
 
     assignments.forEach((assignment) => {
-      const groupIds = byMission.get(assignment.missionKey) ?? new Set<string>();
-      groupIds.add(assignment.groupId);
-      byMission.set(assignment.missionKey, groupIds);
+      const dueByGroup = byMission.get(assignment.missionKey) ?? new Map<string, string | null>();
+      dueByGroup.set(assignment.groupId, assignment.dueDate);
+      byMission.set(assignment.missionKey, dueByGroup);
     });
 
     return byMission;
   }, [assignments]);
 
-  const countAssignedInScope = (missionId: string): number => {
-    const groupIds = groupIdsByMission.get(missionId);
+  const dueDatesInScope = (missionId: string): (string | null)[] => {
+    const dueByGroup = dueByMission.get(missionId);
 
-    return groupIds ? scopedGroupIds.filter((groupId) => groupIds.has(groupId)).length : 0;
+    return dueByGroup
+      ? scopedGroupIds
+          .filter((groupId) => dueByGroup.has(groupId))
+          .map((groupId) => dueByGroup.get(groupId) ?? null)
+      : [];
   };
 
-  const toggleMission = async (missionId: string): Promise<void> => {
+  /*
+   * Al asignar se mandan todos los salones del alcance, incluidos los que ya
+   * la tienen: la escritura les pone a todos la fecha elegida, así que no hace
+   * falta calcular aquí el subconjunto y arriesgarse a hacerlo con estado viejo.
+   */
+  const assignMission = async (missionId: string, dueDate: string | null): Promise<void> => {
     if (scopedGroupIds.length === 0) {
       return;
     }
 
-    const assignedEverywhere = countAssignedInScope(missionId) === scopedGroupIds.length;
-
     setBusyMissionId(missionId);
-    /*
-     * Al asignar se mandan todos los salones del alcance, incluidos los que ya
-     * la tienen: la escritura ignora los duplicados, así que no hace falta
-     * calcular aquí el subconjunto y arriesgarse a hacerlo con estado viejo.
-     */
-    if (assignedEverywhere) {
-      await unassign(missionId, scopedGroupIds);
-    } else {
-      await assign(missionId, scopedGroupIds);
-    }
+    await assign(missionId, scopedGroupIds, dueDate);
+    setBusyMissionId(null);
+  };
+
+  const unassignMission = async (missionId: string): Promise<void> => {
+    setBusyMissionId(missionId);
+    await unassign(missionId, scopedGroupIds);
     setBusyMissionId(null);
   };
 
@@ -643,10 +753,7 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
                   type="button"
                   onClick={() =>
                     navigate(
-                      panelPath(
-                        selectedGroupId,
-                        student.id === studentId ? undefined : student.id
-                      )
+                      panelPath(selectedGroupId, student.id === studentId ? undefined : student.id)
                     )
                   }
                   aria-pressed={student.id === studentId}
@@ -697,11 +804,15 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
             <MissionCard
               key={mission.key}
               mission={mission}
-              assignedCount={countAssignedInScope(mission.key)}
+              assignedCount={dueDatesInScope(mission.key).length}
+              dueDates={dueDatesInScope(mission.key)}
               scopeSize={scopedGroupIds.length}
               busy={busyMissionId === mission.key}
-              onToggle={() => {
-                void toggleMission(mission.key);
+              onUnassign={() => {
+                void unassignMission(mission.key);
+              }}
+              onAssign={(dueDate) => {
+                void assignMission(mission.key, dueDate);
               }}
             />
           ))}

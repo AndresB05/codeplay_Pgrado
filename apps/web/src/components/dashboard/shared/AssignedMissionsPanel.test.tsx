@@ -57,6 +57,7 @@ const buildAssignment = (missionKey: string): MissionAssignment => ({
   groupId: 'group-1',
   missionKey,
   assignedAt: '2026-08-29T10:00:00.000Z',
+  dueDate: null,
 });
 
 const buildCompletion = (missionKey: string, userId = 'kid-1'): MissionCompletion => ({

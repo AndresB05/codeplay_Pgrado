@@ -5,6 +5,7 @@ import {
   type MissionAssignment,
   type MissionCompletion,
 } from '../services/missions.service';
+import { isAssignmentActive } from '../lib/missionDue';
 import type { Mission } from '../types/classroom.types';
 import { useAuth } from './useAuth';
 
@@ -16,7 +17,7 @@ interface UseMissionAssignmentsReturn {
   completions: MissionCompletion[];
   loading: boolean;
   error: AppError | null;
-  assign: (missionKey: string, groupIds: string[]) => Promise<boolean>;
+  assign: (missionKey: string, groupIds: string[], dueDate: string | null) => Promise<boolean>;
   unassign: (missionKey: string, groupIds: string[]) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
@@ -84,7 +85,11 @@ export const useMissionAssignments = (): UseMissionAssignmentsReturn => {
       }
 
       setCatalog(catalogResult.data ?? []);
-      setAssignments(assignmentsResult.data ?? []);
+      setAssignments(
+        (assignmentsResult.data ?? []).filter((assignment) =>
+          isAssignmentActive(assignment.dueDate)
+        )
+      );
       setCompletions(completionsResult.data ?? []);
       setError(null);
       setLoading(false);
@@ -133,12 +138,12 @@ export const useMissionAssignments = (): UseMissionAssignmentsReturn => {
   );
 
   const assign = useCallback(
-    async (missionKey: string, groupIds: string[]): Promise<boolean> => {
+    async (missionKey: string, groupIds: string[], dueDate: string | null): Promise<boolean> => {
       if (!userId) {
         return false;
       }
 
-      return runWrite(() => missionsService.assignMission(missionKey, groupIds));
+      return runWrite(() => missionsService.assignMission(missionKey, groupIds, dueDate));
     },
     [runWrite, userId]
   );
