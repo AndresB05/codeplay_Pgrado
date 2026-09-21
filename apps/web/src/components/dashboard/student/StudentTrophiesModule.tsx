@@ -59,6 +59,7 @@ type BigTrophyCardProps = {
   description: string;
   progressLabel: string;
   progressValue: number;
+  awardedXp: number;
   accent: keyof typeof bigCardStyles;
 };
 
@@ -102,12 +103,16 @@ const WORLD_TROPHIES: { key: string; order: number; accent: keyof typeof bigCard
   { key: 'perfect_world_3', order: 3, accent: 'sky' },
 ];
 
+/* Los de mundo ya tienen su tarjeta grande: repetirlos abajo los contaba dos veces. */
+const WORLD_TROPHY_KEYS = new Set(WORLD_TROPHIES.map((trophy) => trophy.key));
+
 
 const BigTrophyCard = ({
   title,
   description,
   progressLabel,
   progressValue,
+  awardedXp,
   accent,
 }: BigTrophyCardProps) => {
   const style = bigCardStyles[accent];
@@ -144,7 +149,8 @@ const BigTrophyCard = ({
             />
           </div>
 
-          <div className="mt-3 flex justify-end">
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
+            <span className="chip chip-sun">+{awardedXp} XP</span>
             <span className={`chip ${style.chip}`}>{progressLabel}</span>
           </div>
         </div>
@@ -179,6 +185,9 @@ export const StudentTrophiesModule = () => {
 
   /* Las tarjetas grandes buscan su logro por clave, no por posición. */
   const byKey = new Map(achievements.map((achievement) => [achievement.key, achievement]));
+  const regularAchievements = achievements.filter(
+    (achievement) => !WORLD_TROPHY_KEYS.has(achievement.key)
+  );
 
   return (
     <div className="px-5 py-5">
@@ -242,6 +251,7 @@ export const StudentTrophiesModule = () => {
                     : `${progress.done}/${progress.total} niveles al 100`
                 }
                 progressValue={unlocked ? 100 : trophyPercent(progress)}
+                awardedXp={achievement.awardedXp}
                 accent={trophy.accent}
               />
             );
@@ -266,7 +276,7 @@ export const StudentTrophiesModule = () => {
           ) : null}
 
           {!achievementsLoading && !achievementsError ? (
-            <AchievementList achievements={achievements} />
+            <AchievementList achievements={regularAchievements} />
           ) : null}
         </div>
       </section>

@@ -39,6 +39,8 @@ export interface AuthContextValue {
   /** Cambia la contraseña verificando antes la actual. Ajustes, con sesión. */
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   clearError: () => void;
+  /** Borra la cuenta propia con todo lo suyo y cierra la sesión. Ajustes. */
+  deleteAccount: () => Promise<boolean>;
   error: AppError | null;
   loading: boolean;
   requestPasswordReset: (email: string) => Promise<boolean>;

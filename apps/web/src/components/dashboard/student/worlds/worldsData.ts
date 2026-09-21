@@ -16,45 +16,6 @@ export type WorldModuleCard = {
   totalLevels: number;
 };
 
-export const studentWorlds: WorldModuleCard[] = [
-  {
-    id: 'forest-loops',
-    title: 'Bosque de Bucles',
-    description: 'Aprende a repetir acciones sin cansarte en esta selva mágica.',
-    difficultyLabel: 'Fácil',
-    difficulty: 'easy',
-    theme: 'logic',
-    category: 'beginners',
-    tone: 'forest',
-    completedLevels: 4,
-    totalLevels: 10,
-  },
-  {
-    id: 'volcano-variables',
-    title: 'Volcán de Variables',
-    description: 'Guarda información importante antes de que haga erupción.',
-    difficultyLabel: 'Intermedio',
-    difficulty: 'medium',
-    theme: 'logic',
-    category: 'beginners',
-    tone: 'volcano',
-    completedLevels: 2,
-    totalLevels: 10,
-  },
-  {
-    id: 'ocean-objects',
-    title: 'Océano de Objetos',
-    description: 'Sumérgete en las profundidades de la programación orientada a objetos.',
-    difficultyLabel: 'Difícil',
-    difficulty: 'hard',
-    theme: 'logic',
-    category: 'beginners',
-    tone: 'ocean',
-    completedLevels: 1,
-    totalLevels: 10,
-  },
-];
-
 export interface WorldToneStyles {
   /** Degradado de la cabecera de la tarjeta (135°, claro → saturado). */
   gradient: string;

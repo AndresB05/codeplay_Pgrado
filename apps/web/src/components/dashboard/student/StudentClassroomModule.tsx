@@ -5,6 +5,7 @@ import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 import { StatCard } from '../shared/StatCard';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
+import { ClassroomPodium } from '../shared/ClassroomPodium';
 import { StudentRosterTable } from '../shared/StudentRosterTable';
 import { getClassGroupStats } from '../teacher/classroomsData';
 import { MedalIcon, StudentsIcon } from '../teacher/TeacherIcons';
@@ -144,6 +145,8 @@ export const StudentClassroomModule = () => {
       </section>
 
       <AssignedMissionsPanel />
+
+      <ClassroomPodium students={currentGroup.students} />
 
       <section className="mt-6 pb-4">
         <StudentRosterTable students={currentGroup.students} />

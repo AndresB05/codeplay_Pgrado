@@ -894,6 +894,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      delete_my_account: { Args: never; Returns: undefined }
       executed_root_block: {
         Args: { input_submitted_code: string }
         Returns: Json

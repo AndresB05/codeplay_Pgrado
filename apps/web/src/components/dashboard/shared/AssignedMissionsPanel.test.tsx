@@ -130,6 +130,46 @@ describe('AssignedMissionsPanel', () => {
     expect(container.querySelectorAll('a')).toHaveLength(0);
   });
 
+  /* En «Mundos» la cumplida sólo estorba: allí se va, y en «Mi salón» se queda. */
+  it('con hideCompleted esconde la cumplida, y si no queda ninguna, el panel', async () => {
+    mocks.listAssignments.mockResolvedValue({
+      data: [buildAssignment('clear_world_1'), buildAssignment('clear_world_3')],
+      error: null,
+    });
+    mocks.listCompletions.mockResolvedValue({
+      data: [buildCompletion('clear_world_1')],
+      error: null,
+    });
+
+    const { unmount } = render(<AssignedMissionsPanel hideCompleted />);
+
+    expect(await screen.findByText('Resuelve la Encrucijada')).toBeInTheDocument();
+    expect(screen.queryByText('Recorre el Sendero')).not.toBeInTheDocument();
+    unmount();
+
+    mocks.listCompletions.mockResolvedValue({
+      data: [buildCompletion('clear_world_1'), buildCompletion('clear_world_3')],
+      error: null,
+    });
+
+    /*
+     * Vacío también está mientras carga, así que el panel sin la opción, montado
+     * al lado, es el que dice cuándo ya llegaron los datos.
+     */
+    render(
+      <>
+        <div data-testid="en-mundos">
+          <AssignedMissionsPanel hideCompleted />
+        </div>
+        <AssignedMissionsPanel />
+      </>
+    );
+
+    await screen.findByText('2 de 2 cumplidas');
+
+    expect(screen.getByTestId('en-mundos')).toBeEmptyDOMElement();
+  });
+
   /*
    * La RLS sólo le devuelve al niño lo suyo, pero el panel filtra igual por
    * usuario: el mismo hook lo usa el panel del tutor, donde vienen las de todos

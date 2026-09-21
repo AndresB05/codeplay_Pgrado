@@ -404,6 +404,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return false;
   }, []);
 
+  const deleteAccount = useCallback(async (): Promise<boolean> => {
+    setError(null);
+
+    const result = await authService.deleteAccount();
+
+    if (result.error) {
+      setError(result.error);
+      return false;
+    }
+
+    await syncSessionProfile(null);
+    return true;
+  }, [syncSessionProfile]);
+
   const signOut = useCallback(async (): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -426,6 +440,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       applyTotalXp,
       changePassword,
       clearError,
+      deleteAccount,
       error,
       loading,
       requestPasswordReset,
@@ -443,6 +458,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       applyTotalXp,
       changePassword,
       clearError,
+      deleteAccount,
       error,
       loading,
       requestPasswordReset,

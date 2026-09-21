@@ -13,6 +13,7 @@ import { Signup } from '../pages/Signup/Signup';
 import { TeacherDashboard } from '../pages/TeacherDashboard/TeacherDashboard';
 import { PrivateRoute } from './PrivateRoute';
 import { PublicRoute } from './PublicRoute';
+import { DEV_TOOLS_ENABLED } from '../config/devTools';
 
 export const AppRouter = () => {
   return (
@@ -185,7 +186,7 @@ export const AppRouter = () => {
              * de verdad. En producción esta ruta no se registra y escribir la
              * dirección cae en el comodín `*` de más abajo.
              */}
-            {import.meta.env.DEV && (
+            {DEV_TOOLS_ENABLED && (
               <Route
                 path={ROUTES.GAME_LAB}
                 element={

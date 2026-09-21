@@ -10,6 +10,7 @@ import { StudentWorldLevelsModule } from '../../components/dashboard/student/Stu
 import { StudentWorldsModule } from '../../components/dashboard/student/StudentWorldsModule';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
+import { DEV_TOOLS_ENABLED } from '../../config/devTools';
 
 export const Dashboard = () => {
   const location = useLocation();
@@ -56,7 +57,7 @@ export const Dashboard = () => {
       case ROUTES.SETTINGS:
         return <StudentSettingsModule user={user} />;
       case ROUTES.GAME_LAB:
-        return import.meta.env.DEV ? <StudentGameLabModule /> : <StudentWorldsModule user={user} />;
+        return DEV_TOOLS_ENABLED ? <StudentGameLabModule /> : <StudentWorldsModule user={user} />;
       default:
         return <StudentWorldsModule user={user} />;
     }

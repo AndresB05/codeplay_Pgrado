@@ -8,6 +8,7 @@ import type { User } from '../../../types/user.types';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
 import { ChangeNamePanel } from '../shared/ChangeNamePanel';
 import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
+import { DeleteAccountPanel } from '../shared/DeleteAccountPanel';
 import { streakLabel } from '../../../lib/streak';
 
 type StudentSettingsModuleProps = {
@@ -114,6 +115,7 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
 
               <ChangeNamePanel />
               <ChangePasswordPanel />
+              <DeleteAccountPanel />
             </div>
           </div>
         </section>

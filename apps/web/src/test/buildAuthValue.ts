@@ -23,6 +23,7 @@ export const buildAuthValue = (
   applyTotalXp: () => undefined,
   changePassword: async () => false,
   clearError: () => undefined,
+  deleteAccount: async () => false,
   error: null,
   loading: false,
   requestPasswordReset: async () => false,

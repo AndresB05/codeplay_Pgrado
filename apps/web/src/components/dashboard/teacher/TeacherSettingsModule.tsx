@@ -7,6 +7,7 @@ import type { ClassGroup } from '../../../types/classroom.types';
 import type { User } from '../../../types/user.types';
 import { ChangeNamePanel } from '../shared/ChangeNamePanel';
 import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
+import { DeleteAccountPanel } from '../shared/DeleteAccountPanel';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 
@@ -100,6 +101,7 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
 
               <ChangeNamePanel />
               <ChangePasswordPanel />
+              <DeleteAccountPanel />
             </div>
           </div>
         </section>

@@ -25,7 +25,8 @@ sigue en `localStorage`** con datos de ejemplo: conectarlo es el paso 10.
 **Login real todavía no hay** —eso es el paso 12—, pero el botón «Sin login» ya
 no simula nada: **autentica de verdad** con cuentas de prueba si hay credenciales
 en `apps/web/.env`, y cae en la marca de invitado si no las hay. Sólo existe en
-desarrollo.
+desarrollo, y **está apagado para la prueba con usuarios** —él y el Laboratorio
+3D—: se enciende con `VITE_ENABLE_DEV_TOOLS=true` en `apps/web/.env`.
 
 `npm run build`, `npm run lint` y `npm run test:run` pasan. No los rompas.
 

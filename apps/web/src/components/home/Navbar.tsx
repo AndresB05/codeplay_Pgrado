@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useRoleHomeRedirect } from '../../hooks/useRoleHomeRedirect';
 import type { UserRole } from '../../types/user.types';
 import { SectionContainer } from './shared';
+import { DEV_TOOLS_ENABLED } from '../../config/devTools';
 
 const centerLinks = [
   { label: 'Recursos', href: '#como-aprender' },
@@ -115,7 +116,7 @@ export const Navbar = () => {
             Regístrate
           </Link>
 
-          {import.meta.env.DEV ? (
+          {DEV_TOOLS_ENABLED ? (
             <div className="flex items-center gap-2 rounded-[16px] border-[3px] border-dashed border-line px-3 py-1.5">
               <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-ink-faint">
                 Sin login

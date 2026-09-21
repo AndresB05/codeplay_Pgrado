@@ -18,7 +18,8 @@ context: |
   Y EL REGISTRO YA SON REALES (paso 12): cada rol aterriza en su panel según el
   perfil que devuelve el servidor, un registro que no abre sesión pide confirmar
   el correo en vez de fallar mudo, y una sesión sin perfil no da acceso a ningún
-  panel. El botón «Sin login» sigue existiendo sólo en desarrollo y autentica de
+  panel. El botón «Sin login» sigue existiendo sólo en desarrollo, APAGADO salvo
+  VITE_ENABLE_DEV_TOOLS=true (igual que el Laboratorio 3D), y autentica de
   verdad con las cuentas de prueba de apps/web/.env. LAS CONTRASEÑAS TAMBIÉN SON
   REALES (paso 13): se cambian desde Ajustes —pidiendo la actual y verificándola
   contra el servidor— y se recuperan por correo desde /forgot-password, con la

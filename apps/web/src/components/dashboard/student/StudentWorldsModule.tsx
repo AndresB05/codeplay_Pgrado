@@ -8,7 +8,6 @@ import {
   type DifficultyKey,
   type DifficultyLabel,
   getCardToneStyles,
-  studentWorlds,
   type ThemeKey,
   type WorldModuleCard,
 } from './worlds/worldsData';
@@ -17,8 +16,6 @@ import { AssignedMissionsPanel } from '../shared/AssignedMissionsPanel';
 import { useProgress } from '../../../hooks/useProgress';
 import { worldsService } from '../../../services/worlds.service';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
-
-const fallbackWorlds: WorldModuleCard[] = studentWorlds;
 
 const DIFFICULTY_LABELS: Record<Exclude<DifficultyKey, 'all'>, DifficultyLabel> = {
   easy: 'Fácil',
@@ -193,7 +190,7 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
   const [theme, setTheme] = useState<ThemeKey>('all');
   const [category, setCategory] = useState<CategoryKey>('beginners');
 
-  const { worlds: fetchedWorlds } = useWorlds();
+  const { worlds: fetchedWorlds, loading: worldsLoading, error: worldsError } = useWorlds();
   const { progress } = useProgress(user?.id ?? null);
 
   const [worldStats, setWorldStats] = useState<
@@ -204,11 +201,6 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
     let mounted = true;
 
     const loadStats = async (): Promise<void> => {
-      /*
-       * Sólo se consultan los mundos que vienen del backend. Los de
-       * `fallbackWorlds` llevan identificadores de maqueta y `levels.world_id`
-       * es un uuid, así que preguntar por ellos devuelve 400 sin excepción.
-       */
       const list = (fetchedWorlds ?? []).map((world) => ({ id: world.id }));
 
       if (list.length === 0) {
@@ -251,10 +243,6 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
   }, [fetchedWorlds, progress]);
 
   const dataWorlds: WorldModuleCard[] = useMemo(() => {
-    if (!fetchedWorlds || fetchedWorlds.length === 0) {
-      return fallbackWorlds;
-    }
-
     const tones: WorldModuleCard['tone'][] = ['forest', 'volcano', 'ocean'];
 
     return fetchedWorlds.map((world, index) => {
@@ -321,7 +309,7 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
         </div>
       </section>
 
-      <AssignedMissionsPanel />
+      <AssignedMissionsPanel hideCompleted />
 
       <section className="card mt-6 px-5 py-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -374,7 +362,23 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
           <h2 className="title-lg">Mundos</h2>
         </div>
 
-        {filteredWorlds.length === 0 ? (
+        {/*
+         * Sin repliegue de maqueta: si la lectura falla se dice, en vez de
+         * enseñar mundos inventados con un progreso que el niño no hizo.
+         */}
+        {worldsLoading ? (
+          <p className="card mt-4 px-5 py-12 text-center text-[16px] font-semibold text-ink-faint">
+            Cargando mundos...
+          </p>
+        ) : worldsError ? (
+          <p className="mt-4 rounded-[20px] border-2 border-coral-dark bg-coral-soft px-5 py-4 text-[15px] font-bold text-coral-dark">
+            No pudimos cargar los mundos. Recarga la página para intentarlo de nuevo.
+          </p>
+        ) : dataWorlds.length === 0 ? (
+          <p className="card mt-4 px-5 py-12 text-center text-[16px] font-semibold text-ink-faint">
+            Todavía no hay mundos disponibles.
+          </p>
+        ) : filteredWorlds.length === 0 ? (
           <p className="card mt-4 px-5 py-12 text-center text-[16px] font-semibold text-ink-faint">
             Ningún mundo coincide con estos filtros. Prueba con otra dificultad.
           </p>

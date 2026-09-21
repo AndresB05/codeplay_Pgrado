@@ -1,4 +1,5 @@
 import type { UserRole } from '../types/user.types';
+import { DEV_TOOLS_ENABLED } from '../config/devTools';
 
 /**
  * Sesión de invitado para desarrollo: permite entrar al dashboard sin login
@@ -10,7 +11,7 @@ const GUEST_ROLE_KEY = 'dev:guestRole';
 
 const isBrowser = (): boolean => typeof window !== 'undefined';
 
-const isGuestModeAvailable = (): boolean => import.meta.env.DEV && isBrowser();
+const isGuestModeAvailable = (): boolean => DEV_TOOLS_ENABLED && isBrowser();
 
 export const isGuestSession = (): boolean => {
   if (!isGuestModeAvailable()) {

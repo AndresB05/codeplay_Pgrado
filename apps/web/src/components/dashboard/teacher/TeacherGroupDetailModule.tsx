@@ -8,6 +8,7 @@ import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 import { StatCard } from '../shared/StatCard';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
+import { ClassroomPodium } from '../shared/ClassroomPodium';
 import { StudentRosterTable } from '../shared/StudentRosterTable';
 import { findClassGroup, getClassGroupStats } from './classroomsData';
 import { AddStudentsPanel } from './AddStudentsPanel';
@@ -180,6 +181,8 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
           onReject={(requestId) => rejectRequest(group.id, requestId)}
         />
       </div>
+
+      <ClassroomPodium students={group.students} />
 
       <section className="mt-6 pb-4">
         <h2 className="title-lg mb-4">Seguimiento de los exploradores</h2>

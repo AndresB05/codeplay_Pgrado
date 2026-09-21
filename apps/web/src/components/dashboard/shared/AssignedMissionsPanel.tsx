@@ -48,11 +48,13 @@ const MissionCard = ({ mission, isCompleted }: { mission: Mission; isCompleted: 
  * los dos casos una tarjeta vacía sería ruido. Un fallo de lectura sí se dice,
  * porque callarlo afirmaría que no hay misiones.
  *
- * **Una misión cumplida NO desaparece.** La asignación es del salón y el
- * cumplimiento es de cada alumno: la misión sigue ahí hasta que el tutor la
- * retire, y al que ya la cumplió le queda como lo que ganó.
+ * **En «Mi salón» una misión cumplida NO desaparece.** La asignación es del
+ * salón y el cumplimiento es de cada alumno: la misión sigue ahí hasta que el
+ * tutor la retire, y al que ya la cumplió le queda como lo que ganó. En «Mundos»
+ * sí se va (`hideCompleted`): ahí el niño viene a jugar, y lo ya cumplido sólo
+ * le estorba entre él y los mundos.
  */
-export const AssignedMissionsPanel = () => {
+export const AssignedMissionsPanel = ({ hideCompleted = false }: { hideCompleted?: boolean }) => {
   const { user } = useAuth();
   const { catalog, assignments, completions, loading, error } = useMissionAssignments();
 
@@ -92,6 +94,13 @@ export const AssignedMissionsPanel = () => {
   );
 
   const completedCount = missions.filter((mission) => myCompletions.has(mission.key)).length;
+  const visibleMissions = hideCompleted
+    ? missions.filter((mission) => !myCompletions.has(mission.key))
+    : missions;
+
+  if (visibleMissions.length === 0) {
+    return null;
+  }
 
   return (
     <section className="mt-8">
@@ -111,7 +120,7 @@ export const AssignedMissionsPanel = () => {
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
-        {missions.map((mission) => (
+        {visibleMissions.map((mission) => (
           <MissionCard
             key={mission.key}
             mission={mission}

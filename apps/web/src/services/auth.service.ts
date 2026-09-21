@@ -257,6 +257,26 @@ export const authService = {
     return { data: { url: data.url }, error: null };
   },
 
+  /*
+   * El cierre de sesión que sigue es sólo LOCAL: la cuenta ya no existe, así que
+   * pedirle al servidor que revoque su sesión respondería con error y dejaría
+   * el token en el navegador.
+   */
+  async deleteAccount(): ServiceResult<void> {
+    const { error } = await supabase.rpc('delete_my_account');
+
+    if (error) {
+      return {
+        data: null,
+        error: authError(error, 'No se pudo eliminar la cuenta.', 'auth_delete_account_error'),
+      };
+    }
+
+    await supabase.auth.signOut({ scope: 'local' });
+
+    return { data: undefined, error: null };
+  },
+
   async signOut(): ServiceResult<void> {
     const { error } = await supabase.auth.signOut();
 

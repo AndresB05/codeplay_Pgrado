@@ -11,4 +11,5 @@ interface ImportMetaEnv {
   readonly VITE_DEV_TUTOR_PASSWORD?: string;
   readonly VITE_DEV_CHILD_EMAIL?: string;
   readonly VITE_DEV_CHILD_PASSWORD?: string;
+  readonly VITE_ENABLE_DEV_TOOLS?: string;
 }

@@ -127,18 +127,6 @@ const MAX_DISTANCE = 18;
  * `components/decor/` porque no son adornos: nombran lo que hace cada control, y
  * viven pegados a él.
  */
-const BackIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path
-      d="M15 5l-7 7 7 7"
-      stroke="currentColor"
-      strokeWidth="2.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 const ViewCubeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z" fill="currentColor" opacity="0.35" />
@@ -927,12 +915,9 @@ export const GameScene = ({
        */}
       <button
         type="button"
-        className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-ink py-2 pl-2.5 pr-4 font-display text-[15px] text-white shadow-[0_6px_18px_rgba(42,27,69,0.28)] transition-transform hover:-translate-y-[1px]"
+        className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-ink py-2 pl-3.5 pr-4 font-display text-[15px] text-white shadow-[0_6px_18px_rgba(42,27,69,0.28)] transition-transform hover:-translate-y-[1px]"
         onClick={resetView}
       >
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15">
-          <BackIcon />
-        </span>
         <ViewCubeIcon />
         Vista inicial
       </button>

@@ -7,6 +7,7 @@ import type { User } from '../../../types/user.types';
 import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
 import { XPBar } from '../../ui/XPBar';
 import { streakLabel } from '../../../lib/streak';
+import { DEV_TOOLS_ENABLED } from '../../../config/devTools';
 
 type SidebarProps = {
   user: User | null;
@@ -139,7 +140,7 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
      * login»: en producción su ruta ni siquiera se registra, así que un enlace
      * aquí llevaría al comodín del router.
      */
-    ...(import.meta.env.DEV
+    ...(DEV_TOOLS_ENABLED
       ? [{ route: ROUTES.GAME_LAB, label: 'Laboratorio 3D', icon: CubeIcon, dev: true }]
       : []),
   ];

@@ -368,7 +368,7 @@ se muestra por salón.
 | Enrutado con guardas por rol | ✅ | `router/AppRouter.tsx`, `PrivateRoute.tsx`, `PublicRoute.tsx` |
 | Quien entra en un panel ajeno es devuelto al suyo | ✅ | `PrivateRoute.tsx` + `getHomeRouteForRole()` |
 | Rol efectivo unificado (perfil real o invitado) | ✅ | `hooks/useActiveRole.ts` |
-| Sesión de invitado, **sólo en desarrollo** (`import.meta.env.DEV`) | ✅ | `context/guest.helpers.ts` |
+| Sesión de invitado, **sólo en desarrollo y con `VITE_ENABLE_DEV_TOOLS=true`** (§2.12) | ✅ | `context/guest.helpers.ts` + `config/devTools.ts` |
 | Acceso «Sin login» que **autentica de verdad** con cuentas de prueba | ✅ | `guest.helpers.ts` (`getDevCredentials`) + `components/home/Navbar.tsx` |
 | Salir cierra también la sesión de Supabase, por los cuatro caminos | ✅ | Las dos barras laterales y las dos pantallas de Ajustes |
 | Formularios de login y registro con validación zod | ✅ | `pages/Login/`, `pages/Signup/`, `components/auth/*.schema.ts` |
@@ -502,7 +502,9 @@ se muestra por salón.
 - `guest.helpers.ts` **centraliza** las claves de `localStorage` de la sesión de
   invitado; ningún componente las toca directamente.
 - La sesión de invitado se apaga sola fuera de desarrollo: `isGuestModeAvailable()`
-  comprueba `import.meta.env.DEV`. En producción no hay puerta trasera.
+  comprueba `DEV_TOOLS_ENABLED`, que exige `import.meta.env.DEV` **y**
+  `VITE_ENABLE_DEV_TOOLS=true` (§2.12). En producción no hay puerta trasera, y en
+  desarrollo tampoco salvo que se encienda.
 - `useActiveRole()` prioriza el perfil autenticado y cae en el rol de invitado.
   Cuando el login real entre, esta función es el único punto que hay que revisar.
 - **El botón «Sin login» ya no simula la sesión: inicia sesión de verdad** con la
@@ -933,7 +935,7 @@ progreso conseguido.
 | Requisito | Estado | Dónde vive |
 | --- | --- | --- |
 | Listado de mundos con filtros (dificultad, tema, categoría) | 🟡 | `student/StudentWorldsModule.tsx` |
-| Lectura desde Supabase con repliegue a datos locales | 🟡 | `useWorlds()` + `fallbackWorlds` (`student/worlds/worldsData.ts`) |
+| Lectura desde Supabase, **sin repliegue de maqueta** (§2.12) | ✅ | `useWorlds()` en `student/StudentWorldsModule.tsx` |
 | Recuento de niveles completados por mundo | 🟡 | `worldsService.getLevelsByWorld()` + `useProgress()` |
 | Niveles de un mundo, **sin candado hasta la prueba preliminar** (§4.11) | 🟡 | `student/StudentWorldLevelsModule.tsx` |
 | Sala de trofeos | 🟡 | `student/StudentTrophiesModule.tsx` + `AchievementList/` |
@@ -941,13 +943,12 @@ progreso conseguido.
 
 **Decisiones de diseño**
 
-- El patrón es **Supabase primero, repliegue local después**: si `useWorlds()`
-  no devuelve nada, se pintan los mundos de `worldsData.ts`. **Hoy devuelve los
-  tres reales**, así que el repliegue no se ve; sigue ahí para cuando la lectura
-  falle.
-- El repliegue local usa el tono de tarjeta (`forest` / `volcano` / `ocean`) como
-  identidad visual del mundo, no un color guardado en base de datos. El tono se
-  asigna **por posición**, así que renombrar un mundo no lo cambia de color.
+- **Ya no hay repliegue de maqueta** (§2.12): mientras carga se dice «Cargando
+  mundos...», si la lectura falla se dice que falló, y si no hay mundos se dice
+  eso. `worldsData.ts` conserva sólo los tipos y los tonos.
+- El tono de tarjeta (`forest` / `volcano` / `ocean`) es la identidad visual del
+  mundo, no un color guardado en base de datos. Se asigna **por posición**, así
+  que renombrar un mundo no lo cambia de color.
 
 #### Cómo se llaman los tres mundos, y por qué cambió (20-sep-2026)
 
@@ -1783,9 +1784,9 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/components/dashboard/student/StudentGameLabModule.tsx` | El banco de pruebas, **compuesto como estará la pantalla de nivel** desde el J6.3: el juego en una zona alta con el lienzo superpuesto abajo, y a la derecha caja de bloques, botones e instrucciones, en paneles flotantes. **Posee la maqueta y crea los tres huecos** —caja, botones y mensaje— que bajan a las piezas diferidas. Enseña el sobre en el `<pre>`, fuera de la maqueta. Bloquea el lienzo detenido igual que la pantalla de nivel, y **no abre la ventana de felicitaciones**: no tiene mundo al que salir |
 | `apps/web/src/main.css` | Además del tema: la regla que **apaga los recortes mientras se arrastra un bloque** y la que deja **transparente el fondo del lienzo** de Blockly, las dos con su porqué |
 | `apps/web/src/constants/routes.ts` | `GAME_LAB: '/dashboard/game'` |
-| `apps/web/src/router/AppRouter.tsx` | Registra esa ruta **sólo** bajo `import.meta.env.DEV` |
+| `apps/web/src/router/AppRouter.tsx` | Registra esa ruta **sólo** bajo `DEV_TOOLS_ENABLED` (§2.12) |
 | `apps/web/src/pages/Dashboard/Dashboard.tsx` | Un caso más en el `switch`, con la misma bandera. La pantalla de nivel lleva **`key={levelId}`**, para que «Siguiente nivel» empiece de cero |
-| `apps/web/src/components/dashboard/Sidebar/Sidebar.tsx` | La entrada «Laboratorio 3D», visible sólo en desarrollo |
+| `apps/web/src/components/dashboard/Sidebar/Sidebar.tsx` | La entrada «Laboratorio 3D», visible sólo con `DEV_TOOLS_ENABLED` |
 
 **La ruta NO puede colgar de `/dashboard/worlds/`.** `Dashboard.tsx` colapsa todo
 lo que empiece por ese prefijo en `ROUTES.WORLDS` **antes** del `switch`, así que
@@ -3783,6 +3784,26 @@ de arriba y su gemela del cliente sí tiene tests.
 programa hay que construirlo en el editor de bloques y las partidas de prueba se
 mandaron por REST.
 
+### 2.12 Correcciones previas al despliegue (21-sep-2026)
+
+Sin propuesta de OpenSpec, a petición del usuario: retoques para la prueba con
+usuarios.
+
+| Cambio | Dónde vive |
+| --- | --- |
+| Los «Dueño de…» salen sólo en «Grandes trofeos», con su XP; «Todos los logros» ya no los repite | `student/StudentTrophiesModule.tsx` (`WORLD_TROPHY_KEYS`) |
+| «Sin login» y el Laboratorio 3D, **apagados** salvo `VITE_ENABLE_DEV_TOOLS=true` en desarrollo. No se borraron: se necesitan después de la prueba | `config/devTools.ts`, usado en `Navbar.tsx`, `Sidebar.tsx`, `AppRouter.tsx`, `Dashboard.tsx` y `guest.helpers.ts` |
+| «Vista inicial» pierde la flecha «‹»: se leía como «salir del nivel» | `game/GameScene.tsx` |
+| En «Mundos» la misión cumplida desaparece; en «Mi salón» sigue, como cumplida | `shared/AssignedMissionsPanel.tsx` (`hideCompleted`) |
+| Podio con los tres de más XP del salón (desempate: niveles superados, racha, nombre). No sale si nadie tiene XP | `shared/ClassroomPodium.tsx` + `shared/podiumRanking.ts`, montado en `StudentClassroomModule.tsx` y `TeacherGroupDetailModule.tsx` |
+| Fuera los tres mundos inventados de `worldsData.ts`: si la lectura falla se dice, no se enseña progreso falso | `student/StudentWorldsModule.tsx`, `student/worlds/worldsData.ts` |
+| «Eliminar mi cuenta» en los dos Ajustes, con confirmación. Borra la fila de `auth.users` y todo cae en cascada; al tutor se le van sus salones | Migración `0045_delete_my_account.sql` (`delete_my_account()`), `authService.deleteAccount`, `AuthProvider` y `shared/DeleteAccountPanel.tsx` |
+
+**La bandera se lee de `.env`, no se compila apagada:** para volver a usar «Sin
+login» basta con `VITE_ENABLE_DEV_TOOLS=true` en `apps/web/.env` y reiniciar
+Vite. En el build de producción sigue sin existir pase lo que pase, porque exige
+también `import.meta.env.DEV`.
+
 ---
 
 ## 3. Especificaciones por aplicar
@@ -4694,11 +4715,9 @@ la marca de la invitación ocurren **en la misma transacción** —`joined_at` y
 `accepted_at` coinciden al microsegundo en los tres canjes—, y un canje fallido
 **no gasta el enlace**.
 
-**Cuidado al comprobar la pantalla de mundos:** `useWorlds()` arranca con la
-lista vacía, así que durante la carga se pinta el respaldo de `worldsData.ts`
-—«Bosque de Bucles», `4/10 NIVELES`— y sólo después llegan los datos reales. Ver
-esos nombres no significa que el backend no responda; significa que se miró
-demasiado pronto.
+**La pantalla de mundos ya no enseña maqueta mientras carga** (§2.12): antes
+pintaba «Bosque de Bucles», `4/10 NIVELES` hasta que llegaban los datos reales.
+Hoy dice «Cargando mundos...» y, si la lectura falla, lo dice.
 
 ### Cómo comprobar algo contra la base real
 
