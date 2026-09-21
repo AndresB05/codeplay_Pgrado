@@ -21,7 +21,7 @@ const BigWorldCard = () => {
         />
 
         <div className="absolute right-3 top-3">
-          <LevelBadge>Nivel 1</LevelBadge>
+          <LevelBadge>Mundo 1</LevelBadge>
         </div>
       </div>
 
@@ -71,7 +71,10 @@ const SmallWorldCard = ({ title, description, level, gradient }: SmallWorldCardP
 
 export const WorldsSection = () => {
   return (
-    <section className="jungle-band relative overflow-hidden border-y-[3px] border-ink">
+    <section
+      id="mundos"
+      className="jungle-band relative scroll-mt-[100px] overflow-hidden border-y-[3px] border-ink"
+    >
       <PalmFrond
         size={130}
         className="pointer-events-none absolute -left-10 top-6 rotate-[14deg] opacity-70"
@@ -97,13 +100,13 @@ export const WorldsSection = () => {
             <SmallWorldCard
               title="Cordillera de la Abstracción"
               description="Parte el camino en tramos y súbelo por partes."
-              level="Nivel 2"
+              level="Mundo 2"
               gradient="linear-gradient(135deg, #A77BF3 0%, #7B3FE4 100%)"
             />
             <SmallWorldCard
               title="Encrucijada de las Decisiones"
               description="Varios caminos llegan, pero sólo algunos caben en tus pasos."
-              level="Nivel 3"
+              level="Mundo 3"
               gradient="linear-gradient(135deg, #7FC4FF 0%, #3B9DF8 100%)"
             />
           </div>

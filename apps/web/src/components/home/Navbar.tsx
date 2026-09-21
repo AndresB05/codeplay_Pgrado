@@ -1,4 +1,5 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { getHomeRouteForRole } from '../../context/auth.helpers';
 import { getDevCredentials, startGuestSession } from '../../context/guest.helpers';
@@ -8,11 +9,86 @@ import type { UserRole } from '../../types/user.types';
 import { SectionContainer } from './shared';
 import { DEV_TOOLS_ENABLED } from '../../config/devTools';
 
-const centerLinks = [
-  { label: 'Recursos', href: '#como-aprender' },
-  { label: 'Tutor', href: '#tutores' },
-  { label: 'Inicio', to: ROUTES.LANDING },
+/* `sectionId` nulo es lo más alto de la página. */
+const centerLinks: { label: string; sectionId: string | null }[] = [
+  { label: 'Inicio', sectionId: null },
+  { label: 'Mundos', sectionId: 'mundos' },
+  { label: 'Tutor', sectionId: 'tutores' },
+  { label: 'Cómo aprender', sectionId: 'como-aprender' },
 ];
+
+/* La barra es fija y tapa la parte de arriba: una sección cuenta como actual al pasar por debajo. */
+const HEADER_OFFSET = 120;
+
+const sectionInView = (): string | null => {
+  const atBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 4;
+  let current: string | null = null;
+
+  for (const { sectionId } of centerLinks) {
+    const section = sectionId ? document.getElementById(sectionId) : null;
+
+    if (!section) {
+      continue;
+    }
+
+    /*
+     * La última sección es corta y nunca llega arriba del todo: al tocar el
+     * final de la página se da por actual.
+     */
+    if (section.getBoundingClientRect().top <= HEADER_OFFSET || atBottom) {
+      current = sectionId;
+    }
+  }
+
+  return current;
+};
+
+/*
+ * La marca sigue al desplazamiento, no sólo al clic: si no, quien baja con la
+ * rueda ve marcado un apartado que ya dejó atrás. Tras un clic se congela hasta
+ * que el desplazamiento suave termina, para que no parpadee por las secciones
+ * que cruza de camino.
+ */
+const useActiveSection = () => {
+  const [active, setActive] = useState<string | null>(null);
+  const pinnedRef = useRef(false);
+  const settleTimerRef = useRef<number>();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (pinnedRef.current) {
+        window.clearTimeout(settleTimerRef.current);
+        settleTimerRef.current = window.setTimeout(() => {
+          pinnedRef.current = false;
+        }, 150);
+        return;
+      }
+
+      setActive(sectionInView());
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.clearTimeout(settleTimerRef.current);
+    };
+  }, []);
+
+  const select = (sectionId: string | null) => {
+    pinnedRef.current = true;
+    setActive(sectionId);
+
+    /* Si ya estaba ahí no hay desplazamiento que la descongele. */
+    window.clearTimeout(settleTimerRef.current);
+    settleTimerRef.current = window.setTimeout(() => {
+      pinnedRef.current = false;
+    }, 800);
+  };
+
+  return { active, select };
+};
 
 const guestEntries: { role: UserRole; label: string; className: string }[] = [
   {
@@ -28,8 +104,8 @@ const guestEntries: { role: UserRole; label: string; className: string }[] = [
 ];
 
 export const Navbar = () => {
-  const location = useLocation();
   const navigate = useNavigate();
+  const { active, select } = useActiveSection();
   const { clearError, error, loading, signIn } = useAuth();
   const { awaitingProfile, cancel, start } = useRoleHomeRedirect();
 
@@ -82,28 +158,22 @@ export const Navbar = () => {
 
         <nav className="hidden items-center gap-2 md:flex">
           {centerLinks.map((item) => {
-            const active = 'to' in item && location.pathname === item.to;
+            const isActive = active === item.sectionId;
 
-            return 'href' in item ? (
+            return (
               <a
                 key={item.label}
-                href={item.href}
-                className="rounded-full border-[3px] border-transparent px-5 py-2 font-display text-[16px] text-ink transition-colors hover:bg-cream"
-              >
-                {item.label}
-              </a>
-            ) : (
-              <Link
-                key={item.label}
-                to={item.to}
+                href={item.sectionId ? `#${item.sectionId}` : '#'}
+                onClick={() => select(item.sectionId)}
+                aria-current={isActive ? 'location' : undefined}
                 className={`rounded-full border-[3px] px-5 py-2 font-display text-[16px] transition-colors ${
-                  active
+                  isActive
                     ? 'border-ink bg-grape-soft text-grape-dark'
                     : 'border-transparent text-ink hover:bg-cream'
                 }`}
               >
                 {item.label}
-              </Link>
+              </a>
             );
           })}
         </nav>

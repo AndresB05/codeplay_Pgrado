@@ -52,7 +52,7 @@ export const LearningSection = () => {
             bubble="bg-jungle-soft"
             icon={<Toucan size={52} />}
             title="Gana Recompensas"
-            description="Colecciona insignias y personaliza tu explorador mientras avanzas en tu viaje de aprendizaje."
+            description="Gana trofeos y sube de Nivel Explorador mientras avanzas en tu viaje de aprendizaje."
           />
         </div>
       </SectionContainer>

@@ -42,7 +42,11 @@ export const HeroSection = () => {
           </div>
         </div>
 
-        <div className="relative flex justify-center lg:relative lg:left-[-170px] lg:justify-center">
+        {/*
+         * El corrimiento hacia el texto sólo cabe desde xl: entre lg y xl la
+         * columna del texto es más estrecha y el hueco se le montaba encima.
+         */}
+        <div className="relative flex justify-center xl:left-[-170px]">
           {/* Marco de la mascota: la ilustración llega después, el hueco se queda. */}
           <MonsteraLeaf
             size={92}
