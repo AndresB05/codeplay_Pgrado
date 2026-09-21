@@ -1,5 +1,8 @@
-import { MonsteraLeaf, PalmFrond } from '../decor/JungleDecor';
-import { ImagePlaceholder, LevelBadge, SectionContainer } from './shared';
+import world1 from '../../assets/brand/world-1.webp';
+import world2 from '../../assets/brand/world-2.webp';
+import world3 from '../../assets/brand/world-3.webp';
+import { PalmFrond } from '../decor/JungleDecor';
+import { LevelBadge, SectionContainer } from './shared';
 
 const BigWorldCard = () => {
   return (
@@ -9,15 +12,10 @@ const BigWorldCard = () => {
        * hueco de la imagen crece para ocuparla y no deja una franja en blanco.
        */}
       <div className="relative flex flex-1 flex-col">
-        {/* Hueco reservado para la ilustración del mundo. */}
-        <ImagePlaceholder
-          rounded="rounded-none"
-          className="min-h-[200px] w-full flex-1 sm:min-h-[255px]"
-        />
-
-        <MonsteraLeaf
-          size={78}
-          className="pointer-events-none absolute -left-5 -top-5 rotate-[26deg]"
+        <img
+          src={world1}
+          alt=""
+          className="min-h-[200px] w-full flex-1 object-cover object-[35%_55%] sm:min-h-[255px]"
         />
 
         <div className="absolute right-3 top-3">
@@ -46,13 +44,30 @@ type SmallWorldCardProps = {
   description: string;
   level: string;
   gradient: string;
+  image: string;
+  /**
+   * La tarjeta pequeña recorta la ilustración a una franja muy baja: esto
+   * decide qué altura de la imagen queda a la vista, la del leopardo.
+   */
+  imagePosition: string;
 };
 
-const SmallWorldCard = ({ title, description, level, gradient }: SmallWorldCardProps) => {
+const SmallWorldCard = ({
+  title,
+  description,
+  level,
+  gradient,
+  image,
+  imagePosition,
+}: SmallWorldCardProps) => {
   return (
     <article className="card flex flex-col overflow-hidden">
       <div className="relative flex flex-1 flex-col">
-        <ImagePlaceholder rounded="rounded-none" className="min-h-[120px] w-full flex-1" />
+        <img
+          src={image}
+          alt=""
+          className={`min-h-[120px] w-full flex-1 object-cover ${imagePosition}`}
+        />
 
         <div className="absolute right-3 top-3">
           <LevelBadge>{level}</LevelBadge>
@@ -101,12 +116,16 @@ export const WorldsSection = () => {
               title="Cordillera de la Abstracción"
               description="Parte el camino en tramos y súbelo por partes."
               level="Mundo 2"
+              image={world2}
+              imagePosition="object-[50%_22%]"
               gradient="linear-gradient(135deg, #A77BF3 0%, #7B3FE4 100%)"
             />
             <SmallWorldCard
               title="Encrucijada de las Decisiones"
               description="Varios caminos llegan, pero sólo algunos caben en tus pasos."
               level="Mundo 3"
+              image={world3}
+              imagePosition="object-[50%_60%]"
               gradient="linear-gradient(135deg, #7FC4FF 0%, #3B9DF8 100%)"
             />
           </div>

@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
-import { LeafCorner, TropicalFlower } from '../decor/JungleDecor';
-import { CheckBullet, ImagePlaceholder, InfoBadge, SectionContainer } from './shared';
+import tutorLeopard from '../../assets/brand/tutor-leopard.webp';
+import { LeafCorner } from '../decor/JungleDecor';
+import { CheckBullet, InfoBadge, SectionContainer } from './shared';
 
 export const TutorSection = () => {
   return (
@@ -12,19 +13,13 @@ export const TutorSection = () => {
 
           <div className="relative grid grid-cols-1 items-center gap-10 lg:grid-cols-[300px_1fr] lg:gap-[74px]">
             <div className="flex justify-center">
-              <div className="relative flex h-[184px] w-[184px] items-center justify-center rounded-full border-[3px] border-ink bg-[linear-gradient(135deg,#7CE6DA_0%,#17C3B2_100%)] shadow-[0_8px_0_rgba(42,27,69,0.16)]">
-                <TropicalFlower
-                  size={40}
-                  className="absolute -left-3 top-4 rotate-[-12deg]"
-                  color="#FFC93C"
-                />
-
-                {/* Hueco de la mascota guía: se conserva a la espera de la ilustración. */}
-                <ImagePlaceholder
-                  rounded="rounded-full"
-                  className="h-[128px] w-[128px] border-white/70"
-                />
-              </div>
+              <img
+                src={tutorLeopard}
+                alt=""
+                width={280}
+                height={280}
+                className="h-auto w-[240px] sm:w-[280px]"
+              />
             </div>
 
             <div className="max-w-[620px]">
