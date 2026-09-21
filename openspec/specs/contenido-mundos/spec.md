@@ -86,6 +86,12 @@ SHALL salir de datos de ejemplo. El **primer nivel sin completar** del mundo
 SHALL marcarse como el nivel en el que va el niño; si están todos completados,
 ninguno SHALL llevar esa marca.
 
+El **primer nivel** de cada mundo SHALL estar siempre abierto, y cada uno de los
+demás SHALL abrirse al **completar el anterior**. El candado SHALL comprobarse
+en la **pantalla de nivel**, no sólo en la lista, porque a ella se llega también
+escribiendo la dirección. Si el progreso no se puede leer, el nivel SHALL
+dejarse jugar.
+
 Un nivel cuya fila no se pueda jugar SHALL poder abrirse igualmente desde la
 lista, y lo que el niño encuentre SHALL ser el aviso de que ese nivel todavía no
 se puede jugar, no un tablero a medias.
@@ -93,14 +99,19 @@ se puede jugar, no un tablero a medias.
 #### Scenario: Un niño sin progreso entra en un mundo
 
 - **WHEN** el niño no ha completado ningún nivel de ese mundo
-- **THEN** todos los niveles aparecen disponibles y se pueden abrir desde la lista
+- **THEN** sólo el primer nivel aparece disponible, y los demás salen bloqueados
 - **AND** el primer nivel lleva la marca del nivel en el que va
 
 #### Scenario: Un nivel aún no está disponible
 
-- **WHEN** el niño pulsa en la lista un nivel cuyo anterior no ha completado, que con el candado habría salido bloqueado
-- **THEN** ese nivel se muestra igual de disponible que los demás, sin candado
-- **AND** se abre la pantalla de ese nivel
+- **WHEN** el niño abre, desde la lista o escribiendo la dirección, un nivel cuyo anterior no ha completado
+- **THEN** en la lista ese nivel sale bloqueado y no se puede pulsar
+- **AND** la pantalla de nivel no dibuja el tablero y dice qué nivel hay que superar antes
+
+#### Scenario: Se pasa al siguiente nivel antes de que se guarde la partida
+
+- **WHEN** el niño supera un nivel y pulsa «Siguiente nivel» antes de que el guardado termine
+- **THEN** el siguiente nivel se abre igualmente, sin salir bloqueado
 
 #### Scenario: El niño abre un nivel que todavía no se puede jugar
 

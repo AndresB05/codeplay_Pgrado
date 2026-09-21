@@ -265,6 +265,17 @@ describe.each(levels)('$name', ({ config, solution }) => {
 });
 
 /*
+ * EL MUNDO 1 NO OFRECE «SALTAR» (`flyoutBlocks`), así que sus niveles tienen que
+ * poder ganarse con el 100 sin él. Junto con los dos casos de arriba —la
+ * solución llega y gasta justo los pasos sembrados— basta con que ninguna salte.
+ */
+describe('el mundo 1 se gana sin saltar', () => {
+  it.each(levels.filter(({ name }) => name.endsWith('del mundo 1')))('$name', ({ solution }) => {
+    expect(solution.some((order) => order.kind === 'jump')).toBe(false);
+  });
+});
+
+/*
  * La búsqueda misma, contra un tablero donde saltar es obligatorio: si no supiera
  * saltar, no llegaría; si contara el salto como un paso, daría menos.
  *

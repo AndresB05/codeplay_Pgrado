@@ -212,3 +212,13 @@ export const FLYOUT_BLOCKS: Blockly.utils.toolbox.FlyoutItemInfoArray = [
   { kind: 'block', type: TURN_RIGHT_BLOCK },
   { kind: 'block', type: JUMP_BLOCK },
 ];
+
+/*
+ * La caja sin «saltar», para el mundo 1: allí no hay alturas que subir, y
+ * ofrecerlo sólo invitaba a gastar pasos —saltar cuesta dos—. Decidido por el
+ * usuario el 21-sep-2026.
+ */
+export const flyoutBlocks = (withJump: boolean): Blockly.utils.toolbox.FlyoutItemInfoArray =>
+  withJump
+    ? FLYOUT_BLOCKS
+    : FLYOUT_BLOCKS.filter((item) => !('type' in item) || item.type !== JUMP_BLOCK);

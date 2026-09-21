@@ -319,6 +319,7 @@ export const StudentGameLabModule = () => {
                     onProgramChange={handleProgramChange}
                     flyoutHost={blockBox}
                     starterWorkspace={{}}
+                    withJump
                   />
                 )}
 

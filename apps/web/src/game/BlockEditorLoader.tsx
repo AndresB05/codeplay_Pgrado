@@ -21,12 +21,15 @@ interface BlockEditorLoaderProps {
   flyoutHost: HTMLElement;
   /* Con qué bloques arranca el lienzo. Lo saca del sobre quien lee el nivel. */
   starterWorkspace: WorkspaceState;
+  /* Si la caja ofrece «saltar»: el mundo 1 no lo lleva. */
+  withJump: boolean;
 }
 
 export const BlockEditorLoader = ({
   onProgramChange,
   flyoutHost,
   starterWorkspace,
+  withJump,
 }: BlockEditorLoaderProps) => (
   <Suspense
     fallback={
@@ -40,6 +43,7 @@ export const BlockEditorLoader = ({
       onProgramChange={onProgramChange}
       flyoutHost={flyoutHost}
       starterWorkspace={starterWorkspace}
+      withJump={withJump}
     />
   </Suspense>
 );

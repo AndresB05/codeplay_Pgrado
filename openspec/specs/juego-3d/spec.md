@@ -444,6 +444,11 @@ El juego de bloques disponible SHALL ser, por ahora:
 - **girar a la derecha**;
 - **saltar**, que **lleva otros bloques dentro**.
 
+En el **mundo 1** —el primero de la lista ordenada de mundos— la caja NO SHALL
+ofrecer **saltar**: sus niveles no tienen alturas que subir, y SHALL poder
+ganarse con la puntuación máxima sin él. Si la lista de mundos no se puede leer,
+la caja SHALL ofrecerlo.
+
 Los bloques SHALL poder **encadenarse en secuencia**, y el orden en que quedan
 encadenados SHALL ser el orden en que se leen. Un bloque suelto —que no cuelga de
 la secuencia— NO SHALL formar parte del programa. El niño SHALL poder **quitar**

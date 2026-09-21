@@ -937,7 +937,7 @@ progreso conseguido.
 | Listado de mundos con filtros (dificultad, tema, categoría) | 🟡 | `student/StudentWorldsModule.tsx` |
 | Lectura desde Supabase, **sin repliegue de maqueta** (§2.12) | ✅ | `useWorlds()` en `student/StudentWorldsModule.tsx` |
 | Recuento de niveles completados por mundo | 🟡 | `worldsService.getLevelsByWorld()` + `useProgress()` |
-| Niveles de un mundo, **sin candado hasta la prueba preliminar** (§4.11) | 🟡 | `student/StudentWorldLevelsModule.tsx` |
+| Niveles de un mundo, **con candado**: el 1 siempre abierto, cada uno de los demás al superar el anterior (§4.11) | ✅ | `student/StudentWorldLevelsModule.tsx`, `student/levelLock.ts` |
 | Sala de trofeos | 🟡 | `student/StudentTrophiesModule.tsx` + `AchievementList/` |
 | Ajustes de cuenta del alumno | 🟡 | `student/StudentSettingsModule.tsx` |
 
@@ -3809,6 +3809,8 @@ usuarios.
 | Las tarjetas de mundo y de nivel son `<button>`, y un botón que la rejilla estira **centra su contenido en vertical**: la de texto más corto enseñaba una franja blanca sobre la cabecera. Ahora son `flex-col` | `student/StudentWorldsModule.tsx`, `student/StudentWorldLevelsModule.tsx` |
 | **Quién está conectado:** punto verde en el avatar y «En línea» en la tabla del salón, para el tutor y para los compañeros. Realtime Presence, un canal por salón (`presence:classroom:<id>`): el niño se anuncia desde cualquier pantalla y el tutor mira sin anunciarse. Canal público, como el de `subscribeToClassrooms`: quien conozca el id interno de un salón podría fingirse conectado. Medido contra el proyecto real con dos clientes: el que mira ve entrar y salir al que se anuncia | `watchClassroomPresence` en `services/classrooms.service.ts` (registro con cierre aplazado por StrictMode), `onlineStudentIds` en `ClassroomsProvider`, `shared/StudentRosterTable.tsx` |
 | **La última actividad cuenta también entrar a la página:** `profiles.last_seen_at`, que el niño toca al entrar, al volver a la pestaña y cada 5 min; el roster enseña la más reciente entre eso y la última partida. Sin sesión la función responde `42501`, medido | Migración `0046_last_seen.sql` (`touch_last_seen()`, columna al final de `classroom_roster`), `hooks/useLastSeen.ts` montado en `Dashboard.tsx`, `profileService.touchLastSeen`, `latest` en `classrooms.service.ts` |
+| **Candado en los niveles:** el 1 de cada mundo siempre abierto; el 2 y el 3, al superar el anterior. La lista los enseña grises con «Bloqueado»; la pantalla de nivel es la que de verdad cierra, también a quien escribe la dirección. Si el progreso no se puede leer, deja jugar. «Siguiente nivel» lleva en el estado del router el nivel recién superado, porque la ventana sale antes de que el guardado termine | `student/levelLock.ts` (con tests), `StudentWorldLevelsModule.tsx`, `StudentLevelModule.tsx` |
+| **El mundo 1 no ofrece «saltar»:** allí no hay alturas y sólo gastaba pasos. El mundo 1 es el primero de la lista ordenada, el mismo criterio que da el color a cada mundo; si la lista falla, la caja lo lleva. Un test comprueba que sus tres niveles se ganan con el 100 sin saltar | `flyoutBlocks` en `game/blocks.ts`, prop `withJump` de `BlockEditor`/`BlockEditorLoader`, `game/levelSolutions.test.ts` |
 
 **La bandera se lee de `.env`, no se compila apagada:** para volver a usar «Sin
 login» basta con `VITE_ENABLE_DEV_TOOLS=true` en `apps/web/.env` y reiniciar
@@ -4537,7 +4539,13 @@ solapan en **un solo eje** se ven superpuestas desde un ángulo bajo sin invadir
 comprobado en el J7.1 calculando las huellas en vez de mirando la pantalla. Vale
 para cualquier cosa que se dibuje al lado del tablero, con modelos o sin ellos.
 
-### 4.11 Los niveles no tienen candado, y cómo ordenar el avance está por decidir
+### 4.11 Los niveles no tienen candado, y cómo ordenar el avance está por decidir — RESUELTO
+
+**Resuelto el 21-sep-2026, por decisión del usuario:** el nivel 1 de cada mundo
+está siempre abierto y cada uno de los demás se abre al superar el anterior. Se
+hizo como decía el último párrafo de abajo: la lista sólo lo enseña, y **el que
+cuenta es el de la pantalla de nivel**, porque a ella se llega también
+escribiendo la dirección. Detalle en §2.12. Lo de abajo queda como historia.
 
 **Desde `niveles-sin-candado` (13-sep-2026), por decisión del usuario:** hasta la
 prueba preliminar **todos los niveles se abren desde la lista**, y el candado se

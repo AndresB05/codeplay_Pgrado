@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { BlockEditorLoader } from '../../../game/BlockEditorLoader';
 import type { LevelFinish } from '../../../game/GameScene';
@@ -8,6 +8,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { openLevel, type PlayableLevel } from '../../../game/levelConfig';
 import type { Program } from '../../../game/program';
 import { scoreForSteps } from '../../../game/score';
+import { progressService } from '../../../services/progress.service';
 import { worldsService } from '../../../services/worlds.service';
 import type {
   AchievementUnlock,
@@ -17,6 +18,7 @@ import type {
 import { HaltedLock } from './HaltedLock';
 import { AchievementToast } from './AchievementToast';
 import { LevelCompleteDialog } from './LevelCompleteDialog';
+import { blockingLevel } from './levelLock';
 import { nextLevelId } from './nextLevel';
 import { submitAttempt } from './submitAttempt';
 
@@ -100,12 +102,14 @@ const CANVAS_MAX = 380;
 type LevelState =
   | { status: 'loading' }
   | { status: 'rejected' }
+  | { status: 'locked'; previousLevelName: string }
   | {
       status: 'ready';
       title: string;
       instructions: string;
       level: PlayableLevel;
       nextLevelId: string | null;
+      withJump: boolean;
     };
 
 type StudentLevelModuleProps = {
@@ -130,7 +134,17 @@ type StudentLevelModuleProps = {
  */
 export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps) => {
   const navigate = useNavigate();
-  const { applyTotalXp } = useAuth();
+  const location = useLocation();
+  const { applyTotalXp, user } = useAuth();
+
+  /*
+   * El nivel que se acaba de superar, si se llegó por «Siguiente nivel». La
+   * ventana sale sin esperar al guardado, así que el progreso que lee el
+   * candado puede no traerlo todavía y cerraría el nivel que se acaba de ganar.
+   * En una referencia porque sólo vale para la carga de esta entrada.
+   */
+  const justPassed = useRef((location.state as { passedLevelId?: string } | null)?.passedLevelId);
+  const userId = user?.id ?? null;
   const [state, setState] = useState<LevelState>({ status: 'loading' });
 
   const [program, setProgram] = useState<Program | null>(null);
@@ -256,11 +270,46 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
        * «Siguiente nivel»: no poder ofrecer el siguiente no es motivo para no
        * dejar jugar éste.
        */
-      const siblings = await worldsService.getLevelsByWorld(row.worldId);
+      const [siblings, worlds, progress] = await Promise.all([
+        worldsService.getLevelsByWorld(row.worldId),
+        worldsService.getWorlds(),
+        userId === null ? null : progressService.getMyProgress(userId),
+      ]);
 
       if (!mounted) {
         return;
       }
+
+      /*
+       * EL CANDADO QUE CUENTA ES ÉSTE, no el de la lista: aquí llega también
+       * quien escribe la dirección a mano. Si el progreso o la lista no se
+       * pudieron leer se deja jugar, porque un corte de red no debe cerrarle a
+       * un niño un nivel que quizá ya se ganó.
+       */
+      if (siblings.data !== null && progress !== null && progress.data !== null) {
+        const completedIds = new Set(
+          progress.data
+            .filter((item) => item.completionStatus === 'completed')
+            .map((item) => item.levelId)
+        );
+
+        if (justPassed.current) {
+          completedIds.add(justPassed.current);
+        }
+        const blocker = blockingLevel(siblings.data, levelId, completedIds);
+
+        if (blocker !== null) {
+          setState({ status: 'locked', previousLevelName: blocker.name });
+          return;
+        }
+      }
+
+      /*
+       * El mundo 1 es el PRIMERO DE LA LISTA ordenada, el mismo criterio que
+       * da el color de cada mundo en sus pantallas. Si la lista falla, la caja
+       * lleva «saltar»: sobrar un bloque no deja ningún nivel sin resolver.
+       */
+      const worldPosition = (worlds.data ?? []).findIndex((world) => world.id === row.worldId);
 
       setState({
         status: 'ready',
@@ -268,6 +317,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         instructions: row.narrative,
         level,
         nextLevelId: siblings.data === null ? null : nextLevelId(siblings.data, row.orderIndex),
+        withJump: worldPosition !== 0,
       });
     };
 
@@ -276,7 +326,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
     return () => {
       mounted = false;
     };
-  }, [levelId]);
+  }, [levelId, userId]);
 
   const startResize = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -345,6 +395,24 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
           <h1 className="title-lg">Este nivel todavía no se puede jugar</h1>
           <p className="subtitle mx-auto mt-2 max-w-[520px]">
             Estamos preparándolo. Vuelve a la lista y prueba con otro.
+          </p>
+
+          <button type="button" onClick={backToLevels} className="btn btn-grape mt-5">
+            <BackIcon />
+            Volver a los niveles
+          </button>
+        </section>
+      </div>
+    );
+  }
+
+  if (state.status === 'locked') {
+    return (
+      <div className="px-5 py-5">
+        <section className="card p-6 text-center">
+          <h1 className="title-lg">Este nivel todavía está cerrado</h1>
+          <p className="subtitle mx-auto mt-2 max-w-[520px]">
+            Supera «{state.previousLevelName}» y se abrirá.
           </p>
 
           <button type="button" onClick={backToLevels} className="btn btn-grape mt-5">
@@ -444,6 +512,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
                     onProgramChange={handleProgramChange}
                     flyoutHost={blockBox}
                     starterWorkspace={state.level.workspace}
+                    withJump={state.withJump}
                   />
                 )}
 
@@ -499,7 +568,10 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
           onNext={
             state.nextLevelId === null
               ? undefined
-              : () => navigate(`${ROUTES.WORLDS}/${worldId}/${state.nextLevelId}`)
+              : () =>
+                  navigate(`${ROUTES.WORLDS}/${worldId}/${state.nextLevelId}`, {
+                    state: { passedLevelId: levelId },
+                  })
           }
           onRetry={() => {
             setFinish(null);

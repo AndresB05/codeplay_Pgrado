@@ -1,7 +1,7 @@
 import * as Blockly from 'blockly/core';
 import * as SpanishMessages from 'blockly/msg/es';
 import { useEffect, useRef } from 'react';
-import { FLYOUT_BLOCKS, defineGameBlocks } from './blocks';
+import { defineGameBlocks, flyoutBlocks } from './blocks';
 import { sealProgram, type Program, type WorkspaceState } from './program';
 
 /*
@@ -97,12 +97,15 @@ interface BlockEditorProps {
    * eso «sin programa de partida» y es un nivel perfectamente corriente.
    */
   starterWorkspace: WorkspaceState;
+  /* Si la caja ofrece «saltar». Como el lienzo de partida, se fija al montar. */
+  withJump: boolean;
 }
 
 export const BlockEditor = ({
   onProgramChange,
   flyoutHost,
   starterWorkspace,
+  withJump,
 }: BlockEditorProps) => {
   const container = useRef<HTMLDivElement>(null);
 
@@ -121,6 +124,7 @@ export const BlockEditor = ({
    * con lo que empieza el lienzo, no algo que cambie mientras se juega.
    */
   const starter = useRef(starterWorkspace);
+  const jumpInBox = useRef(withJump);
 
   useEffect(() => {
     if (!container.current) {
@@ -316,7 +320,7 @@ export const BlockEditor = ({
     flyoutHost.appendChild(flyoutSvg);
     flyout.init(workspace);
     flyout.setAutoClose(false);
-    flyout.show(FLYOUT_BLOCKS);
+    flyout.show(flyoutBlocks(jumpInBox.current));
 
     /*
      * LA CAJA NO SE DESPLAZA. Blockly le pone barra siempre, la coloque o no

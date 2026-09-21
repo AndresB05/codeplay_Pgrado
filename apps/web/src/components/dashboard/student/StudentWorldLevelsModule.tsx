@@ -6,7 +6,29 @@ import { worldsService } from '../../../services/worlds.service';
 import type { User } from '../../../types/user.types';
 import type { Level, World } from '../../../types/world.types';
 import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
+import { blockingLevel } from './levelLock';
 import { getCardToneStyles, type WorldModuleCard } from './worlds/worldsData';
+
+const LockIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect
+      x="5"
+      y="10.5"
+      width="14"
+      height="10"
+      rx="2.5"
+      fill="#FFF9EF"
+      stroke="#2A1B45"
+      strokeWidth="2.6"
+    />
+    <path
+      d="M8.5 10.5V8A3.5 3.5 0 0115.5 8V10.5"
+      stroke="#2A1B45"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
 
 const ForestIcon = () => <MonsteraLeaf size={64} color="#FFF9EF" />;
 
@@ -178,11 +200,9 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
   );
 
   /*
-   * SIN CANDADO HASTA LA PRUEBA PRELIMINAR, decidido por el usuario el
-   * 13-sep-2026: todos los niveles se abren desde aquí, y cómo se ordena el
-   * avance se decide después (`docs/CONTEXT.md` §4.11). «Aquí vas» sale del
-   * primer nivel sin completar y no de «desbloqueado y sin completar», que sin
-   * candado marcaría todos.
+   * El candado de aquí es sólo lo que se ve: el que cuenta está en la pantalla
+   * de nivel, que es donde lleva la dirección escrita a mano. «Aquí vas» sale
+   * del primer nivel sin completar.
    */
   const currentPosition = levels.findIndex((level) => !completedIds.has(level.id));
 
@@ -190,6 +210,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
     level,
     isCompleted: completedIds.has(level.id),
     isCurrent: position === currentPosition,
+    isLocked: blockingLevel(levels, level.id, completedIds) !== null,
   }));
 
   const completedCount = cards.filter((card) => card.isCompleted).length;
@@ -253,13 +274,19 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
         ) : (
           // Tres columnas y no más: cada mundo tiene tres niveles, y con más columnas sobraba medio ancho vacío.
           <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
-            {cards.map(({ level, isCompleted, isCurrent }, position) => {
+            {cards.map(({ level, isCompleted, isCurrent, isLocked }, position) => {
               return (
                 <button
                   key={level.id}
                   type="button"
+                  disabled={isLocked}
                   onClick={() => navigate(`${ROUTES.WORLDS}/${world.id}/${level.id}`)}
-                  className="card flex flex-col overflow-hidden text-left transition-transform duration-100 hover:-translate-y-1 active:translate-y-0"
+                  title={isLocked ? 'Supera el nivel anterior para abrirlo' : undefined}
+                  className={`card flex flex-col overflow-hidden text-left transition-transform duration-100 ${
+                    isLocked
+                      ? 'cursor-not-allowed opacity-60 grayscale'
+                      : 'hover:-translate-y-1 active:translate-y-0'
+                  }`}
                 >
                   <div
                     className="flex items-center justify-between border-b-[3px] border-ink px-3 py-2"
@@ -286,6 +313,13 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
                     {isCurrent ? (
                       <span className="rounded-full border-2 border-ink bg-sun px-2 py-0.5 font-display text-[11px] text-ink">
                         Aquí vas
+                      </span>
+                    ) : null}
+
+                    {isLocked ? (
+                      <span className="flex items-center gap-1 rounded-full border-2 border-ink bg-white px-2 py-0.5 font-display text-[11px] text-ink">
+                        <LockIcon />
+                        Bloqueado
                       </span>
                     ) : null}
                   </div>
