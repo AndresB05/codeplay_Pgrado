@@ -7,6 +7,7 @@ import { Canopy, TropicalFlower } from '../../components/decor/JungleDecor';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useRoleHomeRedirect } from '../../hooks/useRoleHomeRedirect';
+import { BrandLogo } from '../../components/ui/BrandLogo';
 
 /**
  * Pantalla a la que lleva el enlace del correo.
@@ -62,17 +63,7 @@ export const ResetPassword = () => {
           to={ROUTES.LANDING}
           className="flex items-center gap-2 pt-2 font-display text-[26px] tracking-[-0.02em] text-grape-dark"
         >
-          <span className="flex h-[38px] w-[38px] items-center justify-center rounded-[13px] border-[3px] border-ink bg-sun shadow-[0_4px_0_rgba(42,27,69,0.2)]">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M9 8L5 12L9 16M15 8L19 12L15 16"
-                stroke="#2A1B45"
-                strokeWidth="2.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
+          <BrandLogo size={46} />
           Codeplay
         </Link>
 

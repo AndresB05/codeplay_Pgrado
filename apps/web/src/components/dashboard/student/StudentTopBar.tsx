@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import type { User } from '../../../types/user.types';
 import { XPBar } from '../../ui/XPBar';
+import { BrandLogo } from '../../ui/BrandLogo';
 
 const FireIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -46,17 +47,7 @@ export const StudentTopBar = ({ user }: StudentTopBarProps) => {
         onClick={() => navigate(ROUTES.WORLDS)}
         className="flex items-center gap-2 font-display text-[32px] tracking-[-0.02em] text-grape-dark"
       >
-        <span className="flex h-[42px] w-[42px] items-center justify-center rounded-[14px] border-[3px] border-ink bg-sun shadow-[0_4px_0_rgba(42,27,69,0.2)]">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M9 8L5 12L9 16M15 8L19 12L15 16"
-              stroke="#2A1B45"
-              strokeWidth="2.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
+        <BrandLogo size={52} />
         Codeplay
       </button>
 
