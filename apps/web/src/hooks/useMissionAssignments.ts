@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AppError } from '../errors/AppError';
-import { missionsService, type MissionAssignment } from '../services/missions.service';
+import {
+  missionsService,
+  type MissionAssignment,
+  type MissionCompletion,
+} from '../services/missions.service';
+import type { Mission } from '../types/classroom.types';
 import { useAuth } from './useAuth';
 
 interface UseMissionAssignmentsReturn {
+  /** El catálogo entero, en su orden. Desde que vive en la base. */
+  catalog: Mission[];
   assignments: MissionAssignment[];
+  /** Lo cumplido que quien mira puede ver: lo suyo, o lo de sus alumnos. */
+  completions: MissionCompletion[];
   loading: boolean;
   error: AppError | null;
   assign: (missionKey: string, groupIds: string[]) => Promise<boolean>;
@@ -21,7 +30,9 @@ export const useMissionAssignments = (): UseMissionAssignmentsReturn => {
   const { user } = useAuth();
   const userId = user?.id ?? null;
 
+  const [catalog, setCatalog] = useState<Mission[]>([]);
   const [assignments, setAssignments] = useState<MissionAssignment[]>([]);
+  const [completions, setCompletions] = useState<MissionCompletion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
 
@@ -38,7 +49,9 @@ export const useMissionAssignments = (): UseMissionAssignmentsReturn => {
   const runLoad = useCallback(
     async (silent: boolean): Promise<void> => {
       if (!userId) {
+        setCatalog([]);
         setAssignments([]);
+        setCompletions([]);
         return;
       }
 
@@ -47,15 +60,32 @@ export const useMissionAssignments = (): UseMissionAssignmentsReturn => {
         setError(null);
       }
 
-      const result = await missionsService.listAssignments();
+      /*
+       * Las tres a la vez: son tres alcances distintos —el catálogo lo lee
+       * cualquiera con sesión, las asignaciones y los cumplimientos los acota la
+       * RLS— y pedirlas en serie triplicaría la espera sin ganar nada.
+       *
+       * Un fallo en cualquiera de las tres deja el estado como estaba y pinta el
+       * motivo. Quedarse con dos de tres enseñaría una misión sin saber si está
+       * cumplida, que es peor que decir que no se pudo cargar.
+       */
+      const [catalogResult, assignmentsResult, completionsResult] = await Promise.all([
+        missionsService.listCatalog(),
+        missionsService.listAssignments(),
+        missionsService.listCompletions(),
+      ]);
 
-      if (result.error) {
-        setError(result.error);
+      const readError = catalogResult.error ?? assignmentsResult.error ?? completionsResult.error;
+
+      if (readError) {
+        setError(readError);
         setLoading(false);
         return;
       }
 
-      setAssignments(result.data ?? []);
+      setCatalog(catalogResult.data ?? []);
+      setAssignments(assignmentsResult.data ?? []);
+      setCompletions(completionsResult.data ?? []);
       setError(null);
       setLoading(false);
     },
@@ -108,7 +138,7 @@ export const useMissionAssignments = (): UseMissionAssignmentsReturn => {
         return false;
       }
 
-      return runWrite(() => missionsService.assignMission(missionKey, groupIds, userId));
+      return runWrite(() => missionsService.assignMission(missionKey, groupIds));
     },
     [runWrite, userId]
   );
@@ -120,5 +150,5 @@ export const useMissionAssignments = (): UseMissionAssignmentsReturn => {
     [runWrite]
   );
 
-  return { assignments, loading, error, assign, unassign, refresh };
+  return { catalog, assignments, completions, loading, error, assign, unassign, refresh };
 };

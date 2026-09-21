@@ -1,10 +1,13 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MissionAssignment } from '../../../services/missions.service';
+import type { MissionAssignment, MissionCompletion } from '../../../services/missions.service';
+import type { Mission } from '../../../types/classroom.types';
 import { AssignedMissionsPanel } from './AssignedMissionsPanel';
 
 const mocks = vi.hoisted(() => ({
+  listCatalog: vi.fn(),
   listAssignments: vi.fn(),
+  listCompletions: vi.fn(),
   /* Guarda al oyente para poder disparar un cambio como haría la base. */
   emit: null as null | (() => void),
   subscribeToAssignments: vi.fn((onChange: () => void) => {
@@ -22,12 +25,32 @@ vi.mock('../../../hooks/useAuth', () => ({
 
 vi.mock('../../../services/missions.service', () => ({
   missionsService: {
+    listCatalog: mocks.listCatalog,
     listAssignments: mocks.listAssignments,
+    listCompletions: mocks.listCompletions,
     assignMission: vi.fn(),
     unassignMission: vi.fn(),
     subscribeToAssignments: mocks.subscribeToAssignments,
   },
 }));
+
+/* El catálogo vive en la base desde que las misiones se pueden cumplir. */
+const CATALOGO: Mission[] = [
+  {
+    key: 'clear_world_1',
+    title: 'Recorre el Sendero',
+    description: 'Supera los tres niveles del Sendero de los Patrones.',
+    difficultyLabel: 'Fácil',
+    xpReward: 300,
+  },
+  {
+    key: 'clear_world_3',
+    title: 'Resuelve la Encrucijada',
+    description: 'Supera los tres niveles de la Encrucijada de las Decisiones.',
+    difficultyLabel: 'Difícil',
+    xpReward: 500,
+  },
+];
 
 const buildAssignment = (missionKey: string): MissionAssignment => ({
   id: `assignment-${missionKey}`,
@@ -36,9 +59,19 @@ const buildAssignment = (missionKey: string): MissionAssignment => ({
   assignedAt: '2026-08-29T10:00:00.000Z',
 });
 
+const buildCompletion = (missionKey: string, userId = 'kid-1'): MissionCompletion => ({
+  userId,
+  missionKey,
+  groupId: 'group-1',
+  awardedXp: 300,
+  completedAt: '2026-09-20T10:00:00.000Z',
+});
+
 describe('AssignedMissionsPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.listCatalog.mockResolvedValue({ data: CATALOGO, error: null });
+    mocks.listCompletions.mockResolvedValue({ data: [], error: null });
   });
 
   /*
@@ -59,51 +92,96 @@ describe('AssignedMissionsPanel', () => {
   });
 
   it('pinta la misión asignada con el premio que da', async () => {
-    mocks.listAssignments.mockResolvedValue({ data: [buildAssignment('m1')], error: null });
-
-    render(<AssignedMissionsPanel />);
-
-    expect(await screen.findByText('La ruta del leopardo')).toBeInTheDocument();
-    expect(screen.getByText('+300 XP')).toBeInTheDocument();
-  });
-
-  it('no ofrece ningún control para jugarla y dice que llega con el juego', async () => {
-    mocks.listAssignments.mockResolvedValue({ data: [buildAssignment('m1')], error: null });
-
-    const { container } = render(<AssignedMissionsPanel />);
-
-    await screen.findByText('La ruta del leopardo');
-
-    expect(container.querySelectorAll('button')).toHaveLength(0);
-    expect(container.querySelectorAll('a')).toHaveLength(0);
-    expect(screen.getByText(/llegará con el juego/i)).toBeInTheDocument();
-  });
-
-  /*
-   * `mission_key` es texto sin clave ajena, así que la base puede devolver una
-   * clave que el catálogo ya no tenga. Se descarta, no se pinta a medias.
-   */
-  it('descarta una clave que no está en el catálogo', async () => {
     mocks.listAssignments.mockResolvedValue({
-      data: [buildAssignment('m1'), buildAssignment('mision-fantasma')],
+      data: [buildAssignment('clear_world_1')],
       error: null,
     });
 
     render(<AssignedMissionsPanel />);
 
-    await screen.findByText('La ruta del leopardo');
+    expect(await screen.findByText('Recorre el Sendero')).toBeInTheDocument();
+    expect(screen.getByText('+300 XP')).toBeInTheDocument();
+  });
 
-    expect(screen.getByText('1 misión especial')).toBeInTheDocument();
+  /*
+   * La asignación es del salón y el cumplimiento de cada alumno: que uno la
+   * cumpla no se la quita a nadie, y al que ya la cumplió le queda como lo que
+   * ganó. Sigue sin haber botón, ahora porque una misión no se empieza: se
+   * cumple jugando los niveles.
+   */
+  it('dice cuál está cumplida, y la cumplida no desaparece', async () => {
+    mocks.listAssignments.mockResolvedValue({
+      data: [buildAssignment('clear_world_1'), buildAssignment('clear_world_3')],
+      error: null,
+    });
+    mocks.listCompletions.mockResolvedValue({
+      data: [buildCompletion('clear_world_1')],
+      error: null,
+    });
+
+    const { container } = render(<AssignedMissionsPanel />);
+
+    await screen.findByText('Recorre el Sendero');
+
+    expect(screen.getByText(/¡Cumplida! Ganaste 300 XP/)).toBeInTheDocument();
+    expect(screen.getByText('Resuelve la Encrucijada')).toBeInTheDocument();
+    expect(screen.getByText('1 de 2 cumplidas')).toBeInTheDocument();
+    expect(container.querySelectorAll('button')).toHaveLength(0);
+    expect(container.querySelectorAll('a')).toHaveLength(0);
+  });
+
+  /*
+   * La RLS sólo le devuelve al niño lo suyo, pero el panel filtra igual por
+   * usuario: el mismo hook lo usa el panel del tutor, donde vienen las de todos
+   * sus alumnos.
+   */
+  it('lo que cumplió un compañero no sale como cumplido por él', async () => {
+    mocks.listAssignments.mockResolvedValue({
+      data: [buildAssignment('clear_world_1')],
+      error: null,
+    });
+    mocks.listCompletions.mockResolvedValue({
+      data: [buildCompletion('clear_world_1', 'kid-2')],
+      error: null,
+    });
+
+    render(<AssignedMissionsPanel />);
+
+    await screen.findByText('Recorre el Sendero');
+
+    expect(screen.queryByText(/¡Cumplida!/)).not.toBeInTheDocument();
+    expect(screen.getByText('0 de 1 cumplidas')).toBeInTheDocument();
+  });
+
+  /*
+   * `mission_key` ya tiene clave ajena, así que esto no debería ocurrir contra
+   * la base real. El descarte se queda porque el catálogo y las asignaciones
+   * son dos lecturas distintas y pueden llegar desfasadas.
+   */
+  it('descarta una clave que no está en el catálogo', async () => {
+    mocks.listAssignments.mockResolvedValue({
+      data: [buildAssignment('clear_world_1'), buildAssignment('mision-fantasma')],
+      error: null,
+    });
+
+    render(<AssignedMissionsPanel />);
+
+    await screen.findByText('Recorre el Sendero');
+
+    expect(screen.getByText('0 de 1 cumplidas')).toBeInTheDocument();
   });
 
   it('la misión que el tutor acaba de asignar aparece sin volver a montar', async () => {
-    mocks.listAssignments.mockResolvedValue({ data: [buildAssignment('m1')], error: null });
+    mocks.listAssignments.mockResolvedValue({
+      data: [buildAssignment('clear_world_1')],
+      error: null,
+    });
 
     render(<AssignedMissionsPanel />);
-    await screen.findByText('La ruta del leopardo');
+    await screen.findByText('Recorre el Sendero');
 
     mocks.listAssignments.mockResolvedValue({
-      data: [buildAssignment('m1'), buildAssignment('m3')],
+      data: [buildAssignment('clear_world_1'), buildAssignment('clear_world_3')],
       error: null,
     });
 
@@ -111,8 +189,8 @@ describe('AssignedMissionsPanel', () => {
       mocks.emit?.();
     });
 
-    expect(screen.getByText('El puente que decide')).toBeInTheDocument();
-    expect(screen.getByText('2 misiones especiales')).toBeInTheDocument();
+    expect(screen.getByText('Resuelve la Encrucijada')).toBeInTheDocument();
+    expect(screen.getByText('0 de 2 cumplidas')).toBeInTheDocument();
   });
 
   /*
@@ -122,17 +200,23 @@ describe('AssignedMissionsPanel', () => {
    * terminar el panel ya volvió y un test que mire el final pasa igual.
    */
   it('un evento no hace desaparecer el panel mientras relee', async () => {
-    mocks.listAssignments.mockResolvedValue({ data: [buildAssignment('m1')], error: null });
+    mocks.listAssignments.mockResolvedValue({
+      data: [buildAssignment('clear_world_1')],
+      error: null,
+    });
 
     render(<AssignedMissionsPanel />);
-    await screen.findByText('La ruta del leopardo');
+    await screen.findByText('Recorre el Sendero');
 
     let releaseRead = (): void => {};
 
     mocks.listAssignments.mockReturnValue(
       new Promise((resolve) => {
         releaseRead = () => {
-          resolve({ data: [buildAssignment('m1'), buildAssignment('m3')], error: null });
+          resolve({
+            data: [buildAssignment('clear_world_1'), buildAssignment('clear_world_3')],
+            error: null,
+          });
         };
       })
     );
@@ -142,12 +226,12 @@ describe('AssignedMissionsPanel', () => {
     });
 
     /* La consulta está a medias y el panel sigue en pie. */
-    expect(screen.getByText('La ruta del leopardo')).toBeInTheDocument();
+    expect(screen.getByText('Recorre el Sendero')).toBeInTheDocument();
 
     await act(async () => {
       releaseRead();
     });
 
-    expect(screen.getByText('El puente que decide')).toBeInTheDocument();
+    expect(screen.getByText('Resuelve la Encrucijada')).toBeInTheDocument();
   });
 });

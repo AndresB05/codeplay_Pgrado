@@ -33,6 +33,7 @@ const outcome = (over: Partial<AttemptOutcome> = {}): AttemptOutcome => ({
   awardedXp: 100,
   totalXp: 400,
   unlockedAchievements: [],
+  completedMissions: [],
   streak: { current: 1, max: 1, lastDay: '2026-09-18' },
   ...over,
 });

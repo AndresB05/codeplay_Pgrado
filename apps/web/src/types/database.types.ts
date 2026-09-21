@@ -391,6 +391,92 @@ export type Database = {
             referencedRelation: "class_groups"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "mission_assignments_mission_key_fkey"
+            columns: ["mission_key"]
+            isOneToOne: false
+            referencedRelation: "mission_catalog"
+            referencedColumns: ["mission_key"]
+          },
+        ]
+      }
+      mission_catalog: {
+        Row: {
+          awarded_xp: number
+          created_at: string
+          description: string
+          difficulty_label: string
+          mission_key: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          awarded_xp?: number
+          created_at?: string
+          description: string
+          difficulty_label: string
+          mission_key: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          awarded_xp?: number
+          created_at?: string
+          description?: string
+          difficulty_label?: string
+          mission_key?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      mission_completions: {
+        Row: {
+          awarded_xp: number
+          completed_at: string
+          group_id: string
+          id: string
+          mission_key: string
+          user_id: string
+        }
+        Insert: {
+          awarded_xp?: number
+          completed_at?: string
+          group_id: string
+          id?: string
+          mission_key: string
+          user_id: string
+        }
+        Update: {
+          awarded_xp?: number
+          completed_at?: string
+          group_id?: string
+          id?: string
+          mission_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_completions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_group_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_completions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_completions_mission_key_fkey"
+            columns: ["mission_key"]
+            isOneToOne: false
+            referencedRelation: "mission_catalog"
+            referencedColumns: ["mission_key"]
+          },
         ]
       }
       profiles: {
@@ -756,6 +842,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      assign_mission_to_groups: {
+        Args: { input_group_ids: string[]; input_mission_key: string }
+        Returns: Json
+      }
       award_achievements: {
         Args: {
           input_is_success: boolean
@@ -767,6 +857,7 @@ export type Database = {
         }
         Returns: Json
       }
+      award_missions: { Args: { input_user_id: string }; Returns: Json }
       count_block_chain: {
         Args: { input_block: Json; input_inside_jump: boolean }
         Returns: number

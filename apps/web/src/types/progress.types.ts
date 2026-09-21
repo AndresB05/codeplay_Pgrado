@@ -54,6 +54,13 @@ export interface AttemptOutcome {
    * así no hay carrera contra quien los escribió.
    */
   unlockedAchievements: AchievementUnlock[];
+  /**
+   * Las misiones que ESTA partida acaba de dar por cumplidas. Vienen por el
+   * mismo camino y por el mismo motivo que los logros: avisar sin volver a
+   * consultar. Están vacías en la inmensa mayoría de las partidas, y también
+   * cuando el niño no tiene ninguna asignada.
+   */
+  completedMissions: MissionCompletionUnlock[];
   streak: StreakState;
 }
 
@@ -63,6 +70,17 @@ export interface AchievementUnlock {
   title: string;
   description: string;
   iconName: string;
+  awardedXp: number;
+}
+
+/**
+ * Una misión recién cumplida. No lleva icono: el aviso las distingue por lo que
+ * son, no por una imagen que el catálogo no guarda.
+ */
+export interface MissionCompletionUnlock {
+  key: string;
+  title: string;
+  description: string;
   awardedXp: number;
 }
 

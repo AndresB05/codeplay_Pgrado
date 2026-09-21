@@ -1,12 +1,3 @@
-/*
- * Con qué etiqueta el catálogo de misiones cada reto. Dejó de medir nada el
- * 18-sep-2026, cuando se retiraron los reportes de habilidades: el juego tiene
- * cuatro bloques de movimiento y ninguno de bucle, condicional o función, así
- * que cuatro de estas cinco no tienen con qué entrenarse. Sobrevive porque las
- * misiones siguen usándola de rótulo, y su suerte la decide el paso 22.
- */
-export type SkillKey = 'sequences' | 'loops' | 'conditionals' | 'debugging' | 'decomposition';
-
 export type DifficultyLabel = 'Fácil' | 'Intermedio' | 'Difícil';
 
 export interface ClassroomStudent {
@@ -123,17 +114,24 @@ export interface ClassGroupStats {
   bestStreak: number;
 }
 
+/**
+ * Una misión del catálogo, que **vive en la base** desde que se pueden cumplir:
+ * `mission_catalog`. Antes eran cinco constantes en `teacher/classroomsData.ts`
+ * y `mission_assignments.mission_key` era texto suelto contra ellas.
+ *
+ * No lleva `skill` ni `estimatedMinutes`: la primera dejó de medir nada al
+ * retirarse los reportes de habilidades, y los minutos eran un número inventado.
+ */
 export interface Mission {
-  id: string;
+  /** `mission_catalog.mission_key`, a la que apunta la asignación. */
+  key: string;
   title: string;
   description: string;
-  skill: SkillKey;
   difficultyLabel: DifficultyLabel;
-  estimatedMinutes: number;
   /**
    * XP que otorga. Está por encima del nivel más generoso de la siembra (260)
-   * porque una misión es un reto especial, no un nivel más. Se muestra al niño,
-   * pero todavía no lo suma nadie: eso llega con el juego.
+   * porque una misión es un reto especial, no un nivel más. **Se cobra al
+   * cumplirla, una sola vez en la vida**, y lo concede el servidor.
    */
   xpReward: number;
 }

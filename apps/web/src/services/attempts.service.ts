@@ -6,6 +6,7 @@ import type {
   AchievementUnlock,
   AttemptOutcome,
   LevelAttempt,
+  MissionCompletionUnlock,
   StreakState,
 } from '../types/progress.types';
 
@@ -57,6 +58,7 @@ const readAttemptOutcome = (value: unknown): AttemptOutcome | null => {
     awardedXp,
     totalXp,
     unlockedAchievements: readUnlocked(value.unlocked_achievements),
+    completedMissions: readCompletedMissions(value.completed_missions),
     streak: readStreak(value.streak),
   };
 };
@@ -88,6 +90,37 @@ const readUnlocked = (value: unknown): AchievementUnlock[] => {
         title: element.title,
         description: typeof element.description === 'string' ? element.description : '',
         iconName: typeof element.icon_name === 'string' ? element.icon_name : 'trophy',
+        awardedXp: numberField(element, 'awarded_xp') ?? 0,
+      },
+    ];
+  });
+};
+
+/*
+ * LAS MISIONES CUMPLIDAS SE LEEN IGUAL DE BLANDAS QUE LOS LOGROS, y por lo
+ * mismo: sin ellas la partida se guardó, se puntuó y pagó su XP —el `total_xp`
+ * que viene al lado ya las incluye—, y lo único que se pierde es un aviso. La
+ * misión sigue cumplida en la base y la tarjeta lo dirá en cuanto se recargue.
+ */
+const readCompletedMissions = (value: unknown): MissionCompletionUnlock[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((element) => {
+    if (
+      !isObject(element) ||
+      typeof element.key !== 'string' ||
+      typeof element.title !== 'string'
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        key: element.key,
+        title: element.title,
+        description: typeof element.description === 'string' ? element.description : '',
         awardedXp: numberField(element, 'awarded_xp') ?? 0,
       },
     ];

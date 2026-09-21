@@ -1554,9 +1554,9 @@ hasta llegar al máximo del juego:
 
 ### 2.8 `misiones-asignadas` — Misiones especiales del salón
 
-**Propósito.** Que el tutor asigne misiones a sus salones y que el niño las vea,
-aunque **todavía no pueda jugarlas**. Una misión es un reto *especial*: sólo
-existe para el niño si su tutor se la asignó, y premia más XP que un nivel.
+**Propósito.** Que el tutor asigne misiones a sus salones, que el niño las vea y
+**que pueda cumplirlas**. Una misión es un reto *especial*: sólo existe para el
+niño si su tutor se la asignó, y premia más XP que un nivel.
 
 | Requisito | Estado | Dónde vive |
 | --- | --- | --- |
@@ -1569,38 +1569,121 @@ existe para el niño si su tutor se la asignó, y premia más XP que un nivel.
 | El niño ve sólo las asignadas, en dos pantallas | ✅ | `shared/AssignedMissionsPanel.tsx`, montado en `student/StudentWorldsModule.tsx` y `student/StudentClassroomModule.tsx` |
 | El catálogo declara el premio en XP | ✅ | `Mission.xpReward` en `types/classroom.types.ts` + `teacher/classroomsData.ts` |
 | El niño ve la asignación y la retirada sin recargar | ✅ | `subscribeToAssignments()` en `services/missions.service.ts` + `hooks/useMissionAssignments.ts` |
-| Jugar una misión | ❌ | **No existe.** Llega con el juego, pasos 20 y 21 |
+| El catálogo vive en la base, con clave ajena | ✅ | `migrations/…0044_playable_missions.sql`, `mission_catalog` |
+| Cumplir una misión, y cobrarla | ✅ | `award_missions()` dentro de `submit_level_attempt` |
+| El tutor ve quién la cumplió | ✅ | `mission_completions` + `teacher/TeacherPanelModule.tsx` |
 
-**LAS MISIONES TODAVÍA NO SON FUNCIONALES, y no es un descuido.** Se asignan, se
-guardan y se ven, pero **no se pueden jugar ni completar**: nada en la plataforma
-puede terminar una misión hasta que el juego reporte progreso (paso 21). De ahí
-salen dos cosas que parecen fallos y no lo son: la tarjeta del niño **no tiene
-botón** —ofrecerlo sería prometer algo que no ocurre al pulsarlo— y el salón
-entero sale en «Pendiente», con el motivo escrito encima de la tabla.
+#### Ya se pueden cumplir, y qué cuenta como cumplirlas (20-sep-2026)
+
+Durante semanas **no se podían**, y el panel del tutor lo decía con todas las
+letras. El contrato §8 dejaba abierto «cómo se relacionan las misiones que un
+profesor asigna con los niveles del juego»; ese cabo se cierra aquí.
+
+**UNA MISIÓN ES UN RETO SOBRE LOS NUEVE NIVELES QUE YA EXISTEN**, decisión del
+usuario: su condición es una pregunta sobre el historial del propio niño, que
+comprueba el servidor. No hay puzles nuevos que diseñar, y por eso se pudo
+cumplir el mismo día.
+
+**Son cuatro, y pocas a propósito:** el usuario las quiso **cumplibles de punta a
+punta en la prueba preliminar** en vez de un catálogo grande a medio funcionar.
+
+| Clave | Título | Se cumple | XP |
+| --- | --- | --- | --- |
+| `clear_world_1` | Recorre el Sendero | Superando los tres niveles del mundo 1 | 300 |
+| `clear_world_2` | Cruza la Cordillera | Superando los tres del mundo 2 | 400 |
+| `clear_world_3` | Resuelve la Encrucijada | Superando los tres del mundo 3 | 500 |
+| `flawless_3` | Ni un paso de más | Consiguiendo 100 en tres niveles cualesquiera | 400 |
+
+**LAS TRES DE MUNDO PIDEN SUPERAR, NO LA MARCA MÁXIMA**, y ahí está la raya que
+las separa de los logros: `perfect_world_N` exige los tres al 100. Un niño puede
+cumplir la misión sin tener el logro, que es lo que las hace servir de tarea.
+
+**Se descartó una quinta** —«supera tres niveles en el primer intento»— por ser
+la única cuya condición necesitaba una subconsulta correlacionada sobre
+`min(created_at)`, y porque dos intentos con la misma marca al milisegundo la
+habrían concedido de más.
+
+#### El catálogo se mudó a la base, y la asignación por fin apunta a algo
+
+Vivía en `teacher/classroomsData.ts` —cinco constantes de TypeScript— y
+`mission_assignments.mission_key` era **texto sin clave ajena**, a sabiendas: la
+`0020` lo dejó escrito como provisional. La `0044` crea `mission_catalog` y añade
+la clave ajena. Mismo patrón que `achievement_catalog` y por el mismo motivo
+(§2.11).
+
+**De las cinco misiones viejas, tres premiaban bucles, condicionales y
+descomposición**, que los cuatro bloques no permiten practicar. Se fueron con el
+catálogo, y con ellas `SkillKey`, `getSkillLabel` y `estimatedMinutes`, que era
+un número inventado.
+
+#### Cumplimiento: tabla propia, individual, y una sola vez en la vida
+
+**No puede montar sobre `achievements`:** su `unique (user_id, achievement_key)`
+significa «una vez en la vida» y una misión es **reasignable**. Misma maquinaria
+de concesión, cardinalidad distinta. Lo pedía el contrato.
+
+- **La asignación es del salón; el cumplimiento, de cada alumno.** Que uno la
+  cumpla **no la retira de los demás**: sigue en el salón hasta que el tutor la
+  retire, y al que ya la cumplió le queda como lo que ganó.
+- **`mission_completions.group_id` se guarda, no se deriva.** Un niño que cambie
+  de salón haría desaparecer lo cumplido de los informes de su antiguo profesor.
+- **Paga una sola vez en la vida**, decisión del usuario. Lo sostiene el
+  `unique (user_id, mission_key)`: reasignarla la enseña ya cumplida y no vuelve
+  a pagar. **Medido**: retirar y reasignar dejó el XP en 4500 y las filas en 4.
+- **Sin `grant` de escritura para nadie**: sólo escribe una función
+  `security definer`, la misma puerta que `achievements`.
+
+#### ASIGNAR PONE AL DÍA A QUIEN YA CUMPLÍA, y por eso deja de ser un `upsert`
+
+Sin esto, un salón donde varios ya terminaron el mundo saldría **entero en
+«Pendiente»** hasta que cada uno volviera a jugar — que es exactamente el síntoma
+que este paso vino a quitar. En los logros ese desfase no tiene testigo; aquí lo
+tiene, y es el profesor.
+
+Por eso `assignMission` pasa por `assign_mission_to_groups`, una RPC
+`security definer`: la puesta al día escribe en filas de **otros usuarios**.
+
+**LA GARANTÍA SE MUEVE DE LA POLÍTICA A LA FUNCIÓN, y hay que escribirla
+dentro.** `security definer` **no expande** las políticas de
+`mission_assignments`, así que el `with check` de la 0020 no protege nada ahí: la
+función comprueba a mano que todos los salones son de quien llama. Verificado con
+`42501` desde el segundo tutor y desde un niño.
+
+**Queda un desfase que no se cierra, y va escrito:** un niño que **entra al salón
+después** de que la misión se asignara, y que ya cumplía la condición, la verá
+cumplida en su siguiente partida y no antes.
 
 **Decisiones de diseño**
 
 - **La asignación cuelga del salón, no del tutor.** El niño se liga a un salón
   por su pertenencia, no a una persona, y su vista no expone quién es su tutor.
   `assigned_by` conserva el autor como dato de auditoría, no de acceso.
-- **`mission_key` es texto sin clave ajena, a sabiendas.** El catálogo son cinco
-  entradas en `teacher/classroomsData.ts` y no existe tabla a la que apuntar; una
-  clave ajena a `levels` sería mentira, porque las misiones no son ninguno de los
-  nueve niveles. Escrito en la propia migración. Mientras tanto, **el cliente
-  ignora las claves que no reconoce** en vez de romper la pantalla.
-- **No hay tabla de cumplimientos, y es deliberado.** El estado se calcula.
-  Diseñarla obligaría a decidir qué reporta el juego y con qué garantía, que es
-  la pregunta abierta de `ROADMAP.md` §3.2, previa al paso 20.
+- ~~**`mission_key` es texto sin clave ajena, a sabiendas.**~~ **Dejó de serlo con
+  la 0044**, que creó el catálogo al que apuntar. El descarte de claves
+  desconocidas en el cliente se mantiene, porque catálogo y asignaciones son dos
+  lecturas distintas y pueden llegar desfasadas.
+- ~~**No hay tabla de cumplimientos, y es deliberado.**~~ **La hay desde la
+  0044**, y lo que la desbloqueó fue cerrar qué cuenta como cumplir una misión.
+  Calcularlo al vuelo dejó de bastar en cuanto el premio se paga: pagar una sola
+  vez en la vida exige un registro durable.
 - **El premio ancla en la siembra: 300, 400 y 500 por dificultad.** Los nueve
   niveles sembrados dan de 100 a 260, así que la misión más floja supera al nivel
-  más generoso. Es el único XP medible que existe: no hay catálogo de logros
-  (§4.2). **El premio se muestra, no se otorga**: nada suma XP todavía.
+  más generoso. **El premio ya se otorga**, por el mismo camino que el de un
+  nivel o un logro, y una sola vez en la vida.
 - **El niño sólo ve lo asignado.** No hay catálogo en gris con candado: que la
   misión esté bloqueada hasta que el tutor la asigne es regla del modelo y se
   cumple sola, porque no hay superficie donde verla si no.
 - **El panel del niño no se pinta si no hay nada que enseñar.** Sin salón o sin
   misiones, devuelve `null` sin dejar hueco. Un fallo de lectura sí se dice:
-  callarlo afirmaría que no hay misiones.
+  callarlo afirmaría que no hay misiones. **Una misión cumplida sí se pinta**: es
+  lo que el niño ganó, no algo que estorbe.
+- **Sigue sin haber botón en la tarjeta, y ahora por otro motivo.** Antes era que
+  nada podía cumplirla; ahora, que una misión **no se empieza**: se cumple
+  jugando los niveles que ya existen, y un botón prometería una pantalla propia
+  que no tiene.
+- **El aviso de esquina comparte cola con el de los logros**, con el rótulo y el
+  icono cambiados. La misma partida puede conceder un logro y cumplir una misión,
+  y con dos colas las dos tarjetas se pintarían una encima de la otra.
 - **Y por eso mismo, la recarga en vivo del paso 18 no declara espera aquí.** Que
   el panel no se pinte mientras carga significa que un evento ajeno no lo haría
   parpadear: lo haría **desaparecer y volver**. El camino silencioso de
@@ -1618,7 +1701,32 @@ entero sale en «Pendiente», con el motivo escrito encima de la tabla.
   habría que mezclar alumnos de salones distintos en una misma tabla.
 - **Este cambio NO tocó `ClassroomsProvider`.** Va por su propio servicio y su
   propio hook, como `worlds.service.ts` + `useWorlds()`. La frontera de §4.3
-  sigue en pie.
+  sigue en pie, también con la 0044.
+
+#### Lo verificado, y lo que no
+
+Contra la base el 20-sep-2026, con las cuentas de `.env`:
+
+- El catálogo trae las cuatro filas, y una asignación con clave inventada se
+  rechaza con **23503** —comprobado con un control positivo, porque el primer
+  intento devolvió `42501` por un `assigned_by` falso y **eso no probaba la clave
+  ajena**—.
+- Asignadas las cuatro desde el panel del tutor, la cuenta con los nueve niveles
+  al 100 salió **«Cumplida» en las cuatro sin volver a jugar**, y los otros dos
+  exploradores del salón en «Pendiente». Su `total_xp` subió **exactamente
+  1600**, y `mission_completions` quedó en cuatro filas con el `group_id` del
+  salón.
+- Retirar una misión y reasignarla **no pagó dos veces** ni creó una quinta fila.
+- `42501` desde el segundo tutor, desde un niño, y al llamar a `award_missions`
+  desde fuera.
+- Una partida real por REST devuelve `completed_missions` y `missions_error`, con
+  el motivo **nulo**: el tercer bloque corre sin error.
+
+**NO está verificado que el aviso «¡Misión cumplida!» se dispare jugando**, sólo
+sus tests. La única cuenta a la que entra el botón «Sin login» ya tiene las
+cuatro cumplidas, y las dos cuentas del salón a las que les faltan no tienen sus
+credenciales en `.env`. Es el mismo hueco que el paso 22 dejó con su propio
+aviso.
 
 ### 2.9 `juego-3d` — El esqueleto, la cuadrícula, el personaje, los bloques, su ejecución y el resultado (J1 a J6.4)
 

@@ -5,8 +5,6 @@ import type {
   ClassroomStudent,
   LevelAttempt,
   LevelProgress,
-  Mission,
-  SkillKey,
   StudentProgressDetail,
   TeacherResource,
 } from '../../../types/classroom.types';
@@ -239,70 +237,6 @@ export const buildWorldProgress = (
  */
 export const isWorldFinished = (world: StudentWorldProgress): boolean =>
   world.totalLevels > 0 && world.completedLevels >= world.totalLevels;
-
-/*
- * Con qué rótulo se le enseña al tutor cada clave de `Mission.skill`. Fue la
- * tabla de los reportes de habilidades hasta que se retiraron el 18-sep-2026;
- * lo único que sobrevive es el nombre, porque el catálogo de misiones sigue
- * etiquetando con él. Las descripciones se fueron con las barras.
- */
-const SKILL_LABELS: Record<SkillKey, string> = {
-  sequences: 'Secuencias',
-  loops: 'Bucles',
-  conditionals: 'Condicionales',
-  debugging: 'Depuración',
-  decomposition: 'Descomposición',
-};
-
-export const getSkillLabel = (skill: SkillKey): string => SKILL_LABELS[skill] ?? skill;
-
-export const missionCatalog: Mission[] = [
-  {
-    id: 'm1',
-    title: 'La ruta del leopardo',
-    description: 'Ordena los pasos para cruzar la selva sin salirse del camino.',
-    skill: 'sequences',
-    difficultyLabel: 'Fácil',
-    estimatedMinutes: 10,
-    xpReward: 300,
-  },
-  {
-    id: 'm2',
-    title: 'Cosecha en bucle',
-    description: 'Recoge diez frutas repitiendo el menor número de instrucciones.',
-    skill: 'loops',
-    difficultyLabel: 'Fácil',
-    estimatedMinutes: 15,
-    xpReward: 300,
-  },
-  {
-    id: 'm3',
-    title: 'El puente que decide',
-    description: 'Cruza solo si el puente es seguro; si no, busca otra ruta.',
-    skill: 'conditionals',
-    difficultyLabel: 'Intermedio',
-    estimatedMinutes: 20,
-    xpReward: 400,
-  },
-  {
-    id: 'm4',
-    title: 'Caza del error',
-    description: 'El robot se sale de la ruta: encuentra la instrucción equivocada.',
-    skill: 'debugging',
-    difficultyLabel: 'Intermedio',
-    estimatedMinutes: 20,
-    xpReward: 400,
-  },
-  {
-    id: 'm5',
-    title: 'Plan maestro',
-    description: 'Divide una misión larga en tres misiones pequeñas y resuélvelas.',
-    skill: 'decomposition',
-    difficultyLabel: 'Difícil',
-    estimatedMinutes: 30,
-    xpReward: 500,
-  },
-];
 
 export const teacherResources: TeacherResource[] = [
   {

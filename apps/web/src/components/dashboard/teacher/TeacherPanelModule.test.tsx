@@ -3,14 +3,19 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CatalogWorld } from '../../../services/studentProgress.service';
-import type { MissionAssignment } from '../../../services/missions.service';
-import type { ClassGroup, ClassroomStudent } from '../../../types/classroom.types';
+import type {
+  MissionAssignment,
+  MissionCompletion,
+} from '../../../services/missions.service';
+import type { ClassGroup, ClassroomStudent, Mission } from '../../../types/classroom.types';
 import { ClassroomsContext } from '../../../context/ClassroomsContext';
 import { buildClassroomsValue } from '../../../test/buildClassroomsValue';
 import { TeacherPanelModule } from './TeacherPanelModule';
 
 const mocks = vi.hoisted(() => ({
+  listCatalog: vi.fn(),
   listAssignments: vi.fn(),
+  listCompletions: vi.fn(),
   getCatalog: vi.fn(),
   getDetail: vi.fn(),
   /* Guarda al oyente para poder disparar un cambio como haría la base. */
@@ -44,7 +49,9 @@ vi.mock('../../../services/studentProgress.service', () => ({
 
 vi.mock('../../../services/missions.service', () => ({
   missionsService: {
+    listCatalog: mocks.listCatalog,
     listAssignments: mocks.listAssignments,
+    listCompletions: mocks.listCompletions,
     assignMission: vi.fn(),
     unassignMission: vi.fn(),
     subscribeToAssignments: mocks.subscribeToAssignments,
@@ -151,9 +158,39 @@ const buildAssignment = (groupId: string, missionKey: string): MissionAssignment
 
 const TWO_GROUPS = [buildGroup('g1', 'Salón A'), buildGroup('g2', 'Salón B')];
 
-/** El botón de la tarjeta de «La ruta del leopardo», que es la primera. */
+/* El catálogo vive en la base desde que las misiones se pueden cumplir. */
+const CATALOGO: Mission[] = [
+  {
+    key: 'clear_world_1',
+    title: 'Recorre el Sendero',
+    description: 'Supera los tres niveles del Sendero de los Patrones.',
+    difficultyLabel: 'Fácil',
+    xpReward: 300,
+  },
+  {
+    key: 'clear_world_2',
+    title: 'Cruza la Cordillera',
+    description: 'Supera los tres niveles de la Cordillera de la Abstracción.',
+    difficultyLabel: 'Intermedio',
+    xpReward: 400,
+  },
+];
+
+const buildCompletion = (
+  missionKey: string,
+  userId: string,
+  groupId = 'g1'
+): MissionCompletion => ({
+  userId,
+  missionKey,
+  groupId,
+  awardedXp: 300,
+  completedAt: '2026-09-20T10:00:00.000Z',
+});
+
+/** El botón de la tarjeta de «Recorre el Sendero», que es la primera. */
 const missionButton = (): HTMLButtonElement => {
-  const heading = screen.getByText('La ruta del leopardo');
+  const heading = screen.getByText('Recorre el Sendero');
   const card = heading.closest('article');
 
   if (!card) {
@@ -205,6 +242,8 @@ describe('TeacherPanelModule', () => {
     vi.clearAllMocks();
     /* Por defecto, sin misiones asignadas: quien necesite otra cosa lo redefine. */
     mocks.listAssignments.mockResolvedValue({ data: [], error: null });
+    mocks.listCatalog.mockResolvedValue({ data: CATALOGO, error: null });
+    mocks.listCompletions.mockResolvedValue({ data: [], error: null });
     mocks.getCatalog.mockResolvedValue({ data: CATALOG, error: null });
     mocks.getDetail.mockResolvedValue({ data: { levels: [], attemptsByLevel: {} }, error: null });
   });
@@ -242,7 +281,7 @@ describe('TeacherPanelModule', () => {
   describe('asignación de misiones según el alcance', () => {
     it('marca «Asignada» sólo si la tienen todos los salones del alcance', async () => {
       mocks.listAssignments.mockResolvedValue({
-        data: [buildAssignment('g1', 'm1'), buildAssignment('g2', 'm1')],
+        data: [buildAssignment('g1', 'clear_world_1'), buildAssignment('g2', 'clear_world_1')],
         error: null,
       });
 
@@ -255,7 +294,7 @@ describe('TeacherPanelModule', () => {
 
     it('con la misión en unos salones y no en otros dice en cuántos está', async () => {
       mocks.listAssignments.mockResolvedValue({
-        data: [buildAssignment('g1', 'm1')],
+        data: [buildAssignment('g1', 'clear_world_1')],
         error: null,
       });
 
@@ -267,7 +306,7 @@ describe('TeacherPanelModule', () => {
 
     it('un salón elegido no hereda lo asignado en el otro', async () => {
       mocks.listAssignments.mockResolvedValue({
-        data: [buildAssignment('g1', 'm1')],
+        data: [buildAssignment('g1', 'clear_world_1')],
         error: null,
       });
 
@@ -294,18 +333,18 @@ describe('TeacherPanelModule', () => {
   describe('apartado de quién ha cumplido', () => {
     it('no aparece con «Todos» elegido, porque mezclaría salones', async () => {
       mocks.listAssignments.mockResolvedValue({
-        data: [buildAssignment('g1', 'm1'), buildAssignment('g2', 'm1')],
+        data: [buildAssignment('g1', 'clear_world_1'), buildAssignment('g2', 'clear_world_1')],
         error: null,
       });
 
       renderPanel(TWO_GROUPS, null);
 
-      await screen.findByText('La ruta del leopardo');
+      await screen.findByText('Recorre el Sendero');
 
       expect(screen.queryByText('Quién ha cumplido')).not.toBeInTheDocument();
     });
 
-    it('con un salón elegido saca a cada explorador en pendiente y explica el motivo', async () => {
+    it('con un salón elegido enseña quién la cumplió y quién no', async () => {
       const groupWithStudents: ClassGroup = {
         ...buildGroup('g1', 'Salón A'),
         memberCount: 1,
@@ -329,7 +368,7 @@ describe('TeacherPanelModule', () => {
       };
 
       mocks.listAssignments.mockResolvedValue({
-        data: [buildAssignment('g1', 'm1')],
+        data: [buildAssignment('g1', 'clear_world_1')],
         error: null,
       });
 
@@ -338,12 +377,48 @@ describe('TeacherPanelModule', () => {
       expect(await screen.findByText('Quién ha cumplido')).toBeInTheDocument();
       expect(screen.getByText('Nina Prueba')).toBeInTheDocument();
       expect(screen.getByText('Pendiente')).toBeInTheDocument();
-      expect(screen.getByText(/hasta que el juego reporte el progreso/i)).toBeInTheDocument();
+
+      /*
+       * El aviso de que nadie podía cumplirlas se retiró con este paso: ya se
+       * pueden, así que explicarlo sería mentir.
+       */
+      expect(screen.queryByText(/hasta que el juego reporte el progreso/i)).not.toBeInTheDocument();
+    });
+
+    /*
+     * La asignación es del salón y el cumplimiento de cada alumno: la tabla
+     * tiene que poder decir cosas distintas de dos alumnos de la misma columna.
+     */
+    it('marca «Cumplida» sólo a quien la cumplió, no a todo el salón', async () => {
+      const groupWithTwo: ClassGroup = {
+        ...buildGroup('g1', 'Salón A'),
+        memberCount: 2,
+        students: [
+          buildStudent({ id: 'kid-1', name: 'Nina Prueba' }),
+          buildStudent({ id: 'kid-2', name: 'Beto Prueba' }),
+        ],
+      };
+
+      mocks.listAssignments.mockResolvedValue({
+        data: [buildAssignment('g1', 'clear_world_1')],
+        error: null,
+      });
+      mocks.listCompletions.mockResolvedValue({
+        data: [buildCompletion('clear_world_1', 'kid-1')],
+        error: null,
+      });
+
+      renderPanel([groupWithTwo], 'g1');
+
+      await screen.findByText('Quién ha cumplido');
+
+      expect(screen.getByText('Cumplida')).toBeInTheDocument();
+      expect(screen.getByText('Pendiente')).toBeInTheDocument();
     });
 
     it('un salón sin exploradores lo dice en vez de enseñar una tabla vacía', async () => {
       mocks.listAssignments.mockResolvedValue({
-        data: [buildAssignment('g1', 'm1')],
+        data: [buildAssignment('g1', 'clear_world_1')],
         error: null,
       });
 
@@ -423,7 +498,7 @@ describe('TeacherPanelModule', () => {
     it('una dirección con alguien que no está en el alcance no abre ficha', async () => {
       renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'de-otro-salón');
 
-      await screen.findByText('La ruta del leopardo');
+      await screen.findByText('Recorre el Sendero');
 
       expect(screen.queryByText('Cordillera de la Abstracción')).not.toBeInTheDocument();
       expect(mocks.getDetail).not.toHaveBeenCalled();

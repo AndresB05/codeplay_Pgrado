@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import type { AchievementUnlock } from '../../../types/progress.types';
+import { useEffect, useMemo, useState } from 'react';
+import type { AchievementUnlock, MissionCompletionUnlock } from '../../../types/progress.types';
 
 /*
  * EL AVISO DE LOGRO DESBLOQUEADO, pedido por el usuario «como en los juegos de
@@ -13,11 +13,34 @@ import type { AchievementUnlock } from '../../../types/progress.types';
  * VAN DE UNO EN UNO porque llegan en manojo: terminar el noveno nivel al 100
  * concede el del nivel, el del mundo y el de todo en la misma partida, y tres
  * tarjetas a la vez no se leen.
+ *
+ * LA MISMA COLA SIRVE PARA LAS MISIONES, y por eso no hay un componente aparte:
+ * la misma partida puede conceder un logro y cumplir una misión, y con dos colas
+ * las dos tarjetas se pintarían una encima de la otra. Lo que cambia es el
+ * rótulo y el icono, porque una misión la puso su profesor y llamarla logro
+ * confundiría las dos cosas.
  */
 const VISIBLE_MS = 4200;
 
 /** Cuánto dura la salida. Tiene que cuadrar con la duración de la transición. */
 const LEAVING_MS = 320;
+
+/** Una entrada de la cola: un logro o una misión, con qué rótulo anunciarla. */
+type ToastEntry = {
+  kind: 'achievement' | 'mission';
+  key: string;
+  title: string;
+  description: string;
+  awardedXp: number;
+};
+
+const TargetBadge = () => (
+  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" stroke="#2A1B45" strokeWidth="2.2" />
+    <circle cx="12" cy="12" r="5" stroke="#2A1B45" strokeWidth="2.2" />
+    <circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="#2A1B45" strokeWidth="1.4" />
+  </svg>
+);
 
 const TrophyBadge = () => (
   <svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -45,9 +68,28 @@ const TrophyBadge = () => (
  * lista vacía no pinta nada, que es el caso normal: la mayoría de las partidas
  * no conceden ningún logro.
  */
-export const AchievementToast = ({ unlocked }: { unlocked: AchievementUnlock[] }) => {
-  const [queue, setQueue] = useState<AchievementUnlock[]>([]);
+export const AchievementToast = ({
+  unlocked,
+  completedMissions,
+}: {
+  unlocked: AchievementUnlock[];
+  completedMissions: MissionCompletionUnlock[];
+}) => {
+  const [queue, setQueue] = useState<ToastEntry[]>([]);
   const [leaving, setLeaving] = useState(false);
+
+  /*
+   * Los logros van delante de las misiones: el logro sale de lo que el niño
+   * acaba de hacer en la partida, y la misión de lo que su profesor le puso
+   * hace días. Lo primero explica lo segundo.
+   */
+  const entries = useMemo<ToastEntry[]>(
+    () => [
+      ...unlocked.map((achievement) => ({ kind: 'achievement' as const, ...achievement })),
+      ...completedMissions.map((mission) => ({ kind: 'mission' as const, ...mission })),
+    ],
+    [unlocked, completedMissions]
+  );
 
   /*
    * La cola se REEMPLAZA con lo que traiga cada partida en vez de acumularse:
@@ -55,9 +97,9 @@ export const AchievementToast = ({ unlocked }: { unlocked: AchievementUnlock[] }
    * el aviso al volver a jugar.
    */
   useEffect(() => {
-    setQueue(unlocked);
+    setQueue(entries);
     setLeaving(false);
-  }, [unlocked]);
+  }, [entries]);
 
   const current = queue[0] ?? null;
 
@@ -93,12 +135,12 @@ export const AchievementToast = ({ unlocked }: { unlocked: AchievementUnlock[] }
     >
       <article className="card flex items-start gap-3 border-[3px] border-ink bg-sun-soft p-4 shadow-[0_6px_0_rgba(42,27,69,0.25)]">
         <span className="shrink-0 text-sun-dark">
-          <TrophyBadge />
+          {current.kind === 'mission' ? <TargetBadge /> : <TrophyBadge />}
         </span>
 
         <div className="min-w-0">
           <p className="text-[12px] font-bold uppercase tracking-[0.06em] text-sun-dark">
-            ¡Logro desbloqueado!
+            {current.kind === 'mission' ? '¡Misión cumplida!' : '¡Logro desbloqueado!'}
           </p>
 
           <h3 className="font-display text-[18px] leading-tight text-ink">{current.title}</h3>

@@ -9,7 +9,11 @@ import { openLevel, type PlayableLevel } from '../../../game/levelConfig';
 import type { Program } from '../../../game/program';
 import { scoreForSteps } from '../../../game/score';
 import { worldsService } from '../../../services/worlds.service';
-import type { AchievementUnlock, AttemptOutcome } from '../../../types/progress.types';
+import type {
+  AchievementUnlock,
+  AttemptOutcome,
+  MissionCompletionUnlock,
+} from '../../../types/progress.types';
 import { HaltedLock } from './HaltedLock';
 import { AchievementToast } from './AchievementToast';
 import { LevelCompleteDialog } from './LevelCompleteDialog';
@@ -23,6 +27,8 @@ import { submitAttempt } from './submitAttempt';
  * identidad —se reiniciaría sola y el aviso no se iría nunca—.
  */
 const EMPTY_UNLOCKED: AchievementUnlock[] = [];
+/* La gemela de arriba, y por el mismo motivo: la identidad tiene que ser estable. */
+const EMPTY_MISSIONS: MissionCompletionUnlock[] = [];
 
 const BlocksIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -509,7 +515,10 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
        * éxito— y ahí el diálogo no se monta. Colgarlo de él habría dejado esos
        * avisos sin enseñar sin que nada lo delate.
        */}
-      <AchievementToast unlocked={outcome?.unlockedAchievements ?? EMPTY_UNLOCKED} />
+      <AchievementToast
+        unlocked={outcome?.unlockedAchievements ?? EMPTY_UNLOCKED}
+        completedMissions={outcome?.completedMissions ?? EMPTY_MISSIONS}
+      />
     </div>
   );
 };

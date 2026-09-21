@@ -1,14 +1,17 @@
 import { AppError } from '../errors/AppError';
 import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
+import type { DifficultyLabel, Mission } from '../types/classroom.types';
 import type { Database } from '../types/database.types';
 
 type MissionAssignmentRow = Database['public']['Tables']['mission_assignments']['Row'];
+type MissionCatalogRow = Database['public']['Tables']['mission_catalog']['Row'];
+type MissionCompletionRow = Database['public']['Tables']['mission_completions']['Row'];
 
 /**
- * Una misión asignada a un salón. `missionKey` es texto sin clave ajena: el
- * catálogo vive en el cliente y no hay tabla a la que apuntar, así que una clave
- * puede no corresponder a ninguna misión conocida y quien pinta la descarta.
+ * Una misión asignada a un salón. Desde que el catálogo está en la base,
+ * `missionKey` **tiene clave ajena** contra `mission_catalog`, así que una
+ * asignación siempre apunta a una misión que existe.
  */
 export interface MissionAssignment {
   id: MissionAssignmentRow['id'];
@@ -17,9 +20,24 @@ export interface MissionAssignment {
   assignedAt: MissionAssignmentRow['assigned_at'];
 }
 
+/**
+ * Una misión que un explorador ya cumplió. Lleva **el salón donde ocurrió**, que
+ * se guarda y no se deriva: un niño que cambie de salón haría desaparecer lo
+ * cumplido de los informes de su antiguo tutor.
+ */
+export interface MissionCompletion {
+  userId: MissionCompletionRow['user_id'];
+  missionKey: MissionCompletionRow['mission_key'];
+  groupId: MissionCompletionRow['group_id'];
+  awardedXp: MissionCompletionRow['awarded_xp'];
+  completedAt: MissionCompletionRow['completed_at'];
+}
+
 export interface MissionsService {
+  listCatalog: () => ServiceResult<Mission[]>;
   listAssignments: () => ServiceResult<MissionAssignment[]>;
-  assignMission: (missionKey: string, groupIds: string[], tutorId: string) => ServiceResult<null>;
+  listCompletions: () => ServiceResult<MissionCompletion[]>;
+  assignMission: (missionKey: string, groupIds: string[]) => ServiceResult<null>;
   unassignMission: (missionKey: string, groupIds: string[]) => ServiceResult<null>;
   subscribeToAssignments: (onChange: () => void) => () => void;
 }
@@ -65,7 +83,60 @@ const mapAssignmentRow = (assignment: MissionAssignmentRow): MissionAssignment =
   };
 };
 
+/*
+ * `difficulty_label` es `text` con un `check` en la base, así que llega como
+ * `string`. Se estrecha aquí en vez de confiar: un valor que el `check` no
+ * permitiría no puede existir, pero el tipo generado no lo sabe.
+ */
+const mapCatalogRow = (mission: MissionCatalogRow): Mission => {
+  return {
+    key: mission.mission_key,
+    title: mission.title,
+    description: mission.description,
+    difficultyLabel: mission.difficulty_label as DifficultyLabel,
+    xpReward: mission.awarded_xp,
+  };
+};
+
+const mapCompletionRow = (completion: MissionCompletionRow): MissionCompletion => {
+  return {
+    userId: completion.user_id,
+    missionKey: completion.mission_key,
+    groupId: completion.group_id,
+    awardedXp: completion.awarded_xp,
+    completedAt: completion.completed_at,
+  };
+};
+
 export const missionsService: MissionsService = {
+  /**
+   * El catálogo entero, que es contenido y no dato de nadie: lo leen igual el
+   * tutor —para elegir qué asignar— y el niño —para la tarjeta de lo asignado—.
+   *
+   * Vive en la base desde que las misiones se pueden cumplir. Con una lista en
+   * SQL para conceder y otra en TypeScript para pintar, las dos se separan en
+   * cuanto alguien toque una.
+   */
+  async listCatalog(): ServiceResult<Mission[]> {
+    const { data, error } = await supabase
+      .from('mission_catalog')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      return {
+        data: null,
+        error: missionError(
+          error,
+          'No se pudo cargar el catálogo de misiones.',
+          'missions_catalog_error'
+        ),
+      };
+    }
+
+    return { data: data.map(mapCatalogRow), error: null };
+  },
+
   /**
    * Una sola lectura sirve a los dos roles: la RLS devuelve las del salón del
    * niño o las de los salones del tutor según quién pregunte, así que no hace
@@ -93,28 +164,53 @@ export const missionsService: MissionsService = {
   },
 
   /**
-   * `ignoreDuplicates` y no un `insert` a secas: con «Todos» elegido, un tutor
-   * que ya tenía la misión en uno de sus salones vería morir la operación entera
-   * con `23505` por una fila que ya estaba bien. En PostgREST esto es un
-   * `on conflict do nothing`, así que no exige el permiso de `update`.
+   * Lo cumplido que quien consulta puede ver: lo suyo si es niño, lo de sus
+   * alumnos si es tutor. Quién ve qué lo decide la RLS, como en
+   * `listAssignments()`.
    */
-  async assignMission(
-    missionKey: string,
-    groupIds: string[],
-    tutorId: string
-  ): ServiceResult<null> {
+  async listCompletions(): ServiceResult<MissionCompletion[]> {
+    const { data, error } = await supabase
+      .from('mission_completions')
+      .select('*')
+      .order('completed_at', { ascending: true });
+
+    if (error) {
+      return {
+        data: null,
+        error: missionError(
+          error,
+          'No se pudo cargar quién ha cumplido las misiones.',
+          'missions_completions_error'
+        ),
+      };
+    }
+
+    return { data: data.map(mapCompletionRow), error: null };
+  },
+
+  /**
+   * PASA POR UNA RPC Y NO POR UN `upsert`, desde que las misiones se cumplen: al
+   * asignar hay que dar por cumplida la misión a quien ya satisfaga su
+   * condición, y eso escribe en filas de **otros usuarios** —sus cumplimientos y
+   * su XP—, que el rol del tutor no puede tocar por ninguna vía directa.
+   *
+   * Sin esa puesta al día, un salón donde varios ya terminaron el mundo saldría
+   * entero en «Pendiente» hasta que cada uno volviera a jugar, que es el síntoma
+   * que este paso vino a quitar.
+   *
+   * El tutor ya no se pasa: la función lee `auth.uid()` por dentro, que es lo
+   * que hace imposible asignar en nombre de otro. Dentro sigue habiendo un
+   * `on conflict do nothing`, así que mandar salones que ya la tienen no falla.
+   */
+  async assignMission(missionKey: string, groupIds: string[]): ServiceResult<null> {
     if (groupIds.length === 0) {
       return { data: null, error: null };
     }
 
-    const { error } = await supabase.from('mission_assignments').upsert(
-      groupIds.map((groupId) => ({
-        group_id: groupId,
-        mission_key: missionKey,
-        assigned_by: tutorId,
-      })),
-      { onConflict: 'group_id,mission_key', ignoreDuplicates: true }
-    );
+    const { error } = await supabase.rpc('assign_mission_to_groups', {
+      input_group_ids: groupIds,
+      input_mission_key: missionKey,
+    });
 
     if (error) {
       return {
@@ -123,6 +219,13 @@ export const missionsService: MissionsService = {
       };
     }
 
+    /*
+     * La respuesta trae `assigned`, `caught_up` y `missions_error`. No se
+     * devuelve: la asignación salió bien aunque la puesta al día fallara, y
+     * decirle al tutor que falló algo cuando su misión está asignada sería
+     * mentirle. El motivo queda en la respuesta para quien depure por REST, que
+     * es lo mismo que hace `achievements_error` al guardar una partida.
+     */
     return { data: null, error: null };
   },
 

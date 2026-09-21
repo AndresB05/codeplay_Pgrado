@@ -22,9 +22,7 @@ import {
   buildWorldProgress,
   formatLastActivity,
   getClassroomProgressSummary,
-  getSkillLabel,
   isWorldFinished,
-  missionCatalog,
   teacherResources,
   type StudentLevelProgress,
   type StudentWorldProgress,
@@ -99,9 +97,7 @@ const MissionCard = ({
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="chip chip-mint">{getSkillLabel(mission.skill)}</span>
         <span className="chip chip-sun">+{mission.xpReward} XP</span>
-        <span className="chip chip-sky">{mission.estimatedMinutes} min</span>
       </div>
 
       {assignedPartially ? (
@@ -409,7 +405,14 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
     });
   }, []);
 
-  const { assignments, error: missionsError, assign, unassign } = useMissionAssignments();
+  const {
+    catalog: missionCatalog,
+    assignments,
+    completions,
+    error: missionsError,
+    assign,
+    unassign,
+  } = useMissionAssignments();
 
   const scopedGroups = useMemo(
     () =>
@@ -507,12 +510,21 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
     );
 
     /*
-     * `missionKey` es texto sin clave ajena, así que se recorre el catálogo y no
-     * las filas: una clave que ya no exista en el catálogo se queda fuera en vez
-     * de pintar una columna sin título.
+     * Se recorre el catálogo y no las filas, para que el orden de las columnas
+     * sea el mismo en el que el tutor las asignó desde la lista de arriba.
      */
-    return missionCatalog.filter((mission) => assignedKeys.has(mission.id));
-  }, [assignments, selectedGroup]);
+    return missionCatalog.filter((mission) => assignedKeys.has(mission.key));
+  }, [assignments, missionCatalog, selectedGroup]);
+
+  /*
+   * Quién ha cumplido qué, en un solo conjunto de claves «alumno + misión». Es
+   * una tabla de alumnos por misiones y mirarla fila a fila con `find` la
+   * convertiría en un recorrido cuadrático sobre los cumplimientos.
+   */
+  const completedPairs = useMemo(
+    () => new Set(completions.map((completion) => `${completion.userId}:${completion.missionKey}`)),
+    [completions]
+  );
 
   const scopeLabel =
     selectedGroupId === ALL_GROUPS
@@ -683,13 +695,13 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
           {missionCatalog.map((mission) => (
             <MissionCard
-              key={mission.id}
+              key={mission.key}
               mission={mission}
-              assignedCount={countAssignedInScope(mission.id)}
+              assignedCount={countAssignedInScope(mission.key)}
               scopeSize={scopedGroupIds.length}
-              busy={busyMissionId === mission.id}
+              busy={busyMissionId === mission.key}
               onToggle={() => {
-                void toggleMission(mission.id);
+                void toggleMission(mission.key);
               }}
             />
           ))}
@@ -707,16 +719,6 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
             Misiones asignadas a {selectedGroup.name} y cómo va cada explorador.
           </p>
 
-          {/*
-           * El motivo va antes que la tabla y sin desplegar nada: una lista
-           * entera en «Pendiente» sin explicación se lee como un fallo de la
-           * aplicación, y no lo es.
-           */}
-          <p className="mt-4 rounded-[18px] border-2 border-sun-dark bg-sun-soft px-5 py-4 text-[15px] font-bold text-sun-dark">
-            Todos aparecen en «Pendiente» porque todavía no hay forma de cumplir una misión: nadie
-            puede completarlas hasta que el juego reporte el progreso.
-          </p>
-
           {selectedGroup.students.length === 0 ? (
             <p className="mt-4 rounded-[18px] border-2 border-line bg-cream px-5 py-4 text-[15px] font-bold text-ink-faint">
               Este salón todavía no tiene exploradores inscritos.
@@ -728,7 +730,7 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
                   <tr className="border-b-[3px] border-line">
                     <th className="px-5 py-4 font-display text-[15px] text-ink">Explorador</th>
                     {assignedMissions.map((mission) => (
-                      <th key={mission.id} className="px-5 py-4 font-display text-[15px] text-ink">
+                      <th key={mission.key} className="px-5 py-4 font-display text-[15px] text-ink">
                         {mission.title}
                       </th>
                     ))}
@@ -738,11 +740,17 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
                   {selectedGroup.students.map((student) => (
                     <tr key={student.id} className="border-b-2 border-line last:border-b-0">
                       <td className="px-5 py-4 text-[15px] font-bold text-ink">{student.name}</td>
-                      {assignedMissions.map((mission) => (
-                        <td key={mission.id} className="px-5 py-4">
-                          <span className="chip chip-sun">Pendiente</span>
-                        </td>
-                      ))}
+                      {assignedMissions.map((mission) => {
+                        const isCompleted = completedPairs.has(`${student.id}:${mission.key}`);
+
+                        return (
+                          <td key={mission.key} className="px-5 py-4">
+                            <span className={isCompleted ? 'chip chip-mint' : 'chip chip-sun'}>
+                              {isCompleted ? 'Cumplida' : 'Pendiente'}
+                            </span>
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>

@@ -810,9 +810,15 @@ Escrito a propósito, para que nadie lo dé por resuelto:
 - ~~**El catálogo de logros**~~ — **cerrado por el paso 22** (20-sep-2026). Son
   veinte y viven en `achievement_catalog`; el juego sigue sin nombrarlos. Ver
   `CONTEXT.md` §2.11.
-- **Cómo se relacionan las misiones que un profesor asigna con los niveles del
-  juego.** Hoy son dos catálogos distintos y nada los une. Mientras no se unan,
-  ninguna misión puede completarse. **No afecta al juego**, por §3.
+- ~~**Cómo se relacionan las misiones que un profesor asigna con los niveles del
+  juego**~~ — **cerrado el 20-sep-2026.** Una misión es un **reto sobre los
+  niveles publicados**: su condición es una pregunta sobre el historial del niño
+  y la comprueba el servidor dentro de la misma llamada que guarda la partida.
+  Los dos catálogos se unieron —`mission_catalog` en la base, con
+  `mission_assignments.mission_key` apuntando a él— y el cumplimiento vive en
+  `mission_completions`, con su salón, como este contrato pedía. **El juego sigue
+  sin nombrar ninguna misión**, igual que no nombra ningún logro: manda el
+  intento y el servidor decide qué ganó. Ver `CONTEXT.md` §2.8.
 
 ---
 
@@ -902,6 +908,11 @@ vida», y una misión es reasignable —`mission_assignments` ya declara
 normal—. Misma maquinaria de concesión, cardinalidad distinta. Y el cumplimiento
 debe guardar el salón, no derivarlo: un niño que cambie de salón haría
 desaparecer lo cumplido de los informes de su antiguo profesor.
+
+**Y así se hizo, punto por punto:** `mission_completions` existe desde la 0044,
+con `unique (user_id, mission_key)` —el «una sola vez en la vida» que el usuario
+decidió para el premio— y `group_id` **not null**. Este párrafo se escribió antes
+de que existiera nada de eso y acertó entero.
 
 **La condición de un logro no va en `validation_rules`.** Esa columna la lee
 cualquiera sin sesión —`grant select ... to anon` más la política de lectura de
