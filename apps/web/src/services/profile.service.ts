@@ -44,6 +44,7 @@ const mapProfileRowToUser = (profile: ProfileRow, email: string | null = null): 
     email,
     fullName: profile.full_name,
     id: profile.id,
+    isRoleDeclared: profile.is_role_declared,
     maxStreak: profile.max_streak,
     role: profile.role,
     /*

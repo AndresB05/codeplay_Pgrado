@@ -28,6 +28,7 @@ export const buildUser = (overrides: Partial<User> = {}): User => ({
   email: 'nina@codeplay.test',
   fullName: 'Nina Prueba',
   id: 'user-test',
+  isRoleDeclared: true,
   maxStreak: 0,
   role: 'child',
   streakDays: 0,

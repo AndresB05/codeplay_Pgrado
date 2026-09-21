@@ -13,6 +13,11 @@ export interface User {
   email: string | null;
   fullName: ProfileRow['full_name'];
   id: ProfileRow['id'];
+  /**
+   * Si alguien eligió el rol. Una cuenta nacida de Google desde la pantalla de
+   * acceso no lo eligió: el disparador la hace `child` por defecto.
+   */
+  isRoleDeclared: ProfileRow['is_role_declared'];
   maxStreak: ProfileRow['max_streak'];
   role: UserRole;
   streakDays: ProfileRow['current_streak'];

@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Canopy, MonsteraLeaf, Toucan } from '../../components/decor/JungleDecor';
 import { ROUTES } from '../../constants/routes';
 import { resolveLandingRoute } from '../../context/auth.helpers';
 import { takePendingSignupRole } from '../../context/oauthRole.helpers';
 import { useAuth } from '../../hooks/useAuth';
+import type { UserRole } from '../../types/user.types';
 
 /**
  * Motivo que el proveedor dejó en el fragmento de la URL cuando la vuelta falla.
@@ -64,7 +65,8 @@ export const AuthCallback = () => {
   const [providerError] = useState(readProviderError);
   const [roleFailed, setRoleFailed] = useState(false);
   const [roleLocked, setRoleLocked] = useState(false);
-
+  const [choosingRole, setChoosingRole] = useState(false);
+  const [applyingRole, setApplyingRole] = useState(false);
 
   /*
    * El efecto depende de `user`, que se reconstruye al fijar el rol, así que sin
@@ -72,6 +74,45 @@ export const AuthCallback = () => {
    * referencia y no en estado porque no tiene que provocar ningún render.
    */
   const resolvedRef = useRef(false);
+
+  const applyRole = useCallback(
+    async (role: UserRole): Promise<void> => {
+      const applied = await updateRole(role);
+
+      /*
+       * El servidor rechazó fijar el rol porque esta cuenta ya existía —ya
+       * había declarado su rol, o tiene lazos de salón—. Eso NO es un fallo:
+       * la sesión es buena y la persona está dentro; lo único que no ocurrió
+       * es un cambio que no debía ocurrir. Por eso lleva aviso neutro y no
+       * pantalla de error, y por eso no se cierra la sesión ni se va a
+       * `/login`.
+       */
+      if (applied.status === 'locked') {
+        setRoleLocked(true);
+        return;
+      }
+
+      if (applied.status === 'error') {
+        setRoleFailed(true);
+        return;
+      }
+
+      // El destino lo decide el perfil que devolvió el servidor, NO el rol que
+      // se pidió. Hoy coinciden porque la RPC escribe lo mismo que valida,
+      // pero navegar con lo pedido es el error que `useRoleHomeRedirect`
+      // existe para no cometer: si algún día dejaran de coincidir, se vería el
+      // desajuste en vez de un rebote de `PrivateRoute` sin explicación.
+      navigate(resolveLandingRoute(applied.user.role));
+    },
+    [navigate, updateRole]
+  );
+
+  const handleChooseRole = async (role: UserRole): Promise<void> => {
+    setApplyingRole(true);
+    await applyRole(role);
+    setApplyingRole(false);
+    setChoosingRole(false);
+  };
 
   useEffect(() => {
     if (providerError || loading) {
@@ -113,32 +154,18 @@ export const AuthCallback = () => {
        * camino sigue sin poder tocar el rol de nadie.
        */
       if (pendingRole) {
-        const applied = await updateRole(pendingRole);
+        await applyRole(pendingRole);
+        return;
+      }
 
-        /*
-         * El servidor rechazó fijar el rol porque esta cuenta ya existía —ya
-         * había declarado su rol, o tiene lazos de salón—. Eso NO es un fallo:
-         * la sesión es buena y la persona está dentro; lo único que no ocurrió
-         * es un cambio que no debía ocurrir. Por eso lleva aviso neutro y no
-         * pantalla de error, y por eso no se cierra la sesión ni se va a
-         * `/login`.
-         */
-        if (applied.status === 'locked') {
-          setRoleLocked(true);
-          return;
-        }
-
-        if (applied.status === 'error') {
-          setRoleFailed(true);
-          return;
-        }
-
-        // El destino lo decide el perfil que devolvió el servidor, NO el rol que
-        // se pidió. Hoy coinciden porque la RPC escribe lo mismo que valida,
-        // pero navegar con lo pedido es el error que `useRoleHomeRedirect`
-        // existe para no cometer: si algún día dejaran de coincidir, se vería el
-        // desajuste en vez de un rebote de `PrivateRoute` sin explicación.
-        navigate(resolveLandingRoute(applied.user.role));
+      /*
+       * Google desde la pantalla de acceso, sin cuenta previa: el disparador la
+       * creó `child` sin que nadie lo eligiera. Mandarlo al panel de niño dejaba
+       * a un profesor sin poder crear salones y sin saber por qué, así que se le
+       * pregunta aquí. La RPC sólo deja fijarlo esta vez.
+       */
+      if (!user.isRoleDeclared) {
+        setChoosingRole(true);
         return;
       }
 
@@ -146,10 +173,9 @@ export const AuthCallback = () => {
     };
 
     void resolveRole();
-  }, [loading, navigate, providerError, session, updateRole, user]);
+  }, [applyRole, loading, navigate, providerError, session, user]);
 
-  const failureMessage = providerError ?? (roleFailed ? error?.message ?? null : null);
-
+  const failureMessage = providerError ?? (roleFailed ? (error?.message ?? null) : null);
 
   return (
     <div className="jungle-surface relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-4">
@@ -163,7 +189,35 @@ export const AuthCallback = () => {
       <Toucan size={96} className="pointer-events-none absolute bottom-8 right-8" />
 
       <section className="card relative z-10 w-full max-w-[520px] px-8 py-10 text-center">
-        {roleLocked ? (
+        {choosingRole && !roleLocked && !roleFailed ? (
+          <>
+            <span className="chip chip-leaf">Un último paso</span>
+            <h1 className="title-xl mt-3">¿Quién eres?</h1>
+            <p className="subtitle mt-1">
+              Es tu primera vez con esta cuenta. Elige tu tipo de cuenta; después no se puede
+              cambiar.
+            </p>
+
+            <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => void handleChooseRole('child')}
+                disabled={applyingRole}
+                className="btn btn-grape disabled:opacity-60"
+              >
+                Soy niño
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleChooseRole('tutor')}
+                disabled={applyingRole}
+                className="btn btn-leaf disabled:opacity-60"
+              >
+                Soy profesor
+              </button>
+            </div>
+          </>
+        ) : roleLocked ? (
           <>
             <span className="chip chip-leaf">Ya nos conocíamos</span>
             <h1 className="title-xl mt-3">Ya tenías una cuenta</h1>
@@ -177,9 +231,9 @@ export const AuthCallback = () => {
              * único cierto en los dos casos.
              */}
             <p className="subtitle mt-1">
-              Enlazamos tu acceso con Google a la cuenta que ya existía con este correo. Entras
-              como <strong>{user?.role === 'tutor' ? 'Tutor' : 'Niño'}</strong>, y tu tipo de
-              cuenta no cambia.
+              Enlazamos tu acceso con Google a la cuenta que ya existía con este correo. Entras como{' '}
+              <strong>{user?.role === 'tutor' ? 'Tutor' : 'Niño'}</strong>, y tu tipo de cuenta no
+              cambia.
             </p>
 
             <button
