@@ -68,7 +68,7 @@ const buildStudent = (overrides: Partial<ClassroomStudent> = {}): ClassroomStude
   name: 'Axoluk',
   initials: 'AX',
   avatarTone: 'bg-grape',
-  currentWorld: 'Selva Algorítmica',
+  currentWorld: 'Sendero de los Patrones',
   hoursSinceLastActivity: 1,
   streakDays: null,
   xp: 0,
@@ -84,7 +84,7 @@ const buildStudent = (overrides: Partial<ClassroomStudent> = {}): ClassroomStude
 const CATALOG: CatalogWorld[] = [
   {
     worldId: 'w1',
-    title: 'Selva Algorítmica',
+    title: 'Sendero de los Patrones',
     levels: [
       { levelId: 'w1-l1', title: 'Siempre adelante' },
       { levelId: 'w1-l2', title: 'Camino con curvas' },
@@ -93,7 +93,7 @@ const CATALOG: CatalogWorld[] = [
   },
   {
     worldId: 'w2',
-    title: 'Cordillera Binaria',
+    title: 'Cordillera de la Abstracción',
     levels: [
       { levelId: 'w2-l1', title: 'Salta y sube' },
       { levelId: 'w2-l2', title: 'El gran rodeo' },
@@ -102,7 +102,7 @@ const CATALOG: CatalogWorld[] = [
   },
   {
     worldId: 'w3',
-    title: 'Costa de Bugs',
+    title: 'Encrucijada de las Decisiones',
     levels: [
       { levelId: 'w3-l1', title: 'Dos caminos' },
       { levelId: 'w3-l2', title: 'El faro' },
@@ -118,7 +118,7 @@ const AXOLUK_DETAIL = {
       levelId: 'w1-l1',
       levelTitle: 'Siempre adelante',
       worldId: 'w1',
-      worldTitle: 'Selva Algorítmica',
+      worldTitle: 'Sendero de los Patrones',
       worldSortOrder: 1,
       levelSortOrder: 1,
       completed: true,
@@ -130,7 +130,7 @@ const AXOLUK_DETAIL = {
       levelId: 'w3-l1',
       levelTitle: 'Dos caminos',
       worldId: 'w3',
-      worldTitle: 'Costa de Bugs',
+      worldTitle: 'Encrucijada de las Decisiones',
       worldSortOrder: 3,
       levelSortOrder: 1,
       completed: true,
@@ -373,9 +373,9 @@ describe('TeacherPanelModule', () => {
     it('nombra los tres mundos, también el que el explorador no ha tocado', async () => {
       renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-1');
 
-      expect(await screen.findByText('Cordillera Binaria')).toBeInTheDocument();
-      expect(screen.getByText('Selva Algorítmica')).toBeInTheDocument();
-      expect(screen.getByText('Costa de Bugs')).toBeInTheDocument();
+      expect(await screen.findByText('Cordillera de la Abstracción')).toBeInTheDocument();
+      expect(screen.getByText('Sendero de los Patrones')).toBeInTheDocument();
+      expect(screen.getByText('Encrucijada de las Decisiones')).toBeInTheDocument();
     });
 
     it('nombra los niveles que nunca empezó, y los dice sin empezar', async () => {
@@ -397,7 +397,7 @@ describe('TeacherPanelModule', () => {
     it('da el recuento de cada mundo en su cabecera', async () => {
       renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-1');
 
-      await screen.findByText('Cordillera Binaria');
+      await screen.findByText('Cordillera de la Abstracción');
 
       expect(screen.getAllByText('1 de 3')).toHaveLength(2);
       expect(screen.getByText('0 de 3')).toBeInTheDocument();
@@ -425,7 +425,7 @@ describe('TeacherPanelModule', () => {
 
       await screen.findByText('La ruta del leopardo');
 
-      expect(screen.queryByText('Cordillera Binaria')).not.toBeInTheDocument();
+      expect(screen.queryByText('Cordillera de la Abstracción')).not.toBeInTheDocument();
       expect(mocks.getDetail).not.toHaveBeenCalled();
     });
   });

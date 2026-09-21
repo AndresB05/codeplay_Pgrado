@@ -30,7 +30,7 @@ const PROGRESS_ROW = {
   world_id: 'w1',
   level_title: 'Nivel 1 - Siempre adelante',
   level_sort_order: 1,
-  world_title: 'Selva Algorítmica',
+  world_title: 'Sendero de los Patrones',
   world_sort_order: 1,
   completion_status: 'completed',
   best_score: 100,
@@ -142,8 +142,8 @@ describe('studentProgressService.getCatalog', () => {
   it('devuelve los mundos publicados con sus niveles, en el orden en que llegan', async () => {
     stubCatalog(
       [
-        { id: 'w1', title: 'Selva Algorítmica' },
-        { id: 'w2', title: 'Cordillera Binaria' },
+        { id: 'w1', title: 'Sendero de los Patrones' },
+        { id: 'w2', title: 'Cordillera de la Abstracción' },
       ],
       [
         { id: 'w1-l1', world_id: 'w1', title: 'Siempre adelante' },
@@ -157,13 +157,13 @@ describe('studentProgressService.getCatalog', () => {
     expect(data).toEqual([
       {
         worldId: 'w1',
-        title: 'Selva Algorítmica',
+        title: 'Sendero de los Patrones',
         levels: [
           { levelId: 'w1-l1', title: 'Siempre adelante' },
           { levelId: 'w1-l2', title: 'Camino con curvas' },
         ],
       },
-      { worldId: 'w2', title: 'Cordillera Binaria', levels: [{ levelId: 'w2-l1', title: 'Salta y sube' }] },
+      { worldId: 'w2', title: 'Cordillera de la Abstracción', levels: [{ levelId: 'w2-l1', title: 'Salta y sube' }] },
     ]);
   });
 
@@ -174,7 +174,7 @@ describe('studentProgressService.getCatalog', () => {
   it('deja fuera un mundo publicado que todavía no tiene niveles', async () => {
     stubCatalog(
       [
-        { id: 'w1', title: 'Selva Algorítmica' },
+        { id: 'w1', title: 'Sendero de los Patrones' },
         { id: 'w9', title: 'Mundo en preparación' },
       ],
       [{ id: 'w1-l1', world_id: 'w1', title: 'Siempre adelante' }]
@@ -189,7 +189,7 @@ describe('studentProgressService.getCatalog', () => {
   it('devuelve el error si falla cualquiera de las dos lecturas', async () => {
     mocks.from.mockImplementation((table: string) =>
       table === 'worlds'
-        ? respondWith({ data: [{ id: 'w1', title: 'Selva Algorítmica' }], error: null })
+        ? respondWith({ data: [{ id: 'w1', title: 'Sendero de los Patrones' }], error: null })
         : respondWith({ data: null, error: { code: '42501', message: 'permission denied' } })
     );
 

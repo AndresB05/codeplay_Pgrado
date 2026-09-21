@@ -137,6 +137,7 @@ escrito en §2.1.
 | 20 | ~~Pantalla de nivel con contenedor, y el puente hacia el juego~~ — **HECHO en el J7.1**, por decisión del usuario de montarla donde va en vez de ensayarla otra vez: la ruta `/dashboard/worlds/:worldId/:levelId`, la pantalla con el juego dentro, la selección de niveles **leyendo de la base** —fuera los diez títulos inventados y el `find ?? studentWorlds[0]` que metía cualquier uuid real en el primer mundo de maqueta— y `mapLevelRow` trayendo ya `narrative`, `starter_code` y `validation_rules`. **Le queda mandar el intento**, que es el paso 21. Ver `ROADMAP-JUEGO.md` §3 | ✅ | P4 |
 | 21 | Escritura de progreso y XP desde el juego — **HECHO el 17-sep-2026, en tres pasos del roadmap del juego**: el **J9** guarda cada partida terminada con su programa, con éxito o sin él; el **J10** estrena la puntuación —la calcula el servidor contando el programa, migración `202606030033`— y cambia la concesión a la marca de agua; y el **J11** pone la barra por tramos de 300 con el **Nivel Explorador** y refresca el XP sin recargar. Los tres verificados jugando contra la base real: ver `CONTEXT.md` §2.7. **Deja fuera la racha**, que es del 22 | ✅ | `mandar-el-intento` + `migracion-del-xp` + `nivel-explorador` |
 | 22 | **Rachas y logros — HECHO el 20-sep-2026.** No existía nada: medido con la cuenta de `.env`, que tenía 900 XP y los nueve niveles al 100, había **cero filas en `achievements` y la racha a cero**, con la tabla puesta desde la `0005` y las columnas desde la `0002`. **Veinte logros** sembrados en `achievement_catalog`: nueve de nivel perfecto, tres de mundo perfecto, uno de todo, cuatro de acción —«Sin mareos», «Intentando volar», «Eso fue innecesario...» y «¡Auch! mis rodillas»— y tres de racha. **Todos exigen superar el nivel**, decidido por el usuario. **La racha cuenta días de Colombia (UTC−5)** y sube sólo con una partida superada, una vez al día; la guardada **caduca al leerse**, porque sólo se recalcula al jugar. El aviso estilo Steam sale al terminar la partida, en cola si son varios. **Las estrellas se retiraron** de las dos tablas, de la RPC y del cliente. Seis migraciones, `0036` a `0041`, y **cinco fueron por fallos propios**: las tres lecciones están en `CONTEXT.md` §2.11. Verificado jugando contra la base: 17 de 20 logros, los cuatro negativos no conceden, y el XP cuadra en 2350. **Sin verificar contra la base**: que la racha pase de 1 a 2 al día siguiente, que exige esperar | ✅ | `rachas-y-logros` |
+| 32 | ★ **Renombrar los mundos para que cuadren con el juego — HECHO el 20-sep-2026.** Eran **dos problemas y no uno**: la base decía «Selva Algorítmica / Cordillera Binaria / Costa de Bugs» y la landing anterior al login anunciaba **otros tres** —«La Selva de las Secuencias», «El Espacio de los Bucles», «El Océano Condicional»—, y cinco de esos seis nombres, más las tres descripciones de la base, prometían bucles, condicionales, funciones, estructuras de datos y depuración que **los cuatro bloques no permiten**. Ahora son **Sendero de los Patrones**, **Cordillera de la Abstracción** y **Encrucijada de las Decisiones**, decidido por el usuario: los nombres apuntan a los pilares del pensamiento computacional y no a la naturaleza colombiana. `region_label` pasa de la región al pilar, y los `slug` se renombraron con los títulos. **LA TRAMPA, y es la que ahorra la tarde:** el catálogo de logros **copió** los nombres al sembrarse —los nueve de nivel con `split_part` sobre `levels.title`, los tres de mundo escritos a mano—, así que renombrar **no lo actualiza solo**; la migración `0043` lo pone al día, y **lo ya concedido se queda con el nombre viejo a propósito** (`CONTEXT.md` §2.11). Ninguna clave se rompe: salen del `sort_order`. Los nueve títulos de nivel no cambian. Verificado contra la base y en pantalla, incluidas las dos mitades del catálogo: quien ya los tenía sigue leyendo «Dueño de la Selva», quien no, lee «Dueño del Sendero» | ✅ | `renombrar-mundos` |
 | 27.1 | ★ **Despliegue provisional para la prueba — AÑADIDO EL 18-SEP-2026.** Montaje **simple y desechable** sobre Supabase, sólo para que la prueba preliminar exista: no es el despliegue bueno, que va al servidor de la universidad detrás del 30. Aparece aquí porque la prueba dejó de ser local: ver §2.1 | ⬜ | **usuario** |
 | — | 🔬 **PRUEBA PRELIMINAR — REPLANTEADA EL 18-SEP-2026: ya no es local ni con gente cercana.** La hace **un salón de estudiantes universitarios** sobre el despliegue provisional del 27.1, con sus propias cuentas. Siguen sin entrar menores de fuera —son mayores de edad—, así que el **consentimiento del acudiente** del paso 14 sigue sin aplicar y el 14 puede seguir detrás. **Lo que sí cambia es que habrá datos personales de terceros en un despliegue público**, y eso queda anotado en §2.1 como riesgo asumido, no como descuido | ⬜ | — |
 | 14 | ★ Consentimiento del acudiente y política de privacidad — **adelantado en parte y el resto DETRÁS de la prueba preliminar, ver §2.1 y §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó el único sitio donde se guardaban datos de terceros. Lo que falta **se retoma después de la prueba preliminar, y en todo caso antes del primer usuario real**. Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los compañeros se ven entre sí nombre, XP y racha (§3.2) | 🔄 | `invitaciones-sin-correo` + §3.4 |
@@ -823,17 +824,25 @@ el dato **real** de Supabase, y al entrar aparecen **10 niveles falsos**. El `3`
 es la verdad; el `10`, la ficción. Conectar esa pantalla al backend es parte del
 paso 20 y es más trabajo del que sugería su enunciado.
 
-La siembra tiene **9 niveles en total, tres por mundo**:
+La siembra tiene **9 niveles en total, tres por mundo**. Esta tabla estaba **dos
+veces vieja** y se corrigió el 20-sep-2026: sus nueve títulos eran los de la 0012,
+que el J7 reescribió nivel a nivel, y sus tres mundos eran los de antes del
+cambio `renombrar-mundos`. Lo que hay hoy en la base:
 
-| Mundo | Niveles |
+| Mundo (pilar) | Niveles |
 | --- | --- |
-| Selva Algorítmica | Ruta del Colibrí, Puente Condicional, Ciclo del Río |
-| Cordillera Binaria | Eco de Funciones, Mochila de Datos, Sendero Recursivo |
-| Costa de Bugs | Ola de Errores, Faro Asíncrono, Tormenta Final |
+| Sendero de los Patrones (algoritmos y patrones) | Siempre adelante, Camino con curvas, La escalera |
+| Cordillera de la Abstracción (descomposición y abstracción) | Salta y sube, El gran rodeo, La torre |
+| Encrucijada de las Decisiones (evaluación de problemas) | Dos caminos, El faro, Muchos caminos |
 
-Por eso la tarjeta de un mundo muestra `0/3 NIVELES`: es el recuento real, no un
-error. Pero tres niveles por mundo es contenido de relleno, no un currículo de
-pensamiento computacional.
+**Los mundos se renombraron para que dejaran de prometer lo que los cuatro
+bloques no permiten** —bucles, condicionales, funciones, estructuras de datos y
+depuración—, y con ellos la landing, que anunciaba tres nombres que no existían
+en ninguna parte. El detalle está en `CONTEXT.md` §2.6.
+
+Por eso la tarjeta de un mundo muestra `0/3 NIVELES` mientras no se juegue: es el
+recuento real, no un error. Pero tres niveles por mundo es contenido de relleno,
+no un currículo de pensamiento computacional.
 
 Ampliarlo no bloquea ningún paso técnico y no está en la secuencia, pero sí
 condiciona lo que se puede enseñar en una demostración. Decidir cuándo se escribe

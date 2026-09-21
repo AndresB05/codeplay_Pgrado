@@ -23,11 +23,11 @@ const BigWorldCard = () => {
         style={{ background: 'linear-gradient(135deg, #7CE6DA 0%, #17C3B2 100%)' }}
       >
         <h3 className="font-display text-[22px] leading-tight text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)] sm:text-[24px]">
-          La Selva de las Secuencias
+          Sendero de los Patrones
         </h3>
         <p className="mt-2 text-[15px] font-bold leading-[1.6] text-white/95">
-          Aprende los fundamentos ordenando los pasos para guiar a nuestro leopardo a través del
-          espeso bosque.
+          Ordena los pasos del explorador y encuentra el patrón que resuelve cada tablero: avanzar y
+          girar hasta la meta.
         </p>
       </div>
     </article>
@@ -88,14 +88,14 @@ export const WorldsSection = () => {
 
           <div className="grid grid-cols-1 gap-6">
             <SmallWorldCard
-              title="El Espacio de los Bucles"
-              description="Automatiza tareas repitiendo acciones."
+              title="Cordillera de la Abstracción"
+              description="Parte el camino en tramos y súbelo por partes."
               level="Nivel 2"
               gradient="linear-gradient(135deg, #A77BF3 0%, #7B3FE4 100%)"
             />
             <SmallWorldCard
-              title="El Océano Condicional"
-              description="Toma decisiones basadas en el entorno."
+              title="Encrucijada de las Decisiones"
+              description="Varios caminos llegan, pero sólo algunos caben en tus pasos."
               level="Nivel 3"
               gradient="linear-gradient(135deg, #7FC4FF 0%, #3B9DF8 100%)"
             />

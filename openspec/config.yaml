@@ -164,8 +164,9 @@ context: |
                    van en public/ porque GLTFLoader los pide por URL
   apps/game/       NO EXISTE y ya no existirá: no hay Unity
   packages/        código compartido — vacío
-  supabase/        migrations/ (29 migraciones SQL; el seed vive en la 0012,
-                   y los niveles del juego de bloques desde la 0023)
+  supabase/        migrations/ (43 migraciones SQL; el seed vive en la 0012,
+                   los niveles del juego de bloques desde la 0023, y la 0043
+                   renombró los tres mundos y puso al día el catálogo de logros)
   docs/            CONTEXT.md (estado y prioridades), ESTADO-DEL-PROYECTO.md,
                    ROADMAP.md, ROADMAP-JUEGO.md (el orden del juego),
                    CONTRATO-DE-INTEGRACION.md (el contrato del juego) y

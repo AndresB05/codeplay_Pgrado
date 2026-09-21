@@ -46,7 +46,7 @@ const buildTestStudent = (overrides: Partial<ClassroomStudent> = {}): ClassroomS
 const buildTestCatalog = (): CatalogWorld[] => [
   {
     worldId: 'w1',
-    title: 'Selva Algorítmica',
+    title: 'Sendero de los Patrones',
     levels: [
       { levelId: 'w1-l1', title: 'Siempre adelante' },
       { levelId: 'w1-l2', title: 'Camino con curvas' },
@@ -55,7 +55,7 @@ const buildTestCatalog = (): CatalogWorld[] => [
   },
   {
     worldId: 'w2',
-    title: 'Cordillera Binaria',
+    title: 'Cordillera de la Abstracción',
     levels: [
       { levelId: 'w2-l1', title: 'Salta y sube' },
       { levelId: 'w2-l2', title: 'El gran rodeo' },
@@ -64,7 +64,7 @@ const buildTestCatalog = (): CatalogWorld[] => [
   },
   {
     worldId: 'w3',
-    title: 'Costa de Bugs',
+    title: 'Encrucijada de las Decisiones',
     levels: [
       { levelId: 'w3-l1', title: 'Dos caminos' },
       { levelId: 'w3-l2', title: 'El faro' },
@@ -77,7 +77,7 @@ const buildTestProgress = (overrides: Partial<LevelProgress> = {}): LevelProgres
   levelId: 'w1-l1',
   levelTitle: 'Siempre adelante',
   worldId: 'w1',
-  worldTitle: 'Selva Algorítmica',
+  worldTitle: 'Sendero de los Patrones',
   worldSortOrder: 1,
   levelSortOrder: 1,
   completed: true,
@@ -391,7 +391,7 @@ describe('buildWorldProgress', () => {
           levelId: 'w3-l1',
           levelTitle: 'Dos caminos',
           worldId: 'w3',
-          worldTitle: 'Costa de Bugs',
+          worldTitle: 'Encrucijada de las Decisiones',
           worldSortOrder: 3,
         }),
       ],
@@ -401,9 +401,9 @@ describe('buildWorldProgress', () => {
     const worlds = buildWorldProgress(buildTestCatalog(), detail);
 
     expect(worlds.map((world) => world.title)).toEqual([
-      'Selva Algorítmica',
-      'Cordillera Binaria',
-      'Costa de Bugs',
+      'Sendero de los Patrones',
+      'Cordillera de la Abstracción',
+      'Encrucijada de las Decisiones',
     ]);
     expect(worlds.map((world) => `${world.completedLevels} de ${world.totalLevels}`)).toEqual([
       '1 de 3',

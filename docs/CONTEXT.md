@@ -942,10 +942,56 @@ progreso conseguido.
 **Decisiones de diseño**
 
 - El patrón es **Supabase primero, repliegue local después**: si `useWorlds()`
-  no devuelve nada (hoy, siempre), se pintan los mundos de `worldsData.ts`. Al
-  conectar el backend, la pantalla cambia de fuente sin tocar el componente.
+  no devuelve nada, se pintan los mundos de `worldsData.ts`. **Hoy devuelve los
+  tres reales**, así que el repliegue no se ve; sigue ahí para cuando la lectura
+  falle.
 - El repliegue local usa el tono de tarjeta (`forest` / `volcano` / `ocean`) como
-  identidad visual del mundo, no un color guardado en base de datos.
+  identidad visual del mundo, no un color guardado en base de datos. El tono se
+  asigna **por posición**, así que renombrar un mundo no lo cambia de color.
+
+#### Cómo se llaman los tres mundos, y por qué cambió (20-sep-2026)
+
+Se llamaban «Selva Algorítmica», «Cordillera Binaria» y «Costa de Bugs», y la
+landing anterior al login anunciaba **otros tres**: «La Selva de las Secuencias»,
+«El Espacio de los Bucles» y «El Océano Condicional». Eran **dos problemas**: la
+plataforma se contradecía consigo misma, y cinco de esos seis nombres —más las
+tres descripciones de la base— prometían bucles, condicionales, funciones,
+estructuras de datos y depuración, que los **cuatro bloques** del juego no
+permiten practicar. Misma frontera que retiró las barras de habilidades en el
+paso 17 y que acotó el catálogo de logros en el 22.
+
+Decisión del usuario: nombres que apunten a los **pilares del pensamiento
+computacional** en lugar de a la naturaleza colombiana.
+
+| Orden | Título | `region_label` | Qué pide de verdad |
+| --- | --- | --- | --- |
+| 1 | Sendero de los Patrones | Algoritmos y patrones | Avanzar y girar sobre tablero llano |
+| 2 | Cordillera de la Abstracción | Descomposición y abstracción | Alturas: el camino se arma por tramos |
+| 3 | Encrucijada de las Decisiones | Evaluación de problemas | Varias rutas y un tope de pasos que sólo algunas respetan |
+
+**`region_label` dejó de ser la región y pasó a ser el pilar.** Es el rótulo que
+`StudentWorldLevelsModule` pinta bajo «Selecciona un nivel»: antes decía
+«Amazonía», «Región Andina» y «Caribe». Se pierde ahí la ambientación colombiana,
+asumido por el usuario; sigue en los títulos de nivel y en el tema visual.
+
+**LOS SLUG SE RENOMBRARON CON LOS TÍTULOS.** No los consume ninguna pantalla
+—`worlds.service.ts` los mapea y nadie los lee—, y dejar `costa-de-bugs`
+apuntando a «Encrucijada de las Decisiones» convertiría cualquier consulta de
+depuración en un acertijo.
+
+**LOS NOMBRES DE LA LANDING SON COPIA A MANO.** `home/WorldsSection.tsx` los
+tiene escritos dentro del componente y **no lee la base**: es la pantalla
+anterior al login. Renombrar un mundo obliga a tocar **los dos sitios**, y nada
+en el repositorio lo impide — que es exactamente cómo divergieron la primera vez.
+
+**Los nueve títulos de nivel NO cambiaron**, y las claves tampoco: `perfect_wN_lM`
+y `perfect_world_N` salen del `sort_order`. Ver §2.11 para lo que sí hubo que
+poner al día.
+
+**Verificado contra la base el 20-sep-2026** tras la migración `0043`: los tres
+mundos con `slug`, título, descripción y rótulo nuevos y su `sort_order` intacto;
+los nueve logros de nivel sin tocar; y en pantalla la lista de mundos, la lista
+de niveles de la Cordillera con su pilar debajo, y la landing sin sesión.
 
 ### 2.7 `backend-supabase` — Esquema de base de datos
 
@@ -3495,6 +3541,34 @@ siembra no son los mismos en otro proyecto de Supabase.
 
 `achievements` **copia** título y descripción al conceder, y por eso renombrar un
 logro no reescribe lo que un niño ya ganó.
+
+#### EL CATÁLOGO NO SE PONE AL DÍA SOLO, y cuesta una tarde averiguarlo
+
+**El catálogo también copió, al sembrarse.** Los nueve `perfect_wN_lM` salieron
+de `levels.title` con un `split_part` sobre «Nivel N - », y los tres
+`perfect_world_N` llevan el nombre del mundo **escrito a mano** en el título y
+dentro de la descripción —derivarlo daba «Dueño de Selva Algorítmica», que no se
+lee—. Así que **renombrar un nivel o un mundo no actualiza el catálogo**, y un
+catálogo que nombra contenido que ya no se llama así es un defecto, no un
+registro histórico: hace falta una migración que lo ponga al día.
+
+**Lo ya concedido sí se queda con el nombre viejo, y eso es lo correcto.** Son
+dos cosas distintas y conviene no confundirlas:
+
+| Tabla | Al renombrar un mundo | Por qué |
+| --- | --- | --- |
+| `achievement_catalog` | **se pone al día** | Es lo que se anuncia: enseñar un mundo que no existe es mentir |
+| `achievements` | **se queda igual** | Es lo que el niño vio al ganarlo; reescribirlo cambiaría su pasado |
+
+Lo aplicó la migración `0043` del cambio `renombrar-mundos` (20-sep-2026), que
+pasó los tres a «Dueño del Sendero», «Dueño de la Cordillera» y «Dueño de la
+Encrucijada». **Medido después, y es la comprobación que vale**: la cuenta de
+`.env`, que ya tenía los tres concedidos, sigue viendo «Dueño de la Selva» y
+«Dueño de la Costa» en la Sala de Trofeos, mientras que una cuenta sin ellos lee
+del catálogo los nombres nuevos. El de la Cordillera **no prueba nada por sí
+solo** —se llama igual antes y después—, así que la prueba son los otros dos.
+
+**Las claves no se tocaron**, porque salen del `sort_order`. Ver §2.6.
 
 #### Todos exigen superar el nivel
 
