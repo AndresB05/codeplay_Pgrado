@@ -43,7 +43,7 @@ export const TutorSection = () => {
               <ul className="mt-5 space-y-3">
                 <li className="flex items-start gap-3 text-[16px] font-bold text-ink">
                   <CheckBullet />
-                  <span>Reportes detallados de habilidades.</span>
+                  <span>Seguimiento nivel a nivel: marcas, intentos y pasos.</span>
                 </li>
                 <li className="flex items-start gap-3 text-[16px] font-bold text-ink">
                   <CheckBullet />

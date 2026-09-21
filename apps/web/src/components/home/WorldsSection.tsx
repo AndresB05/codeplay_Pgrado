@@ -3,10 +3,17 @@ import { ImagePlaceholder, LevelBadge, SectionContainer } from './shared';
 
 const BigWorldCard = () => {
   return (
-    <article className="card overflow-hidden">
-      <div className="relative">
+    <article className="card flex flex-col overflow-hidden">
+      {/*
+       * La rejilla estira la tarjeta hasta la altura de la columna de al lado; el
+       * hueco de la imagen crece para ocuparla y no deja una franja en blanco.
+       */}
+      <div className="relative flex flex-1 flex-col">
         {/* Hueco reservado para la ilustración del mundo. */}
-        <ImagePlaceholder rounded="rounded-none" className="h-[200px] w-full sm:h-[255px]" />
+        <ImagePlaceholder
+          rounded="rounded-none"
+          className="min-h-[200px] w-full flex-1 sm:min-h-[255px]"
+        />
 
         <MonsteraLeaf
           size={78}
@@ -43,9 +50,9 @@ type SmallWorldCardProps = {
 
 const SmallWorldCard = ({ title, description, level, gradient }: SmallWorldCardProps) => {
   return (
-    <article className="card overflow-hidden">
-      <div className="relative">
-        <ImagePlaceholder rounded="rounded-none" className="h-[120px] w-full" />
+    <article className="card flex flex-col overflow-hidden">
+      <div className="relative flex flex-1 flex-col">
+        <ImagePlaceholder rounded="rounded-none" className="min-h-[120px] w-full flex-1" />
 
         <div className="absolute right-3 top-3">
           <LevelBadge>{level}</LevelBadge>

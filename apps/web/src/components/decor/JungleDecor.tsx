@@ -160,39 +160,6 @@ export const Toucan = ({ size = 64, className = '' }: DecorProps) => (
   </svg>
 );
 
-/** Liana con hojas: separador horizontal entre bloques de contenido. */
-export const VineDivider = ({ className = '' }: { className?: string }) => (
-  <svg
-    viewBox="0 0 400 24"
-    preserveAspectRatio="none"
-    className={`h-[24px] w-full ${className}`}
-    fill="none"
-    aria-hidden="true"
-    focusable="false"
-  >
-    <path
-      d="M0 12C50 2 90 22 140 12C190 2 230 22 280 12C330 2 360 22 400 12"
-      stroke={INK}
-      strokeWidth="3"
-      strokeLinecap="round"
-      vectorEffect="non-scaling-stroke"
-    />
-    {[70, 200, 330].map((x) => (
-      <ellipse
-        key={x}
-        cx={x}
-        cy="18"
-        rx="12"
-        ry="6"
-        fill="#4ECB85"
-        stroke={INK}
-        strokeWidth="3"
-        vectorEffect="non-scaling-stroke"
-      />
-    ))}
-  </svg>
-);
-
 /**
  * Dosel: hojas colgando del borde superior de una pantalla o tarjeta. El
  * contenedor debe ser `relative` y recortar el desbordamiento.

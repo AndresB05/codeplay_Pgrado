@@ -663,5 +663,28 @@ describe('TeacherPanelModule', () => {
 
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
+
+    it('Tab no sale de la ventana, y al cerrar el foco vuelve a la tarjeta', async () => {
+      renderPanel(TWO_GROUPS, null);
+
+      const card = screen.getByRole('button', { name: /Qué significan los trofeos/ });
+      await userEvent.click(card);
+
+      const close = screen.getByRole('button', { name: 'Cerrar' });
+      const text = screen.getByRole('region', { name: 'Qué significan los trofeos' });
+      expect(close).toHaveFocus();
+
+      await userEvent.tab();
+      expect(text).toHaveFocus();
+
+      await userEvent.tab();
+      expect(close).toHaveFocus();
+
+      await userEvent.tab({ shift: true });
+      expect(text).toHaveFocus();
+
+      await userEvent.click(close);
+      expect(card).toHaveFocus();
+    });
   });
 });

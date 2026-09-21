@@ -171,7 +171,7 @@ export const Signup = () => {
               <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
                 <SignupRoleCard
                   title="Niño"
-                  description="Aprende a programar jugando. Resuelve acertijos, gana medallas y embárcate en aventuras de código con nuestra mascota leopardo."
+                  description="Aprende a programar jugando. Resuelve acertijos, gana trofeos y embárcate en aventuras de código con nuestra mascota leopardo."
                   buttonLabel="Soy un explorador"
                   placeholderLabel="Imagen Niño"
                   tone="grape"
