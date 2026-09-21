@@ -248,12 +248,12 @@ propósito**: `.mascot-slot` en CSS, o `ImagePlaceholder` de
 `components/home/shared.tsx`. No rellenarlos con imágenes genéricas.
 
 **Origen de las imágenes.** Las ilustraciones definitivas —mascota, escenarios,
-portadas de mundo— serán **generadas por IA con Higgsfield, a través de su MCP
-conectado a Claude**. Decisión tomada, ejecución **aplazada a propósito**: el
-foco actual son las funcionalidades, no el apartado gráfico. Ver §3 → P6.
-Esto no cambia nada de lo anterior: los adornos SVG de `components/decor/` se
-siguen escribiendo a mano (son geometría, no ilustración) y los huecos siguen
-vacíos hasta que haya imágenes reales.
+portadas de mundo— se **generan con Gemini**, que las pide el usuario a partir
+de su dibujo de referencia del leopardo; no pasan por ningún MCP. Cambiado el
+21-sep-2026 desde Higgsfield: ver §3 → P6. **La primera ya está puesta**, la
+del hero de la landing. Esto no cambia nada de lo anterior: los adornos SVG de
+`components/decor/` se siguen escribiendo a mano (son geometría, no
+ilustración) y cada hueco sigue vacío hasta que llegue su imagen real.
 
 **El formato del juego lo fija el contrato, no el código.** `config` y el sobre
 del programa están escritos campo por campo en
@@ -4126,20 +4126,27 @@ pendiente al canjear. Se **cancela**, ni se acepta ni se rechaza. Ver §2.4.
 
 ### P6 — `assets-graficos`: ilustraciones generadas por IA
 
-**Aplazado a propósito.** La decisión de herramienta ya está tomada, pero el
-trabajo gráfico no entra hasta que las funcionalidades (P1–P4) estén completas.
-Se documenta aquí para que no se pierda entre sesiones ni se improvise otra
-solución.
+**Empezado el 21-sep-2026 con el hero; el resto sigue aplazado** hasta después
+de la prueba preliminar. Se documenta aquí para que no se pierda entre sesiones
+ni se improvise otra solución.
 
-**Decisión.** Las ilustraciones definitivas se generan con **Higgsfield**,
-invocado desde Claude a través de su **MCP**. No se dibujan a mano ni se compran
-en bancos de imágenes.
+**Decisión: Gemini, desde el 21-sep-2026.** Las ilustraciones las genera el
+usuario con Gemini a partir de su dibujo de referencia, y es ese dibujo el que
+mantiene al leopardo igual entre imágenes, no la herramienta. No se dibujan a
+mano ni se compran en bancos de imágenes. **Sustituye a Higgsfield**, que era la
+decisión anterior por su MCP: con el mismo prompt entregó la imagen **vertical
+dos veces** pidiendo panorámica, y con marca de agua. ChatGPT, con el que salió
+el logo, se descartó por su límite diario de imágenes.
+
+**Ya aplicado:** el logo (`components/ui/BrandLogo.tsx`, desde
+`src/assets/brand/logo.webp`, que también da el favicon) y la ilustración del
+hero (`home/HeroSection.tsx`, desde `src/assets/brand/hero-leopard.webp`).
 
 **Qué cubre**
 
 | Asset | Dónde va | Hueco actual |
 | --- | --- | --- |
-| Mascota (un leopardo) | Landing, login, registro, ajustes, mundos | `.mascot-slot` / `ImagePlaceholder`, hoy vacíos |
+| Mascota (un leopardo) | Landing, login, registro, ajustes, mundos | El hero de la landing ya la tiene; el resto, `.mascot-slot` / `ImagePlaceholder`, siguen vacíos |
 | Portadas de mundo | `student/StudentWorldsModule.tsx` | Hoy se resuelve con tono de color e icono SVG |
 | Escenarios y fondos | Landing y paneles | Hoy son degradados y adornos SVG |
 
@@ -4150,19 +4157,24 @@ pesan una fracción de lo que pesaría un PNG. No hay motivo para reemplazarlos.
 
 **Tareas cuando llegue el momento**
 
-1. Conectar el MCP de Higgsfield a Claude y verificar que responde.
-2. Fijar el *prompt base* del estilo —contorno grueso de tinta, relleno saturado,
+1. Fijar el *prompt base* del estilo —contorno grueso de tinta, relleno saturado,
    paleta de §2.1, bioma de selva— para que todos los assets salgan coherentes
-   entre sí y con la interfaz ya construida.
-3. Generar primero la mascota: es la que aparece en más pantallas y la que fija
-   el estilo del resto.
-4. Definir dónde se guardan (`apps/web/public/` o `apps/web/src/assets/`) y con
-   qué formato y tamaños. **Ya no hay que decidir nada sobre Git LFS**: sin Unity
-   no hay binarios de motor que lo justifiquen.
-5. Sustituir los huecos por las imágenes, retirando el contorno discontinuo.
+   entre sí y con la interfaz ya construida. El del hero pide además el estilo
+   **exacto** del personaje de referencia y el fondo en ese mismo estilo; sin lo
+   segundo, el paisaje tiende a salir casi fotográfico.
+2. Generar las poses de la mascota que faltan: login, registro de niño, registro
+   de tutor y pantalla de mundos. Después, las tres portadas de mundo.
+3. ~~Definir dónde se guardan~~ — **decidido con el logo y el hero**: en
+   `apps/web/src/assets/brand/`, en WebP, importadas desde el componente. Las
+   que lleguen con fondo se entregan sobre un color plano y se recortan en el
+   repo. **Ya no hay que decidir nada sobre Git LFS**: sin Unity no hay binarios
+   de motor que lo justifiquen.
+4. Sustituir los huecos por las imágenes, retirando el contorno discontinuo.
+   Pedirlas **horizontales y de al menos 2000 px de ancho** cuando ocupen el
+   ancho de una sección: la primera del hero medía 896 px y se veía borrosa.
 
-**Dependencias.** MCP de Higgsfield conectado (hoy no lo está). Ninguna
-dependencia de código: los huecos ya existen y están marcados.
+**Dependencias.** Ninguna: no hay MCP que conectar, y los huecos ya existen y
+están marcados.
 
 ---
 

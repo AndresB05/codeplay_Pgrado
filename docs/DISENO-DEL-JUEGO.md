@@ -282,7 +282,8 @@ contradiga nada: el 3D es el terreno, no la pantalla entera.
 Kenney encaja bien porque su estilo de cubos con colores planos es el mismo del
 que hablan las decisiones visuales del proyecto, y su licencia es libre.
 
-**No lo cubre Higgsfield.** Esa decisión era para las ilustraciones 2D de la
+**No lo cubre Gemini.** La herramienta de ilustraciones —Higgsfield hasta el
+21-sep-2026, Gemini desde entonces— es para las ilustraciones 2D de la
 plataforma —la mascota, las portadas de mundo—, que es otra cosa y sigue en pie
 por su lado.
 

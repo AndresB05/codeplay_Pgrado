@@ -1,15 +1,30 @@
 import { Link } from 'react-router-dom';
+import heroLeopard from '../../assets/brand/hero-leopard.webp';
 import { ROUTES } from '../../constants/routes';
-import { Canopy, MonsteraLeaf, Toucan, TropicalFlower } from '../decor/JungleDecor';
-import { ImagePlaceholder, SectionContainer } from './shared';
+import { Canopy, TropicalFlower } from '../decor/JungleDecor';
+import { SectionContainer } from './shared';
 
 export const HeroSection = () => {
   return (
     <section className="jungle-surface relative overflow-hidden">
       <Canopy />
 
-      <SectionContainer className="relative z-10 grid grid-cols-1 items-center gap-14 py-[48px] sm:py-[56px] lg:grid-cols-[1fr_400px] lg:gap-[72px] lg:py-[64px]">
-        <div className="max-w-[575px] pt-1">
+      {/*
+       * La ilustración cubre el hero entero, anclada a la derecha para que el
+       * leopardo no se corte al estrechar la pantalla. El degradado tapa la
+       * mitad izquierda, que es donde va el texto.
+       */}
+      <div className="pointer-events-none absolute inset-0 hidden lg:block">
+        <img
+          src={heroLeopard}
+          alt=""
+          className="h-full w-full object-cover object-[100%_40%] xl:object-[80%_40%]"
+        />
+        <div className="absolute inset-y-0 left-0 w-[65%] bg-gradient-to-r from-lavender from-15% via-lavender/60 to-transparent" />
+      </div>
+
+      <SectionContainer className="relative z-10 flex items-center py-[48px] sm:py-[56px] lg:min-h-[600px] lg:py-[64px]">
+        <div className="w-full max-w-[575px] pt-1">
           <span className="chip chip-leaf">
             <TropicalFlower size={18} />
             Expedición para exploradores
@@ -40,22 +55,13 @@ export const HeroSection = () => {
             <span className="chip chip-sun">🌿 3 mundos abiertos</span>
             <span className="chip chip-mint">👦 Para niños de 7 a 14</span>
           </div>
-        </div>
 
-        {/*
-         * El corrimiento hacia el texto sólo cabe desde xl: entre lg y xl la
-         * columna del texto es más estrecha y el hueco se le montaba encima.
-         */}
-        <div className="relative flex justify-center xl:left-[-170px]">
-          {/* Marco de la mascota: la ilustración llega después, el hueco se queda. */}
-          <MonsteraLeaf
-            size={92}
-            className="absolute -left-6 -top-8 z-10 rotate-[22deg]"
-            color="#1F9D5B"
+          {/* En una sola columna no hay lado derecho: la ilustración baja debajo del texto. */}
+          <img
+            src={heroLeopard}
+            alt=""
+            className="mt-10 aspect-[4/3] w-full rounded-[24px] border-[3px] border-ink object-cover object-[85%_50%] lg:hidden"
           />
-          <Toucan size={86} className="absolute -bottom-6 -right-4 z-10 rotate-[-8deg]" />
-
-          <ImagePlaceholder className="h-[320px] w-full max-w-[400px] rounded-[2px] sm:h-[380px] lg:h-[460px] lg:w-[500px] lg:max-w-[500px]" />
         </div>
       </SectionContainer>
     </section>
