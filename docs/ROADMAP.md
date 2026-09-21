@@ -216,7 +216,7 @@ es el corazón del paso 14— no aplica.
 > **datos personales de terceros** —correo y nombre de gente que no es cercana—
 > en una aplicación desplegada, y la política de privacidad no estará publicada.
 > De la lista de §3.4, lo que ese escenario haría exigible son los puntos **1**
-> (la política y los cuatro enlaces muertos del footer) y **2** (la tabla de
+> (la política y su enlace en el footer, cuyos enlaces muertos ya se quitaron) y **2** (la tabla de
 > consentimientos); los puntos 3 y 4 siguen siendo de menores y no se tocan. El
 > usuario lo decidió con esto delante el 18-sep-2026. **Si entrara un menor en la
 > prueba, esto deja de ser una decisión y pasa a ser una parada.**
@@ -855,7 +855,9 @@ seguir sembrando por migración.
 **Falta esto, y la lista es el encargo entero:**
 
 1. **La política de privacidad** con los seis puntos del art. 13 del Decreto 1377
-   de 2013, su página, y los cuatro enlaces muertos de `home/Footer.tsx:4`.
+   de 2013, su página, y su enlace en `home/Footer.tsx`. Los cuatro enlaces
+   muertos que había —Privacidad, Términos, Contacto, Ayuda— se quitaron antes
+   de la prueba del 27.1; al publicar la política vuelve el suyo.
 2. **Tabla de consentimientos append-only** —nunca `update`— con titular, quién
    autorizó, **la versión del texto** y la fecha: el art. 8 obliga a conservar
    prueba, y sin versión no se prueba a qué se consintió.

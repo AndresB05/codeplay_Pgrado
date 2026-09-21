@@ -1,8 +1,6 @@
 import { VineDivider } from '../decor/JungleDecor';
 import { SectionContainer } from './shared';
 
-const footerLinks = ['Privacidad', 'Términos', 'Contacto', 'Ayuda'];
-
 export const Footer = () => {
   return (
     <footer className="border-t-[3px] border-ink bg-white">
@@ -25,15 +23,7 @@ export const Footer = () => {
         </div>
 
         <div className="text-center">
-          © 2024 Codeplay · Acompañando el pensamiento computacional
-        </div>
-
-        <div className="flex items-center gap-5">
-          {footerLinks.map((label) => (
-            <a key={label} href="#" className="hover:text-grape-dark">
-              {label}
-            </a>
-          ))}
+          © 2026 Codeplay · Acompañando el pensamiento computacional
         </div>
       </SectionContainer>
     </footer>
