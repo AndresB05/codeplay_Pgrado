@@ -1,5 +1,10 @@
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { AppRouter } from './router/AppRouter';
 
 export const App = () => {
-  return <AppRouter />;
+  return (
+    <ErrorBoundary>
+      <AppRouter />
+    </ErrorBoundary>
+  );
 };

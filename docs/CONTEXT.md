@@ -3799,6 +3799,8 @@ usuarios.
 | Fuera los tres mundos inventados de `worldsData.ts`: si la lectura falla se dice, no se enseña progreso falso | `student/StudentWorldsModule.tsx`, `student/worlds/worldsData.ts` |
 | «Eliminar mi cuenta» en los dos Ajustes, con confirmación. Borra la fila de `auth.users` y todo cae en cascada; al tutor se le van sus salones | Migración `0045_delete_my_account.sql` (`delete_my_account()`), `authService.deleteAccount`, `AuthProvider` y `shared/DeleteAccountPanel.tsx` |
 | Google desde «Entrar» sin cuenta previa ya no crea un niño en silencio: la vuelta pregunta «Soy niño / Soy profesor» si el perfil tiene `is_role_declared = false`. Sin migración: la marca es de la 0018 y `set_my_role` ya permitía ese único cambio | `pages/AuthCallback/AuthCallback.tsx`, `User.isRoleDeclared` en `types/user.types.ts` y `profile.service.ts` |
+| `ErrorBoundary` por encima del router: un error inesperado enseña un aviso con «Recargar» e «Ir al inicio» en vez de la pantalla en blanco. Es clase porque React no ofrece hook para `componentDidCatch` | `components/ui/ErrorBoundary.tsx`, montado en `App.tsx` |
+| `vercel.json` para el despliegue provisional (paso 27.1): mismos `npm ci` y `npm run build` que el CI, salida `apps/web/dist` y **toda ruta reescrita a `index.html`**, sin la cual recargar o volver de Google a `/auth/callback` da 404 | `vercel.json` en la raíz |
 
 **La bandera se lee de `.env`, no se compila apagada:** para volver a usar «Sin
 login» basta con `VITE_ENABLE_DEV_TOOLS=true` en `apps/web/.env` y reiniciar
