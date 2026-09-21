@@ -98,7 +98,7 @@ export const CreateGroupForm = ({
 
           <div>
             <label htmlFor="group-teacher" className="field-label">
-              Profesor a cargo
+              Tutor a cargo
             </label>
             <input
               id="group-teacher"

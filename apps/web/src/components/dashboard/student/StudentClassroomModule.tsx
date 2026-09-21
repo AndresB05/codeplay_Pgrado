@@ -31,8 +31,16 @@ const HourglassIcon = () => (
  * en espera de respuesta del tutor, e inscrito (ve a sus compañeros).
  */
 export const StudentClassroomModule = () => {
-  const { groups, membership, currentGroup, error, loading, requestJoin, cancelJoinRequest } =
-    useClassrooms();
+  const {
+    groups,
+    membership,
+    currentGroup,
+    error,
+    loading,
+    onlineStudentIds,
+    requestJoin,
+    cancelJoinRequest,
+  } = useClassrooms();
 
   /* Antes de cualquier `return`: esta pantalla tiene varios y son condicionales. */
   useFreshClassrooms();
@@ -84,8 +92,8 @@ export const StudentClassroomModule = () => {
             <h1 className="title-xl mt-4">Tu solicitud a {currentGroup.name} está en camino</h1>
 
             <p className="subtitle mt-3 max-w-[460px]">
-              El profesor {currentGroup.teacherName} tiene que aceptarte. En cuanto lo haga verás
-              aquí a tus compañeros y podrás seguir su avance.
+              El tutor {currentGroup.teacherName} tiene que aceptarte. En cuanto lo haga verás aquí
+              a tus compañeros y podrás seguir su avance.
             </p>
 
             <div className="mt-5 flex items-center gap-3 rounded-[20px] border-2 border-line bg-cream px-4 py-3">
@@ -125,7 +133,7 @@ export const StudentClassroomModule = () => {
           <h1 className="font-display text-[30px] leading-tight text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)]">
             {currentGroup.name}
           </h1>
-          <p className="text-[16px] font-bold text-white/90">Profesor {currentGroup.teacherName}</p>
+          <p className="text-[16px] font-bold text-white/90">Tutor {currentGroup.teacherName}</p>
         </div>
       </section>
 
@@ -144,13 +152,19 @@ export const StudentClassroomModule = () => {
         />
       </section>
 
-      <AssignedMissionsPanel />
-
       <ClassroomPodium students={currentGroup.students} />
 
-      <section className="mt-6 pb-4">
-        <StudentRosterTable students={currentGroup.students} />
+      <section className="mt-6">
+        <StudentRosterTable students={currentGroup.students} onlineIds={onlineStudentIds} />
       </section>
+
+      {/*
+       * Al final, pedido por el usuario: las misiones van y vienen, mientras
+       * que compañeros y podio están siempre, y son lo que se viene a mirar.
+       */}
+      <div className="pb-4">
+        <AssignedMissionsPanel />
+      </div>
     </div>
   );
 };

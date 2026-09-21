@@ -19,7 +19,7 @@ export const isTutor = (user: User | null): boolean => {
   return getUserRole(user) === 'tutor';
 };
 
-/** Panel al que pertenece cada rol: el niño juega, el profesor administra salones. */
+/** Panel al que pertenece cada rol: el niño juega, el tutor administra salones. */
 export const getHomeRouteForRole = (role: UserRole | null): string => {
   return role === 'tutor' ? ROUTES.TEACHER_GROUPS : ROUTES.WORLDS;
 };

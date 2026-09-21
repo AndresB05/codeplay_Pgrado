@@ -17,7 +17,7 @@ import type { AchievementUnlock, MissionCompletionUnlock } from '../../../types/
  * LA MISMA COLA SIRVE PARA LAS MISIONES, y por eso no hay un componente aparte:
  * la misma partida puede conceder un logro y cumplir una misión, y con dos colas
  * las dos tarjetas se pintarían una encima de la otra. Lo que cambia es el
- * rótulo y el icono, porque una misión la puso su profesor y llamarla logro
+ * rótulo y el icono, porque una misión la puso su tutor y llamarla logro
  * confundiría las dos cosas.
  */
 const VISIBLE_MS = 4200;
@@ -80,7 +80,7 @@ export const AchievementToast = ({
 
   /*
    * Los logros van delante de las misiones: el logro sale de lo que el niño
-   * acaba de hacer en la partida, y la misión de lo que su profesor le puso
+   * acaba de hacer en la partida, y la misión de lo que su tutor le puso
    * hace días. Lo primero explica lo segundo.
    */
   const entries = useMemo<ToastEntry[]>(

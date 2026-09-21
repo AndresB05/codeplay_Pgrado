@@ -197,7 +197,7 @@ export const AppRouter = () => {
               />
             )}
 
-            {/* Panel del profesor */}
+            {/* Panel del tutor */}
             <Route
               path={ROUTES.TEACHER}
               element={<Navigate to={ROUTES.TEACHER_GROUPS} replace />}

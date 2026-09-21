@@ -166,4 +166,18 @@ export const profileService = {
 
     return { data: mapProfileRowToUser(data, email), error: null };
   },
+
+  /** Anota que la cuenta tiene la página abierta; la base ignora las repeticiones del mismo minuto. */
+  async touchLastSeen(): ServiceResult<null> {
+    const { error } = await supabase.rpc('touch_last_seen');
+
+    if (error) {
+      return {
+        data: null,
+        error: createAppError(error, 'No se pudo registrar la visita.', 'profile_last_seen_error'),
+      };
+    }
+
+    return { data: null, error: null };
+  },
 };

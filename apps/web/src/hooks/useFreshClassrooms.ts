@@ -1,6 +1,13 @@
 import { useEffect } from 'react';
 import { useClassrooms } from './useClassrooms';
 
+/*
+ * Lo bastante corto para que el tutor vea moverse el ranking y la última
+ * actividad mientras sus alumnos juegan, y lo bastante largo para que un salón
+ * entero con la pantalla abierta no sea una carga para la base.
+ */
+const POLL_INTERVAL_MS = 15_000;
+
 /**
  * Pone al día los salones al abrirse una pantalla que los muestra.
  *
@@ -13,6 +20,11 @@ import { useClassrooms } from './useClassrooms';
  * Se salta la consulta si el store ya está cargando, que es el caso de entrar
  * directamente a esta ruta: ahí la carga del provider ya viene en camino y
  * pedirla otra vez serían dos consultas para lo mismo.
+ *
+ * Mientras la pantalla sigue abierta, vuelve a consultar cada
+ * `POLL_INTERVAL_MS`. Es el sustituto de la suscripción que el progreso no
+ * puede tener. Con la pestaña oculta no consulta: al volver ya relee el
+ * `visibilitychange` del provider.
  */
 export const useFreshClassrooms = (): void => {
   const { loading, refreshSilently } = useClassrooms();
@@ -30,5 +42,17 @@ export const useFreshClassrooms = (): void => {
      * traer el dato.
      */
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshSilently]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void refreshSilently();
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
   }, [refreshSilently]);
 };

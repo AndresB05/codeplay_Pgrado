@@ -30,8 +30,15 @@ interface TeacherGroupDetailModuleProps {
 
 export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModuleProps) => {
   const navigate = useNavigate();
-  const { groups, acceptRequest, deleteGroup, error, rejectRequest, removeStudent } =
-    useClassrooms();
+  const {
+    groups,
+    acceptRequest,
+    deleteGroup,
+    error,
+    onlineStudentIds,
+    rejectRequest,
+    removeStudent,
+  } = useClassrooms();
 
   /* Antes de cualquier `return`: esta pantalla tiene varios y son condicionales. */
   useFreshClassrooms();
@@ -100,7 +107,7 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
                 {group.name}
               </h1>
               <p className="text-[16px] font-bold text-white/90">
-                {group.gradeLabel} · Profesor {group.teacherName}
+                {group.gradeLabel} · Tutor {group.teacherName}
               </p>
               <span className="mt-2 inline-flex rounded-full border-2 border-ink bg-white px-3 py-1 font-display text-[13px] tracking-[0.05em] text-ink">
                 ID: {group.publicId}
@@ -189,6 +196,7 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
 
         <StudentRosterTable
           students={group.students}
+          onlineIds={onlineStudentIds}
           onRemoveStudent={(studentId) => removeStudent(group.id, studentId)}
         />
       </section>

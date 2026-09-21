@@ -19,6 +19,8 @@ import type { ClassroomsContextValue } from './ClassroomsContext';
  */
 const EMPTY_MEMBERSHIP: StudentMembership = { status: 'none', groupId: null };
 
+const NOBODY_ONLINE: ReadonlySet<string> = new Set();
+
 interface ClassroomsProviderProps {
   children: ReactNode;
   /**
@@ -50,6 +52,7 @@ export const ClassroomsProvider = ({
   const [membership, setMembership] = useState<StudentMembership>(EMPTY_MEMBERSHIP);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AppError | null>(null);
+  const [onlineStudentIds, setOnlineStudentIds] = useState<ReadonlySet<string>>(NOBODY_ONLINE);
 
   /*
    * Cada carga se numera para descartar las respuestas que llegan tarde: al
@@ -164,6 +167,34 @@ export const ClassroomsProvider = ({
       document.removeEventListener('visibilitychange', onVisible);
     };
   }, [refreshSilently, userId]);
+
+  /*
+   * El niño se deja ver en su salón desde cualquier pantalla, no sólo desde la
+   * del salón: por eso la presencia vive en el store, que está en la raíz. Los
+   * ids se aplanan a una cadena para que cada recarga, que trae arrays nuevos
+   * con los mismos salones, no cierre y reabra los canales.
+   */
+  const presenceGroupKey =
+    userRole === 'tutor'
+      ? groups.map((group) => group.id).join(',')
+      : membership.status === 'member' && membership.groupId
+        ? membership.groupId
+        : '';
+
+  useEffect(() => {
+    if (!userId || !presenceGroupKey) {
+      setOnlineStudentIds(NOBODY_ONLINE);
+
+      return;
+    }
+
+    return service.watchClassroomPresence(
+      presenceGroupKey.split(','),
+      userId,
+      userRole !== 'tutor',
+      setOnlineStudentIds
+    );
+  }, [presenceGroupKey, service, userId, userRole]);
 
   /** Ejecuta una escritura y recarga si salió bien. */
   const runWrite = useCallback(
@@ -300,6 +331,7 @@ export const ClassroomsProvider = ({
       leaveGroup,
       loading,
       membership,
+      onlineStudentIds,
       redeemInvitation,
       refreshSilently,
       rejectRequest,
@@ -317,6 +349,7 @@ export const ClassroomsProvider = ({
       leaveGroup,
       loading,
       membership,
+      onlineStudentIds,
       redeemInvitation,
       refreshSilently,
       rejectRequest,

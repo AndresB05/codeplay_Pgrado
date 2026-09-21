@@ -46,9 +46,9 @@ export interface InvitationsService {
  * puede ampliar nada. El código es el mismo; quien está delante, no.
  */
 const ERROR_MESSAGES: Record<string, string> = {
-  ZC010: 'Ese enlace no es válido. Pídele a tu profesor uno nuevo.',
-  ZC011: 'Ese enlace ya caducó. Pídele a tu profesor uno nuevo.',
-  ZC012: 'Ese enlace ya lo usó alguien. Pídele a tu profesor uno nuevo.',
+  ZC010: 'Ese enlace no es válido. Pídele a tu tutor uno nuevo.',
+  ZC011: 'Ese enlace ya caducó. Pídele a tu tutor uno nuevo.',
+  ZC012: 'Ese enlace ya lo usó alguien. Pídele a tu tutor uno nuevo.',
   '23514': 'Ese salón ya está lleno.',
   '23505': 'Ya perteneces a un salón. Sal de él antes de entrar en otro.',
   '42501': 'No puedes entrar a un salón con esta cuenta.',

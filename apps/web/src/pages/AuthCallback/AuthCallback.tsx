@@ -161,7 +161,7 @@ export const AuthCallback = () => {
       /*
        * Google desde la pantalla de acceso, sin cuenta previa: el disparador la
        * creó `child` sin que nadie lo eligiera. Mandarlo al panel de niño dejaba
-       * a un profesor sin poder crear salones y sin saber por qué, así que se le
+       * a un tutor sin poder crear salones y sin saber por qué, así que se le
        * pregunta aquí. La RPC sólo deja fijarlo esta vez.
        */
       if (!user.isRoleDeclared) {
@@ -213,7 +213,7 @@ export const AuthCallback = () => {
                 disabled={applyingRole}
                 className="btn btn-leaf disabled:opacity-60"
               >
-                Soy profesor
+                Soy tutor
               </button>
             </div>
           </>

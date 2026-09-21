@@ -259,7 +259,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
                   key={level.id}
                   type="button"
                   onClick={() => navigate(`${ROUTES.WORLDS}/${world.id}/${level.id}`)}
-                  className="card overflow-hidden text-left transition-transform duration-100 hover:-translate-y-1 active:translate-y-0"
+                  className="card flex flex-col overflow-hidden text-left transition-transform duration-100 hover:-translate-y-1 active:translate-y-0"
                 >
                   <div
                     className="flex items-center justify-between border-b-[3px] border-ink px-3 py-2"
@@ -297,7 +297,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
                     </div>
                   </div>
 
-                  <div className="px-3 pb-4 pt-3 text-center">
+                  <div className="flex-1 px-3 pb-4 pt-3 text-center">
                     <div className="font-display text-[17px] text-ink">{level.name}</div>
                     <p className="mt-1 text-[12px] font-semibold leading-[1.4] text-ink-soft">
                       {level.description}

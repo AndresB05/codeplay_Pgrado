@@ -26,6 +26,7 @@ export const buildClassroomsValue = (
   leaveGroup: async () => undefined,
   loading: false,
   membership: { status: 'none', groupId: null },
+  onlineStudentIds: new Set(),
   redeemInvitation: async () => false,
   refreshSilently: vi.fn(async () => undefined),
   rejectRequest: async () => undefined,

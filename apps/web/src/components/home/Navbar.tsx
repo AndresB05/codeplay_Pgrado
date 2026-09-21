@@ -22,7 +22,7 @@ const guestEntries: { role: UserRole; label: string; className: string }[] = [
   },
   {
     role: 'tutor',
-    label: 'Profesor',
+    label: 'Tutor',
     className: 'btn-mint',
   },
 ];

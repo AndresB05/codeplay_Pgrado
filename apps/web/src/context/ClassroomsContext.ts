@@ -12,6 +12,8 @@ export interface ClassroomsContextValue {
   loading: boolean;
   /** Último error de lectura o de escritura, para no descartarlo en silencio. */
   error: AppError | null;
+  /** Alumnos de los salones visibles que tienen CodePlay abierto ahora mismo. */
+  onlineStudentIds: ReadonlySet<string>;
   /**
    * Vuelve a leer sin declarar espera, para cuando quien mira vuelve a mirar: al
    * abrirse una pantalla o al recuperar la ventana el foco.

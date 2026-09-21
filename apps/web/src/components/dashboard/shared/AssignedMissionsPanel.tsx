@@ -116,7 +116,7 @@ export const AssignedMissionsPanel = ({ hideCompleted = false }: { hideCompleted
       </div>
 
       <p className="subtitle mt-1">
-        Tu profesor las eligió para ti. Dan más experiencia que un nivel normal.
+        Tu tutor las eligió para ti. Dan más experiencia que un nivel normal.
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">

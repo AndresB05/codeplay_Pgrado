@@ -38,7 +38,7 @@ describe('AuthCallback', () => {
 
     renderCallback(buildUser({ role: 'child', isRoleDeclared: false }), updateRole);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Soy profesor' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Soy tutor' }));
 
     expect(updateRole).toHaveBeenCalledWith('tutor');
     expect(await screen.findByText('Panel del tutor')).toBeInTheDocument();
@@ -63,6 +63,6 @@ describe('AuthCallback', () => {
 
     expect(await screen.findByText('Panel del tutor')).toBeInTheDocument();
     expect(updateRole).toHaveBeenCalledWith('tutor');
-    expect(screen.queryByRole('button', { name: 'Soy profesor' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Soy tutor' })).not.toBeInTheDocument();
   });
 });

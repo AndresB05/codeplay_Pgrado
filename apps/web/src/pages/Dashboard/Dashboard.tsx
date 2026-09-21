@@ -10,12 +10,14 @@ import { StudentWorldLevelsModule } from '../../components/dashboard/student/Stu
 import { StudentWorldsModule } from '../../components/dashboard/student/StudentWorldsModule';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
+import { useLastSeen } from '../../hooks/useLastSeen';
 import { DEV_TOOLS_ENABLED } from '../../config/devTools';
 
 export const Dashboard = () => {
   const location = useLocation();
   const { levelId, worldId } = useParams();
   const { loading: authLoading, user } = useAuth();
+  useLastSeen(user?.id ?? null);
 
   const activeRoute =
     location.pathname === ROUTES.DASHBOARD || location.pathname.startsWith(`${ROUTES.WORLDS}/`)

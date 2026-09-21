@@ -13,7 +13,7 @@ import { PulseIcon, SeatIcon, StudentsIcon } from './TeacherIcons';
 
 interface TeacherGroupsModuleProps {
   groups: ClassGroup[];
-  /** Nombre por defecto del profesor a cargo al crear un salón. */
+  /** Nombre por defecto del tutor a cargo al crear un salón. */
   teacherName: string;
 }
 

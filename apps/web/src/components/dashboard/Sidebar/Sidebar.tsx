@@ -8,6 +8,8 @@ import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
 import { XPBar } from '../../ui/XPBar';
 import { streakLabel } from '../../../lib/streak';
 import { DEV_TOOLS_ENABLED } from '../../../config/devTools';
+import { useSidebarCollapsed } from '../../../hooks/useSidebarCollapsed';
+import { SidebarToggle } from './SidebarToggle';
 
 type SidebarProps = {
   user: User | null;
@@ -121,6 +123,7 @@ const FireIcon = () => (
 export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 
   const displayName = user?.fullName || FALLBACK_STUDENT_NAME;
   /*
@@ -158,55 +161,64 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
   };
 
   return (
-    <aside className="flex w-[262px] shrink-0 flex-col border-r-[3px] border-ink bg-white px-4 py-6">
-      <div className="relative flex flex-col items-center">
-        {/* Hojas asomando tras el avatar: la selva entra también en la barra. */}
-        <MonsteraLeaf
-          size={58}
-          className="pointer-events-none absolute -left-1 top-1 rotate-[-18deg]"
-          color="#1F9D5B"
-        />
-        <PalmFrond
-          size={52}
-          className="pointer-events-none absolute -right-1 top-2 -scale-x-100 rotate-[14deg]"
-        />
+    <aside
+      className={`relative flex shrink-0 flex-col border-r-[3px] border-ink bg-white py-6 ${
+        collapsed ? 'w-[92px] px-3' : 'w-[262px] px-4'
+      }`}
+    >
+      <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} />
 
-        <div className="relative flex h-[112px] w-[112px] items-center justify-center rounded-full border-[4px] border-ink bg-[linear-gradient(135deg,#A77BF3_0%,#7B3FE4_100%)] shadow-[0_6px_0_rgba(42,27,69,0.2)]">
-          <svg width="66" height="66" viewBox="0 0 64 64" fill="none">
-            <circle cx="32" cy="26" r="13" fill="#FFF9EF" stroke="#2A1B45" strokeWidth="4" />
-            <circle cx="27" cy="25" r="2.8" fill="#2A1B45" />
-            <circle cx="37" cy="25" r="2.8" fill="#2A1B45" />
-            <path
-              d="M28 31C29.5 33 34.5 33 36 31"
-              stroke="#2A1B45"
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-            <path
-              d="M14 54C16.5 46 23.5 42 32 42C40.5 42 47.5 46 50 54"
-              fill="#FFC93C"
-              stroke="#2A1B45"
-              strokeWidth="4"
-              strokeLinejoin="round"
-            />
-          </svg>
+      {/* Plegada se queda sin la ficha: la barra superior ya enseña racha y XP. */}
+      {collapsed ? null : (
+        <div className="relative flex flex-col items-center">
+          {/* Hojas asomando tras el avatar: la selva entra también en la barra. */}
+          <MonsteraLeaf
+            size={58}
+            className="pointer-events-none absolute -left-1 top-1 rotate-[-18deg]"
+            color="#1F9D5B"
+          />
+          <PalmFrond
+            size={52}
+            className="pointer-events-none absolute -right-1 top-2 -scale-x-100 rotate-[14deg]"
+          />
+
+          <div className="relative flex h-[112px] w-[112px] items-center justify-center rounded-full border-[4px] border-ink bg-[linear-gradient(135deg,#A77BF3_0%,#7B3FE4_100%)] shadow-[0_6px_0_rgba(42,27,69,0.2)]">
+            <svg width="66" height="66" viewBox="0 0 64 64" fill="none">
+              <circle cx="32" cy="26" r="13" fill="#FFF9EF" stroke="#2A1B45" strokeWidth="4" />
+              <circle cx="27" cy="25" r="2.8" fill="#2A1B45" />
+              <circle cx="37" cy="25" r="2.8" fill="#2A1B45" />
+              <path
+                d="M28 31C29.5 33 34.5 33 36 31"
+                stroke="#2A1B45"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+              <path
+                d="M14 54C16.5 46 23.5 42 32 42C40.5 42 47.5 46 50 54"
+                fill="#FFC93C"
+                stroke="#2A1B45"
+                strokeWidth="4"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+
+          <h2 className="mt-4 text-center font-display text-[24px] leading-tight text-grape-dark">
+            {displayName}
+          </h2>
+
+          <div className="mt-2 flex items-center gap-2 rounded-full border-2 border-ink bg-sun-soft px-4 py-1 font-display text-[16px] text-sun-dark">
+            <FireIcon />
+            <span>{streakLabel(streakDays)}</span>
+          </div>
+
+          <div className="mt-3 w-full px-1">
+            <XPBar xp={user?.xp ?? 0} />
+          </div>
         </div>
+      )}
 
-        <h2 className="mt-4 text-center font-display text-[24px] leading-tight text-grape-dark">
-          {displayName}
-        </h2>
-
-        <div className="mt-2 flex items-center gap-2 rounded-full border-2 border-ink bg-sun-soft px-4 py-1 font-display text-[16px] text-sun-dark">
-          <FireIcon />
-          <span>{streakLabel(streakDays)}</span>
-        </div>
-
-        <div className="mt-3 w-full px-1">
-          <XPBar xp={user?.xp ?? 0} />
-        </div>
-      </div>
-
-      <nav className="mt-8 space-y-2.5">
+      <nav className={`${collapsed ? 'mt-12' : 'mt-8'} space-y-2.5`}>
         {navItems.map((item) => {
           const isActive = activeRoute === item.route;
           const Icon = item.icon;
@@ -216,15 +228,19 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
               key={item.route}
               type="button"
               onClick={() => navigate(item.route)}
-              className={`flex h-[54px] w-full items-center gap-3 rounded-[18px] border-[3px] px-4 text-left font-display text-[16px] transition-all ${
+              aria-label={collapsed ? item.label : undefined}
+              title={collapsed ? item.label : undefined}
+              className={`flex h-[54px] w-full items-center gap-3 rounded-[18px] border-[3px] text-left font-display text-[16px] transition-all ${
+                collapsed ? 'justify-center px-0' : 'px-4'
+              } ${
                 isActive
                   ? 'border-ink bg-grape text-white shadow-[0_4px_0_rgba(42,27,69,0.25)]'
                   : 'border-transparent text-ink hover:border-line hover:bg-cream'
               }`}
             >
               <Icon active={isActive} />
-              <span>{item.label}</span>
-              {'dev' in item ? (
+              {collapsed ? null : <span>{item.label}</span>}
+              {'dev' in item && !collapsed ? (
                 <span className="ml-auto rounded-full border-2 border-dashed border-line px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-ink-faint">
                   Dev
                 </span>
@@ -238,10 +254,14 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
         <button
           type="button"
           onClick={() => void handleTemporaryLogout()}
-          className="flex w-full items-center gap-3 rounded-[18px] border-[3px] border-transparent px-3 py-3 text-left font-display text-[16px] text-coral-dark transition-colors hover:border-coral-soft hover:bg-coral-soft"
+          aria-label={collapsed ? 'Cerrar sesión' : undefined}
+          title={collapsed ? 'Cerrar sesión' : undefined}
+          className={`flex w-full items-center gap-3 rounded-[18px] border-[3px] border-transparent py-3 text-left font-display text-[16px] text-coral-dark transition-colors hover:border-coral-soft hover:bg-coral-soft ${
+            collapsed ? 'justify-center px-0' : 'px-3'
+          }`}
         >
           <LogoutIcon />
-          Cerrar sesión
+          {collapsed ? null : 'Cerrar sesión'}
         </button>
       </div>
     </aside>

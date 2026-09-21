@@ -138,9 +138,14 @@ const WorldCard = ({ world }: { world: WorldModuleCard }) => {
     <button
       type="button"
       onClick={() => navigate(`${ROUTES.WORLDS}/${world.id}`)}
-      className="card block w-full overflow-hidden text-left transition-transform duration-100 hover:-translate-y-1 active:translate-y-0"
+      className="card flex w-full flex-col overflow-hidden text-left transition-transform duration-100 hover:-translate-y-1 active:translate-y-0"
       aria-label={`Ingresar a ${world.title}`}
     >
+      {/*
+       * `flex-col` no es de adorno: un `<button>` que la rejilla estira centra su
+       * contenido en vertical, y la tarjeta de texto más corto enseñaba una
+       * franja blanca encima de la cabecera.
+       */}
       <div
         className="relative flex h-[168px] items-center justify-center border-b-[3px] border-ink"
         style={{ background: tone.gradient }}
@@ -155,13 +160,13 @@ const WorldCard = ({ world }: { world: WorldModuleCard }) => {
         </span>
       </div>
 
-      <div className="px-5 pb-5 pt-4 text-center">
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-4 text-center">
         <h3 className="font-display text-[22px] leading-tight text-ink">{world.title}</h3>
         <p className="mt-2 text-[15px] font-semibold leading-[1.6] text-ink-soft">
           {world.description}
         </p>
 
-        <div className="mt-5">
+        <div className="mt-auto pt-5">
           <div className="flex items-center justify-between text-[13px] font-bold uppercase tracking-[0.04em] text-ink-faint">
             <span>Progreso</span>
             <span>

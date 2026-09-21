@@ -196,7 +196,7 @@ export const buildWorldProgress = (
 
   /*
    * Lo jugado que el catálogo ya no nombra no se pierde: despublicar un nivel
-   * borraría de la vista del profesor el historial de un niño, y sin ningún
+   * borraría de la vista del tutor el historial de un niño, y sin ningún
    * error que lo delate. Va al final de su mundo, y si el mundo tampoco está
    * publicado, a un grupo propio al final de la lista.
    */

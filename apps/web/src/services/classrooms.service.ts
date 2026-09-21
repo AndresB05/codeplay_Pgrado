@@ -5,6 +5,7 @@ import {
   pickAvatarTone,
 } from '../components/dashboard/teacher/classroomsData';
 import { invitationError } from './invitations.service';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import type { ServiceResult } from '../types/api.types';
 import type { Database } from '../types/database.types';
@@ -42,7 +43,80 @@ export interface ClassroomsService {
   cancelJoinRequest: (studentId: string) => ServiceResult<null>;
   leaveGroup: (studentId: string) => ServiceResult<null>;
   subscribeToClassrooms: (userId: string, onChange: () => void) => () => void;
+  watchClassroomPresence: (
+    groupIds: string[],
+    userId: string,
+    announce: boolean,
+    onChange: (onlineIds: ReadonlySet<string>) => void
+  ) => () => void;
 }
+
+/*
+ * UN CANAL DE PRESENCIA POR SALÓN Y POR PESTAÑA, y por eso un registro aquí.
+ *
+ * Al revés que `subscribeToClassrooms`, el nombre no puede llevar nada al azar:
+ * la presencia sólo se ve entre quienes comparten el mismo canal. Y con el mismo
+ * nombre, `supabase.channel()` devuelve el que ya existe, mientras que quitarlo
+ * es asíncrono. Bajo StrictMode el efecto se desmonta y se vuelve a montar al
+ * instante: sin este registro, el segundo montaje recibiría el canal que se está
+ * cerrando y fallaría al añadirle oyentes tras el `subscribe()`.
+ *
+ * Por eso el cierre se aplaza un turno: si alguien vuelve a pedir el salón
+ * antes, se cancela y se sigue usando el mismo canal.
+ */
+interface PresenceRoom {
+  channel: RealtimeChannel;
+  online: ReadonlySet<string>;
+  listeners: Set<() => void>;
+  closeTimer: ReturnType<typeof setTimeout> | null;
+}
+
+const presenceRooms = new Map<string, PresenceRoom>();
+
+const openPresenceRoom = (groupId: string, userId: string, announce: boolean): PresenceRoom => {
+  const existing = presenceRooms.get(groupId);
+
+  if (existing) {
+    if (existing.closeTimer) {
+      clearTimeout(existing.closeTimer);
+      existing.closeTimer = null;
+    }
+
+    return existing;
+  }
+
+  const channel = supabase.channel(`presence:classroom:${groupId}`, {
+    config: { presence: { key: userId } },
+  });
+
+  const room: PresenceRoom = { channel, online: new Set(), listeners: new Set(), closeTimer: null };
+
+  channel.on('presence', { event: 'sync' }, () => {
+    room.online = new Set(Object.keys(channel.presenceState()));
+    room.listeners.forEach((listener) => listener());
+  });
+
+  channel.subscribe((status) => {
+    if (status === 'SUBSCRIBED' && announce) {
+      void channel.track({ online_at: new Date().toISOString() });
+    }
+  });
+
+  presenceRooms.set(groupId, room);
+
+  return room;
+};
+
+const releasePresenceRoom = (groupId: string, room: PresenceRoom): void => {
+  if (room.listeners.size > 0 || room.closeTimer) {
+    return;
+  }
+
+  room.closeTimer = setTimeout(() => {
+    presenceRooms.delete(groupId);
+    void supabase.removeChannel(room.channel);
+  }, 0);
+};
 
 const EMPTY_MEMBERSHIP: StudentMembership = { status: 'none', groupId: null };
 
@@ -142,6 +216,13 @@ const hoursSince = (iso: string | null): number | null => {
  * acababa de jugar. Un alumno sin ninguna partida no tiene fila ahí, y sus dos
  * huecos siguen siendo el dato.
  */
+/* Jugar y entrar cuentan igual como actividad: vale la más reciente de las dos. */
+const latest = (...isoDates: (string | null | undefined)[]): string | null =>
+  isoDates.reduce<string | null>(
+    (newest, iso) => (iso && (!newest || Date.parse(iso) > Date.parse(newest)) ? iso : newest),
+    null
+  );
+
 const mapRosterRow = (row: RosterRow, activity: ActivityRow | undefined): ClassroomStudent => {
   const name = row.full_name || FALLBACK_STUDENT_NAME;
   const id = row.student_id ?? '';
@@ -152,7 +233,7 @@ const mapRosterRow = (row: RosterRow, activity: ActivityRow | undefined): Classr
     initials: buildInitials(name),
     avatarTone: pickAvatarTone(id),
     currentWorld: activity?.current_world_title ?? null,
-    hoursSinceLastActivity: hoursSince(activity?.last_attempt_at ?? null),
+    hoursSinceLastActivity: hoursSince(latest(activity?.last_attempt_at, row.last_seen_at)),
     /* Derivada, como en `profile.service.ts`: una racha muerta se lee como cero. */
     streakDays: liveStreak({
       current: row.current_streak ?? 0,
@@ -167,7 +248,6 @@ const mapRosterRow = (row: RosterRow, activity: ActivityRow | undefined): Classr
     averageBestScore: activity?.average_best_score ?? null,
   };
 };
-
 
 const mapJoinRequestRow = (row: JoinRequestRow, profile: ProfileRow | undefined): JoinRequest => {
   const name = profile?.full_name || FALLBACK_STUDENT_NAME;
@@ -640,6 +720,36 @@ export const classroomsService: ClassroomsService = {
 
     return () => {
       void supabase.removeChannel(channel);
+    };
+  },
+
+  /**
+   * Quién de estos salones tiene CodePlay abierto ahora mismo, con Realtime
+   * Presence. Sólo anuncia quien pasa `announce`: el niño se deja ver, el tutor
+   * mira sin aparecer.
+   *
+   * El canal es público, como el de `subscribeToClassrooms`: sólo viajan ids de
+   * usuario, y únicamente a quien conoce el id interno del salón.
+   */
+  watchClassroomPresence(groupIds, userId, announce, onChange) {
+    const rooms = groupIds.map((groupId) => ({
+      groupId,
+      room: openPresenceRoom(groupId, userId, announce),
+    }));
+
+    const emit = (): void => {
+      onChange(new Set(rooms.flatMap(({ room }) => [...room.online])));
+    };
+
+    rooms.forEach(({ room }) => room.listeners.add(emit));
+    /* Un salón ya abierto no vuelve a sincronizar: lo que sabe se entrega ya. */
+    emit();
+
+    return () => {
+      rooms.forEach(({ groupId, room }) => {
+        room.listeners.delete(emit);
+        releasePresenceRoom(groupId, room);
+      });
     };
   },
 };

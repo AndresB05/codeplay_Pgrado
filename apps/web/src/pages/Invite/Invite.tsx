@@ -154,7 +154,7 @@ export const Invite = () => {
       <Frame>
         <span className="chip chip-coral">Enlace incompleto</span>
         <h1 className="title-xl mt-3">Ese enlace no está entero</h1>
-        <p className="subtitle mt-1">Pídele a tu profesor que te lo comparta otra vez, completo.</p>
+        <p className="subtitle mt-1">Pídele a tu tutor que te lo comparta otra vez, completo.</p>
       </Frame>
     );
   }
@@ -261,8 +261,8 @@ export const Invite = () => {
         <h1 className="title-xl mt-3">{preview.groupName}</h1>
         <p className="subtitle mt-1">
           {preview.state === 'used'
-            ? 'Alguien ya entró con este enlace. Pídele a tu profesor uno nuevo.'
-            : 'Este enlace pasó de fecha. Pídele a tu profesor uno nuevo.'}
+            ? 'Alguien ya entró con este enlace. Pídele a tu tutor uno nuevo.'
+            : 'Este enlace pasó de fecha. Pídele a tu tutor uno nuevo.'}
         </p>
 
         <button

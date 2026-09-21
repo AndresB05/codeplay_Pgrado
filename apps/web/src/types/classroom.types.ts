@@ -85,7 +85,7 @@ export interface ClassGroup {
   name: string;
   /** Grado o curso al que pertenece el salón. */
   gradeLabel: string;
-  /** Profesor a cargo del salón. */
+  /** Tutor a cargo del salón. */
   teacherName: string;
   /** Cupos totales del salón. */
   capacity: number;

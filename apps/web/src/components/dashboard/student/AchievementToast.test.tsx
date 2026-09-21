@@ -94,7 +94,7 @@ describe('AchievementToast', () => {
   });
 
   /*
-   * Una misión la puso su profesor y un logro sale de lo que acaba de hacer:
+   * Una misión la puso su tutor y un logro sale de lo que acaba de hacer:
    * llamarlas igual confundiría las dos cosas. Comparten cola porque la misma
    * partida puede conceder las dos, y dos colas se pintarían una encima de otra.
    */

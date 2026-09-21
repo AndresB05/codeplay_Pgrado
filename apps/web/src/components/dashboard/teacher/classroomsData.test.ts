@@ -461,7 +461,7 @@ describe('buildWorldProgress', () => {
   });
 
   /*
-   * Despublicar un nivel borraría de la vista del profesor el historial de un
+   * Despublicar un nivel borraría de la vista del tutor el historial de un
    * niño, y sin ningún error que lo delate. Por eso lo jugado no se pierde.
    */
   it('conserva un nivel jugado que ya no está en el catálogo', () => {

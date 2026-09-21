@@ -488,6 +488,7 @@ export type Database = {
           full_name: string
           id: string
           is_role_declared: boolean
+          last_seen_at: string | null
           last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]
@@ -503,6 +504,7 @@ export type Database = {
           full_name?: string
           id: string
           is_role_declared?: boolean
+          last_seen_at?: string | null
           last_streak_day?: string | null
           max_streak?: number
           role?: Database["public"]["Enums"]["user_role"]
@@ -518,6 +520,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_role_declared?: boolean
+          last_seen_at?: string | null
           last_streak_day?: string | null
           max_streak?: number
           role?: Database["public"]["Enums"]["user_role"]
@@ -753,6 +756,7 @@ export type Database = {
           full_name: string | null
           group_id: string | null
           joined_at: string | null
+          last_seen_at: string | null
           last_streak_day: string | null
           student_id: string | null
           total_xp: number | null
@@ -943,6 +947,7 @@ export type Database = {
           full_name: string
           id: string
           is_role_declared: boolean
+          last_seen_at: string | null
           last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]
@@ -967,6 +972,7 @@ export type Database = {
         }
         Returns: Json
       }
+      touch_last_seen: { Args: never; Returns: undefined }
       touch_streak: {
         Args: { input_user_id: string }
         Returns: {
@@ -977,6 +983,7 @@ export type Database = {
           full_name: string
           id: string
           is_role_declared: boolean
+          last_seen_at: string | null
           last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]
@@ -1006,6 +1013,7 @@ export type Database = {
           full_name: string
           id: string
           is_role_declared: boolean
+          last_seen_at: string | null
           last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]

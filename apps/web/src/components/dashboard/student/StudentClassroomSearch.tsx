@@ -57,8 +57,7 @@ export const StudentClassroomSearch = ({ groups, onRequestJoin }: StudentClassro
           <div className="min-w-[260px] flex-1">
             <h1 className="title-xl">¡Todavía no estás en ningún salón!</h1>
             <p className="subtitle mt-1">
-              Busca el salón de tu clase por su nombre, o escribe el ID exacto que te dio tu
-              profesor.
+              Busca el salón de tu clase por su nombre, o escribe el ID exacto que te dio tu tutor.
             </p>
           </div>
         </div>
@@ -105,8 +104,7 @@ export const StudentClassroomSearch = ({ groups, onRequestJoin }: StudentClassro
 
         {results.length === 0 ? (
           <p className="card mt-4 px-5 py-12 text-center text-[16px] font-semibold text-ink-faint">
-            Ningún salón coincide con «{query.trim()}». Revisa el nombre o pídele el ID a tu
-            profesor.
+            Ningún salón coincide con «{query.trim()}». Revisa el nombre o pídele el ID a tu tutor.
           </p>
         ) : (
           <div className="mt-4 grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -139,7 +137,7 @@ export const StudentClassroomSearch = ({ groups, onRequestJoin }: StudentClassro
 
                   <div className="px-5 py-4">
                     <p className="text-[16px] font-bold text-ink">
-                      Profesor <span className="text-mint-dark">{group.teacherName}</span>
+                      Tutor <span className="text-mint-dark">{group.teacherName}</span>
                     </p>
 
                     <div className="mt-3">

@@ -3,6 +3,13 @@ import { explorerLevel } from '../../../constants/progress';
 import type { ClassroomStudent } from '../../../types/classroom.types';
 import { XPBar } from '../../ui/XPBar';
 import { formatLastActivity } from '../teacher/classroomsData';
+import { sortRoster, type RosterSortKey } from './podiumRanking';
+
+const SORT_OPTIONS: { key: RosterSortKey; label: string }[] = [
+  { key: 'xp', label: 'Más XP' },
+  { key: 'streak', label: 'Mayor racha' },
+  { key: 'name', label: 'A-Z' },
+];
 
 const WorldBadgeIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -44,6 +51,8 @@ interface StudentRosterTableProps {
    * del salón. Solo el tutor la recibe.
    */
   onRemoveStudent?: (studentId: string) => void;
+  /** Quién tiene CodePlay abierto ahora: lleva el punto verde y «En línea». */
+  onlineIds?: ReadonlySet<string>;
 }
 
 /**
@@ -54,8 +63,11 @@ export const StudentRosterTable = ({
   students,
   emptyLabel = 'Todavía no hay exploradores en este salón.',
   onRemoveStudent,
+  onlineIds,
 }: StudentRosterTableProps) => {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<RosterSortKey>('xp');
+  const sortedStudents = sortRoster(students, sortKey);
 
   /*
    * La columna de XP cambia de sitio según quién mira: el niño la ve junto a la
@@ -89,106 +101,141 @@ export const StudentRosterTable = ({
   };
 
   return (
-    <section className="card overflow-hidden">
+    <div>
       <div
-        className={`grid ${gridColumns} border-b-[3px] border-ink bg-grape-soft px-5 py-4 font-display text-[15px] text-grape-dark`}
+        role="group"
+        aria-label="Ordenar exploradores"
+        className="mb-3 flex flex-wrap items-center justify-end gap-2"
       >
-        <div>Explorador</div>
-        <div>Mundo actual</div>
-        <div>Última actividad</div>
-        {onRemoveStudent ? null : <div>XP</div>}
-        <div>Racha</div>
-        {onRemoveStudent ? <div>XP</div> : null}
-        {onRemoveStudent ? <div className="text-right">Acciones</div> : null}
+        <span className="text-[14px] font-bold text-ink-faint">Ordenar por</span>
+        {SORT_OPTIONS.map((option) => (
+          <button
+            key={option.key}
+            type="button"
+            onClick={() => setSortKey(option.key)}
+            aria-pressed={sortKey === option.key}
+            className={`rounded-full border-2 px-3 py-1 font-display text-[14px] transition-colors ${
+              sortKey === option.key
+                ? 'border-ink bg-grape text-white'
+                : 'border-line bg-white text-ink hover:bg-cream'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
 
-      {students.length === 0 ? (
-        <p className="px-5 py-10 text-center text-[16px] font-semibold text-ink-faint">
-          {emptyLabel}
-        </p>
-      ) : (
-        <div>
-          {students.map((student, index) => (
-            <div
-              key={student.id}
-              className={`grid ${gridColumns} items-center border-b-2 border-line px-5 py-4 text-[16px] text-ink last:border-b-0 ${
-                index % 2 === 1 ? 'bg-cream' : 'bg-white'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full border-[3px] border-ink font-display text-[15px] ${student.avatarTone}`}
-                >
-                  {student.initials}
+      <section className="card overflow-hidden">
+        <div
+          className={`grid ${gridColumns} border-b-[3px] border-ink bg-grape-soft px-5 py-4 font-display text-[15px] text-grape-dark`}
+        >
+          <div>Explorador</div>
+          <div>Mundo actual</div>
+          <div>Última actividad</div>
+          {onRemoveStudent ? null : <div>XP</div>}
+          <div>Racha</div>
+          {onRemoveStudent ? <div>XP</div> : null}
+          {onRemoveStudent ? <div className="text-right">Acciones</div> : null}
+        </div>
+
+        {students.length === 0 ? (
+          <p className="px-5 py-10 text-center text-[16px] font-semibold text-ink-faint">
+            {emptyLabel}
+          </p>
+        ) : (
+          <div>
+            {sortedStudents.map((student, index) => (
+              <div
+                key={student.id}
+                className={`grid ${gridColumns} items-center border-b-2 border-line px-5 py-4 text-[16px] text-ink last:border-b-0 ${
+                  index % 2 === 1 ? 'bg-cream' : 'bg-white'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`relative flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full border-[3px] border-ink font-display text-[15px] ${student.avatarTone}`}
+                  >
+                    {student.initials}
+                    {onlineIds?.has(student.id) ? (
+                      <span
+                        aria-hidden="true"
+                        className="absolute -bottom-1 -right-1 h-[16px] w-[16px] rounded-full border-[3px] border-white bg-jungle-light"
+                      />
+                    ) : null}
+                  </div>
+                  <span className="font-bold">{student.name}</span>
                 </div>
-                <span className="font-bold">{student.name}</span>
-              </div>
 
-              <div>
-                {student.currentWorld ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-mint px-3 py-1 font-display text-[13px] text-white">
-                    <WorldBadgeIcon />
-                    {student.currentWorld}
-                  </span>
-                ) : (
-                  <span className="text-ink-faint">—</span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 font-semibold text-ink-soft">
-                {student.hoursSinceLastActivity === null ? <SleepIcon /> : null}
-                {formatLastActivity(student.hoursSinceLastActivity)}
-              </div>
-
-              {onRemoveStudent ? null : <div>{xpCell(student.xp)}</div>}
-
-              <div>
-                {student.streakDays !== null ? (
-                  <span className="inline-flex items-center gap-1.5 font-display text-[18px] text-sun-dark">
-                    <FireIcon />
-                    {student.streakDays}
-                  </span>
-                ) : (
-                  <span className="text-ink-faint">—</span>
-                )}
-              </div>
-
-              {onRemoveStudent ? <div>{xpCell(student.xp)}</div> : null}
-
-              {onRemoveStudent ? (
-                <div className="flex justify-end">
-                  {confirmingId === student.id ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleRemove(student.id)}
-                        className="btn btn-sm btn-coral"
-                      >
-                        Confirmar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmingId(null)}
-                        className="btn btn-sm btn-ghost"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
+                <div>
+                  {student.currentWorld ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-mint px-3 py-1 font-display text-[13px] text-white">
+                      <WorldBadgeIcon />
+                      {student.currentWorld}
+                    </span>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmingId(student.id)}
-                      className="rounded-full border-2 border-coral-dark bg-coral-soft px-4 py-1.5 font-display text-[14px] text-coral-dark transition-colors hover:bg-coral hover:text-white"
-                    >
-                      Quitar
-                    </button>
+                    <span className="text-ink-faint">—</span>
                   )}
                 </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
+
+                {onlineIds?.has(student.id) ? (
+                  <div className="font-display text-[15px] text-jungle-dark">En línea</div>
+                ) : (
+                  <div className="flex items-center gap-2 font-semibold text-ink-soft">
+                    {student.hoursSinceLastActivity === null ? <SleepIcon /> : null}
+                    {formatLastActivity(student.hoursSinceLastActivity)}
+                  </div>
+                )}
+
+                {onRemoveStudent ? null : <div>{xpCell(student.xp)}</div>}
+
+                <div>
+                  {student.streakDays !== null ? (
+                    <span className="inline-flex items-center gap-1.5 font-display text-[18px] text-sun-dark">
+                      <FireIcon />
+                      {student.streakDays}
+                    </span>
+                  ) : (
+                    <span className="text-ink-faint">—</span>
+                  )}
+                </div>
+
+                {onRemoveStudent ? <div>{xpCell(student.xp)}</div> : null}
+
+                {onRemoveStudent ? (
+                  <div className="flex justify-end">
+                    {confirmingId === student.id ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(student.id)}
+                          className="btn btn-sm btn-coral"
+                        >
+                          Confirmar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingId(null)}
+                          className="btn btn-sm btn-ghost"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingId(student.id)}
+                        className="rounded-full border-2 border-coral-dark bg-coral-soft px-4 py-1.5 font-display text-[14px] text-coral-dark transition-colors hover:bg-coral hover:text-white"
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 };

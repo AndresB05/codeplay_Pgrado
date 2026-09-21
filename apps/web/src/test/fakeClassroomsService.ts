@@ -1,11 +1,7 @@
 import { AppError } from '../errors/AppError';
 import { buildInitials, pickAvatarTone } from '../components/dashboard/teacher/classroomsData';
 import type { ClassroomsService, ClassroomsSnapshot } from '../services/classrooms.service';
-import type {
-  ClassGroup,
-  ClassroomStudent,
-  StudentMembership,
-} from '../types/classroom.types';
+import type { ClassGroup, ClassroomStudent, StudentMembership } from '../types/classroom.types';
 
 /**
  * Servidor de salones en memoria. Imita a la base, no al store: impone el cupo,
@@ -474,6 +470,10 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
         listeners.delete(onChange);
       };
     },
+
+    watchClassroomPresence() {
+      return () => undefined;
+    },
   };
 
   return {
@@ -522,8 +522,7 @@ export const createFakeClassrooms = (tutorId = 'tutor-de-prueba'): FakeClassroom
       return token;
     },
 
-    invitationStatus: (token) =>
-      invitations.find((entry) => entry.token === token)?.status ?? null,
+    invitationStatus: (token) => invitations.find((entry) => entry.token === token)?.status ?? null,
 
     actAs: (studentId) => {
       actingStudentId = studentId;
