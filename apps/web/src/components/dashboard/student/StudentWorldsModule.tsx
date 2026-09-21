@@ -3,25 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { FALLBACK_STUDENT_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
-import {
-  type CategoryKey,
-  type DifficultyKey,
-  type DifficultyLabel,
-  getCardToneStyles,
-  type ThemeKey,
-  type WorldModuleCard,
-} from './worlds/worldsData';
+import { type DifficultyLabel, getCardToneStyles, type WorldModuleCard } from './worlds/worldsData';
 import { useWorlds } from '../../../hooks/useWorlds';
 import { AssignedMissionsPanel } from '../shared/AssignedMissionsPanel';
 import { useProgress } from '../../../hooks/useProgress';
 import { worldsService } from '../../../services/worlds.service';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
 
-const DIFFICULTY_LABELS: Record<Exclude<DifficultyKey, 'all'>, DifficultyLabel> = {
-  easy: 'Fácil',
-  medium: 'Intermedio',
-  hard: 'Difícil',
-};
+/*
+ * La dificultad sale del orden: cada mundo pide lo del anterior y algo más, y
+ * el tercero ya limita los pasos. Un cuarto mundo se quedaría en «Difícil».
+ */
+const DIFFICULTY_BY_ORDER: DifficultyLabel[] = ['Fácil', 'Intermedio', 'Difícil'];
+
+const ALL = 'all';
 
 const FilterIcon = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
@@ -119,8 +114,19 @@ const SelectField = ({
             </option>
           ))}
         </select>
-        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center font-display text-[18px] text-ink-soft">
-          ⌄
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-ink-soft"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M6 9L12 15L18 9"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </span>
       </span>
     </label>
@@ -191,10 +197,9 @@ type StudentWorldsModuleProps = {
 };
 
 export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
-  const [difficulty, setDifficulty] = useState<DifficultyKey>('easy');
-  const [theme, setTheme] = useState<ThemeKey>('all');
-  const [category, setCategory] = useState<CategoryKey>('beginners');
-
+  /* Arrancan en «Todas»: con otro valor, el niño entraría sin ver parte de sus mundos. */
+  const [difficulty, setDifficulty] = useState<string>(ALL);
+  const [theme, setTheme] = useState<string>(ALL);
   const { worlds: fetchedWorlds, loading: worldsLoading, error: worldsError } = useWorlds();
   const { progress } = useProgress(user?.id ?? null);
 
@@ -251,16 +256,12 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
     const tones: WorldModuleCard['tone'][] = ['forest', 'volcano', 'ocean'];
 
     return fetchedWorlds.map((world, index) => {
-      const worldDifficulty: Exclude<DifficultyKey, 'all'> = 'easy';
-
       return {
         id: world.id,
         title: world.name,
         description: world.description,
-        difficultyLabel: DIFFICULTY_LABELS[worldDifficulty],
-        difficulty: worldDifficulty,
-        theme: 'logic',
-        category: 'beginners',
+        difficultyLabel: DIFFICULTY_BY_ORDER[Math.min(index, DIFFICULTY_BY_ORDER.length - 1)],
+        theme: world.regionLabel,
         tone: tones[index % tones.length],
         completedLevels: worldStats[world.id]?.completed ?? 0,
         totalLevels: worldStats[world.id]?.total ?? 0,
@@ -268,15 +269,21 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
     });
   }, [fetchedWorlds, worldStats]);
 
-  const filteredWorlds = useMemo(() => {
-    return dataWorlds.filter((world) => {
-      const matchesDifficulty = difficulty === 'all' || world.difficulty === difficulty;
-      const matchesTheme = theme === 'all' || world.theme === theme;
-      const matchesCategory = category === 'all' || world.category === category;
+  /* Los temas salen de los mundos que hay, para no ofrecer uno que deje la lista vacía. */
+  const themeOptions = useMemo(
+    () => [...new Set(dataWorlds.flatMap((world) => (world.theme ? [world.theme] : [])))],
+    [dataWorlds]
+  );
 
-      return matchesDifficulty && matchesTheme && matchesCategory;
-    });
-  }, [category, difficulty, theme, dataWorlds]);
+  const filteredWorlds = useMemo(
+    () =>
+      dataWorlds.filter(
+        (world) =>
+          (difficulty === ALL || world.difficultyLabel === difficulty) &&
+          (theme === ALL || world.theme === theme)
+      ),
+    [dataWorlds, difficulty, theme]
+  );
 
   return (
     <div className="px-5 py-5">
@@ -317,7 +324,7 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
       <AssignedMissionsPanel hideCompleted />
 
       <section className="card mt-6 px-5 py-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft">
               <FilterIcon />
@@ -329,30 +336,19 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
             <SelectField
               label="Dificultad"
               value={difficulty}
-              onChange={(value) => setDifficulty(value as DifficultyKey)}
+              onChange={setDifficulty}
               options={[
-                { value: 'easy', label: 'Fácil' },
-                { value: 'medium', label: 'Intermedio' },
-                { value: 'hard', label: 'Difícil' },
-                { value: 'all', label: 'Todas' },
+                { value: ALL, label: 'Todas' },
+                ...DIFFICULTY_BY_ORDER.map((label) => ({ value: label, label })),
               ]}
             />
             <SelectField
               label="Tema"
               value={theme}
-              onChange={(value) => setTheme(value as ThemeKey)}
+              onChange={setTheme}
               options={[
-                { value: 'all', label: 'Todo' },
-                { value: 'logic', label: 'Lógica' },
-              ]}
-            />
-            <SelectField
-              label="Categoría"
-              value={category}
-              onChange={(value) => setCategory(value as CategoryKey)}
-              options={[
-                { value: 'beginners', label: 'Principiantes' },
-                { value: 'all', label: 'Todas' },
+                { value: ALL, label: 'Todos' },
+                ...themeOptions.map((label) => ({ value: label, label })),
               ]}
             />
           </div>
@@ -385,7 +381,7 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
           </p>
         ) : filteredWorlds.length === 0 ? (
           <p className="card mt-4 px-5 py-12 text-center text-[16px] font-semibold text-ink-faint">
-            Ningún mundo coincide con estos filtros. Prueba con otra dificultad.
+            Ningún mundo coincide con estos filtros. Prueba con otra combinación.
           </p>
         ) : (
           <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-3">

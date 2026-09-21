@@ -1,6 +1,3 @@
-export type DifficultyKey = 'all' | 'easy' | 'medium' | 'hard';
-export type ThemeKey = 'all' | 'logic';
-export type CategoryKey = 'all' | 'beginners';
 export type DifficultyLabel = 'Fácil' | 'Intermedio' | 'Difícil';
 
 export type WorldModuleCard = {
@@ -8,9 +5,8 @@ export type WorldModuleCard = {
   title: string;
   description: string;
   difficultyLabel: DifficultyLabel;
-  difficulty: Exclude<DifficultyKey, 'all'>;
-  theme: ThemeKey;
-  category: CategoryKey;
+  /** El pilar del pensamiento computacional que trabaja: `worlds.region_label`. */
+  theme: string | null;
   tone: 'forest' | 'volcano' | 'ocean';
   completedLevels: number;
   totalLevels: number;

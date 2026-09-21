@@ -84,7 +84,7 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
               <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="rounded-[18px] border-2 border-line bg-cream px-4 py-3">
                   <p className="text-[13px] font-bold uppercase tracking-[0.05em] text-ink-faint">
-                    Email
+                    Correo
                   </p>
                   <p className="mt-1 break-words text-[17px] font-bold text-ink">
                     {email ?? <span className="text-ink-faint">Sin correo asociado</span>}
