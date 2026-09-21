@@ -35,7 +35,7 @@ export const TutorSection = () => {
               </h2>
 
               <p className="mt-5 text-[16px] font-semibold leading-[1.7] text-ink-soft">
-                Codeplay no solo es divertido para los estudiantes, sino que proporciona
+                CodePlay no solo es divertido para los estudiantes, sino que proporciona
                 herramientas robustas para tutores. Sigue el avance, identifica áreas de mejora y
                 celebra los logros en el pensamiento computacional.
               </p>

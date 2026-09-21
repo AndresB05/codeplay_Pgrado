@@ -28,7 +28,7 @@ export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
         className="flex items-center gap-2 font-display text-[32px] tracking-[-0.02em] text-grape-dark"
       >
         <BrandLogo size={52} />
-        Codeplay
+        CodePlay
       </button>
 
       <nav className="hidden items-center gap-3 md:flex">

@@ -148,7 +148,7 @@ export const Signup = () => {
           className="flex items-center gap-2 pt-2 font-display text-[26px] tracking-[-0.02em] text-grape-dark"
         >
           <BrandLogo size={46} />
-          Codeplay
+          CodePlay
         </Link>
 
         <div className="flex flex-1 items-center justify-center py-8 sm:py-10">
@@ -246,7 +246,7 @@ export const Signup = () => {
                   />
 
                   <SignupField
-                    label="Correo Electrónico"
+                    label="Correo electrónico"
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
@@ -283,7 +283,7 @@ export const Signup = () => {
                   />
 
                   <SignupField
-                    label="Validar Contraseña"
+                    label="Confirmar contraseña"
                     type={showPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}

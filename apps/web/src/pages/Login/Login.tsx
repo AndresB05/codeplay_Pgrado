@@ -82,7 +82,7 @@ export const Login = () => {
           className="flex items-center gap-2 pt-2 font-display text-[26px] tracking-[-0.02em] text-grape-dark"
         >
           <BrandLogo size={46} />
-          Codeplay
+          CodePlay
         </Link>
 
         <div className="flex flex-1 items-center justify-center py-8 sm:py-10">

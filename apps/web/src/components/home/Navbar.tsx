@@ -144,7 +144,7 @@ export const Navbar = () => {
           className="flex items-center gap-2 font-display text-[26px] tracking-[-0.02em] text-grape-dark sm:text-[32px]"
         >
           <BrandLogo size={52} />
-          Codeplay
+          CodePlay
         </Link>
 
         <nav className="hidden items-center gap-2 md:flex">
