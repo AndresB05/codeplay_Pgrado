@@ -3,10 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CatalogWorld } from '../../../services/studentProgress.service';
-import type {
-  MissionAssignment,
-  MissionCompletion,
-} from '../../../services/missions.service';
+import type { MissionAssignment, MissionCompletion } from '../../../services/missions.service';
 import type { ClassGroup, ClassroomStudent, Mission } from '../../../types/classroom.types';
 import { ClassroomsContext } from '../../../context/ClassroomsContext';
 import { buildClassroomsValue } from '../../../test/buildClassroomsValue';
@@ -326,6 +323,29 @@ describe('TeacherPanelModule', () => {
       expect(await screen.findByText('Vence el 25 de septiembre.')).toBeInTheDocument();
     });
 
+    it('con la ficha de un alumno abierta avisa de que se asigna a todo el salón', async () => {
+      renderPanel(
+        [{ ...buildGroup('g1', 'Salón A'), students: [buildStudent()] }],
+        'g1',
+        undefined,
+        'kid-1'
+      );
+
+      expect(
+        await screen.findByText('Las misiones se asignan a Salón A, no sólo a Axoluk.')
+      ).toBeInTheDocument();
+    });
+
+    it('sin alumno abierto no hace falta el aviso', async () => {
+      renderPanel([{ ...buildGroup('g1', 'Salón A'), students: [buildStudent()] }], 'g1');
+
+      await waitFor(() => {
+        expect(missionButton()).toHaveTextContent('Asignar misión');
+      });
+
+      expect(screen.queryByText(/no sólo a/)).not.toBeInTheDocument();
+    });
+
     it('una misión vencida cuenta como no asignada aunque la pantalla siga abierta', async () => {
       mocks.listAssignments.mockResolvedValue({
         data: [{ ...buildAssignment('g1', 'clear_world_1'), dueDate: '2000-01-01' }],
@@ -486,7 +506,9 @@ describe('TeacherPanelModule', () => {
 
       renderPanel([buildGroup('g1', 'Salón A')], 'g1');
 
-      expect(await screen.findByText(/todavía no tiene exploradores inscritos/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/todavía no tiene exploradores inscritos/i)
+      ).toBeInTheDocument();
       expect(screen.queryByRole('table')).not.toBeInTheDocument();
     });
   });
@@ -495,7 +517,19 @@ describe('TeacherPanelModule', () => {
     const GROUP_WITH_AXOLUK: ClassGroup = {
       ...buildGroup('g1', 'Salón A'),
       memberCount: 2,
-      students: [buildStudent(), buildStudent({ id: 'kid-2', name: 'Invitada Prueba', attemptedLevels: 0, completedLevels: 0, totalAttempts: 0, averageBestScore: null, hoursSinceLastActivity: null, currentWorld: null })],
+      students: [
+        buildStudent(),
+        buildStudent({
+          id: 'kid-2',
+          name: 'Invitada Prueba',
+          attemptedLevels: 0,
+          completedLevels: 0,
+          totalAttempts: 0,
+          averageBestScore: null,
+          hoursSinceLastActivity: null,
+          currentWorld: null,
+        }),
+      ],
     };
 
     beforeEach(() => {

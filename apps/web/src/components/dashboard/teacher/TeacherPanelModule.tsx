@@ -788,6 +788,16 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
           sólo ve las que le asignas.
         </p>
 
+        {/*
+         * Con la ficha de un alumno abierta encima, asignar parecía cosa suya. La
+         * asignación es del salón (0020): se dice para que nadie lo dude.
+         */}
+        {selectedStudent ? (
+          <p className="mt-3 rounded-[18px] border-2 border-sky bg-sky-soft px-5 py-3 text-[15px] font-bold text-sky-dark">
+            Las misiones se asignan a {scopeLabel}, no sólo a {selectedStudent.name}.
+          </p>
+        ) : null}
+
         {groups.length === 0 ? (
           <p className="mt-4 rounded-[18px] border-2 border-sun-dark bg-sun-soft px-5 py-4 text-[15px] font-bold text-sun-dark">
             Todavía no tienes ningún salón, así que no hay a quién asignarle una misión. Crea uno y
