@@ -78,6 +78,17 @@ describe('StudentWorldsModule', () => {
     expect(within(card as HTMLElement).getByText('Difícil')).toBeInTheDocument();
   });
 
+  it('cada uno de los tres mundos lleva su ilustración en la cabecera', () => {
+    renderModule();
+
+    const images = WORLDS.map(
+      (world) => screen.getByText(world.name).closest('button')?.querySelector('img')?.src
+    );
+
+    expect(images.every(Boolean)).toBe(true);
+    expect(new Set(images).size).toBe(3);
+  });
+
   it('el filtro de dificultad deja sólo el mundo de esa dificultad', async () => {
     renderModule();
 

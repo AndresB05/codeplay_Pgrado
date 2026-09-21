@@ -8,6 +8,8 @@ export type WorldModuleCard = {
   /** El pilar del pensamiento computacional que trabaja: `worlds.region_label`. */
   theme: string | null;
   tone: 'forest' | 'volcano' | 'ocean';
+  /** Ilustración de la cabecera; sin ella, la tarjeta pinta su degradado e icono. */
+  image: { src: string; position: string } | null;
   completedLevels: number;
   totalLevels: number;
 };

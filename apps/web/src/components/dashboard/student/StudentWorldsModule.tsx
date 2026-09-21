@@ -9,6 +9,9 @@ import { AssignedMissionsPanel } from '../shared/AssignedMissionsPanel';
 import { useProgress } from '../../../hooks/useProgress';
 import { worldsService } from '../../../services/worlds.service';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
+import world1 from '../../../assets/brand/world-1.webp';
+import world2 from '../../../assets/brand/world-2.webp';
+import world3 from '../../../assets/brand/world-3.webp';
 
 /*
  * La dificultad sale del orden: cada mundo pide lo del anterior y algo más, y
@@ -17,6 +20,17 @@ import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor
 const DIFFICULTY_BY_ORDER: DifficultyLabel[] = ['Fácil', 'Intermedio', 'Difícil'];
 
 const ALL = 'all';
+
+/*
+ * Las ilustraciones van por orden, como la dificultad, con el mismo encuadre que
+ * en la portada: la cabecera recorta una franja baja y el leopardo tiene que
+ * quedar dentro. Un mundo sin ilustración conserva su degradado e icono.
+ */
+const WORLD_IMAGES: { src: string; position: string }[] = [
+  { src: world1, position: 'object-[35%_55%]' },
+  { src: world2, position: 'object-[50%_22%]' },
+  { src: world3, position: 'object-[50%_60%]' },
+];
 
 const FilterIcon = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
@@ -153,13 +167,23 @@ const WorldCard = ({ world }: { world: WorldModuleCard }) => {
        * franja blanca encima de la cabecera.
        */}
       <div
-        className="relative flex h-[168px] items-center justify-center border-b-[3px] border-ink"
+        className="relative flex h-[168px] items-center justify-center overflow-hidden border-b-[3px] border-ink"
         style={{ background: tone.gradient }}
       >
-        <span className="pointer-events-none absolute -right-5 -top-7 h-24 w-24 rounded-full bg-white/25" />
-        <span className="pointer-events-none absolute left-6 bottom-4 h-10 w-10 rounded-full bg-white/20" />
+        {world.image ? (
+          <img
+            src={world.image.src}
+            alt=""
+            className={`absolute inset-0 h-full w-full object-cover ${world.image.position}`}
+          />
+        ) : (
+          <>
+            <span className="pointer-events-none absolute -right-5 -top-7 h-24 w-24 rounded-full bg-white/25" />
+            <span className="pointer-events-none absolute left-6 bottom-4 h-10 w-10 rounded-full bg-white/20" />
 
-        <Icon />
+            <Icon />
+          </>
+        )}
 
         <span className="absolute left-4 top-4 rounded-full border-2 border-ink bg-white px-3 py-1 font-display text-[13px] text-ink">
           {world.difficultyLabel}
@@ -263,6 +287,7 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
         difficultyLabel: DIFFICULTY_BY_ORDER[Math.min(index, DIFFICULTY_BY_ORDER.length - 1)],
         theme: world.regionLabel,
         tone: tones[index % tones.length],
+        image: WORLD_IMAGES[index] ?? null,
         completedLevels: worldStats[world.id]?.completed ?? 0,
         totalLevels: worldStats[world.id]?.total ?? 0,
       };
