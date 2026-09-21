@@ -649,4 +649,19 @@ describe('TeacherPanelModule', () => {
       expect(currentPath()).toBe('/teacher/panel');
     });
   });
+
+  describe('recursos educativos', () => {
+    it('abre el recurso al pulsar su tarjeta, y Escape lo cierra', async () => {
+      renderPanel(TWO_GROUPS, null);
+
+      await userEvent.click(screen.getByRole('button', { name: /Acompañar sin dar la respuesta/ }));
+
+      const dialog = screen.getByRole('dialog', { name: 'Acompañar sin dar la respuesta' });
+      expect(dialog).toHaveTextContent('Cuando el programa falla');
+
+      fireEvent.keyDown(window, { key: 'Escape' });
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
 });

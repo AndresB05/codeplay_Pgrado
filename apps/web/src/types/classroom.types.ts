@@ -136,13 +136,18 @@ export interface Mission {
   xpReward: number;
 }
 
+export interface TeacherResourceSection {
+  heading: string;
+  paragraphs: string[];
+}
+
 export interface TeacherResource {
   id: string;
   title: string;
   description: string;
   /** Sección del recurso: cómo se resuelven acertijos, cómo se ganan medallas, etc. */
   categoryLabel: string;
-  readMinutes: number;
+  sections: TeacherResourceSection[];
 }
 
 /** Situación del niño de la sesión actual respecto a los salones. */

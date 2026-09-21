@@ -6,7 +6,6 @@ import type {
   LevelAttempt,
   LevelProgress,
   StudentProgressDetail,
-  TeacherResource,
 } from '../../../types/classroom.types';
 
 export const findClassGroup = (
@@ -237,41 +236,6 @@ export const buildWorldProgress = (
  */
 export const isWorldFinished = (world: StudentWorldProgress): boolean =>
   world.totalLevels > 0 && world.completedLevels >= world.totalLevels;
-
-export const teacherResources: TeacherResource[] = [
-  {
-    id: 'r1',
-    title: 'Cómo se resuelven los acertijos',
-    description:
-      'Recorrido por la mecánica de los mundos y qué se espera que el niño descubra en cada uno.',
-    categoryLabel: 'Guía de la plataforma',
-    readMinutes: 6,
-  },
-  {
-    id: 'r2',
-    title: 'Qué significan las medallas',
-    description:
-      'Cada medalla premia una habilidad concreta. Aprende a leerlas para saber dónde apoyar.',
-    categoryLabel: 'Logros',
-    readMinutes: 4,
-  },
-  {
-    id: 'r3',
-    title: 'Acompañar sin dar la respuesta',
-    description:
-      'Preguntas que puedes hacerle al niño cuando se atasca, sin resolverle el acertijo.',
-    categoryLabel: 'Acompañamiento',
-    readMinutes: 8,
-  },
-  {
-    id: 'r4',
-    title: 'Leer los reportes de habilidades',
-    description:
-      'Cómo interpretar el dominio por habilidad y cuándo conviene asignar una misión extra.',
-    categoryLabel: 'Guía de la plataforma',
-    readMinutes: 5,
-  },
-];
 
 /** "hace 3 horas", "hace 2 días", a partir de una fecha ISO. */
 export const formatRelativeTime = (iso: string): string => {

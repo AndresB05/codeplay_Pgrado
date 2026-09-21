@@ -20,12 +20,13 @@ import type {
 import type { AppError } from '../../../errors/AppError';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { StatCard } from '../shared/StatCard';
+import { TeacherResourceDialog } from './TeacherResourceDialog';
+import { resourceReadMinutes, teacherResources } from './teacherResources';
 import {
   buildWorldProgress,
   formatLastActivity,
   getClassroomProgressSummary,
   isWorldFinished,
-  teacherResources,
   type StudentLevelProgress,
   type StudentWorldProgress,
 } from './classroomsData';
@@ -491,6 +492,8 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
    * `TeacherDashboard`.
    */
   const selectedGroupId = groupId ?? ALL_GROUPS;
+  const [openResourceId, setOpenResourceId] = useState<string | null>(null);
+  const openResource = teacherResources.find((resource) => resource.id === openResourceId);
 
   const [busyMissionId, setBusyMissionId] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<CatalogWorld[]>(EMPTY_CATALOG);
@@ -889,7 +892,12 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
 
         <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2">
           {teacherResources.map((resource) => (
-            <article key={resource.id} className="card p-5">
+            <button
+              key={resource.id}
+              type="button"
+              onClick={() => setOpenResourceId(resource.id)}
+              className="card p-5 text-left transition-transform hover:-translate-y-0.5"
+            >
               <span className="chip chip-mint">{resource.categoryLabel}</span>
 
               <h3 className="mt-3 font-display text-[19px] text-ink">{resource.title}</h3>
@@ -899,12 +907,17 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
               </p>
 
               <p className="mt-3 text-[14px] font-bold text-ink-faint">
-                {resource.readMinutes} min de lectura
+                {resourceReadMinutes(resource)} min de lectura ·{' '}
+                <span className="text-grape-dark">Leer</span>
               </p>
-            </article>
+            </button>
           ))}
         </div>
       </section>
+
+      {openResource ? (
+        <TeacherResourceDialog resource={openResource} onClose={() => setOpenResourceId(null)} />
+      ) : null}
     </div>
   );
 };
