@@ -60,7 +60,7 @@ const BOX_INSET = 14;
  * Encogerlos por el tema —letra y iconos más pequeños— no llega: los bloques de
  * `zelos` tienen alto y relleno mínimos, y se quedaban en 145.
  */
-const BOX_COLUMNS = 2;
+const BOX_SLOTS = 6;
 const BOX_ROWS = 3;
 const BOX_SCALE = 0.72;
 
@@ -80,6 +80,25 @@ const gameTheme = Blockly.Theme.defineTheme('codeplay', {
   base: Blockly.Themes.Zelos,
   fontStyle: { family: "'Fredoka', 'Quicksand', sans-serif", weight: '600', size: 11 },
 });
+
+/*
+ * EL LIENZO NO TIENE SITIO POR ENCIMA DE SUS BLOQUES. De fábrica Blockly deja
+ * media vista de margen por arriba —y una entera con el lienzo vacío—, así que
+ * con la vista en el origen la barra no está al tope: aparecía a media altura, o
+ * abajo del todo, como si hubiera algo encima. Los bloques se encadenan hacia
+ * abajo, así que el margen sólo hace falta por debajo.
+ */
+class TopAnchoredMetrics extends Blockly.MetricsManager {
+  protected override getPaddedContent_(
+    viewMetrics: Blockly.MetricsManager.ContainerRegion,
+    contentMetrics: Blockly.MetricsManager.ContainerRegion,
+  ) {
+    const padded = super.getPaddedContent_(viewMetrics, contentMetrics);
+    const top = Math.min(contentMetrics.top, 0);
+
+    return { ...padded, top, bottom: Math.max(padded.bottom, top + viewMetrics.height) };
+  }
+}
 
 interface BlockEditorProps {
   onProgramChange: (program: Program) => void;
@@ -144,6 +163,7 @@ export const BlockEditor = ({
     const workspace = Blockly.inject(container.current, {
       renderer: 'zelos',
       theme: gameTheme,
+      plugins: { metricsManager: TopAnchoredMetrics },
       trashcan: false,
       sounds: false,
       zoom: { controls: false, wheel: false, startScale: 1 },
@@ -241,7 +261,15 @@ export const BlockEditor = ({
      * que es lo mismo que hace un bloque sacado de una caja con el lienzo
      * acercado.
      */
-    flyout.getFlyoutScale = () => BOX_SCALE;
+    /*
+     * SALVO EN LA BANDEJA SIN «SALTAR», que es la del mundo 1: tres bloques en
+     * una fila caben a tamaño de lienzo con sitio de sobra, y encogidos se
+     * perdían en ella. Con «saltar» no: su C mide más que el alto del hueco.
+     */
+    const inRow = () => flyoutHost.clientWidth > flyoutHost.clientHeight;
+    const boxScale = () => (inRow() && !jumpInBox.current ? 1 : BOX_SCALE);
+
+    flyout.getFlyoutScale = boxScale;
 
     /*
      * LA CAJA COLOCA EN REJILLA Y NO EN UNA COLUMNA. De fábrica apila hacia
@@ -253,13 +281,39 @@ export const BlockEditor = ({
      * que no estiren el contenido a lo alto.
      */
     const layoutBox = (contents: Blockly.FlyoutItem[]) => {
-      flyoutWorkspace.scale = BOX_SCALE;
+      const scale = boxScale();
+      flyoutWorkspace.scale = scale;
+
+      /*
+       * Un hueco más ancho que alto es una BANDEJA —la de la pantalla de nivel,
+       * bajo el juego— y ahí los seis huecos van en una sola fila. La columna del
+       * laboratorio sigue con su rejilla de tres por dos.
+       */
+      const rows = inRow() ? 1 : BOX_ROWS;
+      const columns = BOX_SLOTS / rows;
 
       // El hueco se mide en píxeles; la rejilla coloca en unidades del espacio.
-      const cellWidth = flyoutHost.clientWidth / BOX_COLUMNS / BOX_SCALE;
-      const cellHeight = flyoutHost.clientHeight / BOX_ROWS / BOX_SCALE;
-      const inset = BOX_INSET / BOX_SCALE;
+      const cellWidth = flyoutHost.clientWidth / columns / scale;
+      const cellHeight = flyoutHost.clientHeight / rows / scale;
+      const inset = BOX_INSET / scale;
       let placed = 0;
+
+      /*
+       * En la fila los bloques se REPARTEN a lo ancho, con el mismo hueco entre
+       * cada dos y contra los bordes: con seis celdas iguales, una bandeja
+       * estrecha encimaba el bloque ancho sobre el siguiente, y seguidos desde
+       * la izquierda dejaban media bandeja vacía.
+       */
+      const blocks = contents.filter((item) => item.getType() === 'block');
+      const blocksWidth = blocks.reduce(
+        (total, item) => total + item.getElement().getBoundingRectangle().getWidth(),
+        0,
+      );
+      const rowGap = Math.max(
+        inset,
+        (flyoutHost.clientWidth / scale - blocksWidth) / (blocks.length + 1),
+      );
+      let rowX = rowGap;
 
       for (const item of contents) {
         const element = item.getElement();
@@ -270,8 +324,14 @@ export const BlockEditor = ({
           continue;
         }
 
-        const column = Math.floor(placed / BOX_ROWS);
-        const row = placed % BOX_ROWS;
+        if (rows === 1) {
+          element.moveBy(rowX - at.left, (cellHeight - at.getHeight()) / 2 - at.top);
+          rowX += at.getWidth() + rowGap;
+          continue;
+        }
+
+        const column = Math.floor(placed / rows);
+        const row = placed % rows;
 
         element.moveBy(
           column * cellWidth + inset - at.left,

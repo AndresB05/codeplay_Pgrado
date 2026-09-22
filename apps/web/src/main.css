@@ -479,6 +479,15 @@ a {
 }
 
 /*
+ * En la pantalla de nivel es al revés: el lienzo está a la derecha y la caja
+ * abajo, así que el bloque sale de la bandeja y tiene que verse por encima de
+ * ella mientras viaja hasta el lienzo.
+ */
+.arrastrando-bloque .columna-del-lienzo {
+  z-index: 30;
+}
+
+/*
  * EL LIENZO NO PINTA SU PROPIO FONDO, y son DOS capas: Blockly pinta un blanco
  * en el `<svg>` y encima un rectángulo bajo los bloques. Aquí el fondo lo pone
  * la bandeja —el marco discontinuo y el texto que dice qué va a aparecer ahí—,

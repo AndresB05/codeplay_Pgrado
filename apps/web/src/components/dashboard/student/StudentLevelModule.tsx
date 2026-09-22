@@ -89,10 +89,17 @@ const BackIcon = () => (
   </svg>
 );
 
-/* Los mismos tres números que la maqueta del J6.3 dejó medidos. */
-const CANVAS_HEIGHT = 130;
-const CANVAS_MIN = 90;
-const CANVAS_MAX = 380;
+const HelpIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M9 9.2a3 3 0 1 1 4.2 2.75c-.75.33-1.2 1.05-1.2 1.87v.68"
+      stroke="currentColor"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+    />
+    <circle cx="12" cy="18" r="1.5" fill="currentColor" />
+  </svg>
+);
 
 /*
  * Tres estados excluyentes, no banderas sueltas: se está leyendo la fila, la
@@ -154,9 +161,9 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
   const [controlsHost, setControlsHost] = useState<HTMLDivElement | null>(null);
   const [messageHost, setMessageHost] = useState<HTMLDivElement | null>(null);
 
-  const [canvasOpen, setCanvasOpen] = useState(true);
-  const [canvasHeight, setCanvasHeight] = useState(CANVAS_HEIGHT);
-  const resizing = useRef<{ y: number; height: number } | null>(null);
+  const [trayOpen, setTrayOpen] = useState(true);
+
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const [halted, setHalted] = useState(false);
   const [finish, setFinish] = useState<LevelFinish | null>(null);
@@ -222,8 +229,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
 
   /*
    * Dónde empieza la bandeja AL ABRIR, que es lo que el encuadre de partida deja
-   * libre. Se mide una vez: estirar o plegar el lienzo después no vuelve a
-   * encuadrar, porque la vista de partida no cambia mientras se juega.
+   * libre. Se mide una vez: plegar la bandeja después no vuelve a encuadrar, porque la vista de partida no cambia mientras se juega.
    */
   const [trayTop, setTrayTop] = useState<number | null>(null);
   const measureTray = useCallback((node: HTMLDivElement | null) => {
@@ -328,49 +334,6 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
     };
   }, [levelId, userId]);
 
-  const startResize = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!canvasOpen) {
-        return;
-      }
-
-      /*
-       * `setPointerCapture` lanza si el puntero ya no existe, y hacerlo dentro
-       * de un manejador de React se lleva por delante el árbol entero.
-       */
-      try {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      } catch {
-        // Sin captura el arrastre sigue funcionando mientras no salga del asa.
-      }
-
-      resizing.current = { y: event.clientY, height: canvasHeight };
-    },
-    [canvasHeight, canvasOpen]
-  );
-
-  const doResize = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    const from = resizing.current;
-
-    if (from === null) {
-      return;
-    }
-
-    // Tirar hacia ARRIBA agranda: la bandeja está anclada abajo y crece contra el juego.
-    const next = from.height + (from.y - event.clientY);
-    setCanvasHeight(Math.min(CANVAS_MAX, Math.max(CANVAS_MIN, next)));
-  }, []);
-
-  const endResize = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    resizing.current = null;
-
-    try {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    } catch {
-      // Ya estaba suelto; soltar dos veces no es un fallo que deba subir.
-    }
-  }, []);
-
   const backToLevels = () => navigate(`${ROUTES.WORLDS}/${worldId}`);
   const closeFinish = useCallback(() => setFinish(null), []);
 
@@ -455,66 +418,80 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
             freeHeight={trayTop}
           />
 
+          {/*
+           * Justo debajo de «Vista inicial», que la escena pinta en la esquina.
+           * Abierta o cerrada es EL MISMO botón: se toca para abrirla y se toca
+           * para cerrarla, sin una ✕ pequeña que haya que encontrar.
+           */}
+          <button
+            type="button"
+            onClick={() => setHelpOpen((open) => !open)}
+            aria-expanded={helpOpen}
+            className={`absolute left-4 top-[72px] z-20 text-left shadow-[0_6px_18px_rgba(42,27,69,0.28)] transition-transform hover:-translate-y-[1px] ${
+              helpOpen
+                ? 'w-[340px] max-w-[calc(100%-2rem)] rounded-[24px] bg-mist px-5 pb-5 pt-4'
+                : 'flex h-11 w-11 items-center justify-center rounded-full bg-ink text-white'
+            }`}
+          >
+            {helpOpen ? (
+              <>
+                <span className="flex items-center gap-2.5">
+                  <NoteIcon />
+                  <span className="font-display text-[18px] text-grape-dark">Instrucciones</span>
+                </span>
+
+                {/*
+                 * Lo que hay que hacer sale de la NARRATIVA DE LA FILA, no escrito
+                 * aquí: cambiar lo que se le pide al niño es cambiar un dato del
+                 * nivel, no publicar la aplicación otra vez.
+                 */}
+                <span className="mt-2.5 block text-[15px] font-semibold leading-[1.6] text-ink-soft">
+                  {state.instructions}
+                </span>
+              </>
+            ) : (
+              <>
+                <HelpIcon />
+                <span className="sr-only">Ver las instrucciones</span>
+              </>
+            )}
+          </button>
+
           <div
             ref={measureTray}
-            className="bandeja-del-lienzo absolute inset-x-4 bottom-4 rounded-[24px] bg-mist shadow-[0_10px_28px_rgba(42,27,69,0.16)] backdrop-blur-sm"
+            className="bandeja-de-bloques absolute inset-x-4 bottom-4 rounded-[24px] bg-mist shadow-[0_10px_28px_rgba(42,27,69,0.16)] backdrop-blur-sm"
           >
-            <div
-              onPointerDown={startResize}
-              onPointerMove={doResize}
-              onPointerUp={endResize}
-              onPointerCancel={endResize}
-              className={`group flex h-4 items-center justify-center rounded-t-[24px] ${
-                canvasOpen ? 'cursor-ns-resize' : ''
-              }`}
-              aria-hidden="true"
-            >
-              {canvasOpen && (
-                <span className="h-1 w-10 rounded-full bg-mist-line transition-colors group-hover:bg-ink-faint" />
-              )}
-            </div>
-
-            <div className="flex items-center gap-3 px-5 pb-1">
-              <CanvasIcon />
-              <h2 className="shrink-0 font-display text-[18px] text-grape-dark">Lienzo</h2>
+            <div className="flex items-center gap-3 px-4 pb-1 pt-2.5">
+              <BlocksIcon />
+              <h2 className="shrink-0 font-display text-[18px] text-grape-dark">Bloques</h2>
 
               {/* El hueco del mensaje, que lo pinta la escena con un portal. */}
               <div ref={setMessageHost} className="min-w-0" />
 
               <button
                 type="button"
-                onClick={() => setCanvasOpen((open) => !open)}
+                onClick={() => setTrayOpen((open) => !open)}
                 className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-grape-dark transition-colors hover:bg-mist-soft"
-                aria-expanded={canvasOpen}
+                aria-expanded={trayOpen}
               >
-                <ChevronIcon up={!canvasOpen} />
+                <ChevronIcon up={!trayOpen} />
                 <span className="sr-only">
-                  {canvasOpen ? 'Plegar el lienzo' : 'Abrir el lienzo'}
+                  {trayOpen ? 'Plegar los bloques' : 'Abrir los bloques'}
                 </span>
               </button>
             </div>
 
-            <div className="px-4 pb-4">
-              <div
-                style={{ height: canvasOpen ? canvasHeight : 0 }}
-                className="marco-del-lienzo relative w-full overflow-hidden"
-              >
-                <span className="pointer-events-none absolute inset-y-0 left-0 right-6 rounded-[18px] border-2 border-dashed border-mist-line bg-mist-soft" />
-
-                {emptyCanvas && (
-                  <p className="pointer-events-none absolute inset-y-0 left-0 right-6 flex items-center justify-center text-center font-display text-[15px] text-ink-faint">
-                    Aquí verás la secuencia de bloques que crees.
-                  </p>
-                )}
-
-                {blockBox !== null && (
-                  <BlockEditorLoader
-                    onProgramChange={handleProgramChange}
-                    flyoutHost={blockBox}
-                    starterWorkspace={state.level.workspace}
-                    withJump={state.withJump}
-                  />
-                )}
+            {/*
+             * Se pliega el MARCO y no el hueco: la caja coloca sus bloques con
+             * el alto del hueco, y un hueco a cero los dejaría encimados al
+             * volver a abrir.
+             */}
+            <div
+              style={{ height: trayOpen ? undefined : 0 }}
+              className={`overflow-hidden px-2 ${trayOpen ? 'pb-2' : ''}`}
+            >
+              <div className="relative rounded-[18px] bg-mist-soft">
+                <div ref={setBlockBox} className="relative h-[104px] w-full" />
 
                 {halted && <HaltedLock />}
               </div>
@@ -522,38 +499,35 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
           </div>
         </div>
 
-        <div className="flex flex-col rounded-[24px] bg-mist shadow-[0_8px_24px_rgba(42,27,69,0.12)]">
-          <div className="px-4 pb-4 pt-3.5">
-            <div className="flex items-center gap-2.5">
-              <BlocksIcon />
-              <h2 className="font-display text-[18px] text-grape-dark">Bloques</h2>
-            </div>
-
-            <div className="relative mt-2.5 rounded-[18px] bg-mist-soft p-2">
-              <div ref={setBlockBox} className="relative h-[240px] w-full" />
-
-              {halted && <HaltedLock />}
-            </div>
-
-            {/* El hueco de los tres botones, que los pinta la escena con un portal. */}
-            <div ref={setControlsHost} className="mt-3.5" />
+        <div className="columna-del-lienzo relative flex min-h-0 flex-col rounded-[24px] bg-mist px-4 pb-4 pt-3.5 shadow-[0_8px_24px_rgba(42,27,69,0.12)]">
+          <div className="flex items-center gap-2.5">
+            <CanvasIcon />
+            <h2 className="font-display text-[18px] text-grape-dark">Lienzo</h2>
           </div>
 
-          <div className="flex flex-1 flex-col border-t-2 border-mist-line px-4 pb-4 pt-3.5">
-            <div className="flex items-center gap-2.5">
-              <NoteIcon />
-              <h2 className="font-display text-[18px] text-grape-dark">Instrucciones</h2>
-            </div>
+          <div className="marco-del-lienzo relative mt-2.5 min-h-0 w-full flex-1 overflow-hidden">
+            <span className="pointer-events-none absolute inset-y-0 left-0 right-6 rounded-[18px] border-2 border-dashed border-mist-line bg-mist-soft" />
 
-            {/*
-             * Lo que hay que hacer sale de la NARRATIVA DE LA FILA, no escrito
-             * aquí: cambiar lo que se le pide al niño es cambiar un dato del
-             * nivel, no publicar la aplicación otra vez.
-             */}
-            <p className="mt-2.5 text-[15px] font-semibold leading-[1.6] text-ink-soft">
-              {state.instructions}
-            </p>
+            {emptyCanvas && (
+              <p className="pointer-events-none absolute inset-y-0 left-0 right-6 flex items-center justify-center px-4 text-center font-display text-[15px] text-ink-faint">
+                Aquí verás la secuencia de bloques que crees.
+              </p>
+            )}
+
+            {blockBox !== null && (
+              <BlockEditorLoader
+                onProgramChange={handleProgramChange}
+                flyoutHost={blockBox}
+                starterWorkspace={state.level.workspace}
+                withJump={state.withJump}
+              />
+            )}
+
+            {halted && <HaltedLock />}
           </div>
+
+          {/* El hueco de los tres botones, que los pinta la escena con un portal. */}
+          <div ref={setControlsHost} className="mt-3.5" />
         </div>
       </section>
 
