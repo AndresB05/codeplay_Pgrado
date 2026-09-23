@@ -1,7 +1,7 @@
 # CodePlay — Hoja de ruta
 
 > **En qué orden se construye el proyecto y quién hace cada parte.**
-> Última actualización: **18 de septiembre de 2026**.
+> Última actualización: **23 de septiembre de 2026**.
 
 **El juego tiene su propia hoja de ruta:**
 [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md), en cuatro fases. Aquí sólo aparece como
@@ -111,6 +111,9 @@ cambios ya archivados—, así que al reordenar se mueve la fila y el número vi
 con ella. Una fila fuera de secuencia numérica es deliberada y lleva su motivo
 escrito en §2.1.
 
+Los pasos con enlace tienen su detalle en §2.3: qué se hizo, qué se midió y qué
+dejó fuera.
+
 | Nº | Paso | Estado | Vía |
 | --- | --- | --- | --- |
 | 1 | Crear `CLAUDE.md` en la raíz | ✅ | directo |
@@ -121,33 +124,33 @@ escrito en §2.1.
 | 6 | Crear el proyecto de Supabase y rellenar `.env` | ✅ | **usuario** |
 | 7 | Columna `profiles.role`, disparador y esquema aplicado | ✅ | `backend-supabase-real` |
 | 8 | Regenerar `database.types.ts` y arreglar sus consumidores | ✅ | *(unido al 7)* |
-| 9 | Migración de las 4 tablas de salones + RLS + grants — **salió con una recursión de RLS, ver §2.1** | ✅ | `tablas-salones` + `arreglo-recursion-rls` |
-| 11 | ★ Usuarios de prueba reales y reapuntar el botón «Sin login» — **adelantado, ver §2.1** | ✅ | `usuarios-de-prueba` |
+| 9 | [Migración de las 4 tablas de salones + RLS + grants](#paso-9) | ✅ | `tablas-salones` + `arreglo-recursion-rls` |
+| 11 | ★ [Usuarios de prueba reales y botón «Sin login»](#paso-11) | ✅ | `usuarios-de-prueba` |
 | 10 | `classrooms.service.ts` y reescribir `ClassroomsProvider` | ✅ | `salones-persistentes` |
 | 12 | Login y registro reales con rol | ✅ | `auth-real` |
-| 13 | Recuperar y cambiar contraseña — **las dos mitades verificadas contra la base real**: el cambio desde Ajustes pide la contraseña actual y la verifica, y el correo de recuperación llegó y su enlace fijó la nueva | ✅ | `password-recovery` |
-| 15 | Google OAuth — **la mina era el rol, y se cerró con una regla: el rol se fija en el primer registro y no cambia nunca.** El disparador crea todo perfil de Google como `child` porque el alta no puede llevar metadatos; la migración 0018 añade `is_role_declared` y hace que `set_my_role` rechace tanto si el rol ya se declaró como si el perfil tiene lazos de salón. **Verificado contra la base real**, incluido el daño que lo motivó —un niño con membresía que acababa tutor y fuera de su salón— reproducido paso por paso y ya no ocurriendo. **No cierra** registrarse como tutor de entrada: eso sigue abierto y lo cierra el código de institución | ✅ | `google-oauth` |
-| 28 | ★ Tres arreglos vivos y la barra de XP — **adelantado, ver §2.1**. El `username` del disparador ya no aborta el alta (migración 0019, verificada con tres altas por `curl`), los fallos de autenticación salen en español por código, el panel dejó de inventar nombre, correo y racha en **cinco** archivos, y el XP se ve en cuatro sitios con `XPBar` retintada | ✅ | `arreglos-y-barra-xp` |
-| 29 | ★ Nombre editable desde Ajustes — **adelantado, ver §2.1**. Un panel compartido que montan las dos pantallas de Ajustes, con la acción en `AuthProvider` para que las **siete** superficies que leen `user.fullName` se refresquen sin recargar. La longitud (2–60) se declara una vez y la heredan el registro y Ajustes; el máximo no existía en ninguna parte. De paso cerró el panel del tutor, que el paso 28 dejó fuera: cuatro «Sr. Robot» y un correo inventado | ✅ | `nombre-editable` |
-| 16 | Persistir la asignación de misiones — la migración 0020 cuelga la asignación **del salón**, con `mission_key` como texto sin clave ajena porque el catálogo sigue en el cliente. El selector de alcance dejó de ignorarse y el niño ve sólo lo asignado, en dos pantallas. **NO las hace jugables**: nada puede completar una misión hasta el paso 21, así que el salón entero sale en «Pendiente» con el motivo escrito en la pantalla, y la tarjeta del niño no ofrece ningún botón. **Sin tabla de cumplimientos a propósito**, para no decidir de paso la pregunta abierta de §3.2 | ✅ | `misiones-asignadas` |
-| 18 | ★ Sincronización en vivo (Supabase Realtime) — **no eran «notificaciones»**: no hay campana, ni lista de avisos, ni no leídos, ni nada que persista un aviso. Son tres pantallas que ya existían y ahora se actualizan solas: la bandeja del tutor, la pertenencia del niño y sus misiones. La migración 0021 publica tres tablas en `supabase_realtime`, que existía con las cuatro operaciones activas y **cero tablas**. De paso cerró el defecto del `loading` que el paso 13 dejó a medias: **una recarga disparada desde fuera no declara espera, pero sí la apaga**, en los dos hooks. Verificado con dos sesiones y con los tres negativos emparejados; cierra además el caso «tutor contra salón ajeno» del paso 16 | ✅ | `sincronizacion-en-vivo` |
-| 23 | ★ **PARTIDO EN DOS, ver §2.1.** **23.1 — Preparar el terreno y escribir el contrato: HECHO.** Cerró las tres decisiones —cómo se verifica un logro (§3.2), si las misiones necesitan tabla propia (§3), y dónde vive la configuración de un nivel (§3.3)— y escribió [`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md). **Ninguna exigió migración.** De paso midió por primera vez `create_level_attempt` y `upsert_my_progress`, escritas hacía ocho días y nunca ejecutadas: ver `CONTEXT.md` §2.7. **No entró el puente ni el contenedor del build** —dependen de un WebGL que no existe y no se verifican de punta a punta—: siguen en el paso 20. **23.2 — Construir el juego: REPLANTEADO EL 3-SEP-2026 y CASI CERRADO.** Se descartó Unity en favor de librerías de JavaScript, así que ya no hay que instalar nada ni activar Git LFS ni generar un build de WebGL: **el juego pasa a ser parte de la aplicación web**. Con eso, 23.2 dejó de depender de una persona y de ser lo único ajeno a este repositorio. Del roadmap del juego están **hechos el J1 al J12** —los nueve niveles se juegan desde la base, se guardan y se puntúan— y **queda el J13**, los assets y el diseño de los tres mundos, que el usuario dejó **para después de la prueba preliminar** (17-sep-2026). El diseño está en [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) y el detalle paso a paso en [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md) | 🔄 | 23.1 directo · 23.2 salvo el J13 |
-| 17 | ~~Reportes de habilidades~~ **sobre progreso real — HECHO el 18-sep-2026, y el nombre dejó de describirlo.** El panel no enseñaba datos de ejemplo: enseñaba **ceros**, y no por falta de cálculo sino de permiso —con sesión de tutor, `user_progress` y `level_attempts` devolvían **cero filas**—. Se midió algo que no estaba escrito en ningún sitio y que cambió el alcance: **el juego tiene cuatro bloques** —avanzar, dos giros y saltar—, sin bucle, sin condicional y sin función, así que de las cinco competencias que el panel pintaba **sólo «secuencias» tiene con qué entrenarse**. El usuario decidió **retirar las cinco barras** y enseñar lo que el dato sostiene: niveles superados, mundos terminados, eficiencia media, y por explorador **los intentos de cada nivel y los pasos de cada partida**. Decidió además que **el tutor ve el historial completo, también el anterior al ingreso** (cierra §3.1) y que **el resumen se ve entre compañeros, el detalle no**. Migraciones `0034` y `0035`; la segunda por una trampa que conviene no repetir: **una vista sin `security_invoker` sortea los permisos de las TABLAS, no el `execute` de una FUNCIÓN**. Verificado contra la base con la cuenta de `.env`. **Deja fuera** la navegación mundo a mundo por alumno, que es el 31 | ✅ | `reportes-de-progreso-real` |
-| 31 | ★ **Seguimiento por alumno en el panel del tutor — HECHO el 18-sep-2026, y el trabajo no estaba en la navegación sino en el dato.** Pedido por el usuario el 3-sep-2026, reducido por el paso 17 —que ya metía la ficha del explorador— y cerrado con la medición delante. **Lo que faltaba:** `classroom_level_progress` sale de `user_progress`, así que un nivel que el alumno nunca empezó no tiene fila y no aparecía. Medido contra la base con la cuenta de `.env`: la ficha de Axoluk decía **«2 superados de 2 empezados»** y Cordillera Binaria **no salía en ninguna parte**. El usuario decidió las dos cosas que la fila dejaba abiertas: **crece la ficha que ya existía** —no una pantalla nueva— y **se enseñan los nueve niveles agrupados por mundo**, con el intacto nombrado y en cero. Ahora la ficha dice «2 de 9 niveles superados · 0 de 3 mundos terminados» y lista los siete que faltan como **«Sin empezar»**, que no es lo mismo que «Sin superar». **El alcance y el explorador pasaron a la dirección** (`/teacher/panel/:groupId/:studentId`, con `all` cuando el alcance es «Todos»): recargar ya no pierde la ficha y el enlace se puede pasar. `getCatalogSize()` se retiró en favor de `getCatalog()`, que trae la lista y no sólo el recuento. **Sin migración**: lo que faltaba no estaba en el servidor. Verificado con las tres cuentas del salón de pruebas, cuadrando pantalla y vistas. **Deja fuera** rachas y logros, que son el 22, y el candado, que sigue para después de la prueba preliminar | ✅ | `avance-por-mundos` |
-| 20 | ~~Pantalla de nivel con contenedor, y el puente hacia el juego~~ — **HECHO en el J7.1**, por decisión del usuario de montarla donde va en vez de ensayarla otra vez: la ruta `/dashboard/worlds/:worldId/:levelId`, la pantalla con el juego dentro, la selección de niveles **leyendo de la base** —fuera los diez títulos inventados y el `find ?? studentWorlds[0]` que metía cualquier uuid real en el primer mundo de maqueta— y `mapLevelRow` trayendo ya `narrative`, `starter_code` y `validation_rules`. **Le queda mandar el intento**, que es el paso 21. Ver `ROADMAP-JUEGO.md` §3 | ✅ | P4 |
-| 21 | Escritura de progreso y XP desde el juego — **HECHO el 17-sep-2026, en tres pasos del roadmap del juego**: el **J9** guarda cada partida terminada con su programa, con éxito o sin él; el **J10** estrena la puntuación —la calcula el servidor contando el programa, migración `202606030033`— y cambia la concesión a la marca de agua; y el **J11** pone la barra por tramos de 300 con el **Nivel Explorador** y refresca el XP sin recargar. Los tres verificados jugando contra la base real: ver `CONTEXT.md` §2.7. **Deja fuera la racha**, que es del 22 | ✅ | `mandar-el-intento` + `migracion-del-xp` + `nivel-explorador` |
-| 22 | **Rachas y logros — HECHO el 20-sep-2026.** No existía nada: medido con la cuenta de `.env`, que tenía 900 XP y los nueve niveles al 100, había **cero filas en `achievements` y la racha a cero**, con la tabla puesta desde la `0005` y las columnas desde la `0002`. **Veinte logros** sembrados en `achievement_catalog`: nueve de nivel perfecto, tres de mundo perfecto, uno de todo, cuatro de acción —«Sin mareos», «Intentando volar», «Eso fue innecesario...» y «¡Auch! mis rodillas»— y tres de racha. **Todos exigen superar el nivel**, decidido por el usuario. **La racha cuenta días de Colombia (UTC−5)** y sube sólo con una partida superada, una vez al día; la guardada **caduca al leerse**, porque sólo se recalcula al jugar. El aviso estilo Steam sale al terminar la partida, en cola si son varios. **Las estrellas se retiraron** de las dos tablas, de la RPC y del cliente. Seis migraciones, `0036` a `0041`, y **cinco fueron por fallos propios**: las tres lecciones están en `CONTEXT.md` §2.11. Verificado jugando contra la base: 17 de 20 logros, los cuatro negativos no conceden, y el XP cuadra en 2350. **Sin verificar contra la base**: que la racha pase de 1 a 2 al día siguiente, que exige esperar | ✅ | `rachas-y-logros` |
-| 32 | ★ **Renombrar los mundos para que cuadren con el juego — HECHO el 20-sep-2026.** Eran **dos problemas y no uno**: la base decía «Selva Algorítmica / Cordillera Binaria / Costa de Bugs» y la landing anterior al login anunciaba **otros tres** —«La Selva de las Secuencias», «El Espacio de los Bucles», «El Océano Condicional»—, y cinco de esos seis nombres, más las tres descripciones de la base, prometían bucles, condicionales, funciones, estructuras de datos y depuración que **los cuatro bloques no permiten**. Ahora son **Sendero de los Patrones**, **Cordillera de la Abstracción** y **Encrucijada de las Decisiones**, decidido por el usuario: los nombres apuntan a los pilares del pensamiento computacional y no a la naturaleza colombiana. `region_label` pasa de la región al pilar, y los `slug` se renombraron con los títulos. **LA TRAMPA, y es la que ahorra la tarde:** el catálogo de logros **copió** los nombres al sembrarse —los nueve de nivel con `split_part` sobre `levels.title`, los tres de mundo escritos a mano—, así que renombrar **no lo actualiza solo**; la migración `0043` lo pone al día, y **lo ya concedido se queda con el nombre viejo a propósito** (`CONTEXT.md` §2.11). Ninguna clave se rompe: salen del `sort_order`. Los nueve títulos de nivel no cambian. Verificado contra la base y en pantalla, incluidas las dos mitades del catálogo: quien ya los tenía sigue leyendo «Dueño de la Selva», quien no, lee «Dueño del Sendero» | ✅ | `renombrar-mundos` |
-| 33 | ★ **Misiones que el profesor asigna, ligadas al juego — HECHO el 20-sep-2026.** Cierra el último cabo abierto del contrato §8: «cómo se relacionan las misiones que un profesor asigna con los niveles del juego». **No se podían cumplir**, y el panel del tutor lo decía con todas las letras. El usuario decidió las dos cosas que el cambio no podía tomar solo: **una misión es un reto sobre los nueve niveles que ya existen** —su condición la comprueba el servidor leyendo el historial, sin puzles nuevos que diseñar— y **son cuatro**, pocas a propósito para que sean **cumplibles de punta a punta en la prueba preliminar**. Las tres de mundo piden **superar**, no la marca máxima, que es lo que las separa del logro `perfect_world_N`. **El catálogo se mudó del cliente a la base** (`mission_catalog`) y `mission_assignments.mission_key` **gana por fin su clave ajena**, cerrando la deuda que la 0020 dejó escrita; con él se fueron `SkillKey` y `estimatedMinutes`. `mission_completions` guarda el salón donde ocurrió, y el XP **se paga una sola vez en la vida**. **Asignar pone al día a quien ya cumplía**, porque si no el salón saldría entero en «Pendiente» y eso se lee como un fallo; eso obligó a cambiar el `upsert` por una RPC `security definer`, **con la garantía escrita dentro de la función**, que es donde deja de protegerte la política. Migración `0044`, con `submit_level_attempt` reescrita **partiendo de su texto** y diffeada antes de aplicar. Verificado contra la base: 1600 XP exactos, cuatro filas, y los negativos de permiso en 42501. **El aviso «¡Misión cumplida!» lo vio el usuario jugando** el 21-sep-2026 con Axoluk, contrastado después en la base | ✅ | `misiones-jugables` |
-| 27.1 | ★ **Despliegue provisional para la prueba — AÑADIDO EL 18-SEP-2026.** Montaje **simple y desechable** sobre Supabase, sólo para que la prueba preliminar exista: no es el despliegue bueno, que va al servidor de la universidad detrás del 30. Aparece aquí porque la prueba dejó de ser local: ver §2.1. **HECHO el 21-sep-2026** en Vercel (plan Hobby): `https://codeplay-pgrado-web.vercel.app`, con `vercel.json` en la raíz, las dos variables de Supabase y las URL de retorno dadas de alta en Supabase. Verificado por el usuario: registro, Google, recarga y niveles | ✅ | **usuario** |
-| — | 🔬 **PRUEBA PRELIMINAR — REPLANTEADA EL 18-SEP-2026: ya no es local ni con gente cercana.** La hace **un salón de estudiantes universitarios** sobre el despliegue provisional del 27.1, con sus propias cuentas. Siguen sin entrar menores de fuera —son mayores de edad—, así que el **consentimiento del acudiente** del paso 14 sigue sin aplicar y el 14 puede seguir detrás. **Lo que sí cambia es que habrá datos personales de terceros en un despliegue público**, y eso queda anotado en §2.1 como riesgo asumido, no como descuido | ⬜ | — |
-| 14 | ★ Consentimiento del acudiente y política de privacidad — **adelantado en parte y el resto DETRÁS de la prueba preliminar, ver §2.1 y §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó el único sitio donde se guardaban datos de terceros. Lo que falta **se retoma después de la prueba preliminar, y en todo caso antes del primer usuario real**. Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los compañeros se ven entre sí nombre, XP y racha (§3.2) | 🔄 | `invitaciones-sin-correo` + §3.4 |
-| 19 | Invitaciones por correo reales y enlace canjeable — **PARTIDO EN DOS, ver §2.1.** **Mitad A hecha:** el tutor genera un enlace canjeable, lo comparte por donde quiera, y quien lo abre entra al salón **sin pasar por la bandeja**; el token sobrevive el registro, incluida la vuelta por Google. La purga por `expires_at` entró desde el primer día, y **ninguna tabla ganó columna de correo**: por eso esta mitad esquiva entera la decisión de privacidad de §3.4. **Mitad B pendiente:** el envío real, que necesita **servicio de correo contratado** (§2.2) | 🔄 | `enlace-de-invitacion` + servicio |
+| 13 | [Recuperar y cambiar contraseña](#paso-13) | ✅ | `password-recovery` |
+| 15 | [Google OAuth](#paso-15) | ✅ | `google-oauth` |
+| 28 | ★ [Tres arreglos vivos y la barra de XP](#paso-28) | ✅ | `arreglos-y-barra-xp` |
+| 29 | ★ [Nombre editable desde Ajustes](#paso-29) | ✅ | `nombre-editable` |
+| 16 | [Persistir la asignación de misiones](#paso-16) | ✅ | `misiones-asignadas` |
+| 18 | ★ [Sincronización en vivo (Supabase Realtime)](#paso-18) | ✅ | `sincronizacion-en-vivo` |
+| 23 | ★ [Integración del juego — 23.1 hecho, a 23.2 le falta el J13](#paso-23) | 🔄 | 23.1 directo · 23.2 salvo el J13 |
+| 17 | [Reportes sobre progreso real](#paso-17) | ✅ | `reportes-de-progreso-real` |
+| 31 | ★ [Seguimiento por alumno en el panel del tutor](#paso-31) | ✅ | `avance-por-mundos` |
+| 20 | [Pantalla de nivel y puente hacia el juego](#paso-20) | ✅ | P4 |
+| 21 | [Progreso y XP desde el juego](#paso-21) | ✅ | `mandar-el-intento` + `migracion-del-xp` + `nivel-explorador` |
+| 22 | [Rachas y logros](#paso-22) | ✅ | `rachas-y-logros` |
+| 32 | ★ [Renombrar los mundos para que cuadren con el juego](#paso-32) | ✅ | `renombrar-mundos` |
+| 33 | ★ [Misiones que el profesor asigna, ligadas al juego](#paso-33) | ✅ | `misiones-jugables` |
+| 27.1 | ★ [Despliegue provisional para la prueba](#paso-27-1) | ✅ | **usuario** |
+| — | 🔬 [Prueba preliminar](#prueba-preliminar) | ⬜ | — |
+| 14 | ★ [Consentimiento del acudiente y política de privacidad](#paso-14) | 🔄 | `invitaciones-sin-correo` + §3.4 |
+| 19 | [Invitaciones: enlace canjeable (hecho) y correo real (pendiente)](#paso-19) | 🔄 | `enlace-de-invitacion` + servicio |
 | 24 | Retirar la sesión de invitado | ⬜ | — |
-| 26 | Ilustraciones con Gemini — **va ANTES del 25, ver §2.1**: hacer responsive un diseño que el apartado gráfico va a cambiar es hacerlo dos veces. **Cambiado de Higgsfield a Gemini el 21-sep-2026**: Higgsfield entregó vertical dos veces lo que se pidió panorámico. **Empezado ese día**: el leopardo es el logo y la ilustración del hero; faltan las demás poses de la mascota y las portadas de mundo, que siguen para después de la prueba preliminar. Ver `CONTEXT.md` §3 → P6 | 🔄 | P6 |
-| 25 | ★ Responsive, accesibilidad y `ErrorBoundary` — **detrás del 26 a propósito.** **Medido**: cero clases `sm:`/`md:`/`lg:` en las pantallas clave, `w-[262px] shrink-0` duplicado en `Sidebar.tsx:134` y `TeacherSidebar.tsx:66`, y **ningún `ErrorBoundary` en todo `apps/web/src`**. Hereda además `/invite/:token` del paso 19, que es la pantalla con más probabilidad de abrirse en un móvil. Ver `CONTEXT.md` §4.4 | ⬜ | — |
-| 30 | ★ Migración al servidor de la universidad — **alcance por decidir, ver §2.1.** Supabase fue para probar funcionalidades con usuarios; lo definitivo va al servidor de la universidad. **Qué se mueve depende de lo que ofrezcan**, y eso se pregunta antes de planificarlo | ⬜ | — |
-| 27.2 | ★ **Despliegue definitivo y URL de demo.** Va detrás del 30 porque el destino bueno es el servidor de la universidad, no Supabase. Lo que el 27.1 monte para la prueba es desechable y no condiciona a éste | ⬜ | — |
+| 26 | [Ilustraciones con Gemini](#paso-26) | 🔄 | P6 |
+| 25 | ★ [Responsive, accesibilidad y `ErrorBoundary`](#paso-25) | ⬜ | — |
+| 30 | ★ [Migración al servidor de la universidad](#paso-30) | ⬜ | — |
+| 27.2 | ★ [Despliegue definitivo y URL de demo](#paso-27-2) | ⬜ | — |
 
 ### 2.1 Decisiones de orden que conviene no deshacer
 
@@ -418,6 +421,357 @@ GitHub, y reapuntar el Deployment Center de la App Service «gym» al repositori
 que le corresponde. Mientras siga apuntando aquí, Azure puede volver a escribir
 su workflow en `.github/workflows/`.
 
+### 2.3 Detalle de cada paso
+
+En el orden de la tabla de §2. Sólo aparecen los pasos que tienen algo que
+contar además del título.
+
+#### <a id="paso-9"></a>9 · Migración de las 4 tablas de salones + RLS + grants
+
+**Salió con una recursión de RLS, ver §2.1.**
+
+#### <a id="paso-11"></a>11 · Usuarios de prueba reales y botón «Sin login»
+
+Usuarios de prueba reales y reapuntar el botón «Sin login» — **adelantado, ver
+§2.1**.
+
+#### <a id="paso-13"></a>13 · Recuperar y cambiar contraseña
+
+**Las dos mitades verificadas contra la base real**: el cambio desde Ajustes pide
+la contraseña actual y la verifica, y el correo de recuperación llegó y su enlace
+fijó la nueva.
+
+#### <a id="paso-15"></a>15 · Google OAuth
+
+**La mina era el rol, y se cerró con una regla: el rol se fija en el primer
+registro y no cambia nunca.** El disparador crea todo perfil de Google como
+`child` porque el alta no puede llevar metadatos; la migración 0018 añade
+`is_role_declared` y hace que `set_my_role` rechace tanto si el rol ya se declaró
+como si el perfil tiene lazos de salón.
+
+**Verificado contra la base real**, incluido el daño que lo motivó —un niño con
+membresía que acababa tutor y fuera de su salón— reproducido paso por paso y ya
+no ocurriendo.
+
+**No cierra** registrarse como tutor de entrada: eso sigue abierto y lo cierra el
+código de institución.
+
+#### <a id="paso-28"></a>28 · Tres arreglos vivos y la barra de XP
+
+**Adelantado, ver §2.1.** El `username` del disparador ya no aborta el alta
+(migración 0019, verificada con tres altas por `curl`), los fallos de
+autenticación salen en español por código, el panel dejó de inventar nombre,
+correo y racha en **cinco** archivos, y el XP se ve en cuatro sitios con `XPBar`
+retintada.
+
+#### <a id="paso-29"></a>29 · Nombre editable desde Ajustes
+
+**Adelantado, ver §2.1.** Un panel compartido que montan las dos pantallas de
+Ajustes, con la acción en `AuthProvider` para que las **siete** superficies que
+leen `user.fullName` se refresquen sin recargar. La longitud (2–60) se declara una
+vez y la heredan el registro y Ajustes; el máximo no existía en ninguna parte.
+
+De paso cerró el panel del tutor, que el paso 28 dejó fuera: cuatro «Sr. Robot» y
+un correo inventado.
+
+#### <a id="paso-16"></a>16 · Persistir la asignación de misiones
+
+La migración 0020 cuelga la asignación **del salón**, con `mission_key` como texto
+sin clave ajena porque el catálogo sigue en el cliente. El selector de alcance
+dejó de ignorarse y el niño ve sólo lo asignado, en dos pantallas.
+
+**NO las hace jugables**: nada puede completar una misión hasta el paso 21, así
+que el salón entero sale en «Pendiente» con el motivo escrito en la pantalla, y la
+tarjeta del niño no ofrece ningún botón. **Sin tabla de cumplimientos a
+propósito**, para no decidir de paso la pregunta abierta de §3.2.
+
+#### <a id="paso-18"></a>18 · Sincronización en vivo (Supabase Realtime)
+
+**No eran «notificaciones»**: no hay campana, ni lista de avisos, ni no leídos, ni
+nada que persista un aviso. Son tres pantallas que ya existían y ahora se
+actualizan solas: la bandeja del tutor, la pertenencia del niño y sus misiones. La
+migración 0021 publica tres tablas en `supabase_realtime`, que existía con las
+cuatro operaciones activas y **cero tablas**.
+
+De paso cerró el defecto del `loading` que el paso 13 dejó a medias: **una recarga
+disparada desde fuera no declara espera, pero sí la apaga**, en los dos hooks.
+
+Verificado con dos sesiones y con los tres negativos emparejados; cierra además el
+caso «tutor contra salón ajeno» del paso 16.
+
+#### <a id="paso-23"></a>23 · Integración del juego
+
+**PARTIDO EN DOS, ver §2.1.**
+
+**23.1 — Preparar el terreno y escribir el contrato: HECHO.** Cerró las tres
+decisiones —cómo se verifica un logro (§3.2), si las misiones necesitan tabla
+propia (§3), y dónde vive la configuración de un nivel (§3.3)— y escribió
+[`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md). **Ninguna exigió
+migración.** De paso midió por primera vez `create_level_attempt` y
+`upsert_my_progress`, escritas hacía ocho días y nunca ejecutadas: ver
+`CONTEXT.md` §2.7. **No entró el puente ni el contenedor del build** —dependen de
+un WebGL que no existe y no se verifican de punta a punta—: siguen en el paso 20.
+
+**23.2 — Construir el juego: REPLANTEADO EL 3-SEP-2026 y CASI CERRADO.** Se
+descartó Unity en favor de librerías de JavaScript, así que ya no hay que instalar
+nada ni activar Git LFS ni generar un build de WebGL: **el juego pasa a ser parte
+de la aplicación web**. Con eso, 23.2 dejó de depender de una persona y de ser lo
+único ajeno a este repositorio.
+
+Del roadmap del juego están **hechos el J1 al J12** —los nueve niveles se juegan
+desde la base, se guardan y se puntúan— y **queda el J13**, los assets y el diseño
+de los tres mundos, que el usuario dejó **para después de la prueba preliminar**
+(17-sep-2026). **Aun así tiene ya una primera pasada**, aprobada el 22-sep-2026
+para que la prueba no se haga con cubos grises: tablero de Kenney, islas de
+decorado generadas por reglas y la pantalla de nivel reordenada. El explorador 3D
+entró pero está apagado por su peso, así que se juega con el personaje de cubos.
+Detalle en `ROADMAP-JUEGO.md`, «Lo que lleva el J13». El diseño está en [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) y el
+detalle paso a paso en [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md).
+
+#### <a id="paso-17"></a>17 · Reportes sobre progreso real
+
+~~Reportes de habilidades~~ **sobre progreso real — HECHO el 18-sep-2026, y el
+nombre dejó de describirlo.** El panel no enseñaba datos de ejemplo: enseñaba
+**ceros**, y no por falta de cálculo sino de permiso —con sesión de tutor,
+`user_progress` y `level_attempts` devolvían **cero filas**—.
+
+Se midió algo que no estaba escrito en ningún sitio y que cambió el alcance: **el
+juego tiene cuatro bloques** —avanzar, dos giros y saltar—, sin bucle, sin
+condicional y sin función, así que de las cinco competencias que el panel pintaba
+**sólo «secuencias» tiene con qué entrenarse**. El usuario decidió **retirar las
+cinco barras** y enseñar lo que el dato sostiene: niveles superados, mundos
+terminados, eficiencia media, y por explorador **los intentos de cada nivel y los
+pasos de cada partida**. Decidió además que **el tutor ve el historial completo,
+también el anterior al ingreso** (cierra §3.1) y que **el resumen se ve entre
+compañeros, el detalle no**.
+
+Migraciones `0034` y `0035`; la segunda por una trampa que conviene no repetir:
+**una vista sin `security_invoker` sortea los permisos de las TABLAS, no el
+`execute` de una FUNCIÓN**. Verificado contra la base con la cuenta de `.env`.
+**Deja fuera** la navegación mundo a mundo por alumno, que es el 31.
+
+#### <a id="paso-31"></a>31 · Seguimiento por alumno en el panel del tutor
+
+**HECHO el 18-sep-2026, y el trabajo no estaba en la navegación sino en el
+dato.** Pedido por el usuario el 3-sep-2026, reducido por el paso 17 —que ya metía
+la ficha del explorador— y cerrado con la medición delante.
+
+**Lo que faltaba:** `classroom_level_progress` sale de `user_progress`, así que un
+nivel que el alumno nunca empezó no tiene fila y no aparecía. Medido contra la
+base con la cuenta de `.env`: la ficha de Axoluk decía **«2 superados de 2
+empezados»** y Cordillera Binaria **no salía en ninguna parte**.
+
+El usuario decidió las dos cosas que la fila dejaba abiertas: **crece la ficha que
+ya existía** —no una pantalla nueva— y **se enseñan los nueve niveles agrupados
+por mundo**, con el intacto nombrado y en cero. Ahora la ficha dice «2 de 9
+niveles superados · 0 de 3 mundos terminados» y lista los siete que faltan como
+**«Sin empezar»**, que no es lo mismo que «Sin superar».
+
+**El alcance y el explorador pasaron a la dirección**
+(`/teacher/panel/:groupId/:studentId`, con `all` cuando el alcance es «Todos»):
+recargar ya no pierde la ficha y el enlace se puede pasar. `getCatalogSize()` se
+retiró en favor de `getCatalog()`, que trae la lista y no sólo el recuento.
+
+**Sin migración**: lo que faltaba no estaba en el servidor. Verificado con las
+tres cuentas del salón de pruebas, cuadrando pantalla y vistas. **Deja fuera**
+rachas y logros, que son el 22, y el candado, que sigue para después de la prueba
+preliminar.
+
+#### <a id="paso-20"></a>20 · Pantalla de nivel y puente hacia el juego
+
+~~Pantalla de nivel con contenedor, y el puente hacia el juego~~ — **HECHO en el
+J7.1**, por decisión del usuario de montarla donde va en vez de ensayarla otra
+vez: la ruta `/dashboard/worlds/:worldId/:levelId`, la pantalla con el juego
+dentro, la selección de niveles **leyendo de la base** —fuera los diez títulos
+inventados y el `find ?? studentWorlds[0]` que metía cualquier uuid real en el
+primer mundo de maqueta— y `mapLevelRow` trayendo ya `narrative`, `starter_code`
+y `validation_rules`.
+
+**Le queda mandar el intento**, que es el paso 21. Ver `ROADMAP-JUEGO.md` §3.
+
+#### <a id="paso-21"></a>21 · Progreso y XP desde el juego
+
+Escritura de progreso y XP desde el juego — **HECHO el 17-sep-2026, en tres pasos
+del roadmap del juego**:
+
+- el **J9** guarda cada partida terminada con su programa, con éxito o sin él;
+- el **J10** estrena la puntuación —la calcula el servidor contando el programa,
+  migración `202606030033`— y cambia la concesión a la marca de agua;
+- y el **J11** pone la barra por tramos de 300 con el **Nivel Explorador** y
+  refresca el XP sin recargar.
+
+Los tres verificados jugando contra la base real: ver `CONTEXT.md` §2.7. **Deja
+fuera la racha**, que es del 22.
+
+#### <a id="paso-22"></a>22 · Rachas y logros
+
+**HECHO el 20-sep-2026.** No existía nada: medido con la cuenta de `.env`, que
+tenía 900 XP y los nueve niveles al 100, había **cero filas en `achievements` y
+la racha a cero**, con la tabla puesta desde la `0005` y las columnas desde la
+`0002`.
+
+**Veinte logros** sembrados en `achievement_catalog`: nueve de nivel perfecto,
+tres de mundo perfecto, uno de todo, cuatro de acción —«Sin mareos», «Intentando
+volar», «Eso fue innecesario...» y «¡Auch! mis rodillas»— y tres de racha.
+**Todos exigen superar el nivel**, decidido por el usuario.
+
+**La racha cuenta días de Colombia (UTC−5)** y sube sólo con una partida
+superada, una vez al día; la guardada **caduca al leerse**, porque sólo se
+recalcula al jugar. El aviso estilo Steam sale al terminar la partida, en cola si
+son varios. **Las estrellas se retiraron** de las dos tablas, de la RPC y del
+cliente.
+
+Seis migraciones, `0036` a `0041`, y **cinco fueron por fallos propios**: las tres
+lecciones están en `CONTEXT.md` §2.11. Verificado jugando contra la base: 17 de 20
+logros, los cuatro negativos no conceden, y el XP cuadra en 2350. **Sin verificar
+contra la base**: que la racha pase de 1 a 2 al día siguiente, que exige esperar.
+
+#### <a id="paso-32"></a>32 · Renombrar los mundos para que cuadren con el juego
+
+**HECHO el 20-sep-2026.** Eran **dos problemas y no uno**: la base decía «Selva
+Algorítmica / Cordillera Binaria / Costa de Bugs» y la landing anterior al login
+anunciaba **otros tres** —«La Selva de las Secuencias», «El Espacio de los
+Bucles», «El Océano Condicional»—, y cinco de esos seis nombres, más las tres
+descripciones de la base, prometían bucles, condicionales, funciones, estructuras
+de datos y depuración que **los cuatro bloques no permiten**.
+
+Ahora son **Sendero de los Patrones**, **Cordillera de la Abstracción** y
+**Encrucijada de las Decisiones**, decidido por el usuario: los nombres apuntan a
+los pilares del pensamiento computacional y no a la naturaleza colombiana.
+`region_label` pasa de la región al pilar, y los `slug` se renombraron con los
+títulos.
+
+**LA TRAMPA, y es la que ahorra la tarde:** el catálogo de logros **copió** los
+nombres al sembrarse —los nueve de nivel con `split_part` sobre `levels.title`,
+los tres de mundo escritos a mano—, así que renombrar **no lo actualiza solo**; la
+migración `0043` lo pone al día, y **lo ya concedido se queda con el nombre viejo
+a propósito** (`CONTEXT.md` §2.11). Ninguna clave se rompe: salen del
+`sort_order`. Los nueve títulos de nivel no cambian.
+
+Verificado contra la base y en pantalla, incluidas las dos mitades del catálogo:
+quien ya los tenía sigue leyendo «Dueño de la Selva», quien no, lee «Dueño del
+Sendero».
+
+#### <a id="paso-33"></a>33 · Misiones que el profesor asigna, ligadas al juego
+
+**HECHO el 20-sep-2026.** Cierra el último cabo abierto del contrato §8: «cómo se
+relacionan las misiones que un profesor asigna con los niveles del juego». **No
+se podían cumplir**, y el panel del tutor lo decía con todas las letras.
+
+El usuario decidió las dos cosas que el cambio no podía tomar solo: **una misión
+es un reto sobre los nueve niveles que ya existen** —su condición la comprueba el
+servidor leyendo el historial, sin puzles nuevos que diseñar— y **son cuatro**,
+pocas a propósito para que sean **cumplibles de punta a punta en la prueba
+preliminar**. Las tres de mundo piden **superar**, no la marca máxima, que es lo
+que las separa del logro `perfect_world_N`.
+
+**El catálogo se mudó del cliente a la base** (`mission_catalog`) y
+`mission_assignments.mission_key` **gana por fin su clave ajena**, cerrando la
+deuda que la 0020 dejó escrita; con él se fueron `SkillKey` y
+`estimatedMinutes`. `mission_completions` guarda el salón donde ocurrió, y el XP
+**se paga una sola vez en la vida**.
+
+**Asignar pone al día a quien ya cumplía**, porque si no el salón saldría entero
+en «Pendiente» y eso se lee como un fallo; eso obligó a cambiar el `upsert` por
+una RPC `security definer`, **con la garantía escrita dentro de la función**, que
+es donde deja de protegerte la política.
+
+Migración `0044`, con `submit_level_attempt` reescrita **partiendo de su texto** y
+diffeada antes de aplicar. Verificado contra la base: 1600 XP exactos, cuatro
+filas, y los negativos de permiso en 42501. **El aviso «¡Misión cumplida!» lo vio
+el usuario jugando** el 21-sep-2026 con Axoluk, contrastado después en la base.
+
+#### <a id="paso-27-1"></a>27.1 · Despliegue provisional para la prueba
+
+**AÑADIDO EL 18-SEP-2026.** Montaje **simple y desechable** sobre Supabase, sólo
+para que la prueba preliminar exista: no es el despliegue bueno, que va al
+servidor de la universidad detrás del 30. Aparece aquí porque la prueba dejó de
+ser local: ver §2.1.
+
+**HECHO el 21-sep-2026** en Vercel (plan Hobby):
+`https://codeplay-pgrado-web.vercel.app`, con `vercel.json` en la raíz, las dos
+variables de Supabase y las URL de retorno dadas de alta en Supabase. Verificado
+por el usuario: registro, Google, recarga y niveles.
+
+#### <a id="prueba-preliminar"></a>🔬 Prueba preliminar
+
+**REPLANTEADA EL 18-SEP-2026: ya no es local ni con gente cercana.** La hace **un
+salón de estudiantes universitarios** sobre el despliegue provisional del 27.1,
+con sus propias cuentas. Siguen sin entrar menores de fuera —son mayores de
+edad—, así que el **consentimiento del acudiente** del paso 14 sigue sin aplicar y
+el 14 puede seguir detrás.
+
+**Lo que sí cambia es que habrá datos personales de terceros en un despliegue
+público**, y eso queda anotado en §2.1 como riesgo asumido, no como descuido.
+
+#### <a id="paso-14"></a>14 · Consentimiento del acudiente y política de privacidad
+
+**Adelantado en parte y el resto DETRÁS de la prueba preliminar, ver §2.1 y
+§3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó
+el único sitio donde se guardaban datos de terceros. Lo que falta **se retoma
+después de la prueba preliminar, y en todo caso antes del primer usuario real**.
+
+Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los
+compañeros se ven entre sí nombre, XP y racha (§3.2).
+
+#### <a id="paso-19"></a>19 · Invitaciones por correo reales y enlace canjeable
+
+**PARTIDO EN DOS, ver §2.1.**
+
+**Mitad A hecha:** el tutor genera un enlace canjeable, lo comparte por donde
+quiera, y quien lo abre entra al salón **sin pasar por la bandeja**; el token
+sobrevive el registro, incluida la vuelta por Google. La purga por `expires_at`
+entró desde el primer día, y **ninguna tabla ganó columna de correo**: por eso
+esta mitad esquiva entera la decisión de privacidad de §3.4.
+
+**Mitad B pendiente:** el envío real, que necesita **servicio de correo
+contratado** (§2.2).
+
+#### <a id="paso-26"></a>26 · Ilustraciones con Gemini
+
+**Va ANTES del 25, ver §2.1**: hacer responsive un diseño que el apartado gráfico
+va a cambiar es hacerlo dos veces.
+
+**Cambiado de Higgsfield a Gemini el 21-sep-2026**: Higgsfield entregó vertical
+dos veces lo que se pidió panorámico. El usuario genera cada imagen con su dibujo
+de referencia del leopardo, y la sesión escribe el prompt midiendo antes el hueco
+y la integra en WebP desde `src/assets/brand/`.
+
+**Casi cerrado el 23-sep-2026.** Ya tienen ilustración: el logo y la pestaña, el
+hero, las tres portadas de mundo y el tutor en la portada, el panel del login, las
+tarjetas de rol y el formulario del registro, la cabecera y las tarjetas de mundo
+del niño, los tres avatares elegibles del niño —con su selector en Ajustes—, los
+tres grandes trofeos y el avatar del tutor. **Queda un hueco: la imagen de los
+nueve niveles** (`StudentWorldLevelsModule.tsx`), con una pregunta abierta para
+el usuario —una por nivel o una por mundo—. Los logros normales no tienen hueco de
+imagen. Ver `CONTEXT.md` §3 → P6.
+
+#### <a id="paso-25"></a>25 · Responsive, accesibilidad y `ErrorBoundary`
+
+**Detrás del 26 a propósito.** **Medido** al planificarlo: cero clases
+`sm:`/`md:`/`lg:` en las pantallas clave, `w-[262px] shrink-0` duplicado en
+`Sidebar.tsx:134` y `TeacherSidebar.tsx:66`, y ningún `ErrorBoundary` en todo
+`apps/web/src`. Hereda además `/invite/:token` del paso 19, que es la pantalla con
+más probabilidad de abrirse en un móvil. Ver `CONTEXT.md` §4.4.
+
+**Adelantado en parte el 21-sep-2026, con las correcciones previas al
+despliegue** (`CONTEXT.md` §2.12): **el `ErrorBoundary` ya existe**, por encima
+del router, y la barra lateral se pliega en los dos roles. Algunas pantallas
+nuevas —mundos, trofeos— ya se reordenan por anchura. **Lo que sigue pendiente es
+lo gordo**: el repliegue del panel para móvil y la accesibilidad.
+
+#### <a id="paso-30"></a>30 · Migración al servidor de la universidad
+
+**Alcance por decidir, ver §2.1.** Supabase fue para probar funcionalidades con
+usuarios; lo definitivo va al servidor de la universidad. **Qué se mueve depende
+de lo que ofrezcan**, y eso se pregunta antes de planificarlo.
+
+#### <a id="paso-27-2"></a>27.2 · Despliegue definitivo y URL de demo
+
+Va detrás del 30 porque el destino bueno es el servidor de la universidad, no
+Supabase. Lo que el 27.1 monte para la prueba es desechable y no condiciona a
+éste.
+
 ---
 
 ## 3. Cabos sueltos detectados
@@ -429,9 +783,9 @@ perderse:
 | --- | --- |
 | El invariante «un alumno, un salón» **ya vive en el modelo** desde el paso 9 —restricción, índice parcial y política—, y desde el paso 10 el store tampoco lo contradice: `requestJoin()` comprueba la pertenencia y la solicitud pendiente antes de escribir | Cerrado en el paso 10 |
 | `levels` guarda `starter_code`, `validation_rules` y `programming_language`: el esquema se diseñó para un editor de código en el navegador | **Cerrado en el paso 23.1: se reinterpretan**, no se amplía el esquema. `validation_rules` lleva la definición del puzle, `starter_code` la disposición inicial de bloques y `programming_language` la versión del formato |
-| No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones. La sala de trofeos sólo puede listar lo conseguido, y el requisito de `contenido-mundos` se ajustó a eso | Paso 22 |
+| ~~No existe catálogo de logros: `achievements` registra los concedidos a cada niño, no los posibles con sus condiciones~~ **CERRADO en el paso 22**: `achievement_catalog` con veinte logros, y la sala de trofeos enseña los conseguidos y los que faltan | Cerrado en el paso 22 |
 | ~~**El progreso no sabe nada de salones**, así que al aceptar a un alumno el tutor pasará a ver *todo* su historial, incluido el anterior al ingreso~~ **CERRADO en el paso 17, y no por accidente**: el usuario lo decidió el 18-sep-2026 con el caso real delante —1 de los 9 niveles de la cuenta de pruebas es anterior a su ingreso—. Se muestra todo, `joined_at` no recorta nada y la fecha sigue guardada por si alguna vez se acota | Cerrado en el paso 17. Lo hereda el 14, ver §3.1 |
-| **El XP casi no tenía superficie en la interfaz.** El paso 28 le dio cuatro —barra lateral, barra superior y la tabla de seguimiento en sus dos vistas—, con `XPBar` retintada al tema de selva y un máximo provisional. Lo que sigue abierto no es dónde se ve, sino que **nada lo escribe**: todas las barras muestran el cero verdadero | Superficie cerrada en el paso 28; la escritura, paso 21 |
+| **El XP casi no tenía superficie en la interfaz.** El paso 28 le dio cuatro —barra lateral, barra superior y la tabla de seguimiento en sus dos vistas—, con `XPBar` retintada al tema de selva y un máximo provisional. Lo que quedaba abierto no era dónde se ve, sino que **nada lo escribía**. **Cerrado en el paso 21**: el juego lo escribe desde el 17-sep-2026, y la barra va por tramos de 300 con el Nivel Explorador | Superficie cerrada en el paso 28; la escritura, en el 21 |
 | **EL JUEGO TIENE CUATRO BLOQUES, y eso acota lo que se puede premiar.** Son avanzar, girar a la izquierda, girar a la derecha y saltar: no hay bucle, ni condicional, ni función. Medido el 18-sep-2026 en `game/blockTypes.ts`, en `FLYOUT_BLOCKS` y en los 28 intentos guardados, donde no aparece ningún otro tipo. Fue lo que retiró las cinco barras de habilidades en el paso 17 —cuatro de las cinco no tenían con qué entrenarse—, y **el paso 22 hereda la misma frontera**: «da tres vueltas sobre tu propio eje usando bloques» se puede premiar, pero nada que pida repetir o decidir. O el catálogo se ciñe a los cuatro bloques, o el juego gana bloques primero | Paso 22, y ver `CONTEXT.md` §2.10 |
 | ~~**PREGUNTA ABIERTA:** cómo verifica el servidor que un logro se consiguió~~ **CERRADA en el paso 23.1.** El juego nunca nombra un logro: manda el intento y el servidor concede, leyendo el programa enviado y el historial. Con eso queda **un solo bit confiado al cliente** —`is_success`—, que es el mismo del que ya colgaba el XP por completar un nivel. La raya que abarata todo: inspeccionar el programa es una condición `jsonb`; ejecutarlo contra la rejilla sería un intérprete de bloques en plpgsql, y queda fuera | Cerrada en el paso 23.1. Ver §3.2 y el contrato |
 | **El historial de solicitudes se acumula en filas**: un mismo par `(student_id, group_id)` puede tener una resuelta y una pendiente nueva. Resuelto ordenando por `requested_at` y quedándose con la última, con `maybeSingle()` y nunca `single()`. **Comprobado con el caso real**: niño rechazado que vuelve a pedir entrar, dos filas, la pantalla lee «En espera» | Cerrado en el paso 10 |
@@ -904,7 +1258,18 @@ El texto legal citado se verificó en fuente primaria —Ley 1581 de 2012 art. 7
 Decreto 1377 de 2013 arts. 7, 8, 10, 11, 12, 13 y 15—, pero **la lectura
 aplicada la tiene que firmar un humano competente** antes de ir a la memoria.
 
-### 3.5 Fecha límite para las misiones — ABIERTO, y lo dejó fuera el usuario
+### 3.5 Fecha límite para las misiones — CERRADA EL 21-SEP-2026
+
+**Hecha, y la respuesta fue «bloquea, con segunda oportunidad».** Pedida por el
+usuario tras probar el candado: al asignar, «Sin fecha límite» u «Hasta el» un
+día de Colombia. Vencida, la misión deja de verse y de poder cumplirse —la oculta
+la política de lectura, sin nada que corra a medianoche—, y **reasignarla le pone
+la fecha nueva**. Quien ya la cobró no vuelve a cobrar. Migración `0047`; el
+detalle en `CONTEXT.md` §2.8, «Fecha límite, y la segunda oportunidad». **Sin
+verificar con sesión**: asignar con fecha, vencer y reasignar desde la interfaz.
+
+Lo que sigue es el planteamiento que se escribió antes de hacerla, y se conserva
+porque explica la decisión.
 
 Propuesto por él mismo el 20-sep-2026 mientras se decidían las misiones, y
 **apartado a propósito** del paso 33 para no ampliarlo: primero que se puedan

@@ -1,6 +1,8 @@
 # CodePlay — Hoja de ruta del juego
 
 > **En qué orden se construye el juego.** Escrita el 3 de septiembre de 2026.
+> Última actualización: **23 de septiembre de 2026** — del J1 al J12 hechos, el
+> J13 en curso.
 
 Esto es **sólo el juego**. El orden del proyecto entero está en
 [`ROADMAP.md`](ROADMAP.md), y aquí no se repite.
@@ -112,7 +114,7 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 | J12.4 | **El máximo de pasos**, la mecánica del mundo 3: `stepLimit` en `config`, el recorrido que se corta al agotarlo y el contador en cuenta atrás (`limite-de-pasos`). Va antes que los tableros porque el lector descartaba en silencio los campos que no conocía | Un nivel con máximo congela al personaje al llegar a cero y le pide reiniciar | ✅ |
 | J12.5 · .6 | Los niveles 1 y 2 del mundo 3, **los primeros con máximo de pasos**: `dos-caminos` —anillo llano con dos pilares que deciden por qué lado rodearlo, 10 pasos contra 11— y `el-faro` —torre de altura 5 con una sola entrada, 17—. Los dos en la 0030 (`mundo-3-niveles-1-y-2`) | Los dos se juegan desde la base, con el contador en cuenta atrás | ✅ |
 | J12.7 | El nivel 3 del mundo 3, `muchos-caminos` (la 0031, retocada por la **0032**). **Cierra el J12 y con él la deuda de los nueve puzles.** El retoque subió una altura para pasar de 13 pasos con cuatro caminos correctos a **14 con dos**, entre 48 recorridos posibles: el usuario rechazó a propósito las variantes de un único camino, «una línea recta entre caminos curvados» | Los nueve niveles se juegan desde la base | ✅ |
-| **J13** | **Assets y diseño de los tres mundos**, en una sola pasada y con los nueve puzles jugándose | Los nueve niveles dejan los cubos: suelo, decorado, cámara y luz, y por último el personaje | ⬜ |
+| **J13** | **Assets y diseño de los tres mundos**, en una sola pasada y con los nueve puzles jugándose | Los nueve niveles dejan los cubos: suelo, decorado, cámara y luz, y por último el personaje — **la primera pasada, aprobada para la prueba preliminar, está hecha; ver «Lo que lleva el J13»** | 🔄 |
 
 ### El apartado gráfico va al final, en una sola pasada
 
@@ -155,6 +157,36 @@ reloj que anima es el mismo que decide cuándo termina un paso — dos
 planificadores para una cosa. La decisión se revisa en el J13, con el modelo
 delante, que es donde §2 dice que entran las librerías: en el paso que primero
 las importe.
+
+### Lo que lleva el J13 (22-sep-2026)
+
+Una **primera pasada**, aprobada por el usuario para la prueba preliminar. No
+cierra el paso: es el aspecto con el que se hace la prueba, y lo que salga de
+ella decide la segunda.
+
+- **El tablero** usa el bloque de hierba de Kenney con el pasto chorreando: las
+  columnas vecinas se funden, la tierra baja hasta el suelo y la hierba va en
+  damero para que se cuenten las casillas. La meta lleva la bandera grande y
+  centrada; la salida no se marca.
+- **Islas de decorado generadas por reglas** (`game/islands.ts`, con tests), con
+  una semilla sacada del tablero: cada nivel sale distinto y siempre igual. Nada
+  tapa casillas por delante; los bloques altos van detrás y los adornos del lado
+  de la cámara.
+- **«Dos caminos»** lleva un pilar que tapa el camino de atrás y la cámara más
+  alejada. Hoy se decide por el `slug`; si se aprueba, tiene que pasar a ser un
+  campo del nivel.
+- **Los muros** siguen siendo el cojín rojo del KayKit Platformer Pack.
+- **El personaje sigue siendo el de cubos.** El explorador de Meshy entró, pero
+  pesa 17 MB y en el despliegue tardaba más de un minuto en bajar, frenando al
+  tablero: queda apagado con `CHARACTER_MODEL_ENABLED` hasta que se aligere, con
+  sus archivos en `public/models/character/`. Los modelos se guardan un día en
+  el navegador (`vercel.json`), así que la segunda visita no los vuelve a bajar.
+- **La pantalla de nivel se reordenó**: la caja de bloques pasa a una bandeja
+  bajo el juego, el lienzo a la columna derecha con los botones debajo, y las
+  instrucciones son un botón «?» que empieza cerrado.
+
+**Lo que queda del J13**: aligerar el explorador y ponerlo, y lo que la prueba
+preliminar diga del tablero y del decorado.
 
 ### Los nueve puzles no existen, y los diseña el usuario
 

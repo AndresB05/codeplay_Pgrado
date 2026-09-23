@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@500;600;700&family=Patrick+Hand&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -68,6 +68,10 @@
   --mist: #f8fbfe;
   --mist-soft: #eff4fa;
   --mist-line: #dfe8f2;
+
+  /* La tinta café del pergamino de las misiones. */
+  --sepia: #6b4423;
+  --sepia-soft: #8a6440;
 
   /* Compatibilidad con las utilidades previas */
   --primary: var(--grape);
@@ -245,6 +249,28 @@ a {
       auto,
       auto,
       26px 26px;
+  }
+
+  /*
+   * Fondo ilustrado de los paneles del niño y del tutor, nunca de la landing ni
+   * del acceso. Lo pinta `PanelBackdrop`, que decide dónde se centra.
+   */
+  .panel-backdrop {
+    background-color: var(--jungle-dark);
+    background-image: url('./assets/brand/panel-backdrop.webp');
+    background-size: cover;
+    background-position: center top;
+  }
+
+  /*
+   * El pergamino de las misiones, en nueve trozos: las esquinas y el contorno
+   * rasgado no se deforman, sólo se estira el papel liso del centro, porque la
+   * tarjeta cambia de ancho y de alto. La sombra sigue la silueta rasgada.
+   */
+  .map-sheet {
+    border: 42px solid transparent;
+    border-image: url('./assets/brand/mission-map.webp') 80 fill stretch;
+    filter: drop-shadow(0 8px 0 rgba(42, 27, 69, 0.12));
   }
 
   /* Franja de tierra húmeda bajo el dosel, para separar bloques de la landing. */

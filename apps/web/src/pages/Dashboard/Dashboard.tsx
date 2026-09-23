@@ -12,6 +12,7 @@ import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useLastSeen } from '../../hooks/useLastSeen';
 import { DEV_TOOLS_ENABLED } from '../../config/devTools';
+import { PanelBackdrop } from '../../components/decor/PanelBackdrop';
 
 export const Dashboard = () => {
   const location = useLocation();
@@ -74,7 +75,10 @@ export const Dashboard = () => {
       <div className={`min-h-[calc(100vh-84px)] ${showSidebar ? 'flex' : 'block'}`}>
         {showSidebar ? <Sidebar user={user} activeRoute={activeRoute} /> : null}
 
-        <main className="min-w-0 flex-1">{renderStudentModule()}</main>
+        <main className="relative isolate min-w-0 flex-1">
+          <PanelBackdrop />
+          {renderStudentModule()}
+        </main>
       </div>
     </div>
   );

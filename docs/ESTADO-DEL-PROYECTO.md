@@ -1,22 +1,28 @@
 # CodePlay — Estado del proyecto
 
 > Documento de referencia para retomar el desarrollo sin perder contexto.
-> Última actualización: **3 de septiembre de 2026**.
+> Última actualización: **23 de septiembre de 2026**.
 
 CodePlay es una plataforma web para enseñar pensamiento computacional a niños,
-con un juego 3D que se integrará más adelante. Este documento mapea qué
-está construido, cómo se ve y con qué está hecho.
+con un juego 3D de bloques dentro de la propia aplicación. Este documento mapea
+qué está construido, cómo se ve y con qué está hecho.
 
-**Lo primero que hay que entender:** la aplicación **está conectada a un backend
-real**. Hay un proyecto de Supabase con su esquema aplicado —22 migraciones—, el
-acceso y el registro son de verdad, y los salones se guardan en la base y se
-sincronizan entre dispositivos. Lo que aún no existe es **el juego**: nada
-escribe progreso, XP ni rachas, así que todas esas cifras muestran el cero
-verdadero.
+**Lo primero que hay que entender:** la aplicación **está entera sobre un backend
+real** y **el juego ya está integrado**. Hay un proyecto de Supabase con su
+esquema aplicado —47 migraciones—, el acceso y el registro son de verdad, los
+salones se sincronizan entre dispositivos, y los **nueve niveles** de los tres
+mundos se juegan leyendo su definición de la base. Cada partida se guarda, el
+servidor la puntúa y concede el XP, la racha, los logros y las misiones. Hay un
+**despliegue provisional** en Vercel para la prueba preliminar:
+`https://codeplay-pgrado-web.vercel.app`.
 
-Si vienes de una versión anterior de este documento: decía que no había backend
-y que los salones vivían en `localStorage`. Eso dejó de ser cierto a finales de
-agosto de 2026.
+Lo que falta es sobre todo **presentación y cierre**: el aspecto final del juego
+(J13), las ilustraciones de los niveles, el panel en móvil, el consentimiento
+del acudiente y el despliegue definitivo. Ver [`ROADMAP.md`](ROADMAP.md).
+
+Si vienes de una versión anterior de este documento: la del 3-sep-2026 decía que
+el juego no existía y que progreso, XP y rachas estaban en cero. Eso dejó de ser
+cierto entre el 10 y el 20 de septiembre.
 
 **Los otros documentos, y cuándo leer cada uno**
 
@@ -68,15 +74,18 @@ En la interfaz se etiqueta "Tutor"; el nombre del profesor se muestra por salón
 | Bandeja "Alumnos en espera" | ✅ | `PendingRequestsSection.tsx` |
 | Aceptar / rechazar solicitud de ingreso | ✅ | `ClassroomsProvider.tsx` — aceptar respeta el cupo y no se puede saltar |
 | Selector de alcance (todos los salones / uno) | ✅ | `TeacherPanelModule.tsx` |
-| Asignación de misiones | ✅ | Persiste en la base (`mission_assignments`). **Pero nadie puede cumplirlas**: sin juego no hay forma de completar una, así que el salón entero sale en «Pendiente» con el motivo escrito en la pantalla |
+| Asignación de misiones | ✅ | Cuatro misiones del catálogo de la base (`mission_catalog`), asignadas al salón. **Se cumplen jugando**: el servidor lo comprueba leyendo el historial, y asignar pone al día a quien ya cumplía |
+| Fecha límite de una misión | ✅ | «Sin fecha límite» o «Hasta el» un día; vencida deja de verse y **reasignarla es la segunda oportunidad** |
 | Enlace de invitación que lleva al salón | ✅ | El tutor genera un enlace y lo comparte por donde quiera; quien lo abre entra **sin pasar por la bandeja**. Caduca a los 14 días |
 | Invitar alumnos por correo | ⛔ | El enlace se comparte a mano. **Enviarlo automáticamente requiere contratar un servicio de correo**, y ninguna tabla guarda direcciones a propósito |
 | La bandeja se actualiza sola | ✅ | Si un niño solicita mientras el panel está abierto, la solicitud aparece sin recargar |
-| Ajustes de cuenta | ✅ | Cambiar el nombre y cambiar la contraseña funcionan de verdad |
-| Reportes de habilidades (5 competencias) | 🟡 | `getSkillReports()` — **calculado sobre datos de ejemplo.** Necesita progreso real, que llega con el juego |
-| Tabla de seguimiento (mundo, actividad, racha) | 🟡 | La estructura es real, pero mundo, actividad y racha son de ejemplo. El XP sí es el de la base: hoy, cero |
-| Recursos educativos | 🟡 | Tarjetas informativas sin destino |
-| Ver el seguimiento de **un alumno concreto** por mundos | ⛔ | Seleccionar a un alumno y ver qué niveles y qué mundos ha completado. Pedido el 3-sep-2026; es el paso 31 del roadmap. Necesita progreso real, que llega con el juego |
+| Ajustes de cuenta | ✅ | Cambiar el nombre, cambiar la contraseña y **eliminar la cuenta** —con confirmación; al tutor se le van sus salones— |
+| Panel de información sobre progreso real | ✅ | `TeacherPanelModule.tsx` — niveles superados, mundos terminados y eficiencia media. **Las cinco barras de habilidades se retiraron**: el juego tiene cuatro bloques y sólo «secuencias» tenía con qué entrenarse |
+| Tabla de seguimiento (XP, racha, última actividad) | ✅ | `StudentRosterTable.tsx` — todo de la base, relee cada 15 s, marca **«En línea»** a quien está conectado y se ordena por XP, racha o nombre |
+| Podio del salón | ✅ | `ClassroomPodium.tsx` — los tres de más XP; no sale si nadie tiene XP |
+| Recursos educativos | ✅ | `TeacherResourceDialog.tsx` — cada tarjeta abre el texto completo, escrito sobre cómo funciona hoy la plataforma |
+| Ver el seguimiento de **un alumno concreto** por mundos | ✅ | La ficha del explorador: los nueve niveles agrupados por mundo, con los intentos y los pasos de cada partida. Vive en la dirección (`/teacher/panel/:groupId/:studentId`) |
+| Avatar del tutor | ✅ | Un leopardo fijo para todos los tutores (`TUTOR_AVATAR`), en la barra lateral, la barra superior y Ajustes |
 | Editar o archivar un salón existente | ⛔ | — |
 | Exportar reportes | ⛔ | — |
 
@@ -92,14 +101,14 @@ En la interfaz se etiqueta "Tutor"; el nombre del profesor se muestra por salón
 | Ver el salón propio y a los compañeros | ✅ | `StudentClassroomModule.tsx` |
 | Bloqueo de solicitud si el salón está lleno | ✅ | `StudentClassroomSearch.tsx` |
 | Entrar por un enlace de invitación | ✅ | `pages/Invite/Invite.tsx` — el token sobrevive registrarse, incluso pasando por Google |
-| Ver sus misiones asignadas | ✅ | Ve sólo lo que su tutor asignó a su salón. **No puede jugarlas**: no hay botón, porque no hay juego |
-| Su salón se actualiza solo | ✅ | Ve que lo aceptan, lo rechazan o lo quitan sin recargar |
-| Ajustes de cuenta | ✅ | `StudentSettingsModule.tsx` — cambiar nombre y contraseña funcionan |
-| Listado de mundos | ✅ | `StudentWorldsModule.tsx` — los 3 mundos vienen de la base. La **dificultad** sí está escrita a mano: los tres dicen «Fácil» |
-| Sala de trofeos | 🟡 | `StudentTrophiesModule.tsx` — lee de la base, pero **sólo lista lo conseguido**: no existe el catálogo de logros posibles, así que hoy está vacía |
-| Niveles de un mundo | 🟡 | `StudentWorldLevelsModule.tsx` — **maqueta pura, y con un defecto conocido**: enseña 10 niveles inventados y siempre los del *mismo* mundo, sea el que sea el que elijas. Lo arregla el paso 20 |
-| Jugar | ⛔ | El juego todavía no existe. **Ya no será Unity**: desde el 3-sep-2026 se hace con librerías dentro de esta misma aplicación. Ver [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) |
-| Progreso, XP y rachas reales | ⛔ | La fontanería está escrita y medida, pero **nada la llama**: llega con el juego. El XP se ve en cuatro sitios y muestra cero |
+| Ver y cumplir sus misiones | ✅ | Ve lo que su tutor asignó a su salón, con su plazo si lo tiene. **Se cumplen jugando** y avisan «¡Misión cumplida!»; en «Mundos» la cumplida desaparece y en «Mi salón» sigue, marcada |
+| Su salón se actualiza solo | ✅ | Ve que lo aceptan, lo rechazan o lo quitan sin recargar; el ranking y el podio se mueven solos |
+| Ajustes de cuenta | ✅ | `StudentSettingsModule.tsx` — nombre, contraseña, **elegir avatar** entre tres leopardos y eliminar la cuenta |
+| Listado de mundos | ✅ | `StudentWorldsModule.tsx` — los 3 mundos vienen de la base, con su ilustración, y los filtros filtran. La dificultad sale del orden: Fácil, Intermedio, Difícil |
+| Sala de trofeos | ✅ | `StudentTrophiesModule.tsx` — **veinte logros** del catálogo de la base (`achievement_catalog`), conseguidos o no. Los tres de mundo van arriba como «Grandes trofeos», con su ilustración y una barra que dice cuánto falta |
+| Niveles de un mundo | ✅ | `StudentWorldLevelsModule.tsx` — los tres niveles de cada mundo, desde la base, **con candado**: el 1 siempre abierto, el 2 y el 3 al superar el anterior. Su hueco de ilustración sigue vacío |
+| Jugar | ✅ | `StudentLevelModule.tsx` — el juego 3D con el editor de bloques debajo. Cuatro bloques: avanzar, girar a cada lado y saltar (el mundo 1 no ofrece «saltar»). Ver [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) |
+| Progreso, XP, rachas y logros | ✅ | Cada partida se guarda con su programa. **Puntúa el servidor**, contando los pasos, y concede el XP por marca de agua. La barra va por tramos de 300 con el **Nivel Explorador**. La racha cuenta días de Colombia y los logros salen con aviso al terminar la partida |
 
 > **Un niño pertenece a un solo salón, y eso es una decisión de diseño, no una
 > limitación pendiente de resolver.** No es que «todavía» no se pueda estar en
@@ -125,9 +134,13 @@ En la interfaz se etiqueta "Tutor"; el nombre del profesor se muestra por salón
 | Cambiar el nombre desde Ajustes | ✅ | Se refresca en las siete pantallas que lo muestran, sin recargar |
 | Persistencia del estado de salones | ✅ | **En Supabase**, no en el navegador: se ve desde cualquier dispositivo |
 | Sincronización en vivo | ✅ | Tres pantallas se actualizan solas. **No hay notificaciones**: ni campana, ni avisos, ni no leídos |
-| Sesión de invitado (entrar sin login) | ✅ | Sólo en desarrollo (`import.meta.env.DEV`). **Ya no simula nada**: autentica de verdad con cuentas de prueba |
+| Quién está conectado | ✅ | Punto verde y «En línea» en el salón, para el tutor y los compañeros (Realtime Presence) |
+| Sesión de invitado (entrar sin login) | ✅ | Sólo en desarrollo y **apagada salvo `VITE_ENABLE_DEV_TOOLS=true`**, igual que el Laboratorio 3D. Autentica de verdad con cuentas de prueba |
 | Mensajes de error en español | 🟡 | Los de acceso sí. Los de perfil siguen llegando en inglés |
-| Responsive y accesibilidad | ⛔ | **El panel no se repliega en móvil.** A 375 px la barra lateral se come la pantalla. Es el paso 25 |
+| `ErrorBoundary` | ✅ | `components/ui/ErrorBoundary.tsx` — un error inesperado enseña «Recargar» e «Ir al inicio» en vez de la pantalla en blanco |
+| Barra lateral plegable | ✅ | En los dos roles; plegada deja sólo los iconos, y se recuerda en el navegador |
+| Responsive y accesibilidad | 🟡 | Algunas pantallas ya se reordenan, pero **el panel no se repliega en móvil**: a 375 px la barra lateral se come la pantalla. Es el paso 25 |
+| Despliegue provisional | ✅ | Vercel (plan Hobby), sólo para la prueba preliminar. El definitivo va al servidor de la universidad |
 | Consentimiento del acudiente y política de privacidad | ⛔ | Obligatorio antes del primer usuario real. Es el paso 14 |
 
 ### 1.4 Flujos de usuario principales
@@ -287,8 +300,30 @@ como nombres de Tailwind. **Usa siempre los nombres, no los hex sueltos.**
 | Coral oscuro | `#C72C2C` | `coral-dark` | Texto de error y validación |
 | Coral suave | `#FFE6E6` | `coral-soft` | Fondo de alertas destructivas |
 | Cielo | `#3B9DF8` | `sky` | **Informativo.** Cupos, datos neutros |
-| Lima | `#7ED957` | `lime` | Barras de dominio alto (≥ 70 %) |
+| Lima | `#7ED957` | `lime` | Acento verde claro y temas de salón |
 | Chicle | `#FF7BC2` | `bubble` | Acento decorativo y temas de salón |
+
+#### Capa de selva
+
+| Nombre | Hex | Tailwind | Uso asignado |
+| --- | --- | --- | --- |
+| Selva | `#1F9D5B` | `jungle` | Verde de hoja: `.btn-leaf`, `.chip-leaf`, mundo 1 y su trofeo |
+| Selva oscuro / claro / suave | `#12703D` / `#4ECB85` / `#DDF7E7` | `jungle-dark` / `-light` / `-soft` | Relieve, degradados y fondos |
+| Papaya | `#FF8A3D` | `papaya` | Naranja cálido: `.btn-papaya`, `.chip-papaya` y el rol tutor en el registro |
+| Papaya oscuro / suave | `#D15B12` / `#FFE8D6` | `papaya-dark` / `-soft` | Texto y fondos |
+
+#### Tinta del pergamino
+
+| Nombre | Hex | Tailwind | Uso asignado |
+| --- | --- | --- | --- |
+| Sepia | `#6B4423` | `sepia` | Títulos escritos sobre el pergamino de las misiones |
+| Sepia suave | `#8A6440` | `sepia-soft` | Texto de las misiones |
+
+#### Escala fría del juego
+
+La pantalla de nivel usa su propia gama de cielo, para que el tablero se lea
+sobre un fondo tranquilo: `sky-high` `#CFE6FB`, `sky-mist` `#EDF5FD` y `mist`
+(`#F8FBFE`, `mist-soft` `#EFF4FA`, `mist-line` `#DFE8F2`).
 
 #### Neutros y fondos
 
@@ -304,16 +339,12 @@ haría la interfaz menos infantil.
 | Lavanda | `#F4EEFF` | `lavender` | **Fondo de la aplicación** |
 | Línea | `#E3D9F7` | `line` | Bordes suaves y lunares del fondo |
 
-El fondo de la aplicación no es un plano liso: lleva una trama de lunares de
-`line` sobre `lavender`, con `background-size: 26px 26px`.
+El fondo de la aplicación no es un plano liso: el resplandor verde del dosel
+cayendo desde arriba, sobre una trama de lunares de `line` en `lavender`
+(`background-size: 26px 26px`).
 
-#### Semáforo de dominio de habilidades
-
-| Rango | Color | Lectura |
-| --- | --- | --- |
-| ≥ 70 % | `lime` | Dominado |
-| 45 – 69 % | `sun` | En camino |
-| < 45 % | `coral` | A reforzar |
+> El **semáforo de dominio de habilidades** (lima, sol, coral) se retiró con las
+> cinco barras de habilidades en el paso 17: ya no lo usa ninguna pantalla.
 
 ### 2.2 Tipografía
 
@@ -321,6 +352,7 @@ El fondo de la aplicación no es un plano liso: lleva una trama de lunares de
 | --- | --- | --- | --- |
 | **Fredoka** | Títulos, botones, etiquetas, números destacados | 500, 600, 700 | Google Fonts |
 | **Quicksand** | Cuerpo de texto, párrafos, tablas | 500, 600, 700 | Google Fonts |
+| **Patrick Hand** | Sólo las tarjetas de misión: parecen escritas a mano sobre el mapa (`font-map`) | 400 (la única) | Google Fonts |
 
 Ambas son redondeadas y de alta legibilidad. El cuerpo arranca en **peso 600**
 por defecto: en una interfaz infantil el texto fino se lee peor.
@@ -373,14 +405,16 @@ aplica escala de grises al 50 % y opacidad 0,65.
 #### Etiquetas de estado
 
 Base `.chip` (Fredoka 13 px, radio completo) más color: `.chip-grape`,
-`.chip-mint`, `.chip-sun`, `.chip-coral`, `.chip-sky`.
+`.chip-mint`, `.chip-sun`, `.chip-coral`, `.chip-sky`, `.chip-leaf`,
+`.chip-papaya`.
 
 | Etiqueta | Color | Significado |
 | --- | --- | --- |
-| Tutor | menta | Rol del usuario |
+| Panel de Tutor | menta | Rol del usuario, en la barra superior |
 | En espera / Pendiente | sol | Solicitud o invitación sin resolver |
-| Dificultad de misión | uva | Fácil / Intermedio / Difícil |
-| Habilidad | menta | Competencia que entrena una misión |
+| XP ganado | sol | «+200 XP» en trofeos y misiones |
+| Desbloqueado / Nivel Explorador | menta | Logro conseguido, nivel de la barra de XP |
+| Dificultad | uva | Fácil / Intermedio / Difícil |
 
 #### Campos de formulario
 
@@ -396,6 +430,30 @@ enfocar, el borde pasa a `grape-light` y el fondo a blanco. Etiquetas con
 | `StatCard` | `components/dashboard/shared/` | Métrica con icono en burbuja. Prop `tone` |
 | `StudentRosterTable` | `components/dashboard/shared/` | Tabla de seguimiento. La columna de acciones solo aparece si se pasa `onRemoveStudent` |
 | `GroupBadge` | `components/dashboard/shared/` | Insignia ilustrada del salón según su tema |
+| `ClassroomPodium` | `components/dashboard/shared/` | Los tres de más XP del salón, para el niño y el tutor |
+| `AssignedMissionsPanel` | `components/dashboard/shared/` | Misiones del salón; `hideCompleted` quita las cumplidas |
+| `ChangeNamePanel`, `ChangePasswordPanel`, `DeleteAccountPanel` | `components/dashboard/shared/` | Los paneles de Ajustes que montan los dos roles |
+| `ChangeAvatarPanel` | `components/dashboard/shared/` | Elegir entre los tres leopardos. Sólo lo monta el niño |
+| `SidebarToggle` | `components/dashboard/Sidebar/` | Pliega y despliega la barra lateral en los dos roles |
+| `BrandLogo` | `components/ui/` | El leopardo como logo, desde `assets/brand/logo.webp` |
+| `ErrorBoundary` | `components/ui/` | Aviso con «Recargar» e «Ir al inicio» ante un error inesperado |
+
+#### Ilustraciones
+
+Las genera el usuario con **Gemini** a partir de su dibujo del leopardo, la
+mascota. Viven en `apps/web/src/assets/brand/`, en WebP, y se importan desde el
+componente. Ya las tienen la portada, el login, el registro, los mundos (en la
+portada y en la pantalla del niño), los grandes trofeos y los avatares —tres
+elegibles para el niño y uno fijo para el tutor—. Además, **el fondo de los dos
+paneles** es un valle ilustrado (`PanelBackdrop`, sólo en los paneles, nunca en la
+portada ni en el acceso), y **las misiones del niño** van sobre un pergamino
+rasgado (`.map-sheet`). **El único hueco que queda es
+el de los niveles** (`StudentWorldLevelsModule.tsx`), y se deja vacío hasta que
+llegue su imagen. El proceso y lo ya aplicado, imagen por imagen, están en
+`CONTEXT.md` §3 → P6.
+
+Los adornos de `components/decor/` (hojas, flores, liana) **siguen siendo SVG**
+a propósito: pesan poco, escalan sin pérdida y heredan el contorno de tinta.
 
 #### Identidad visual de los salones
 
@@ -478,8 +536,21 @@ Entorno de referencia: **Node.js 22.17.1**, **npm 10.9.2**.
 
 | Paquete | Versión | Para qué |
 | --- | --- | --- |
-| `@supabase/supabase-js` | 2.112.3 | **En uso real.** Cliente y 8 servicios contra un proyecto conectado |
+| `@supabase/supabase-js` | 2.112.3 | **En uso real.** Cliente y 12 servicios contra un proyecto conectado |
 | `zod` | 3.25.76 | Valida las variables de entorno y los formularios de acceso |
+
+#### Juego
+
+| Paquete | Versión | Para qué |
+| --- | --- | --- |
+| `three` | ^0.170 | Motor 3D |
+| `@react-three/fiber` | 8.18.0 | Three.js como componentes de React; la 8 es la de React 18 |
+| `@react-three/drei` | 9.122.0 | Cámara orbital, carga de modelos y utilidades |
+| `blockly` | ^12.5.1 | El editor de bloques. La 13 no entra: ver [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md) §2 |
+
+Los modelos 3D son de [Kenney](https://kenney.nl) y del KayKit Platformer Pack,
+en `apps/web/public/models/`. El juego se carga **sólo en la pantalla de nivel**,
+con importación dinámica.
 
 > `framer-motion` **ya no está**: se eliminó porque nada lo usaba.
 
@@ -491,9 +562,10 @@ Entorno de referencia: **Node.js 22.17.1**, **npm 10.9.2**.
 | `jsdom` | 30.0.1 | DOM simulado |
 | `@testing-library/react` | 16.3.2 | Renderizar componentes y buscar por lo que ve el usuario |
 
-Hoy hay **109 tests en 15 archivos**, y pasan. No los rompas: existen sobre todo
-para que reescribir `ClassroomsProvider` tenga red. Si uno falla después de un
-cambio tuyo, **eso es la señal que se pagó por tener**; no se «arregla» tocando
+Hoy hay **458 tests en 42 archivos**, y pasan. Cubren el store de salones, los
+servicios, y sobre todo la lógica del juego: el intérprete, la puntuación, las
+caídas, las islas de decorado y que cada uno de los nueve niveles se gane con
+el 100. Si uno falla después de un cambio tuyo, **eso es la señal que se pagó por tener**; no se «arregla» tocando
 el test.
 
 #### Calidad
@@ -536,7 +608,10 @@ cp apps/web/.env.example apps/web/.env
 
 El `.env` de quien tiene acceso lleva además seis variables `VITE_DEV_*` con las
 cuentas de prueba que usa el botón «Sin login». Sin ellas ese botón cae en una
-marca de invitado que no autentica contra nada.
+marca de invitado que no autentica contra nada. **El botón y el Laboratorio 3D
+están apagados** mientras dura la prueba con usuarios: se encienden con
+`VITE_ENABLE_DEV_TOOLS=true` y reiniciando Vite, y en el build de producción no
+existen pase lo que pase.
 
 ```bash
 npm run dev
@@ -572,15 +647,17 @@ Para instalar una dependencia solo en el front: `npm install <paquete> -w @codep
 ```
 codeplayPGrado/
 ├── apps/
-│   ├── web/                  Front-end (React + TS + Vite + Tailwind)
-│   └── game/                 NO EXISTE, y ya no será Unity (ver §3.4)
+│   └── web/                  Front-end (React + TS + Vite + Tailwind), con el
+│                             juego dentro en src/game/ y los modelos en public/models/
 ├── packages/                 Código compartido entre apps (vacío)
 ├── supabase/                 Esquema de base de datos
-│   └── migrations/           22 migraciones SQL (la siembra vive en la 0012,
-│                             no hay seed.sql suelto)
-├── docs/                     Este documento, CONTEXT.md, ROADMAP.md y
+│   └── migrations/           47 migraciones SQL (la siembra va en las propias
+│                             migraciones, no hay seed.sql suelto)
+├── docs/                     Este documento, CONTEXT.md, ROADMAP.md,
+│                             ROADMAP-JUEGO.md, DISENO-DEL-JUEGO.md y
 │                             CONTRATO-DE-INTEGRACION.md
 ├── .github/workflows/        CI: lint, tests y build
+├── vercel.json               Despliegue provisional (paso 27.1)
 ├── package.json              Raíz del monorepo (npm workspaces)
 ├── .eslintrc.cjs             Config de ESLint compartida
 ├── .prettierrc               Config de Prettier compartida
@@ -591,15 +668,17 @@ codeplayPGrado/
 
 | Carpeta | Contenido |
 | --- | --- |
-| `components/dashboard/teacher/` | Todo el panel del tutor (11 archivos) y `classroomsData.ts`, que reúne los datos de ejemplo y las funciones puras de cálculo |
-| `components/dashboard/student/` | Módulos del alumno: salón, buscador, mundos, trofeos, ajustes |
+| `components/dashboard/teacher/` | Todo el panel del tutor y `classroomsData.ts`, con las funciones puras de cálculo |
+| `components/dashboard/student/` | Módulos del alumno: salón, buscador, mundos, niveles, la pantalla de nivel, trofeos y ajustes |
+| `game/` | El juego: escena 3D, editor de bloques, intérprete, puntuación, caídas y decorado. Casi todo con tests |
+| `assets/brand/` | Las ilustraciones de Gemini, en WebP |
 | `components/dashboard/shared/` | Componentes usados por ambos roles y los temas de salón |
 | `components/dashboard/Sidebar/` | Barra lateral del alumno |
 | `components/home/` | Navbar y secciones de la landing |
 | `components/auth/`, `components/ui/` | Formularios de acceso y primitivas antiguas |
 | `context/` | `AuthProvider` (Supabase), `ClassroomsProvider` (store de salones), helpers de rol y de sesión de invitado |
 | `hooks/` | `useAuth`, `useClassrooms`, `useActiveRole` y los hooks de datos (`useWorlds`, `useProgress`, `useAchievements`, `useProfile`, `useInvitations`, `useMissionAssignments`) |
-| `services/` | 8 servicios de Supabase, **todos en uso**. Devuelven siempre `{ data, error }` y **nunca lanzan** |
+| `services/` | 12 servicios de Supabase, **todos en uso**. Devuelven siempre `{ data, error }` y **nunca lanzan** |
 | `types/` | Tipos de dominio. `classroom.types.ts` es el modelo vivo; `database.types.ts` **se genera con la CLI de Supabase y no se edita a mano** |
 | `test/` | Infraestructura de tests: `setup.ts` y `renderClassrooms.tsx` |
 | `router/` | `AppRouter` y las guardas `PrivateRoute` / `PublicRoute` |
@@ -619,13 +698,16 @@ codeplayPGrado/
 | `/invite/:token` | Sin guarda | Canjear un enlace. **Sin guarda a propósito**: quien llega normalmente no tiene cuenta, y una guarda se llevaría el token por delante |
 | `/dashboard`, `/dashboard/worlds` | Alumno | Mundos |
 | `/dashboard/worlds/:worldId` | Alumno | Niveles de un mundo |
+| `/dashboard/worlds/:worldId/:levelId` | Alumno | **La pantalla de nivel, con el juego dentro.** Si el nivel tiene candado, lo cierra también a quien escribe la dirección |
 | `/dashboard/trophies` | Alumno | Sala de trofeos |
+| `/dashboard/game` | Alumno | Laboratorio 3D. Sólo en desarrollo con `VITE_ENABLE_DEV_TOOLS=true` |
 | `/dashboard/classroom` | Alumno | Salón / buscador / espera |
 | `/dashboard/settings` | Alumno | Ajustes |
 | `/teacher` | Tutor | Redirige a `/teacher/groups` |
 | `/teacher/groups` | Tutor | Mis salones |
 | `/teacher/groups/:groupId` | Tutor | Detalle del salón |
 | `/teacher/panel`, `/teacher/panel/:groupId` | Tutor | Panel de información |
+| `/teacher/panel/:groupId/:studentId` | Tutor | La ficha de un explorador. `all` como `groupId` cuando el alcance es «Todos» |
 | `/teacher/settings` | Tutor | Ajustes de cuenta |
 
 Quien entra en un panel que no le corresponde es redirigido al suyo.
@@ -641,35 +723,28 @@ borrarla. Lo que sí vive en el navegador:
 | `dev:skipAuth` | Marca de sesión de invitado. Sólo en desarrollo |
 | `dev:guestRole` | Rol de la sesión de invitado: `child` o `tutor` |
 | `classrooms:pendingInvitationToken` | El token de un enlace abierto sin sesión. Es lo que le permite sobrevivir al registro, incluido el viaje a Google |
+| `auth:pendingSignupRole` | El rol elegido antes de ir a Google, para fijarlo a la vuelta |
+| `dashboard:sidebarCollapsed` | Si la barra lateral está plegada |
 
-Ningún componente lee `localStorage` directamente: la sesión de invitado pasa
-por `guest.helpers.ts` y el token por `invitationToken.helpers.ts`.
+Ningún componente lee `localStorage` directamente: cada clave pasa por su helper
+en `context/` (`guest`, `invitationToken`, `oauthRole` y `sidebar`).
 
 ### 3.4 Herramientas pendientes de integrar
 
 **Ya integradas** (estaban en esta lista y salieron de ella): Supabase Postgres,
-Supabase Auth, Google OAuth, Supabase Realtime y el CI en GitHub Actions. Los
-enlaces de invitación **no necesitaron Edge Functions**: bastó una función SQL
-`security definer`, que es el patrón que el proyecto ya usaba.
+Supabase Auth, Google OAuth, Supabase Realtime (cambios y Presence), el CI en
+GitHub Actions, **las librerías del juego** —React Three Fiber y Blockly, ver
+§3.1— y **Vercel** para el despliegue provisional. Los enlaces de invitación
+**no necesitaron Edge Functions**: bastó una función SQL `security definer`, que
+es el patrón que el proyecto ya usaba.
 
 Lo que sigue pendiente:
 
 | Herramienta | Necesaria para | Situación |
 | --- | --- | --- |
-| **Librerías del juego** | El juego, que es la pieza que falta | **Ya no es Unity**: se descartó el 3-sep-2026 en favor de librerías de JavaScript, para que el juego sea un componente más de esta aplicación. **Confirmadas el 4-sep-2026 y ya instaladas**: **React Three Fiber** para el 3D (`^8.18` con `three` `^0.170`, fijadas a React 18) y **Blockly** para los bloques (`^12.5.1`; la 13 no entra, ver [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md) §2). Ver [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) §5 |
 | **Servicio de correo** (Resend, SendGrid…) | Enviar la invitación en vez de que el tutor pase el enlace a mano | Sin elegir, y **hay que contratarlo**. No bloquea nada: el enlace ya funciona |
 | **Servidor de la universidad** | El despliegue definitivo; Supabase era para probar | Sin preguntar qué ofrece. Hace falta saber si dan Postgres y con qué versión, HTTPS, si dejan correr procesos y si hay algo equivalente a Realtime y a OAuth |
 
-#### Qué desbloquea el juego
-
-Es la única pieza que bloquea a otras, y bloquea a cuatro:
-
-| Se vuelve posible | Por qué depende del juego |
-| --- | --- |
-| Progreso, XP y rachas reales | Nada escribe progreso hasta que haya partidas que reportar |
-| Reportes de habilidades de verdad | Se calculan sobre el progreso real, que hoy no existe |
-| Logros y catálogo de logros | El servidor los concede leyendo el programa de bloques que manda el juego |
-| Cumplir una misión | Una misión asignada no tiene forma de completarse sin juego |
 
 ---
 
@@ -694,17 +769,16 @@ estimado.
 
 Es el **paso 25** del roadmap, y va detrás del apartado gráfico a propósito:
 hacer responsive un diseño que las ilustraciones van a cambiar es pagarlo dos
-veces.
+veces. La barra plegable del 21-sep-2026 alivia el escritorio estrecho, pero no
+es el repliegue para móvil.
 
-### 4.2 No existe el catálogo de logros
+### 4.2 El catálogo de logros — RESUELTO
 
-La tabla `achievements` guarda los logros **concedidos** a cada niño, no la lista
-de los posibles con sus condiciones. Por eso la sala de trofeos sólo puede
-listar lo conseguido, y hoy está vacía. Diseñar ese catálogo es el **paso 22**.
-
-Y una consecuencia que conviene saber antes de intentarlo: **nada del cliente
-puede conceder un logro.** La tabla no da permiso de escritura a ningún rol, así
-que la única vía es una función SQL del servidor, y no existe todavía.
+Existe desde el paso 22 (`achievement_catalog`, veinte logros), y **sólo el
+servidor concede**: ninguna tabla da permiso de escritura al cliente. Una trampa
+que conviene conocer antes de renombrar nada: el catálogo **copió** los nombres
+de mundos y niveles al sembrarse, así que renombrar no lo pone al día solo. Ver
+`CONTEXT.md` §2.11.
 
 ### 4.3 Los errores de perfil llegan en inglés
 
@@ -728,9 +802,11 @@ ya guardadas**, porque ese campo nunca tuvo validación.
 
 - **ESLint 8 ya no recibe soporte.** Migrar a la versión 9 con configuración
   plana está pendiente y no corre prisa.
-- **El bundle pasa de 500 kB** (596 kB) y el build lo avisa. Hoy es inofensivo,
-  pero cobrará importancia al meter el juego: un build de WebGL ronda los
-  5–20 MB. Se resuelve partiendo el bundle por rutas.
+- **Tres trozos del bundle pasan de 500 kB** —la aplicación, el editor de
+  bloques y la escena 3D— y el build lo avisa. El editor y la escena ya se
+  cargan en diferido, sólo en la pantalla de nivel. Medido en `CONTEXT.md` §4.8.
+- **El explorador 3D pesa 17 MB** y por eso está apagado: el niño juega con el
+  personaje de cubos hasta que se aligere. Es parte del J13.
 
 ---
 
@@ -744,30 +820,30 @@ ya guardadas**, porque ese campo nunca tuvo validación.
    ninguna base de datos.
 3. `npm run dev`, y entra en `http://localhost:5173`.
 4. Entra con una cuenta real por `/login`, o crea una en `/signup`. Los botones
-   **Sin login** de la barra superior siguen ahí en desarrollo y **autentican de
-   verdad** con las cuentas de prueba del `.env`.
+   **Sin login** están apagados; para usarlos, `VITE_ENABLE_DEV_TOOLS=true` en
+   el `.env`, y entonces **autentican de verdad** con las cuentas de prueba.
 
 **Antes de subir nada**
 
-`npm run lint`, `npm run test:run` y `npm run build`. Los tres pasan hoy —109
+`npm run lint`, `npm run test:run` y `npm run build`. Los tres pasan hoy —458
 tests— y el CI los repite en cada pull request.
 
 **Qué conviene entender del estado, en tres frases**
 
-- **El backend está hecho y funciona.** Salones, acceso, roles, invitaciones y
-  sincronización en vivo son reales y están probados contra la base.
-- **Falta el juego, y es lo que bloquea el resto.** Sin él no hay progreso, ni
-  XP, ni rachas, ni logros, ni forma de cumplir una misión: todo eso está
-  esperando partidas que reportar.
-- **Lo que aún es maqueta está señalado con 🟡 en §1**, y de todo ello lo más
-  visible es la pantalla de niveles, que enseña diez niveles inventados.
+- **La plataforma está entera y funciona contra la base**: salones, acceso,
+  roles, invitaciones, el juego con sus nueve niveles, XP, rachas, logros y
+  misiones.
+- **Lo que queda es presentación y cierre**: el aspecto final del juego (J13),
+  la ilustración de los niveles, el panel en móvil, el consentimiento del
+  acudiente y el despliegue definitivo.
+- **Lo que aún no está completo está señalado con 🟡 o ⛔ en §1.**
 
 **Si vas a tocar interfaz**, la §2 de este documento es la guía completa: usa los
 nombres de color del tema y nunca hex sueltos. Y hay dos reglas que sorprenden si
-nadie las cuenta: los huecos de la mascota se dejan **vacíos** a propósito hasta
-que existan las ilustraciones definitivas, y ninguna pantalla habla con Supabase
-directamente —los salones pasan siempre por `useClassrooms()`—.
+nadie las cuenta: un hueco de ilustración se deja **vacío** a propósito hasta que
+llegue su imagen —hoy sólo queda el de los niveles—, y ninguna pantalla habla con
+Supabase directamente —los salones pasan siempre por `useClassrooms()`—.
 
-**Si vas a hacer el juego**, tu documento es
-[`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md), que se lee sin
-conocer nada de este repositorio.
+**Si vas a tocar el juego**, lee [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) y
+[`CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md), y el orden en
+[`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md).

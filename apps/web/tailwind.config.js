@@ -6,6 +6,8 @@ export default {
       fontFamily: {
         sans: ['Quicksand', 'Segoe UI', 'sans-serif'],
         display: ['Fredoka', 'Quicksand', 'sans-serif'],
+        // Letra de mano de las misiones: parece escrita sobre el mapa y se lee bien.
+        map: ['"Patrick Hand"', 'Quicksand', 'sans-serif'],
       },
       colors: {
         grape: {
@@ -71,6 +73,12 @@ export default {
           DEFAULT: '#F8FBFE',
           soft: '#EFF4FA',
           line: '#DFE8F2',
+        },
+
+        // La tinta del pergamino de las misiones. Duplicada a mano en main.css.
+        sepia: {
+          DEFAULT: '#6B4423',
+          soft: '#8A6440',
         },
 
         // Se conservan los nombres anteriores para no romper pantallas antiguas.

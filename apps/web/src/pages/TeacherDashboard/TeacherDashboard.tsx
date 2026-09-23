@@ -9,6 +9,7 @@ import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useClassrooms } from '../../hooks/useClassrooms';
 import { FALLBACK_TEACHER_NAME } from '../../services/classrooms.service';
+import { PanelBackdrop } from '../../components/decor/PanelBackdrop';
 
 export const TeacherDashboard = () => {
   const location = useLocation();
@@ -69,7 +70,10 @@ export const TeacherDashboard = () => {
           activeSection={activeSection}
         />
 
-        <main className="min-w-0 flex-1">{renderModule()}</main>
+        <main className="relative isolate min-w-0 flex-1">
+          <PanelBackdrop />
+          {renderModule()}
+        </main>
       </div>
     </div>
   );

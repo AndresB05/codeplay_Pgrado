@@ -4211,12 +4211,35 @@ lateral (`teacher/TeacherSidebar.tsx`) y en Ajustes
 (`teacher/TeacherSettingsModule.tsx`), y al `UserIcon` del botón de la barra
 superior (`teacher/TeacherTopBar.tsx`), que se retiró de `TeacherIcons.tsx`.
 
+El fondo de los paneles del niño y del tutor (`src/assets/brand/panel-backdrop.webp`,
+23-sep-2026): un valle con río y cascada. **Sólo en los paneles**, nunca en la
+landing ni en las pantallas de acceso. Lo pinta `components/decor/PanelBackdrop.tsx`
+DENTRO de `<main>` (`pages/Dashboard/Dashboard.tsx` y
+`pages/TeacherDashboard/TeacherDashboard.tsx`), para que se centre en la zona de
+contenido con la barra lateral plegada o no: una caja absoluta del tamaño de
+`<main>` con la imagen pegada arriba (`sticky`), anclada por su borde superior.
+**No usar margen negativo para sacarla del flujo**: se probó y, con el recorte,
+cortaba el final del contenido.
+
+El pergamino de las misiones del niño (`src/assets/brand/mission-map.webp`,
+23-sep-2026), en `shared/AssignedMissionsPanel.tsx`: la clase `.map-sheet` lo
+monta en nueve trozos (`border-image`), así que las esquinas y el borde rasgado no
+se deforman aunque la tarjeta cambie de tamaño. Al pasar el cursor la tarjeta se
+inclina entre 1,5° y 3°, a un lado al azar cada vez, salvo con movimiento
+reducido. El texto va escrito «como en el mapa»: letra de mano **Patrick Hand**
+(`font-map`) en tinta **`sepia`**, y las etiquetas como sellos de tinta. Las dos
+cosas son nuevas en el sistema visual y **sólo las usan las misiones**. Se probó
+el mismo pergamino en la barra de filtros de los mundos y se retiró: no quedaba
+bien.
+
 **Qué cubre**
 
 | Asset | Dónde va | Hueco actual |
 | --- | --- | --- |
 | Mascota (un leopardo) | Landing, login, registro, ajustes, mundos, salones | Las seis ya la tienen; Ajustes además deja elegir cuál de los tres |
-| Portadas de mundo | `student/StudentWorldsModule.tsx` | La landing ya las tiene (`home/WorldsSection.tsx`); la pantalla de mundos del niño hoy se resuelve con tono de color e icono SVG |
+| Portadas de mundo | `home/WorldsSection.tsx`, `student/StudentWorldsModule.tsx` | Las dos las tienen |
+| Grandes trofeos | `student/StudentTrophiesModule.tsx` | Los tres la tienen |
+| Imagen de nivel | `student/StudentWorldLevelsModule.tsx` | **Vacío** («Imagen Nivel»): falta decidir si va una por nivel o una por mundo |
 | Escenarios y fondos | Landing y paneles | Hoy son degradados y adornos SVG |
 
 **Qué NO cubre.** Los adornos de `components/decor/JungleDecor.tsx` (hojas,

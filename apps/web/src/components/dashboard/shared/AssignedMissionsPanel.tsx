@@ -1,9 +1,17 @@
+import type { MouseEvent } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useMissionAssignments } from '../../../hooks/useMissionAssignments';
 import { formatDueDate } from '../../../lib/missionDue';
 import type { Mission } from '../../../types/classroom.types';
 import { TargetIcon } from '../teacher/TeacherIcons';
 import { TropicalFlower } from '../../decor/JungleDecor';
+
+/* Cada vez que el cursor entra se sortea el lado, para que no se incline siempre igual. */
+const pickTilt = (event: MouseEvent<HTMLElement>) => {
+  const side = Math.random() < 0.5 ? -1 : 1;
+  const degrees = 1.5 + Math.random() * 1.5;
+  event.currentTarget.style.setProperty('--tilt', `${side * degrees}deg`);
+};
 
 const MissionCard = ({
   mission,
@@ -15,21 +23,36 @@ const MissionCard = ({
   /** Último día para cumplirla; `null` es sin límite. */
   dueDate: string | null;
 }) => (
-  <article className="card flex flex-col p-5">
+  <article
+    onMouseEnter={pickTilt}
+    className="relative isolate flex flex-col px-14 pb-11 pt-10 transition-transform duration-200 ease-out hover:[transform:rotate(var(--tilt))] motion-reduce:transition-none motion-reduce:hover:[transform:none]"
+  >
+    <div aria-hidden className="map-sheet pointer-events-none absolute inset-0 -z-10" />
+
+    {/*
+     * Escrita como sobre el mapa: letra de mano en tinta café, y las etiquetas
+     * como sellos de tinta en vez de pastillas de color.
+     */}
     <div className="flex items-start justify-between gap-3">
-      <h3 className="font-display text-[19px] leading-tight text-ink">{mission.title}</h3>
-      <span className="chip chip-grape shrink-0">{mission.difficultyLabel}</span>
+      <h3 className="font-map text-[20px] font-normal leading-tight text-sepia">{mission.title}</h3>
+      <span className="shrink-0 rotate-[4deg] rounded-md border-2 border-dashed border-grape-dark px-1.5 font-map text-[14px] text-grape-dark">
+        {mission.difficultyLabel}
+      </span>
     </div>
 
-    <p className="mt-2 flex-1 text-[15px] font-semibold leading-[1.6] text-ink-soft">
+    <p className="mt-1 flex-1 font-map text-[15px] font-normal leading-[1.3] text-sepia-soft">
       {mission.description}
     </p>
 
-    <div className="mt-4 flex flex-wrap items-center gap-2">
-      <span className="chip chip-sun">+{mission.xpReward} XP</span>
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <span className="-rotate-[3deg] rounded-full border-2 border-ink px-2 font-map text-[14px] text-sepia">
+        +{mission.xpReward} XP
+      </span>
       {/* Cumplida, la fecha ya no le dice nada: lo ganado no caduca. */}
       {dueDate !== null && !isCompleted ? (
-        <span className="chip chip-coral">Hasta el {formatDueDate(dueDate)}</span>
+        <span className="rotate-[2deg] rounded-md border-2 border-dashed border-coral-dark px-1.5 font-map text-[14px] text-coral-dark">
+          Hasta el {formatDueDate(dueDate)}
+        </span>
       ) : null}
     </div>
 
@@ -39,11 +62,11 @@ const MissionCard = ({
      * pantalla propia que no tiene.
      */}
     {isCompleted ? (
-      <p className="mt-4 rounded-[16px] border-2 border-jungle bg-mint-soft px-4 py-3 text-[14px] font-bold text-jungle-dark">
+      <p className="mt-2.5 self-start -rotate-[2deg] rounded-md border-[3px] border-double border-jungle-dark px-2.5 font-map text-[15px] text-jungle-dark">
         ¡Cumplida! Ganaste {mission.xpReward} XP.
       </p>
     ) : (
-      <p className="mt-4 rounded-[16px] border-2 border-line bg-cream px-4 py-3 text-[14px] font-bold text-ink-faint">
+      <p className="mt-2.5 border-t-2 border-dashed border-ink pt-1.5 font-map text-[14px] text-sepia-soft">
         Se cumple jugando los niveles. ¡Sigue explorando!
       </p>
     )}
