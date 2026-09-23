@@ -319,6 +319,14 @@ como nombres de Tailwind. **Usa siempre los nombres, no los hex sueltos.**
 | Sepia | `#6B4423` | `sepia` | Títulos escritos sobre el pergamino de las misiones |
 | Sepia suave | `#8A6440` | `sepia-soft` | Texto de las misiones |
 
+#### Talla de la madera
+
+| Nombre | Hex | Tailwind | Uso asignado |
+| --- | --- | --- | --- |
+| Madera tinta | `#4A2A12` | `wood-ink` | Texto tallado en las tablas de los logros (`.wood-carved`), 6:1 sobre la madera |
+| Madera luz | `#F6C49A` | `wood-light` | El filo claro bajo la letra y el hueco tallados |
+| Madera pelada | `#F9DFBA` | `wood-bare` | El rectángulo hundido del texto de cada logro y del título de la sala de trofeos (`.wood-bare`), con letra `.wood-deep` |
+
 #### Escala fría del juego
 
 La pantalla de nivel usa su propia gama de cielo, para que el tablero se lea
@@ -447,7 +455,9 @@ portada y en la pantalla del niño), los grandes trofeos y los avatares —tres
 elegibles para el niño y uno fijo para el tutor—. Además, **el fondo de los dos
 paneles** es un valle ilustrado (`PanelBackdrop`, sólo en los paneles, nunca en la
 portada ni en el acceso), y **las misiones del niño** van sobre un pergamino
-rasgado (`.map-sheet`). **El único hueco que queda es
+rasgado (`.map-sheet`), y **cada logro** sobre una tabla de madera con
+la letra tallada (`.wood-board`); la sala de trofeos cambia el valle por
+un fondo de tablas oscuras (`.trophy-backdrop`). **El único hueco que queda es
 el de los niveles** (`StudentWorldLevelsModule.tsx`), y se deja vacío hasta que
 llegue su imagen. El proceso y lo ya aplicado, imagen por imagen, están en
 `CONTEXT.md` §3 → P6.

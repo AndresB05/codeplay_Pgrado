@@ -4232,6 +4232,37 @@ cosas son nuevas en el sistema visual y **sólo las usan las misiones**. Se prob
 el mismo pergamino en la barra de filtros de los mundos y se retiró: no quedaba
 bien.
 
+La tabla de los logros (`src/assets/brand/achievement-plank-render.webp`, 23-sep-2026),
+una por tarjeta en `AchievementList/AchievementItem.tsx`, dos columnas desde `md`.
+La clase `.wood-plank` la monta en nueve trozos, con los bordes de los lados
+anchos para que cubran las grietas: el texto nunca cae encima de ellas. El
+texto va en un rectángulo de madera pelada hundido en la tabla (`.wood-bare`),
+con la letra honda (`.wood-deep`); el hueco del icono y la etiqueta van
+**tallados** (`.wood-well`, `.wood-carved`, tinta `wood-ink`). El logro sin conseguir va entero en gris
+(`.wood-plank-locked`) y ahora **sí enseña su dibujo**, apagado; antes dejaba el
+hueco vacío. Al pasar el cursor la tabla se encoge, y al soltarla rebota: la
+curva de vuelta pasa de largo y oscila hasta pararse. Con movimiento reducido no
+hace nada de esto. Esta tabla sustituye a la que figuraba como descartada en los
+logros: la pidió el usuario.
+La misma tabla hace de cabecera de la sala de trofeos
+(`student/StudentTrophiesModule.tsx`), también con letra tallada pero sin rebote:
+la tabla es `.wood-board` y el rebote va aparte en `.wood-plank`. El título y
+el texto van en un rectángulo de madera pelada (`.wood-bare`, color `wood-bare`),
+hundido en la tabla, con la letra más honda (`.wood-deep`). La hoja y el círculo
+amarillo de la tarjeta blanca se retiraron.
+
+El fondo de la sala de trofeos (`src/assets/brand/achievements-wall.webp`,
+23-sep-2026): tablas oscuras en lugar del valle, **sólo en esa pantalla**. Lo
+pinta el mismo `PanelBackdrop` con `surface="wood"` (clase `.trophy-backdrop`),
+que `pages/Dashboard/Dashboard.tsx` elige por la ruta. A diferencia del valle, **no se
+queda pegado**: corre con el contenido, repetido hacia abajo, con un velo naranja
+del color de las tablas claras al 26 % para que fondo y tablas parezcan la misma
+madera. Los títulos de sección,
+el subtítulo de los grandes trofeos y el recuento «Llevas N de M» van en crema
+(`.dark-wood-label`) para leerse sobre el marrón. Sustituye al fondo de tablas
+oscuras que figuraba como descartado: aquél era para todos los paneles, éste
+sólo para la sala de trofeos, y lo pidió el usuario.
+
 **Qué cubre**
 
 | Asset | Dónde va | Hueco actual |

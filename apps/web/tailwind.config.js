@@ -81,6 +81,13 @@ export default {
           soft: '#8A6440',
         },
 
+        // La talla de las tablas de los logros. Duplicada a mano en main.css.
+        wood: {
+          ink: '#4A2A12',
+          light: '#F6C49A',
+          bare: '#F9DFBA',
+        },
+
         // Se conservan los nombres anteriores para no romper pantallas antiguas.
         primary: {
           DEFAULT: '#7B3FE4',

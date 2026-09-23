@@ -73,6 +73,11 @@
   --sepia: #6b4423;
   --sepia-soft: #8a6440;
 
+  /* La talla de las tablas de los logros: más oscura que el sepia para pasar 4,5:1 sobre la madera. */
+  --wood-ink: #4a2a12;
+  --wood-light: #f6c49a;
+  --wood-bare: #f9dfba;
+
   /* Compatibilidad con las utilidades previas */
   --primary: var(--grape);
   --primary-dark: var(--grape-dark);
@@ -273,6 +278,103 @@ a {
     filter: drop-shadow(0 8px 0 rgba(42, 27, 69, 0.12));
   }
 
+  /*
+   * La tabla de madera de los logros y de la cabecera de trofeos, en nueve trozos
+   * como el pergamino. Los bordes de los lados son anchos a propósito: cubren las
+   * grietas, y así el texto nunca cae encima de ellas.
+   */
+  .wood-board {
+    border-style: solid;
+    border-color: transparent;
+    border-width: 6px 55px 11px 49px;
+    border-image: url('./assets/brand/achievement-plank-render.webp') 15 129 25 114 fill stretch;
+    filter: drop-shadow(0 6px 0 rgba(42, 27, 69, 0.14));
+  }
+
+  /*
+   * El rebote sale de la curva de vuelta, no de una animación: al soltar, la
+   * escala pasa de largo y oscila hasta quedarse quieta.
+   */
+  .wood-plank {
+    transition: transform 750ms
+      linear(
+        0, 0.266, 0.664, 1.05, 1.323, 1.436, 1.402, 1.266, 1.093, 0.939, 0.842, 0.813, 0.843,
+        0.908, 0.981, 1.04, 1.073, 1.078, 1.06, 1.03, 1, 0.978, 0.967, 0.968, 0.978, 0.991,
+        1.003, 1.011, 1.014, 1.013, 1.008, 1.002, 0.997, 0.995, 0.994, 0.995, 0.997, 1
+      );
+  }
+
+  .wood-plank-locked {
+    filter: grayscale(1) drop-shadow(0 6px 0 rgba(42, 27, 69, 0.14));
+  }
+
+  @media (hover: hover) {
+    .wood-plank:hover {
+      transform: scale(0.93);
+      transition: transform 160ms ease-out;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wood-plank,
+    .wood-plank:hover {
+      transform: none;
+      transition: none;
+    }
+  }
+
+  /*
+   * El fondo de la sala de trofeos en lugar del valle: tablas oscuras a todo el
+   * ancho. Se repite hacia abajo porque en pantallas estrechas la caja es más
+   * alta que la imagen.
+   */
+  .trophy-backdrop {
+    background-color: var(--wood-ink);
+    /* Un velo del color de las tablas claras, para que fondo y tablas parezcan la misma madera. */
+    background-image:
+      linear-gradient(rgba(232, 161, 105, 0.26), rgba(232, 161, 105, 0.26)),
+      url('./assets/brand/achievements-wall.webp');
+    background-size:
+      100% 100%,
+      100% auto;
+    background-repeat: no-repeat, repeat-y;
+  }
+
+  /* Letra tallada: tinta oscura con el filo claro debajo, como un surco en la madera. */
+  .wood-carved {
+    color: var(--wood-ink);
+    text-shadow: 0 1px 0 var(--wood-light);
+  }
+
+  /*
+   * La tabla pelada: la madera clara de debajo de la corteza, hundida bajo la
+   * superficie. La luz del filo es blanca porque el crema ya es más claro que
+   * `wood-light`.
+   */
+  .wood-bare {
+    background-color: var(--wood-bare);
+    border: 2px solid rgba(74, 42, 18, 0.45);
+    box-shadow:
+      inset 0 4px 0 rgba(74, 42, 18, 0.22),
+      inset 3px 0 0 rgba(74, 42, 18, 0.1),
+      0 1px 0 var(--wood-light);
+  }
+
+  .wood-deep {
+    color: var(--wood-ink);
+    text-shadow:
+      0 -1px 0 rgba(74, 42, 18, 0.45),
+      0 1.5px 0 rgba(255, 255, 255, 0.75);
+  }
+
+  /* Hueco vaciado en la tabla: sombra arriba y luz abajo. */
+  .wood-well {
+    background-color: rgba(74, 42, 18, 0.14);
+    box-shadow:
+      inset 0 3px 0 rgba(74, 42, 18, 0.28),
+      0 1px 0 var(--wood-light);
+  }
+
   /* Franja de tierra húmeda bajo el dosel, para separar bloques de la landing. */
   .jungle-band {
     background-image: linear-gradient(180deg, var(--jungle-soft) 0%, #ffffff 100%);
@@ -361,6 +463,15 @@ a {
 
   .subtitle {
     @apply text-[16px] font-semibold text-[color:var(--ink-soft)];
+  }
+
+  /*
+   * Letra clara para lo que va directamente sobre las tablas oscuras. Va detrás
+   * de los títulos para ganarles el color.
+   */
+  .dark-wood-label {
+    color: var(--wood-bare);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
   }
 }
 

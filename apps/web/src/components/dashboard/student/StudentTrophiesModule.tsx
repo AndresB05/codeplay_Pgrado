@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAchievements } from '../../../hooks/useAchievements';
 import { AchievementList } from '../AchievementList/AchievementList';
-import { MonsteraLeaf, TropicalFlower } from '../../decor/JungleDecor';
+import { TropicalFlower } from '../../decor/JungleDecor';
 import { trophyPercent, worldTrophyProgress } from '../../../lib/trophyProgress';
 import trophyWorld1 from '../../../assets/brand/trophy-world-1.webp';
 import trophyWorld2 from '../../../assets/brand/trophy-world-2.webp';
@@ -188,7 +188,7 @@ const SectionTitle = ({ icon, title }: { icon: ReactNode; title: string }) => (
     <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft">
       {icon}
     </span>
-    <h2 className="title-lg">{title}</h2>
+    <h2 className="title-lg dark-wood-label">{title}</h2>
   </div>
 );
 
@@ -208,26 +208,20 @@ export const StudentTrophiesModule = () => {
 
   return (
     <div className="px-5 py-5">
-      <section className="card relative overflow-hidden px-5 py-5">
-        <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-sun-soft" />
-        <MonsteraLeaf
-          size={88}
-          className="pointer-events-none absolute -left-6 -bottom-8 rotate-[26deg] opacity-80"
-        />
-
-        <div className="relative flex flex-wrap items-center gap-4">
-          <span className="flex h-[56px] w-[56px] items-center justify-center rounded-[18px] border-[3px] border-ink bg-sun shadow-[0_4px_0_rgba(42,27,69,0.2)]">
+      <section className="wood-board px-2 py-3">
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="wood-well wood-carved flex h-[56px] w-[56px] items-center justify-center rounded-[18px]">
             <TrophyIcon />
           </span>
 
-          <div>
-            <h1 className="title-xl">Sala de Trofeos</h1>
-            <p className="subtitle mt-1">
+          <div className="wood-bare rounded-[12px] px-4 py-2">
+            <h1 className="wood-deep font-display text-[32px] leading-tight">Sala de Trofeos</h1>
+            <p className="wood-deep mt-1 text-[16px] font-semibold">
               Todo lo que has conquistado en la selva del código, en un solo lugar.
             </p>
           </div>
 
-          <span className="chip chip-leaf ml-auto">
+          <span className="chip wood-well wood-carved ml-auto py-0.5">
             <TropicalFlower size={16} />
             Sigue coleccionando
           </span>
@@ -237,7 +231,7 @@ export const StudentTrophiesModule = () => {
       <section className="mt-8">
         <SectionTitle icon={<CrownIcon />} title="Grandes trofeos" />
 
-        <p className="subtitle mt-2">
+        <p className="subtitle dark-wood-label mt-2">
           Uno por mundo, y sólo con los tres niveles al 100.
         </p>
 

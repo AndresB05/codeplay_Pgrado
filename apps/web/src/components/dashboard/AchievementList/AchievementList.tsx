@@ -32,7 +32,7 @@ export const AchievementList = ({ achievements }: AchievementListProps) => {
 
   return (
     <>
-      <p className="mb-4 text-[15px] font-bold text-ink-soft">
+      <p className="dark-wood-label mb-4 text-[15px] font-bold">
         Llevas {won} de {achievements.length}.
       </p>
 
