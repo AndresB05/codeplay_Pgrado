@@ -654,6 +654,13 @@ const CHARACTER_HEIGHT = 1.6;
 // El modelo mira a +z y aquí el frente del personaje es −z.
 const CHARACTER_TURN = Math.PI;
 
+/*
+ * APAGADO PARA LA PRUEBA PRELIMINAR: el explorador pesa 17 MB y en el despliegue
+ * tardaba más de un minuto en bajar, frenando de paso al tablero. Mientras no se
+ * aligere —GLB comprimido y textura pequeña—, el personaje es el de cubos.
+ */
+const CHARACTER_MODEL_ENABLED = false;
+
 const CharacterModel = () => {
   const fbx = useFBX(CHARACTER_MODEL);
   const texture = useTexture(CHARACTER_TEXTURE);
@@ -849,9 +856,13 @@ const Character = ({ config, pose, step, nextStep, stepIndex, onStepDone }: Char
       position={[x, y, z]}
       rotation={[0, FACING_ANGLE[pose.facing], 0]}
     >
-      <Suspense fallback={<PlaceholderBody />}>
-        <CharacterModel />
-      </Suspense>
+      {CHARACTER_MODEL_ENABLED ? (
+        <Suspense fallback={<PlaceholderBody />}>
+          <CharacterModel />
+        </Suspense>
+      ) : (
+        <PlaceholderBody />
+      )}
     </group>
   );
 };
