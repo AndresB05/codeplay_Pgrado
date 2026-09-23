@@ -20,7 +20,7 @@ import type { Program } from './program';
  * `lazy` exige, para no abrir la primera excepción a la convención del repo.
  */
 const LazyGameScene = lazy(() =>
-  import('./GameScene').then((module) => ({ default: module.GameScene })),
+  import('./GameScene').then((module) => ({ default: module.GameScene }))
 );
 
 /*
@@ -58,7 +58,9 @@ class SceneBoundary extends Component<SceneBoundaryProps, { failed: boolean }> {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-1 px-6 text-center">
         <p className="font-display text-[17px] text-ink">No se ha podido dibujar el juego.</p>
-        <p className="text-[14px] text-ink-soft">Vuelve a cargar la página para intentarlo otra vez.</p>
+        <p className="text-[14px] text-ink-soft">
+          Vuelve a cargar la página para intentarlo otra vez.
+        </p>
       </div>
     );
   }
@@ -77,6 +79,9 @@ interface GameSceneLoaderProps {
   onFinish?: (result: LevelFinish) => void;
   /* El alto que la bandeja deja libre, para el encuadre. */
   freeHeight?: number | null;
+  centerPillar?: boolean;
+  islands?: boolean;
+  fillGaps?: boolean;
 }
 
 export const GameSceneLoader = ({
@@ -87,6 +92,9 @@ export const GameSceneLoader = ({
   onHaltedChange,
   onFinish,
   freeHeight,
+  centerPillar,
+  islands,
+  fillGaps,
 }: GameSceneLoaderProps) => (
   <SceneBoundary>
     <Suspense
@@ -105,6 +113,9 @@ export const GameSceneLoader = ({
         onHaltedChange={onHaltedChange}
         onFinish={onFinish}
         freeHeight={freeHeight}
+        centerPillar={centerPillar}
+        islands={islands}
+        fillGaps={fillGaps}
       />
     </Suspense>
   </SceneBoundary>

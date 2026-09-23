@@ -231,6 +231,7 @@ export const StudentGameLabModule = () => {
             messageHost={messageHost}
             onHaltedChange={setHalted}
             freeHeight={trayTop}
+            islands
           />
 
           {/*

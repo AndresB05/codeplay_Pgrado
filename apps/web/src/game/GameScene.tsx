@@ -1,6 +1,7 @@
-import { OrbitControls } from '@react-three/drei';
+import { Clone, OrbitControls, useFBX, useGLTF, useTexture } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -11,7 +12,16 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
-import type { Group, PerspectiveCamera } from 'three';
+import {
+  Box3,
+  MeshStandardMaterial,
+  SRGBColorSpace,
+  Vector3,
+  type Group,
+  type Mesh,
+  type Object3D,
+  type PerspectiveCamera,
+} from 'three';
 import { maxDrop } from './drop';
 import { heightAt, STEP_SECONDS, stepSeconds } from './fall';
 import { FOV, frameBoard } from './framing';
@@ -26,6 +36,7 @@ import {
   type RunStep,
 } from './interpreter';
 import { TILE_SIZE, type Direction, type LevelConfig, type Pose } from './level';
+import { generateIslands } from './islands';
 import { openProgram, sealProgram, type Program } from './program';
 
 /*
@@ -33,19 +44,6 @@ import { openProgram, sealProgram, type Program } from './program';
  * SVG: un material de three recibe un color, no una clase de Tailwind. Son
  * nombres del tema duplicados a mano desde tailwind.config.js.
  */
-/*
- * El suelo va a dos tonos en damero, y no es adorno: con un solo verde las 25
- * casillas se ven como un único plano y la rejilla deja de poder contarse, que
- * es justo lo que el niño tiene que hacer para saber cuántos pasos da. Las
- * losas siguen contiguas —el damero no abre rendijas—, así que el paso de 1,0
- * se conserva.
- */
-const FLOOR_COLOR = '#4ECB85'; // jungle-light
-const FLOOR_ALT_COLOR = '#1F9D5B'; // jungle
-const WALL_COLOR = '#5A5170'; // ink-soft
-const WALL_BASE_COLOR = '#8B82A6'; // ink-faint
-const START_COLOR = '#3B9DF8'; // sky
-const GOAL_COLOR = '#FFC93C'; // sun
 /*
  * CÓMO SE LEE LA CASILLA DEL PERSONAJE DESDE FUERA. Comprobar este juego es
  * comparar DÓNDE ESTÁ EL PERSONAJE contra lo que dice el intérprete —una
@@ -203,70 +201,439 @@ const useBoardPlacement = (config: LevelConfig) =>
 const topOf = (config: LevelConfig, row: number, column: number): number =>
   (config.heights[row][column] - 1) * TILE_SIZE;
 
-const Board = ({ config }: { config: LevelConfig }) => {
+/*
+ * PRUEBA DE ASSETS (rama `prueba/kaykit-platformer`), no definitiva: el tablero
+ * con el bloque de hierba del Platformer Kit de Kenney.
+ */
+const GRASS_MODEL = '/models/platformer/block-grass-overhang-low.glb';
+const FLAG_MODEL = '/models/platformer/flag.glb';
+const WALL_MODEL = '/models/kaykit/barrier_1x1x1_red.gltf';
+
+/*
+ * La bandera mide 0,9 y el personaje 0,82: se escala para que la meta se vea por
+ * encima de él. El mástil está en el origen del modelo, así que sin desplazarla
+ * queda en el centro de la casilla.
+ */
+const FLAG_SCALE = 1.5;
+
+/*
+ * El pilar de «Dos caminos»: llena el agujero de 3 × 3 del centro y sube muy
+ * alto, así que desde la vista de partida tapa el camino de atrás y el niño
+ * tiene que girar el tablero para descubrirlo. No son casillas —el agujero sigue
+ * siendo agujero para las reglas—, es decorado.
+ *
+ * Es el bloque grande de Kenney, de 2 × 2, ensanchado sólo en planta —el pasto
+ * conserva su alto— y con la tierra bajada hasta el suelo del tablero. Sus
+ * esquinas van recortadas hasta 0,92 del medio ancho, así que para tapar las
+ * esquinas del agujero —a 1,5 del centro— hace falta escalarlo por 1,65, y los
+ * lados se montan un poco sobre las plataformas en vez de dejar huecos.
+ */
+const PILLAR_MODEL = '/models/platformer/block-grass-overhang-large.glb';
+const PILLAR_WIDTH_SCALE = 1.65;
+const PILLAR_HEIGHT = 6;
+const PILLAR_BOTTOM_LIMIT = 0.3;
+
+/*
+ * El encuadre sólo mide el tablero: con el pilar delante, la vista de partida se
+ * aleja, y el tablero se baja para que quede cerca de la bandeja y el pilar
+ * tenga sitio arriba.
+ */
+const PILLAR_DISTANCE_SCALE = 1.4;
+const PILLAR_BOARD_DROP = 1.2;
+
+/*
+ * La casilla es el bloque bajo de hierba de Kenney con el pasto chorreando por
+ * los lados: tierra de 0 a 0,25, la hierba encima y la tapa en 0,5. La columna
+ * se alarga bajando sólo los vértices del fondo hasta el suelo del tablero, así
+ * que la hierba no se toca.
+ *
+ * EL BLOQUE DEL KIT TIENE LAS ESQUINAS ACHAFLANADAS, y eso abría un rombo vacío
+ * donde se juntan cuatro casillas. Aquí se llevan a escuadra: los vértices del
+ * chaflán —los que están en la diagonal— salen hasta la esquina, y las tapas de
+ * dos vecinas quedan pegadas.
+ */
+const GRASS_TOP = 0.5;
+const GRASS_BOTTOM_LIMIT = 0.05;
+const CHAMFER_INNER = 0.44;
+const CORNER_EDGE = 0.5;
+const CORNER_LIP = 0.541;
+
+/*
+ * TIERRA Y HIERBA VAN CON MATERIALES DISTINTOS, y se separan por dónde leen la
+ * paleta del kit: la tierra cae a la izquierda de esta u y la hierba a la
+ * derecha. Así la tierra es la misma en todo el tablero y sólo la hierba va en
+ * damero, para que las tapas pegadas se cuenten.
+ */
+const GRASS_UV_LIMIT = 0.7;
+const GRASS_ALT_SHADE = 0.8;
+
+type GrassTone = 'plain' | 'shaded';
+
+/*
+ * EL TABLERO SE FUNDE EN UN SOLO MACIZO. Un lado de la columna que da contra una
+ * vecina igual de alta o más no se ve nunca, y pintarlo dejaba una junta de
+ * tierra y el pasto de las dos montado uno sobre otro. Así que ese lado se quita
+ * entero —pared de tierra y pasto— y lo que queda se recorta en el borde de la
+ * casilla. El pasto sólo cuelga donde hay un escalón o el borde del tablero.
+ */
+type CoveredSides = Record<Direction, boolean>;
+
+const NEIGHBOUR: Record<Direction, [number, number]> = {
+  north: [-1, 0],
+  south: [1, 0],
+  east: [0, 1],
+  west: [0, -1],
+};
+
+const SIDE_NORMAL_LIMIT = 0.9;
+
+const sideOf = (x: number, z: number): Direction => {
+  if (Math.abs(x) >= Math.abs(z)) {
+    return x > 0 ? 'east' : 'west';
+  }
+
+  return z > 0 ? 'south' : 'north';
+};
+
+const squareCorner = (value: number, other: number): number => {
+  const size = Math.abs(value);
+
+  if (size < 0.4 || Math.abs(size - Math.abs(other)) > 0.01) {
+    return value;
+  }
+
+  return Math.sign(value) * (size < CHAMFER_INNER ? CORNER_EDGE : CORNER_LIP);
+};
+
+const firstMesh = (scene: Object3D): Mesh | null => {
+  let found: Mesh | null = null;
+  scene.traverse((node) => {
+    if (found === null && (node as Mesh).isMesh) {
+      found = node as Mesh;
+    }
+  });
+
+  return found;
+};
+
+const useGrassBlock = () => {
+  const { scene } = useGLTF(GRASS_MODEL);
+
+  return useMemo(() => {
+    const mesh = firstMesh(scene);
+
+    if (mesh === null) {
+      return null;
+    }
+
+    const base = mesh.material as MeshStandardMaterial;
+    const shaded = base.clone();
+    shaded.color.multiplyScalar(GRASS_ALT_SHADE);
+
+    const tones: Record<GrassTone, MeshStandardMaterial> = { plain: base, shaded };
+
+    return { geometry: mesh.geometry, dirt: base, tones };
+  }, [scene]);
+};
+
+const GrassColumn = ({
+  height,
+  tone,
+  covered,
+}: {
+  height: number;
+  tone: GrassTone;
+  covered: CoveredSides;
+}) => {
+  const block = useGrassBlock();
+  const { north, south, east, west } = covered;
+
+  const geometry = useMemo(() => {
+    if (block === null) {
+      return null;
+    }
+
+    const hidden: CoveredSides = { north, south, east, west };
+    const result = block.geometry.clone();
+    const position = result.getAttribute('position');
+    const uv = result.getAttribute('uv');
+    const index = result.getIndex();
+
+    for (let i = 0; i < position.count; i++) {
+      const x = position.getX(i);
+      const z = position.getZ(i);
+
+      position.setX(i, squareCorner(x, z));
+      position.setZ(i, squareCorner(z, x));
+
+      if (position.getY(i) < GRASS_BOTTOM_LIMIT) {
+        position.setY(i, position.getY(i) - (height * TILE_SIZE - GRASS_TOP));
+      }
+    }
+
+    if (index !== null) {
+      const dirt: number[] = [];
+      const grass: number[] = [];
+      const a = new Vector3();
+      const b = new Vector3();
+      const c = new Vector3();
+      const normal = new Vector3();
+
+      for (let i = 0; i < index.count; i += 3) {
+        const triangle = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+        a.fromBufferAttribute(position, triangle[0]);
+        b.fromBufferAttribute(position, triangle[1]);
+        c.fromBufferAttribute(position, triangle[2]);
+        normal.subVectors(c, b).cross(b.clone().sub(a)).normalize();
+
+        const isSide = Math.abs(normal.y) < SIDE_NORMAL_LIMIT;
+        const side = sideOf((a.x + b.x + c.x) / 3, (a.z + b.z + c.z) / 3);
+
+        if (isSide && hidden[side]) {
+          continue;
+        }
+
+        (uv.getX(triangle[0]) < GRASS_UV_LIMIT ? dirt : grass).push(...triangle);
+      }
+
+      for (let i = 0; i < position.count; i++) {
+        const x = position.getX(i);
+        const z = position.getZ(i);
+
+        if ((x > CORNER_EDGE && east) || (x < -CORNER_EDGE && west)) {
+          position.setX(i, Math.sign(x) * CORNER_EDGE);
+        }
+
+        if ((z > CORNER_EDGE && south) || (z < -CORNER_EDGE && north)) {
+          position.setZ(i, Math.sign(z) * CORNER_EDGE);
+        }
+      }
+
+      result.setIndex([...dirt, ...grass]);
+      result.clearGroups();
+      result.addGroup(0, dirt.length, 0);
+      result.addGroup(dirt.length, grass.length, 1);
+    }
+
+    position.needsUpdate = true;
+    result.computeBoundingSphere();
+
+    return result;
+  }, [block, height, north, south, east, west]);
+
+  useEffect(() => () => geometry?.dispose(), [geometry]);
+
+  if (block === null || geometry === null) {
+    return null;
+  }
+
+  return (
+    <mesh
+      geometry={geometry}
+      material={[block.dirt, block.tones[tone]]}
+      position={[0, (height - 1) * TILE_SIZE - GRASS_TOP, 0]}
+    />
+  );
+};
+
+const CenterPillar = () => {
+  const { scene } = useGLTF(PILLAR_MODEL);
+
+  const pillar = useMemo(() => {
+    const mesh = firstMesh(scene);
+
+    if (mesh === null) {
+      return null;
+    }
+
+    const geometry = mesh.geometry.clone();
+    const position = geometry.getAttribute('position');
+
+    for (let i = 0; i < position.count; i++) {
+      position.setX(i, position.getX(i) * PILLAR_WIDTH_SCALE);
+      position.setZ(i, position.getZ(i) * PILLAR_WIDTH_SCALE);
+
+      if (position.getY(i) < PILLAR_BOTTOM_LIMIT) {
+        position.setY(i, position.getY(i) - (PILLAR_HEIGHT - 1) * TILE_SIZE);
+      }
+    }
+
+    position.needsUpdate = true;
+    geometry.computeBoundingSphere();
+
+    return { geometry, material: mesh.material };
+  }, [scene]);
+
+  useEffect(() => () => pillar?.geometry.dispose(), [pillar]);
+
+  if (pillar === null) {
+    return null;
+  }
+
+  return (
+    <mesh
+      geometry={pillar.geometry}
+      material={pillar.material}
+      position={[0, (PILLAR_HEIGHT - 2) * TILE_SIZE, 0]}
+    />
+  );
+};
+
+const Model = ({
+  url,
+  position,
+  scale = 1,
+}: {
+  url: string;
+  position: [number, number, number];
+  scale?: number;
+}) => {
+  const { scene } = useGLTF(url);
+
+  return <Clone object={scene} position={position} scale={scale} />;
+};
+
+// Los vértices del fondo de un bloque de Kenney: los únicos que bajan al alargarlo.
+const BLOCK_BOTTOM_LIMIT = 0.05;
+
+/*
+ * Un bloque de decorado con la tierra alargada hasta `bottom`, igual que las
+ * columnas del tablero: se bajan sólo los vértices del fondo, así que la hierba
+ * de arriba no cambia.
+ */
+const StretchedBlock = ({
+  url,
+  position,
+  bottom,
+  width,
+  rotation,
+  stretch,
+}: {
+  url: string;
+  position: [number, number, number];
+  bottom: number;
+  width: number;
+  rotation: number;
+  stretch?: [number, number];
+}) => {
+  const { scene } = useGLTF(url);
+  const drop = position[1] - bottom;
+
+  const block = useMemo(() => {
+    const mesh = firstMesh(scene);
+
+    if (mesh === null) {
+      return null;
+    }
+
+    const geometry = mesh.geometry.clone();
+    const vertices = geometry.getAttribute('position');
+
+    for (let i = 0; i < vertices.count; i++) {
+      if (vertices.getY(i) < BLOCK_BOTTOM_LIMIT) {
+        vertices.setY(i, vertices.getY(i) - drop);
+      }
+    }
+
+    vertices.needsUpdate = true;
+    geometry.computeBoundingSphere();
+
+    return { geometry, material: mesh.material };
+  }, [scene, drop]);
+
+  useEffect(() => () => block?.geometry.dispose(), [block]);
+
+  if (block === null) {
+    return null;
+  }
+
+  return (
+    <mesh
+      geometry={block.geometry}
+      material={block.material}
+      position={position}
+      rotation={[0, rotation, 0]}
+      scale={stretch === undefined ? [width, 1, width] : [stretch[0], 1, stretch[1]]}
+    />
+  );
+};
+
+const Islands = ({ config, fillGaps }: { config: LevelConfig; fillGaps: boolean }) => {
+  const pieces = useMemo(() => generateIslands(config, { fillGaps }), [config, fillGaps]);
+
+  return (
+    <>
+      {pieces.map((piece, index) =>
+        piece.bottom === undefined ? (
+          <group key={index} position={piece.position} rotation={[0, piece.rotation, 0]}>
+            <Model url={piece.url} position={[0, 0, 0]} scale={piece.scale} />
+          </group>
+        ) : (
+          <StretchedBlock
+            key={index}
+            url={piece.url}
+            position={piece.position}
+            bottom={piece.bottom}
+            width={piece.scale}
+            rotation={piece.rotation}
+            stretch={piece.stretch}
+          />
+        )
+      )}
+    </>
+  );
+};
+
+const Board = ({
+  config,
+  centerPillar,
+  islands,
+  fillGaps,
+}: {
+  config: LevelConfig;
+  centerPillar: boolean;
+  islands: boolean;
+  fillGaps: boolean;
+}) => {
   const place = useBoardPlacement(config);
 
   return (
     <>
+      {centerPillar && <CenterPillar />}
+
+      {islands && <Islands config={config} fillGaps={fillGaps} />}
+
       {config.tiles.map((tileRow, row) =>
         tileRow.map((kind, column) => {
-          // Un hueco no se dibuja: por él se ve el fondo, y eso es el vacío.
           if (kind === 'gap') {
             return null;
           }
 
           const [x, z] = place(row, column);
           const height = config.heights[row][column];
-          const isStart = config.start.cell.row === row && config.start.cell.column === column;
+          const top = topOf(config, row, column);
           const isGoal = config.goal.row === row && config.goal.column === column;
 
-          let topColor: string | null = null;
-          if (kind === 'wall') {
-            topColor = WALL_BASE_COLOR;
-          } else if (isGoal) {
-            topColor = GOAL_COLOR;
-          } else if (isStart) {
-            topColor = START_COLOR;
-          }
+          const covered = Object.fromEntries(
+            (Object.keys(NEIGHBOUR) as Direction[]).map((direction) => {
+              const [dr, dc] = NEIGHBOUR[direction];
+              const neighbour = config.heights[row + dr]?.[column + dc] ?? 0;
+
+              return [direction, neighbour >= height];
+            })
+          ) as CoveredSides;
 
           return (
             <group key={`${row}-${column}`} position={[x, 0, z]}>
-              {/*
-               * LA CASILLA ES UNA COLUMNA DE CUBOS, uno por nivel, apoyada en el
-               * suelo del tablero: el usuario fijó que nada flota. Cada cubo mide
-               * lo que ocupa —el paso de la rejilla es 1,0—, así que no hay una
-               * segunda medida que mantener.
-               *
-               * El de más abajo se hunde media altura porque la cara de arriba de
-               * una columna de UN cubo es el plano de pisar de siempre, `y = 0`.
-               *
-               * EL DAMERO SE EXTIENDE A LOS NIVELES, y no es adorno por lo mismo
-               * que no lo es en el suelo: dos cubos apilados del mismo color se
-               * leen como uno alto, y entonces no se cuentan los niveles que hay
-               * que subir. Sólo el de arriba lleva el color de la salida o la
-               * meta, que es la casilla que se pisa.
-               */}
-              {Array.from({ length: height }, (_, level) => (
-                <mesh key={level} position={[0, (level - 0.5) * TILE_SIZE, 0]}>
-                  <boxGeometry args={[TILE_SIZE, TILE_SIZE, TILE_SIZE]} />
-                  <meshStandardMaterial
-                    color={
-                      level === height - 1 && topColor !== null
-                        ? topColor
-                        : (row + column + level) % 2 === 0
-                          ? FLOOR_COLOR
-                          : FLOOR_ALT_COLOR
-                    }
-                  />
-                </mesh>
-              ))}
+              <GrassColumn
+                height={height}
+                tone={(row + column) % 2 === 1 ? 'shaded' : 'plain'}
+                covered={covered}
+              />
 
-              {kind === 'wall' && (
-                <mesh position={[0, (height - 0.5) * TILE_SIZE, 0]}>
-                  <boxGeometry args={[TILE_SIZE, TILE_SIZE, TILE_SIZE]} />
-                  <meshStandardMaterial color={WALL_COLOR} />
-                </mesh>
-              )}
+              {kind === 'wall' && <Model url={WALL_MODEL} position={[0, top, 0]} />}
+
+              {isGoal && <Model url={FLAG_MODEL} position={[0, top, 0]} scale={FLAG_SCALE} />}
             </group>
           );
         })
@@ -274,6 +641,77 @@ const Board = ({ config }: { config: LevelConfig }) => {
     </>
   );
 };
+
+/*
+ * PRUEBA DE ASSETS: el explorador de Meshy como personaje. Llega en FBX con la
+ * textura aparte, así que el color se le pone aquí. Se mide al cargar y se
+ * escala a la altura de la casilla, apoyado en el suelo y centrado: el modelo
+ * trae sus propias unidades y su propio origen.
+ */
+const CHARACTER_MODEL = '/models/character/safari-spotter.fbx';
+const CHARACTER_TEXTURE = '/models/character/safari-spotter.png';
+const CHARACTER_HEIGHT = 1.6;
+// El modelo mira a +z y aquí el frente del personaje es −z.
+const CHARACTER_TURN = Math.PI;
+
+const CharacterModel = () => {
+  const fbx = useFBX(CHARACTER_MODEL);
+  const texture = useTexture(CHARACTER_TEXTURE);
+
+  const model = useMemo(() => {
+    texture.colorSpace = SRGBColorSpace;
+
+    const clone = fbx.clone(true);
+    const material = new MeshStandardMaterial({ map: texture, roughness: 0.8 });
+    clone.traverse((node) => {
+      if ((node as Mesh).isMesh) {
+        (node as Mesh).material = material;
+      }
+    });
+
+    clone.updateMatrixWorld(true);
+    const size = new Box3().setFromObject(clone).getSize(new Vector3());
+    clone.scale.multiplyScalar(CHARACTER_HEIGHT / size.y);
+    clone.updateMatrixWorld(true);
+
+    const box = new Box3().setFromObject(clone);
+    const center = box.getCenter(new Vector3());
+    clone.position.set(
+      clone.position.x - center.x,
+      clone.position.y - box.min.y,
+      clone.position.z - center.z
+    );
+
+    return clone;
+  }, [fbx, texture]);
+
+  return (
+    <group rotation={[0, CHARACTER_TURN, 0]}>
+      <primitive object={model} />
+    </group>
+  );
+};
+
+// El personaje de cubos, mientras el modelo carga.
+const PlaceholderBody = () => (
+  <>
+    <mesh position={[0, 0.35, 0]}>
+      <boxGeometry args={[0.5, 0.7, 0.5]} />
+      <meshStandardMaterial color={CHARACTER_COLOR} />
+    </mesh>
+
+    {/*
+     * El saliente de la cara que mira. Sin él, un cubo girado 90° es el mismo
+     * cubo. Va sobre la cabeza y no en la cara: puesto en la cara, mirando en
+     * dirección contraria a la cámara lo tapa el propio cuerpo, y esa
+     * orientación se queda sin marca.
+     */}
+    <mesh position={[0, 0.74, -0.16]}>
+      <boxGeometry args={[0.22, 0.12, 0.26]} />
+      <meshStandardMaterial color={SNOUT_COLOR} />
+    </mesh>
+  </>
+);
 
 interface CharacterProps {
   config: LevelConfig;
@@ -411,21 +849,9 @@ const Character = ({ config, pose, step, nextStep, stepIndex, onStepDone }: Char
       position={[x, y, z]}
       rotation={[0, FACING_ANGLE[pose.facing], 0]}
     >
-      <mesh position={[0, 0.35, 0]}>
-        <boxGeometry args={[0.5, 0.7, 0.5]} />
-        <meshStandardMaterial color={CHARACTER_COLOR} />
-      </mesh>
-
-      {/*
-       * El saliente de la cara que mira. Sin él, un cubo girado 90° es el mismo
-       * cubo. Va sobre la cabeza y no en la cara: puesto en la cara, mirando en
-       * dirección contraria a la cámara lo tapa el propio cuerpo, y esa
-       * orientación se queda sin marca.
-       */}
-      <mesh position={[0, 0.74, -0.16]}>
-        <boxGeometry args={[0.22, 0.12, 0.26]} />
-        <meshStandardMaterial color={SNOUT_COLOR} />
-      </mesh>
+      <Suspense fallback={<PlaceholderBody />}>
+        <CharacterModel />
+      </Suspense>
     </group>
   );
 };
@@ -435,6 +861,8 @@ interface FramedViewProps {
   freeHeight: number | null;
   board: RefObject<Group>;
   controls: RefObject<ElementRef<typeof OrbitControls>>;
+  distanceScale: number;
+  boardDrop: number;
 }
 
 /*
@@ -447,7 +875,14 @@ interface FramedViewProps {
  * personaje va dentro del grupo del tablero, así que su casilla se sigue leyendo
  * igual: cambia dónde se pinta, no dónde está.
  */
-const FramedView = ({ config, freeHeight, board, controls }: FramedViewProps) => {
+const FramedView = ({
+  config,
+  freeHeight,
+  board,
+  controls,
+  distanceScale,
+  boardDrop,
+}: FramedViewProps) => {
   const camera = useThree((state) => state.camera) as PerspectiveCamera;
   const width = useThree((state) => state.size.width);
   const height = useThree((state) => state.size.height);
@@ -458,11 +893,11 @@ const FramedView = ({ config, freeHeight, board, controls }: FramedViewProps) =>
     }
 
     const framing = frameBoard(config, { width, height, freeHeight: freeHeight ?? height });
-    const distance = Math.hypot(...framing.position);
+    const distance = Math.hypot(...framing.position) * distanceScale;
 
-    camera.position.set(...framing.position);
+    camera.position.set(...framing.position).multiplyScalar(distanceScale);
     camera.lookAt(0, 0, 0);
-    board.current?.position.setY(framing.lift);
+    board.current?.position.setY(framing.lift - boardDrop);
 
     const orbit = controls.current;
 
@@ -473,7 +908,7 @@ const FramedView = ({ config, freeHeight, board, controls }: FramedViewProps) =>
       orbit.update();
       orbit.saveState();
     }
-  }, [board, camera, config, controls, freeHeight, height, width]);
+  }, [board, boardDrop, camera, config, controls, distanceScale, freeHeight, height, width]);
 
   return null;
 };
@@ -521,6 +956,12 @@ interface GameSceneProps {
    * medida todavía, se encuadra en el alto entero.
    */
   freeHeight?: number | null;
+  // PRUEBA DE ASSETS: el pilar de «Dos caminos». Ver `CenterPillar`.
+  centerPillar?: boolean;
+  // PRUEBA DE ASSETS: las islas de decorado alrededor del tablero. Ver `islands.ts`.
+  islands?: boolean;
+  // PRUEBA DE ASSETS: rellenar con las islas los huecos que dan al exterior.
+  fillGaps?: boolean;
 }
 
 /*
@@ -656,6 +1097,9 @@ export const GameScene = ({
   onHaltedChange,
   onFinish,
   freeHeight = null,
+  centerPillar = false,
+  islands = false,
+  fillGaps = false,
 }: GameSceneProps) => {
   const config = level;
 
@@ -878,7 +1322,14 @@ export const GameScene = ({
         <directionalLight position={[4, 6, 3]} intensity={2.2} />
 
         <group ref={board} name={BOARD_NODE}>
-          <Board config={config} />
+          <Suspense fallback={null}>
+            <Board
+              config={config}
+              centerPillar={centerPillar}
+              islands={islands}
+              fillGaps={fillGaps}
+            />
+          </Suspense>
           <Character
             config={config}
             pose={pose}
@@ -903,7 +1354,14 @@ export const GameScene = ({
           maxDistance={MAX_DISTANCE}
         />
 
-        <FramedView config={config} freeHeight={freeHeight} board={board} controls={controls} />
+        <FramedView
+          config={config}
+          freeHeight={freeHeight}
+          board={board}
+          controls={controls}
+          distanceScale={centerPillar ? PILLAR_DISTANCE_SCALE : 1}
+          boardDrop={centerPillar ? PILLAR_BOARD_DROP : 0}
+        />
       </Canvas>
 
       {/*

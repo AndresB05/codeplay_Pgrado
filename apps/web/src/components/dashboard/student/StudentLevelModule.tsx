@@ -117,6 +117,8 @@ type LevelState =
       level: PlayableLevel;
       nextLevelId: string | null;
       withJump: boolean;
+      fillGaps: boolean;
+      centerPillar: boolean;
     };
 
 type StudentLevelModuleProps = {
@@ -324,6 +326,10 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         level,
         nextLevelId: siblings.data === null ? null : nextLevelId(siblings.data, row.orderIndex),
         withJump: worldPosition !== 0,
+        // PRUEBA DE ASSETS: el mundo 3 se queda sin relleno, como lo aprobó el usuario.
+        fillGaps: worldPosition !== 2,
+        // PRUEBA DE ASSETS: sólo «Dos caminos». Si se aprueba, será un campo del nivel.
+        centerPillar: row.slug === 'dos-caminos',
       });
     };
 
@@ -416,6 +422,9 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
             onHaltedChange={setHalted}
             onFinish={handleFinish}
             freeHeight={trayTop}
+            centerPillar={state.centerPillar}
+            islands
+            fillGaps={state.fillGaps}
           />
 
           {/*
