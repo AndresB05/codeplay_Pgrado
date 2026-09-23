@@ -4194,6 +4194,23 @@ vistas y tipos; no se tocó esa capa para no arriesgarla de paso.
 **`avatarTone`/`initials` siguen calculándose** en `teacher/classroomsData.ts`
 mismo pero ya no los pinta nadie.
 
+Las ilustraciones de los tres grandes trofeos (`student/StudentTrophiesModule.tsx`,
+desde `src/assets/brand/trophy-world-{1,2,3}.webp`, 23-sep-2026): el mismo
+leopardo alzando la copa, con fondo de selva, montañas y cruce de caminos según
+el mundo. Cubren todo el panel derecho de la tarjeta —el recuadro punteado
+desapareció— y van recortadas de cerca, de la copa al pecho, para que el
+leopardo se lea a ese tamaño. Desde `sm` van al lado del
+texto, absolutas, para que el alto lo siga marcando la descripción; por debajo
+guardan proporción 3:2 (una franja de alto fijo le cortaba la cara en tableta).
+
+El avatar del tutor (`avatar-tutor.webp`, 23-sep-2026, exportado como
+`TUTOR_AVATAR` desde `constants/mascotAvatars.ts`): el leopardo de bigote y
+monóculo, uno solo para todos los tutores, fuera del reparto de los niños.
+Sustituye al muñeco SVG sobre degradado turquesa en la ficha de la barra
+lateral (`teacher/TeacherSidebar.tsx`) y en Ajustes
+(`teacher/TeacherSettingsModule.tsx`), y al `UserIcon` del botón de la barra
+superior (`teacher/TeacherTopBar.tsx`), que se retiró de `TeacherIcons.tsx`.
+
 **Qué cubre**
 
 | Asset | Dónde va | Hueco actual |

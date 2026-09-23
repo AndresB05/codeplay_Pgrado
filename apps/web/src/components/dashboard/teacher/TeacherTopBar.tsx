@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { FALLBACK_TEACHER_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
-import { UserIcon } from './TeacherIcons';
+import { TUTOR_AVATAR } from '../../../constants/mascotAvatars';
 import { BrandLogo } from '../../ui/BrandLogo';
 
 interface TeacherTopBarProps {
@@ -58,10 +58,14 @@ export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
         <button
           type="button"
           onClick={() => navigate(ROUTES.TEACHER_SETTINGS)}
-          className="flex h-[52px] items-center gap-2.5 rounded-full border-[3px] border-ink bg-grape-soft px-3 pr-4 shadow-[0_4px_0_rgba(42,27,69,0.15)] transition-transform active:translate-y-[2px]"
+          className="flex h-[52px] items-center gap-2.5 rounded-full border-[3px] border-ink bg-grape-soft pl-1.5 pr-4 shadow-[0_4px_0_rgba(42,27,69,0.15)] transition-transform active:translate-y-[2px]"
           aria-label="Ajustes de cuenta"
         >
-          <UserIcon />
+          <img
+            src={TUTOR_AVATAR}
+            alt=""
+            className="h-[34px] w-[34px] rounded-full border-2 border-ink bg-cream object-cover"
+          />
           <span className="font-display text-[16px] text-grape-dark">{displayName}</span>
         </button>
       </div>

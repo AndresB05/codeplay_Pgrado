@@ -5,6 +5,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { FALLBACK_TEACHER_NAME } from '../../../services/classrooms.service';
 import type { ClassGroup } from '../../../types/classroom.types';
 import type { User } from '../../../types/user.types';
+import { TUTOR_AVATAR } from '../../../constants/mascotAvatars';
 import { ChangeNamePanel } from '../shared/ChangeNamePanel';
 import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
 import { DeleteAccountPanel } from '../shared/DeleteAccountPanel';
@@ -51,25 +52,8 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
           <h2 className="title-lg">Detalles del usuario</h2>
 
           <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-start">
-            <div className="flex h-[112px] w-[112px] shrink-0 items-center justify-center rounded-[28px] border-[3px] border-ink bg-[linear-gradient(135deg,#7CE6DA_0%,#17C3B2_100%)] shadow-[0_6px_0_rgba(42,27,69,0.18)]">
-              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                <circle cx="32" cy="24" r="12" fill="#FFF9EF" stroke="#2A1B45" strokeWidth="3.5" />
-                <circle cx="27" cy="23" r="2.6" fill="#2A1B45" />
-                <circle cx="37" cy="23" r="2.6" fill="#2A1B45" />
-                <path
-                  d="M28 29C29.4 30.8 34.6 30.8 36 29"
-                  stroke="#2A1B45"
-                  strokeWidth="2.8"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M14 52C16.5 44 23.5 40 32 40C40.5 40 47.5 44 50 52"
-                  fill="#FFC93C"
-                  stroke="#2A1B45"
-                  strokeWidth="3.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
+            <div className="h-[112px] w-[112px] shrink-0 overflow-hidden rounded-full border-[3px] border-ink bg-cream shadow-[0_6px_0_rgba(42,27,69,0.18)]">
+              <img src={TUTOR_AVATAR} alt="" className="h-full w-full object-cover" />
             </div>
 
             <div className="min-w-0 flex-1">

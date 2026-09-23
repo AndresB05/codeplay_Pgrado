@@ -4,6 +4,9 @@ import avatar3 from '../assets/brand/avatar-3.webp';
 
 export const MASCOT_AVATARS = [avatar1, avatar2, avatar3];
 
+/** Los tutores no eligen mascota: todos llevan este, fuera del reparto de los niños. */
+export { default as TUTOR_AVATAR } from '../assets/brand/avatar-tutor.webp';
+
 /**
  * Los valores que se guardan en `profiles.avatar_key` para estos tres. Un
  * `avatar_key` que no sea ninguno de ellos —el `'colibri'` de siempre, de un

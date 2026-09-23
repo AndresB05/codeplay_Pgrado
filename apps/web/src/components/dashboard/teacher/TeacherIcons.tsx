@@ -79,19 +79,6 @@ export const SeatIcon = () => (
   </svg>
 );
 
-export const UserIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="8" r="3.5" stroke="#5B5567" strokeWidth="1.9" />
-    <path
-      d="M5 19C6.4 16.67 8.89 15.5 12 15.5C15.11 15.5 17.6 16.67 19 19"
-      stroke="#5B5567"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-    />
-    <circle cx="12" cy="12" r="9" stroke="#5B5567" strokeWidth="1.9" />
-  </svg>
-);
-
 export const LogoutIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path

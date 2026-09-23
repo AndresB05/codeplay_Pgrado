@@ -4,6 +4,9 @@ import { useAchievements } from '../../../hooks/useAchievements';
 import { AchievementList } from '../AchievementList/AchievementList';
 import { MonsteraLeaf, TropicalFlower } from '../../decor/JungleDecor';
 import { trophyPercent, worldTrophyProgress } from '../../../lib/trophyProgress';
+import trophyWorld1 from '../../../assets/brand/trophy-world-1.webp';
+import trophyWorld2 from '../../../assets/brand/trophy-world-2.webp';
+import trophyWorld3 from '../../../assets/brand/trophy-world-3.webp';
 
 const TrophyIcon = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
@@ -61,6 +64,7 @@ type BigTrophyCardProps = {
   progressValue: number;
   awardedXp: number;
   accent: keyof typeof bigCardStyles;
+  image: string;
 };
 
 
@@ -97,10 +101,15 @@ const bigCardStyles = {
  * migración 0036 derivando del `sort_order` del mundo, así que esta lista y
  * aquélla se leen juntas.
  */
-const WORLD_TROPHIES: { key: string; order: number; accent: keyof typeof bigCardStyles }[] = [
-  { key: 'perfect_world_1', order: 1, accent: 'jungle' },
-  { key: 'perfect_world_2', order: 2, accent: 'grape' },
-  { key: 'perfect_world_3', order: 3, accent: 'sky' },
+const WORLD_TROPHIES: {
+  key: string;
+  order: number;
+  accent: keyof typeof bigCardStyles;
+  image: string;
+}[] = [
+  { key: 'perfect_world_1', order: 1, accent: 'jungle', image: trophyWorld1 },
+  { key: 'perfect_world_2', order: 2, accent: 'grape', image: trophyWorld2 },
+  { key: 'perfect_world_3', order: 3, accent: 'sky', image: trophyWorld3 },
 ];
 
 /* Los de mundo ya tienen su tarjeta grande: repetirlos abajo los contaba dos veces. */
@@ -114,6 +123,7 @@ const BigTrophyCard = ({
   progressValue,
   awardedXp,
   accent,
+  image,
 }: BigTrophyCardProps) => {
   const style = bigCardStyles[accent];
 
@@ -136,7 +146,7 @@ const BigTrophyCard = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px]">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_240px]">
         <div className="px-5 py-5">
           <p className="max-w-[380px] text-[15px] font-semibold leading-[1.6] text-ink-soft">
             {description}
@@ -155,11 +165,18 @@ const BigTrophyCard = ({
           </div>
         </div>
 
-        <div className="border-t-[3px] border-line px-5 py-5 lg:border-l-[3px] lg:border-t-0">
-          {/* Hueco reservado para la ilustración del logro. */}
-          <div className="flex h-[114px] w-full items-center justify-center rounded-[18px] border-[3px] border-dashed border-line bg-cream font-display text-[14px] text-ink-faint">
-            Imagen logro
-          </div>
+        {/*
+         * Al lado del texto va absoluta, para que el alto lo marque la
+         * descripción y no la imagen. En una columna guarda proporción: una
+         * franja de alto fijo, estirada a lo ancho de una tableta, le cortaba
+         * la cara al leopardo.
+         */}
+        <div className="relative aspect-[3/2] border-t-[3px] border-line sm:aspect-auto sm:border-l-[3px] sm:border-t-0">
+          <img
+            src={image}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-top"
+          />
         </div>
       </div>
     </article>
@@ -253,6 +270,7 @@ export const StudentTrophiesModule = () => {
                 progressValue={unlocked ? 100 : trophyPercent(progress)}
                 awardedXp={achievement.awardedXp}
                 accent={trophy.accent}
+                image={trophy.image}
               />
             );
           })}

@@ -5,6 +5,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { FALLBACK_TEACHER_NAME } from '../../../services/classrooms.service';
 import type { ClassGroup } from '../../../types/classroom.types';
 import type { User } from '../../../types/user.types';
+import { TUTOR_AVATAR } from '../../../constants/mascotAvatars';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
@@ -86,25 +87,8 @@ export const TeacherSidebar = ({
             className="pointer-events-none absolute -right-1 top-2 -scale-x-100 rotate-[14deg]"
           />
 
-          <div className="relative flex h-[104px] w-[104px] items-center justify-center rounded-full border-[4px] border-ink bg-[linear-gradient(135deg,#7CE6DA_0%,#17C3B2_100%)] shadow-[0_6px_0_rgba(42,27,69,0.18)]">
-            <svg width="58" height="58" viewBox="0 0 64 64" fill="none">
-              <circle cx="32" cy="24" r="12" fill="#FFF9EF" stroke="#2A1B45" strokeWidth="3.5" />
-              <circle cx="27" cy="23" r="2.6" fill="#2A1B45" />
-              <circle cx="37" cy="23" r="2.6" fill="#2A1B45" />
-              <path
-                d="M28 29C29.4 30.8 34.6 30.8 36 29"
-                stroke="#2A1B45"
-                strokeWidth="2.8"
-                strokeLinecap="round"
-              />
-              <path
-                d="M14 52C16.5 44 23.5 40 32 40C40.5 40 47.5 44 50 52"
-                fill="#FFC93C"
-                stroke="#2A1B45"
-                strokeWidth="3.5"
-                strokeLinejoin="round"
-              />
-            </svg>
+          <div className="relative h-[104px] w-[104px] overflow-hidden rounded-full border-[4px] border-ink bg-cream shadow-[0_6px_0_rgba(42,27,69,0.18)]">
+            <img src={TUTOR_AVATAR} alt="" className="h-full w-full object-cover" />
           </div>
 
           <h2 className="mt-4 text-center font-display text-[22px] leading-tight text-grape-dark">
