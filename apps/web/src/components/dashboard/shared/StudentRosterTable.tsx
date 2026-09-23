@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { explorerLevel } from '../../../constants/progress';
+import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import type { ClassroomStudent } from '../../../types/classroom.types';
 import { XPBar } from '../../ui/XPBar';
 import { formatLastActivity } from '../teacher/classroomsData';
@@ -152,10 +153,14 @@ export const StudentRosterTable = ({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`relative flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full border-[3px] border-ink font-display text-[15px] ${student.avatarTone}`}
-                  >
-                    {student.initials}
+                  <div className="relative h-[44px] w-[44px] shrink-0">
+                    <div className="h-full w-full overflow-hidden rounded-full border-[3px] border-ink">
+                      <img
+                        src={pickMascotAvatar(student.id, student.name)}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
                     {onlineIds?.has(student.id) ? (
                       <span
                         aria-hidden="true"

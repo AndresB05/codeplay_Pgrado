@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { explorerLevel } from '../../../constants/progress';
 import { ROUTES } from '../../../constants/routes';
+import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
 import { FALLBACK_STUDENT_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
+import { ChangeAvatarPanel } from '../shared/ChangeAvatarPanel';
 import { ChangeNamePanel } from '../shared/ChangeNamePanel';
 import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
 import { DeleteAccountPanel } from '../shared/DeleteAccountPanel';
@@ -70,9 +72,12 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
           <h2 className="title-lg">Detalles del explorador</h2>
 
           <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-start">
-            {/* Hueco reservado para el avatar de la mascota. */}
-            <div className="flex h-[118px] w-[118px] shrink-0 items-center justify-center rounded-full border-[3px] border-dashed border-line bg-cream font-display text-[14px] text-ink-faint">
-              Avatar
+            <div className="h-[118px] w-[118px] shrink-0 overflow-hidden rounded-full border-[3px] border-ink">
+              <img
+                src={pickMascotAvatar(user?.id, user?.fullName, user?.avatarKey)}
+                alt=""
+                className="h-full w-full object-cover"
+              />
             </div>
 
             <div className="min-w-0 flex-1">
@@ -113,6 +118,7 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
                 </div>
               </div>
 
+              <ChangeAvatarPanel />
               <ChangeNamePanel />
               <ChangePasswordPanel />
               <DeleteAccountPanel />

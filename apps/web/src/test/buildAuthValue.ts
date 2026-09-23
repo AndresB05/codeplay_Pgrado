@@ -32,6 +32,7 @@ export const buildAuthValue = (
   signInWithGoogle: async () => false,
   signOut: async () => false,
   signUp: async () => 'error' as const,
+  updateAvatarKey: async () => false,
   updateFullName: async () => false,
   updatePassword: async () => false,
   updateRole: async () => ({ status: 'error' as const }),

@@ -3,7 +3,8 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { SignupField } from '../../components/auth/SignupField';
 import { loginSchema } from '../../components/auth/LoginForm.schema';
-import { Canopy, MonsteraLeaf, Toucan } from '../../components/decor/JungleDecor';
+import { Canopy } from '../../components/decor/JungleDecor';
+import loginLeopard from '../../assets/brand/login-leopard.webp';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useRoleHomeRedirect } from '../../hooks/useRoleHomeRedirect';
@@ -210,21 +211,14 @@ export const Login = () => {
                 </p>
               </div>
 
-              <div
-                className="relative flex items-center justify-center border-t-[3px] border-ink px-8 py-8 sm:px-10 lg:border-l-[3px] lg:border-t-0 lg:px-8 lg:py-10 xl:px-12"
-                style={{ background: 'linear-gradient(160deg, #7CE6DA 0%, #17C3B2 100%)' }}
-              >
-                <MonsteraLeaf
-                  size={110}
-                  className="pointer-events-none absolute -left-8 top-6 rotate-[24deg]"
-                  color="#12703D"
+              <div className="relative min-h-[320px] overflow-hidden sm:min-h-[380px] lg:min-h-0">
+                <img
+                  src={loginLeopard}
+                  alt=""
+                  width={1100}
+                  height={950}
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
-                <Toucan size={92} className="pointer-events-none absolute -bottom-3 right-4" />
-
-                {/* Hueco reservado para la ilustración de la mascota. */}
-                <div className="relative flex h-[260px] w-full max-w-[440px] items-center justify-center rounded-[22px] border-[3px] border-dashed border-white/75 bg-white/25 font-display text-[15px] text-white sm:h-[320px] lg:h-[380px]">
-                  Imagen Login
-                </div>
               </div>
             </div>
           </section>

@@ -1,16 +1,12 @@
-import type { ReactNode } from 'react';
-
-export type RoleCardTone = 'grape' | 'mint';
+export type RoleCardTone = 'grape' | 'papaya';
 
 type SignupRoleCardProps = {
   title: string;
   description: string;
   buttonLabel: string;
-  /** Texto del hueco reservado para la ilustración de la mascota. */
-  placeholderLabel: string;
+  image: string;
   tone: RoleCardTone;
   onSelect: () => void;
-  decor?: ReactNode;
 };
 
 const TONE_STYLES: Record<RoleCardTone, { gradient: string; button: string; chip: string }> = {
@@ -19,10 +15,10 @@ const TONE_STYLES: Record<RoleCardTone, { gradient: string; button: string; chip
     button: 'btn-sun',
     chip: 'chip-grape',
   },
-  mint: {
-    gradient: 'linear-gradient(135deg, #7CE6DA 0%, #17C3B2 100%)',
-    button: 'btn-mint',
-    chip: 'chip-mint',
+  papaya: {
+    gradient: 'linear-gradient(135deg, #FFB27A 0%, #FF8A3D 100%)',
+    button: 'btn-papaya',
+    chip: 'chip-papaya',
   },
 };
 
@@ -30,29 +26,16 @@ export const SignupRoleCard = ({
   title,
   description,
   buttonLabel,
-  placeholderLabel,
+  image,
   tone,
   onSelect,
-  decor,
 }: SignupRoleCardProps) => {
   const styles = TONE_STYLES[tone];
 
   return (
     <article className="card overflow-hidden">
-      {/*
-       * Hueco reservado para la ilustración del rol. Se mantiene intacto: la
-       * mascota entrará aquí cuando esté dibujada.
-       */}
-      <div
-        className="relative flex h-[180px] w-full items-center justify-center border-b-[3px] border-ink"
-        style={{ background: styles.gradient }}
-      >
-        <span className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/20" />
-        {decor}
-
-        <div className="relative flex h-[124px] w-[70%] items-center justify-center rounded-[18px] border-[3px] border-dashed border-white/70 bg-white/25 font-display text-[14px] text-white">
-          {placeholderLabel}
-        </div>
+      <div className="relative h-[180px] w-full overflow-hidden" style={{ background: styles.gradient }}>
+        <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover" />
       </div>
 
       <div className="px-8 pb-8 pt-6 text-center">

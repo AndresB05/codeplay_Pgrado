@@ -4139,15 +4139,67 @@ dos veces** pidiendo panorámica, y con marca de agua. ChatGPT, con el que sali�
 el logo, se descartó por su límite diario de imágenes.
 
 **Ya aplicado:** el logo (`components/ui/BrandLogo.tsx`, desde
-`src/assets/brand/logo.webp`, que también da el favicon) y la ilustración del
-hero (`home/HeroSection.tsx`, desde `src/assets/brand/hero-leopard.webp`).
+`src/assets/brand/logo.webp`, que también da el favicon), la ilustración del
+hero (`home/HeroSection.tsx`, desde `src/assets/brand/hero-leopard.webp`), las
+tres portadas de mundo y la ilustración del tutor de la landing
+(`home/WorldsSection.tsx` y `home/TutorSection.tsx`, desde
+`src/assets/brand/world-{1,2,3}.webp` y `tutor-leopard.webp`), la ilustración
+del panel de login (`pages/Login/Login.tsx`, desde
+`src/assets/brand/login-leopard.webp`, 22-sep-2026), las dos cabeceras de las
+tarjetas de rol del registro (`components/auth/SignupRoleCard.tsx`, desde
+`src/assets/brand/signup-child.webp` y `signup-tutor.webp`, 22-sep-2026): la
+tarjeta ya no tiene hueco punteado, la ilustración cubre toda la cabecera de
+color y por eso se retiraron los adornos SVG (hoja, palma, círculo) que tenía
+encima; y la imagen del formulario de registro (`pages/Signup/Signup.tsx`,
+desde `src/assets/brand/signup-form-child.webp` y `signup-form-tutor.webp`,
+22-sep-2026) — un recorte con fondo transparente, no una escena, así que va
+directo sobre el crema del panel, sin caja blanca detrás; cambia según el rol
+elegido, algo que el hueco no hacía antes. De paso, el tono `mint` del rol
+tutor se reemplazó por `papaya` en toda la página (tarjeta y chip del
+formulario), porque el teal no armonizaba con la cabaña de madera de su
+ilustración; y la ilustración de la cabecera de mundos del niño
+(`student/StudentWorldsModule.tsx`, desde
+`src/assets/brand/world-banner-child.webp`, 22-sep-2026) — ocupa sólo la
+mitad derecha de la tarjeta, a todo su alto, tocando el borde negro de arriba,
+abajo y la derecha (no una caja aparte con sus propias esquinas), con un
+degradado suave hacia el blanco en la unión; en pantallas angostas baja como
+imagen aparte debajo del saludo; y los avatares de la mascota (`avatar-1.webp`
+azul, `avatar-2.webp` amarillo, `avatar-3.webp` verde, 22-sep-2026), con
+selector propio desde el 22-sep-2026: `ChangeAvatarPanel` (nuevo, en
+`dashboard/shared/`, montado sólo en `StudentSettingsModule.tsx` — los
+tutores no eligen mascota) escribe en `profiles.avatar_key` a través de la
+nueva `updateAvatarKey` de `AuthContext`/`AuthProvider` (misma forma que
+`updateFullName`: un `setUser` con lo que devuelve `update_my_profile`, sin
+migración porque la columna ya existía). **Es la primera vez que
+`avatar_key` tiene lector y escritor real**: antes era de un concepto
+abandonado (colibrí, jaguar...) y `profiles` sólo guardaba el `'colibri'` por
+defecto. `constants/mascotAvatars.ts` resuelve cuál mostrar —
+`resolveMascotAvatarIndex`, que comparte `pickMascotAvatar` (la imagen) y
+`ChangeAvatarPanel` (qué botón marcar): si `avatar_key` ya es uno de los tres
+nuevos, es ese; si no, el reparto es un hash determinista del `user.id` (hay
+además una anulación a mano por nombre para la cuenta de prueba del
+usuario), así que a quien no ha elegido le sigue tocando siempre el mismo, sin
+sorteo en cada carga. Se usan en el círculo de Ajustes
+(`student/StudentSettingsModule.tsx`), la cabecera de mundos
+(`student/StudentWorldsModule.tsx`), el botón de perfil de la barra superior
+(`student/StudentTopBar.tsx`), la ficha de la barra lateral (`Sidebar/
+Sidebar.tsx`) y donde antes había iniciales sobre un círculo de color: la
+tabla de seguimiento (`shared/StudentRosterTable.tsx`), el podio del salón
+(`shared/ClassroomPodium.tsx`) y la bandeja de solicitudes
+(`teacher/PendingRequestsSection.tsx`). **Estas tres últimas no leen
+`avatar_key` todavía** —`ClassroomStudent`/`JoinRequest` no lo traen de la
+vista, sólo `id` y `name`— así que si alguien elige un avatar en Ajustes, ahí
+lo sigue viendo por el hash hasta que se traslade `avatar_key` hasta esas
+vistas y tipos; no se tocó esa capa para no arriesgarla de paso.
+**`avatarTone`/`initials` siguen calculándose** en `teacher/classroomsData.ts`
+mismo pero ya no los pinta nadie.
 
 **Qué cubre**
 
 | Asset | Dónde va | Hueco actual |
 | --- | --- | --- |
-| Mascota (un leopardo) | Landing, login, registro, ajustes, mundos | El hero de la landing ya la tiene; el resto, `.mascot-slot` / `ImagePlaceholder`, siguen vacíos |
-| Portadas de mundo | `student/StudentWorldsModule.tsx` | Hoy se resuelve con tono de color e icono SVG |
+| Mascota (un leopardo) | Landing, login, registro, ajustes, mundos, salones | Las seis ya la tienen; Ajustes además deja elegir cuál de los tres |
+| Portadas de mundo | `student/StudentWorldsModule.tsx` | La landing ya las tiene (`home/WorldsSection.tsx`); la pantalla de mundos del niño hoy se resuelve con tono de color e icono SVG |
 | Escenarios y fondos | Landing y paneles | Hoy son degradados y adornos SVG |
 
 **Qué NO cubre.** Los adornos de `components/decor/JungleDecor.tsx` (hojas,
@@ -4162,8 +4214,11 @@ pesan una fracción de lo que pesaría un PNG. No hay motivo para reemplazarlos.
    entre sí y con la interfaz ya construida. El del hero pide además el estilo
    **exacto** del personaje de referencia y el fondo en ese mismo estilo; sin lo
    segundo, el paisaje tiende a salir casi fotográfico.
-2. Generar las poses de la mascota que faltan: login, registro de niño, registro
-   de tutor y pantalla de mundos. Después, las tres portadas de mundo.
+2. ~~Generar la pose de la mascota que falta~~ — **hecho**: ya no queda ningún
+   hueco de mascota vacío. Pendiente, si se retoma el catálogo más amplio
+   (§3 P6, tarea futura), llevar `avatar_key` hasta `ClassroomStudent` /
+   `JoinRequest` para que el roster, el podio y la bandeja de solicitudes
+   reflejen lo elegido en Ajustes en vez de repartir por hash.
 3. ~~Definir dónde se guardan~~ — **decidido con el logo y el hero**: en
    `apps/web/src/assets/brand/`, en WebP, importadas desde el componente. Las
    que lleguen con fondo se entregan sobre un color plano y se recortan en el

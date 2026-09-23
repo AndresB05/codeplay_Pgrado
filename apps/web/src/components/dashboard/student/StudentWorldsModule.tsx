@@ -9,9 +9,11 @@ import { AssignedMissionsPanel } from '../shared/AssignedMissionsPanel';
 import { useProgress } from '../../../hooks/useProgress';
 import { worldsService } from '../../../services/worlds.service';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
+import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import world1 from '../../../assets/brand/world-1.webp';
 import world2 from '../../../assets/brand/world-2.webp';
 import world3 from '../../../assets/brand/world-3.webp';
+import worldBannerChild from '../../../assets/brand/world-banner-child.webp';
 
 /*
  * La dificultad sale del orden: cada mundo pide lo del anterior y algo más, y
@@ -313,37 +315,59 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
   return (
     <div className="px-5 py-5">
       <section className="card relative overflow-hidden px-5 py-5">
-        <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-jungle-soft" />
+        {/*
+         * La ilustración ocupa sólo la parte derecha de la tarjeta, a todo su
+         * alto, tocando el borde negro de arriba, abajo y la derecha. El
+         * overflow-hidden y el rounded-[26px] del `.card` recortan la imagen
+         * a esas mismas esquinas, sin necesidad de redondearla aparte.
+         */}
+        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[38%] lg:block">
+          <img
+            src={worldBannerChild}
+            alt=""
+            className="h-full w-full object-cover object-[55%_50%]"
+          />
+          <div
+            className="absolute inset-y-0 left-0 w-[40%]"
+            style={{
+              background:
+                'linear-gradient(to right, #fff 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.4) 62%, rgba(255,255,255,0.15) 82%, transparent 100%)',
+            }}
+          />
+        </div>
+
+        <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-jungle-soft lg:hidden" />
         <PalmFrond
           size={96}
-          className="pointer-events-none absolute -left-6 -bottom-8 rotate-[18deg] opacity-70"
+          className="pointer-events-none absolute -left-6 -bottom-8 rotate-[18deg] opacity-70 lg:hidden"
         />
 
-        <div className="relative grid grid-cols-1 items-center gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex flex-wrap items-center gap-6">
-            {/* Hueco reservado para el avatar de la mascota. */}
-            <div className="flex h-[110px] w-[110px] shrink-0 items-center justify-center rounded-full border-[3px] border-dashed border-line bg-cream font-display text-[14px] text-ink-faint">
-              Avatar
-            </div>
+        <div className="relative flex flex-wrap items-center gap-6 lg:pr-[40%]">
+          <img
+            src={pickMascotAvatar(user?.id, user?.fullName, user?.avatarKey)}
+            alt=""
+            className="h-[110px] w-[110px] shrink-0 rounded-full border-[3px] border-ink bg-cream object-cover"
+          />
 
-            <div className="max-w-[560px]">
-              <span className="chip chip-leaf">
-                <TropicalFlower size={16} />
-                Expedición del día
-              </span>
+          <div className="max-w-[560px]">
+            <span className="chip chip-leaf">
+              <TropicalFlower size={16} />
+              Expedición del día
+            </span>
 
-              <h1 className="title-xl mt-3">¡HOLA, {getHeroName(user?.fullName)}!</h1>
-              <p className="subtitle mt-1">
-                Bienvenido de nuevo al código. ¿Listo para tu próxima expedición por la selva?
-              </p>
-            </div>
-          </div>
-
-          {/* Hueco reservado para la ilustración del mundo. */}
-          <div className="flex h-[136px] w-full items-center justify-center rounded-[22px] border-[3px] border-dashed border-line bg-cream font-display text-[14px] text-ink-faint xl:h-[144px]">
-            Imagen Mundo
+            <h1 className="title-xl mt-3">¡HOLA, {getHeroName(user?.fullName)}!</h1>
+            <p className="subtitle mt-1">
+              Bienvenido de nuevo al código. ¿Listo para tu próxima expedición por la selva?
+            </p>
           </div>
         </div>
+
+        {/* En pantallas angostas no hay espacio para el fondo completo: la ilustración baja debajo del saludo. */}
+        <img
+          src={worldBannerChild}
+          alt=""
+          className="relative mt-6 h-[160px] w-full rounded-[22px] object-cover lg:hidden"
+        />
       </section>
 
       <AssignedMissionsPanel hideCompleted />

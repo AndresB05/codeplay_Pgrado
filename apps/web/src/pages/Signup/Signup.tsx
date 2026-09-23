@@ -4,12 +4,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SignupField } from '../../components/auth/SignupField';
 import { signupSchema } from '../../components/auth/SignupForm.schema';
 import { SignupRoleCard } from '../../components/auth/SignupRoleCard';
-import {
-  Canopy,
-  MonsteraLeaf,
-  PalmFrond,
-  TropicalFlower,
-} from '../../components/decor/JungleDecor';
+import { Canopy, TropicalFlower } from '../../components/decor/JungleDecor';
+import signupChild from '../../assets/brand/signup-child.webp';
+import signupFormChild from '../../assets/brand/signup-form-child.webp';
+import signupFormTutor from '../../assets/brand/signup-form-tutor.webp';
+import signupTutor from '../../assets/brand/signup-tutor.webp';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useRoleHomeRedirect } from '../../hooks/useRoleHomeRedirect';
@@ -164,15 +163,8 @@ export const Signup = () => {
                   title="Niño"
                   description="Aprende a programar jugando. Resuelve acertijos, gana trofeos y embárcate en aventuras de código con nuestra mascota leopardo."
                   buttonLabel="Soy un explorador"
-                  placeholderLabel="Imagen Niño"
+                  image={signupChild}
                   tone="grape"
-                  decor={
-                    <MonsteraLeaf
-                      size={74}
-                      className="pointer-events-none absolute -left-5 bottom-2 rotate-[22deg]"
-                      color="#12703D"
-                    />
-                  }
                   onSelect={() => handleRoleSelection('child')}
                 />
 
@@ -180,15 +172,8 @@ export const Signup = () => {
                   title="Tutor"
                   description="Acompaña el aprendizaje. Supervisa el progreso, asigna misiones y apoya el desarrollo del pensamiento computacional de tus exploradores."
                   buttonLabel="Soy un guía"
-                  placeholderLabel="Imagen Tutor"
-                  tone="mint"
-                  decor={
-                    <PalmFrond
-                      size={74}
-                      className="pointer-events-none absolute -right-4 bottom-1 -scale-x-100 rotate-[12deg]"
-                      color="#1F9D5B"
-                    />
-                  }
+                  image={signupTutor}
+                  tone="papaya"
                   onSelect={() => handleRoleSelection('tutor')}
                 />
               </div>
@@ -207,7 +192,7 @@ export const Signup = () => {
           ) : (
             <section className="card w-full max-w-[980px] px-6 pb-8 pt-8 sm:px-10 lg:px-14 lg:pb-10">
               <div className="text-center">
-                <span className={`chip ${role === 'child' ? 'chip-grape' : 'chip-mint'}`}>
+                <span className={`chip ${role === 'child' ? 'chip-grape' : 'chip-papaya'}`}>
                   {role === 'child' ? 'Explorador' : 'Tutor'}
                 </span>
 
@@ -310,9 +295,16 @@ export const Signup = () => {
                     color="#FF8A3D"
                   />
 
-                  {/* Hueco reservado para la ilustración de la mascota. */}
-                  <div className="relative flex h-[196px] items-center justify-center rounded-[18px] border-[3px] border-dashed border-line bg-white font-display text-[14px] text-ink-faint">
-                    Imagen Registro
+                  <div className="relative flex h-[320px] items-center justify-center">
+                    <img
+                      src={role === 'child' ? signupFormChild : signupFormTutor}
+                      alt=""
+                      className={
+                        role === 'child'
+                          ? 'h-[250px] w-auto max-w-none object-contain'
+                          : 'h-full w-auto max-w-none object-contain'
+                      }
+                    />
                   </div>
 
                   <div className="mt-6 flex items-center gap-3 text-[13px] font-bold text-ink-faint">

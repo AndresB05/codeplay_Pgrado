@@ -1,3 +1,4 @@
+import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import type { ClassGroup } from '../../../types/classroom.types';
 import { formatRelativeTime } from './classroomsData';
 
@@ -63,10 +64,12 @@ export const PendingRequestsSection = ({
               className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-line px-5 py-4 last:border-b-0"
             >
               <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-[44px] w-[44px] items-center justify-center rounded-full border-[3px] border-ink font-display text-[15px] ${request.avatarTone}`}
-                >
-                  {request.initials}
+                <div className="h-[44px] w-[44px] overflow-hidden rounded-full border-[3px] border-ink">
+                  <img
+                    src={pickMascotAvatar(request.studentId, request.studentName)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
                 </div>
 
                 <div>

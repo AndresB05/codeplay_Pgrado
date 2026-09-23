@@ -1,3 +1,4 @@
+import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import type { ClassroomStudent } from '../../../types/classroom.types';
 import { podiumRanking } from './podiumRanking';
 
@@ -41,10 +42,14 @@ export const ClassroomPodium = ({ students }: ClassroomPodiumProps) => {
                 {style.medal}
               </span>
               <div
-                className={`mt-1 flex h-[52px] w-[52px] items-center justify-center rounded-full border-[3px] border-ink font-display text-[17px] ${student.avatarTone}`}
+                className="mt-1 h-[52px] w-[52px] overflow-hidden rounded-full border-[3px] border-ink"
                 aria-hidden="true"
               >
-                {student.initials}
+                <img
+                  src={pickMascotAvatar(student.id, student.name)}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               </div>
               <span className="mt-2 w-full truncate text-center font-bold text-ink">
                 {student.name}

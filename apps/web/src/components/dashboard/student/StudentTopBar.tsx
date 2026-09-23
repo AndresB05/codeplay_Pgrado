@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
+import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import type { User } from '../../../types/user.types';
 import { XPBar } from '../../ui/XPBar';
 import { BrandLogo } from '../../ui/BrandLogo';
@@ -11,22 +12,6 @@ const FireIcon = () => (
       fill="#FFC93C"
       stroke="#2A1B45"
       strokeWidth="2"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const AvatarIcon = () => (
-  <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
-    <circle cx="32" cy="26" r="13" fill="#FFF9EF" stroke="#2A1B45" strokeWidth="4" />
-    <circle cx="27" cy="25" r="2.8" fill="#2A1B45" />
-    <circle cx="37" cy="25" r="2.8" fill="#2A1B45" />
-    <path d="M28 31C29.5 33 34.5 33 36 31" stroke="#2A1B45" strokeWidth="3" strokeLinecap="round" />
-    <path
-      d="M14 54C16.5 46 23.5 42 32 42C40.5 42 47.5 46 50 54"
-      fill="#7B3FE4"
-      stroke="#2A1B45"
-      strokeWidth="4"
       strokeLinejoin="round"
     />
   </svg>
@@ -65,10 +50,14 @@ export const StudentTopBar = ({ user }: StudentTopBarProps) => {
         <button
           type="button"
           onClick={() => navigate(ROUTES.SETTINGS)}
-          className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-[3px] border-ink bg-grape-soft shadow-[0_4px_0_rgba(42,27,69,0.15)] transition-transform active:translate-y-[2px]"
+          className="h-[52px] w-[52px] overflow-hidden rounded-full border-[3px] border-ink bg-grape-soft shadow-[0_4px_0_rgba(42,27,69,0.15)] transition-transform active:translate-y-[2px]"
           aria-label="Perfil"
         >
-          <AvatarIcon />
+          <img
+            src={pickMascotAvatar(user?.id, user?.fullName, user?.avatarKey)}
+            alt=""
+            className="h-full w-full object-cover"
+          />
         </button>
       </div>
     </header>

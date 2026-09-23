@@ -72,6 +72,12 @@ export interface AuthContextValue {
    * perfil devuelto.
    */
   updateFullName: (fullName: string) => Promise<boolean>;
+  /**
+   * Guarda cuál de los leopardos eligió. Misma forma que `updateFullName`: un
+   * `setUser` con lo que devuelve la RPC, para que sidebar, barra superior y
+   * mundos se refresquen solos. Ajustes, con sesión.
+   */
+  updateAvatarKey: (avatarKey: string) => Promise<boolean>;
   /** Fija la contraseña sin pedir la anterior. Pantalla del enlace del correo. */
   updatePassword: (newPassword: string) => Promise<boolean>;
   /**

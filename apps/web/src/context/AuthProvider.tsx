@@ -353,6 +353,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     [session]
   );
 
+  /* Misma forma que `updateFullName`, mismo motivo: un `setUser` y listo. */
+  const updateAvatarKey = useCallback(
+    async (avatarKey: string): Promise<boolean> => {
+      setError(null);
+
+      const result = await profileService.updateProfile(
+        { avatarKey },
+        session?.user.email ?? null
+      );
+
+      if (result.error) {
+        setError(result.error);
+        return false;
+      }
+
+      if (!result.data) {
+        return false;
+      }
+
+      setUser(result.data);
+
+      return true;
+    },
+    [session]
+  );
+
   /*
    * EL XP QUE ACABA DE CONCEDER EL SERVIDOR, aplicado en el sitio. Misma forma
    * que `updateFullName` —un `setUser` y las superficies que leen de aquí se
@@ -449,6 +475,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       signInWithGoogle,
       signOut,
       signUp,
+      updateAvatarKey,
       updateFullName,
       updatePassword,
       updateRole,
@@ -467,6 +494,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       signInWithGoogle,
       signOut,
       signUp,
+      updateAvatarKey,
       updateFullName,
       updatePassword,
       updateRole,

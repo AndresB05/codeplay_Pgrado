@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
+import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
 import { FALLBACK_STUDENT_NAME } from '../../../services/classrooms.service';
@@ -182,25 +183,12 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
             className="pointer-events-none absolute -right-1 top-2 -scale-x-100 rotate-[14deg]"
           />
 
-          <div className="relative flex h-[112px] w-[112px] items-center justify-center rounded-full border-[4px] border-ink bg-[linear-gradient(135deg,#A77BF3_0%,#7B3FE4_100%)] shadow-[0_6px_0_rgba(42,27,69,0.2)]">
-            <svg width="66" height="66" viewBox="0 0 64 64" fill="none">
-              <circle cx="32" cy="26" r="13" fill="#FFF9EF" stroke="#2A1B45" strokeWidth="4" />
-              <circle cx="27" cy="25" r="2.8" fill="#2A1B45" />
-              <circle cx="37" cy="25" r="2.8" fill="#2A1B45" />
-              <path
-                d="M28 31C29.5 33 34.5 33 36 31"
-                stroke="#2A1B45"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-              <path
-                d="M14 54C16.5 46 23.5 42 32 42C40.5 42 47.5 46 50 54"
-                fill="#FFC93C"
-                stroke="#2A1B45"
-                strokeWidth="4"
-                strokeLinejoin="round"
-              />
-            </svg>
+          <div className="relative h-[112px] w-[112px] overflow-hidden rounded-full border-[4px] border-ink shadow-[0_6px_0_rgba(42,27,69,0.2)]">
+            <img
+              src={pickMascotAvatar(user?.id, user?.fullName, user?.avatarKey)}
+              alt=""
+              className="h-full w-full object-cover"
+            />
           </div>
 
           <h2 className="mt-4 text-center font-display text-[24px] leading-tight text-grape-dark">
