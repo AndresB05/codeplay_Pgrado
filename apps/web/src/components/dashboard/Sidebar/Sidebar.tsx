@@ -198,44 +198,52 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
             <FireIcon />
             <span>{streakLabel(streakDays)}</span>
           </div>
-
-          <div className="wood-bare mt-3 w-full rounded-[12px] px-3 py-2">
-            <XPBar xp={user?.xp ?? 0} />
-          </div>
         </div>
       )}
 
-      <nav className={`${collapsed ? 'mt-12' : 'mt-8'} space-y-2.5`}>
-        {navItems.map((item) => {
-          const isActive = activeRoute === item.route;
-          const Icon = item.icon;
+      {/* El XP sale de la ficha para que el panel tallado lo abarque junto a los botones. */}
+      <div className={`relative isolate ${collapsed ? 'mt-12' : 'mt-7'}`}>
+        <div
+          aria-hidden="true"
+          className={`sidebar-panel pointer-events-none absolute -z-10 ${
+            collapsed ? '-inset-x-3 -bottom-6 -top-5' : '-inset-x-5 -bottom-6 -top-5'
+          }`}
+        />
 
-          return (
-            <button
-              key={item.route}
-              type="button"
-              onClick={() => navigate(item.route)}
-              aria-label={collapsed ? item.label : undefined}
-              title={collapsed ? item.label : undefined}
-              className={`flex h-[54px] w-full items-center gap-3 rounded-[18px] border-[3px] text-left font-display text-[16px] transition-all ${
-                collapsed ? 'justify-center px-0' : 'px-4'
-              } ${
-                isActive
-                  ? 'border-ink bg-grape text-white shadow-[0_4px_0_rgba(42,27,69,0.25)]'
-                  : 'wood-bare text-ink hover:brightness-105'
-              }`}
-            >
-              <Icon active={isActive} />
-              {collapsed ? null : <span>{item.label}</span>}
-              {'dev' in item && !collapsed ? (
-                <span className="ml-auto rounded-full border-2 border-dashed border-line px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-ink-faint">
-                  Dev
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </nav>
+        {collapsed ? null : (
+          <div className="wood-bare w-full rounded-[12px] px-3 py-2">
+            <XPBar xp={user?.xp ?? 0} />
+          </div>
+        )}
+
+        <nav className={`${collapsed ? '' : 'mt-8'} space-y-2.5`}>
+          {navItems.map((item) => {
+            const isActive = activeRoute === item.route;
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.route}
+                type="button"
+                onClick={() => navigate(item.route)}
+                aria-label={collapsed ? item.label : undefined}
+                title={collapsed ? item.label : undefined}
+                className={`flex h-[54px] w-full items-center gap-3 rounded-[18px] border-[3px] text-left font-display text-[16px] ${
+                  collapsed ? 'justify-center px-0' : 'px-4'
+                } ${isActive ? 'wood-key wood-key-current' : 'wood-key text-ink'}`}
+              >
+                <Icon active={isActive} />
+                {collapsed ? null : <span>{item.label}</span>}
+                {'dev' in item && !collapsed ? (
+                  <span className="ml-auto rounded-full border-2 border-dashed border-line px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-ink-faint">
+                    Dev
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
       <div className="mt-auto pt-8">
         <button

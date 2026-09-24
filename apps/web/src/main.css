@@ -77,6 +77,8 @@
   --wood-ink: #4a2a12;
   --wood-light: #f6c49a;
   --wood-bare: #f9dfba;
+  /* El botón seleccionado de la barra del niño: el color de la corteza de los troncos. */
+  --wood-bark: #ac5c34;
 
   /* Compatibilidad con las utilidades previas */
   --primary: var(--grape);
@@ -336,6 +338,15 @@ a {
   }
 
   /*
+   * El panel tallado del tronco, detrás del XP y los botones. En nueve trozos
+   * porque cambia de tamaño: plegada es estrecho y con el Laboratorio 3D crece.
+   */
+  .sidebar-panel {
+    border: 18px solid transparent;
+    border-image: url('./assets/brand/sidebar-panel-thick.webp') 72 fill stretch;
+  }
+
+  /*
    * El rebote sale de la curva de vuelta, no de una animación: al soltar, la
    * escala pasa de largo y oscila hasta quedarse quieta.
    */
@@ -402,6 +413,63 @@ a {
       inset 0 4px 0 rgba(74, 42, 18, 0.22),
       inset 3px 0 0 rgba(74, 42, 18, 0.1),
       0 1px 0 var(--wood-light);
+  }
+
+  /*
+   * Tecla de madera de la barra lateral del niño: sobresale sobre su canto, se
+   * hunde un poco al pasar el cursor y del todo al pulsarla. El hundimiento es
+   * un `transform` para que no empuje a los botones de al lado; el canto de 5 px
+   * cabe en el hueco de 10 px entre ellos.
+   */
+  .wood-key {
+    background-color: var(--wood-bare);
+    background-image:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 55%),
+      repeating-linear-gradient(178deg, transparent 0 9px, rgba(74, 42, 18, 0.07) 9px 10px);
+    border-color: var(--wood-ink);
+    box-shadow:
+      0 5px 0 rgba(74, 42, 18, 0.85),
+      inset 0 -3px 0 rgba(74, 42, 18, 0.18);
+    transition:
+      transform 120ms ease-out,
+      box-shadow 120ms ease-out;
+  }
+
+  @media (hover: hover) {
+    .wood-key:hover {
+      transform: translateY(2px);
+      box-shadow:
+        0 3px 0 rgba(74, 42, 18, 0.85),
+        inset 0 -3px 0 rgba(74, 42, 18, 0.18);
+    }
+  }
+
+  .wood-key:active {
+    transform: translateY(5px);
+    box-shadow: inset 0 3px 6px rgba(74, 42, 18, 0.35);
+  }
+
+  /*
+   * El botón de la sección abierta se queda hundido del todo hasta que se elige
+   * otro, y en el color de la corteza para distinguirse de las teclas claras.
+   */
+  .wood-key-current,
+  .wood-key-current:hover,
+  .wood-key-current:active {
+    background-color: var(--wood-bark);
+    background-image:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 55%),
+      repeating-linear-gradient(178deg, transparent 0 9px, rgba(74, 42, 18, 0.12) 9px 10px);
+    color: var(--cream);
+    text-shadow: 0 1.5px 0 rgba(74, 42, 18, 0.6);
+    transform: translateY(5px);
+    box-shadow: inset 0 3px 6px rgba(74, 42, 18, 0.5);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wood-key {
+      transition: none;
+    }
   }
 
   .wood-deep {

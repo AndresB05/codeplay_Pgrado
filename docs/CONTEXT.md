@@ -4329,6 +4329,21 @@ enseña el mismo tronco más recortado por la izquierda. La imagen lleva debajo
 su propio reflejo para que las uniones de la repetición casen. La barra del
 tutor no cambia.
 
+El panel tallado de la barra del niño (`src/assets/brand/sidebar-panel-thick.webp`,
+24-sep-2026, `.sidebar-panel`): un marco de madera con el centro pelado, detrás
+de la tarjeta de XP y los botones de los módulos —el avatar, el nombre, la racha
+y «Cerrar sesión» quedan fuera, sobre la corteza—. Va en nueve trozos, en su
+propia capa, porque plegada es estrecho y con el Laboratorio 3D crece; el
+contorno oscuro se engrosó en la propia imagen. Para que el XP entre en el panel
+salió de la ficha: el bloque de XP y botones baja 16 px respecto a antes, para
+dejar 8 px entre la racha y el marco. Los botones de los módulos son **teclas de
+madera** (`.wood-key`): sobresalen sobre un canto de 5 px, bajan 2 px con el
+cursor y del todo al pulsarlas; la de la sección abierta (`.wood-key-current`)
+se queda hundida y en el color de la corteza de los troncos (`wood-bark`,
+`#AC5C34`, sacado de la imagen del tronco) con letra crema, y deja atrás el
+morado. «Cerrar sesión» sigue en madera pelada. Se probó antes, y se retiró, una
+grieta astillada sin marco en el mismo sitio.
+
 La imagen de cada nivel (24-sep-2026), una por nivel y alusiva a su título, en
 `student/StudentWorldLevelsModule.tsx`: los nueve
 (`src/assets/brand/level-{siempre-adelante,camino-con-curvas,la-escalera}.webp`,

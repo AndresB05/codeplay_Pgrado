@@ -326,6 +326,7 @@ como nombres de Tailwind. **Usa siempre los nombres, no los hex sueltos.**
 | Madera tinta | `#4A2A12` | `wood-ink` | Texto tallado en las tablas de los logros (`.wood-carved`), 6:1 sobre la madera |
 | Madera luz | `#F6C49A` | `wood-light` | El filo claro bajo la letra y el hueco tallados |
 | Madera pelada | `#F9DFBA` | `wood-bare` | El rectángulo hundido del texto de cada logro y del título de la sala de trofeos (`.wood-bare`), con letra `.wood-deep` |
+| Madera corteza | `#AC5C34` | `wood-bark` | El botón de la sección abierta en la barra lateral del niño (`.wood-key-current`), con letra crema; sale del color de la corteza de los troncos |
 
 #### Escala fría del juego
 
@@ -460,9 +461,11 @@ la letra tallada (`.wood-board`); la sala de trofeos cambia el valle por
 un fondo de tablas oscuras (`.trophy-backdrop`), y sus grandes trofeos van en
 un tronco (`.trophy-log`) sobre un tablón (`.trophy-board`), igual que la cabecera
 y los títulos de sección, que van en troncos. La barra lateral del niño es un
-tronco a tamaño fijo (`.sidebar-log`), con los botones en madera pelada. **El único hueco que queda es
-el de los niveles** (`StudentWorldLevelsModule.tsx`), y se deja vacío hasta que
-llegue su imagen. El proceso y lo ya aplicado, imagen por imagen, están en
+tronco a tamaño fijo (`.sidebar-log`); el XP y los botones van dentro de un
+panel tallado con marco (`.sidebar-panel`), y los botones son teclas de madera
+(`.wood-key`) que sobresalen, bajan un poco con el cursor y del todo al
+pulsarlas; la de la sección abierta se queda hundida y en color corteza. Los
+niveles (`StudentWorldLevelsModule.tsx`) ya tienen su imagen, una por nivel. El proceso y lo ya aplicado, imagen por imagen, están en
 `CONTEXT.md` §3 → P6.
 
 Los adornos de `components/decor/` (hojas, flores, liana) **siguen siendo SVG**

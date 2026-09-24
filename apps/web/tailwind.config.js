@@ -86,6 +86,7 @@ export default {
           ink: '#4A2A12',
           light: '#F6C49A',
           bare: '#F9DFBA',
+          bark: '#AC5C34',
         },
 
         // Se conservan los nombres anteriores para no romper pantallas antiguas.
