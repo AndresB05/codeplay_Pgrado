@@ -138,6 +138,8 @@ context: |
   que npm install blockly muere con ERESOLVE. Subirlo obliga a mover antes el
   entorno de los tests. La 12 se trae jsdom 26.1.0 como dependencia suya: son 77
   paquetes en node_modules y cero peso en el navegador, medido.
+  Confeti: canvas-confetti 1.9.4 (+ @types/canvas-confetti), solo para celebrar
+  los grandes trofeos conseguidos de la sala de trofeos. Sin dependencias.
   El juego se carga en DIFERIDO desde el J1, y hay DOS fronteras desde el J4:
   src/game/GameSceneLoader.tsx aisla el motor 3D y src/game/BlockEditorLoader.tsx
   aisla Blockly (las dos son React.lazy + Suspense). Blockly NO cuelga de la

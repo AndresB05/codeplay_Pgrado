@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
+import confetti from 'canvas-confetti';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAchievements } from '../../../hooks/useAchievements';
 import { AchievementList } from '../AchievementList/AchievementList';
@@ -78,6 +79,9 @@ const bigCardStyles = {
   sky: { bar: '#2BA7DD', medal: '#FFC93C' },
 };
 
+/* El dorado del confeti, que se mezcla con el color del mundo de cada trofeo. */
+const CONFETTI_GOLD = ['#FFC93C', '#FFE29A'];
+
 /*
  * UNA TARJETA GRANDE POR MUNDO, en el orden del catálogo. Las claves las fija la
  * migración 0036 derivando del `sort_order` del mundo, así que esta lista y
@@ -110,8 +114,39 @@ const BigTrophyCard = ({
 }: BigTrophyCardProps) => {
   const style = bigCardStyles[accent];
 
+  const celebrate = (event: MouseEvent<HTMLButtonElement>) => {
+    const box = event.currentTarget.getBoundingClientRect();
+
+    void confetti({
+      particleCount: 90,
+      spread: 75,
+      startVelocity: 38,
+      origin: {
+        x: (box.left + box.width / 2) / window.innerWidth,
+        y: (box.top + box.height / 3) / window.innerHeight,
+      },
+      colors: [style.bar, ...CONFETTI_GOLD],
+      disableForReducedMotion: true,
+    });
+  };
+
   return (
-    <article className={`wood-plank ${unlocked ? '' : 'grayscale'}`}>
+    <article className={`wood-plank relative ${unlocked ? '' : 'grayscale'}`}>
+      {/*
+       * Sólo lo conseguido celebra: confeti sobre un trofeo en gris le diría al
+       * niño que ya lo ganó. Es un botón encima de toda la tarjeta y no la
+       * tarjeta hecha botón, para que el lector de pantalla siga leyendo el
+       * título y la descripción.
+       */}
+      {unlocked ? (
+        <button
+          type="button"
+          onClick={celebrate}
+          aria-label={`Celebrar el trofeo ${title}`}
+          className="absolute inset-0 z-30 cursor-pointer rounded-[18px] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-sun"
+        />
+      ) : null}
+
       <div className="trophy-log flex items-center gap-3 py-1 pl-1">
         <span className="wood-well flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px]">
           <MedalIcon color={style.medal} />
@@ -169,12 +204,15 @@ const BigTrophyCard = ({
   );
 };
 
+/* En un tronco del tamaño de su contenido, como un letrero: suelto, flotaba sobre la madera. */
 const SectionTitle = ({ icon, title }: { icon: ReactNode; title: string }) => (
-  <div className="flex items-center gap-3">
-    <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft">
+  <div className="trophy-log flex w-fit max-w-full items-center gap-3 py-1 pl-1">
+    <span className="wood-well flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[16px]">
       {icon}
     </span>
-    <h2 className="title-lg dark-wood-label">{title}</h2>
+    <div className="wood-bare min-w-0 rounded-[12px] px-3 py-1.5">
+      <h2 className="wood-deep font-display text-[24px] leading-tight">{title}</h2>
+    </div>
   </div>
 );
 
@@ -194,7 +232,7 @@ export const StudentTrophiesModule = () => {
 
   return (
     <div className="px-5 py-5">
-      <section className="wood-board px-2 py-3">
+      <section className="trophy-log px-2 py-3">
         <div className="flex flex-wrap items-center gap-4">
           <span className="wood-well wood-carved flex h-[56px] w-[56px] items-center justify-center rounded-[18px]">
             <TrophyIcon />
@@ -215,7 +253,13 @@ export const StudentTrophiesModule = () => {
       </section>
 
       <section className="mt-8">
-        <SectionTitle icon={<CrownIcon />} title="Grandes trofeos" />
+        {/* Sin tronco a propósito: el de «Todos los logros» sí lo lleva. */}
+        <div className="flex items-center gap-3">
+          <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft">
+            <CrownIcon />
+          </span>
+          <h2 className="title-lg dark-wood-label">Grandes trofeos</h2>
+        </div>
 
         <p className="subtitle dark-wood-label mt-2">
           Uno por mundo, y sólo con los tres niveles al 100.

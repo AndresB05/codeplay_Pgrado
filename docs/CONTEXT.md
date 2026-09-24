@@ -156,6 +156,7 @@ Entorno de referencia: **Node.js 22.17.1**, **npm 10.9.2** (`engines` exige `>=1
 | Juego 3D | `three` + `@react-three/fiber` + `@react-three/drei` | 0.170.0 / 8.18.0 / 9.122.0 |
 | Backend | `@supabase/supabase-js` | 2.112.3 |
 | Validación | `zod` | 3.25.76 |
+| Confeti | `canvas-confetti` (+ `@types/canvas-confetti`) | 1.9.4 |
 | Calidad | `eslint` 8.57.1 (config heredada) + `prettier` 3.9.6 | — |
 | Tests | `vitest` + `jsdom` + `@testing-library/react` | 3.2.7 / 30.0.1 / 16.3.2 |
 | CI | GitHub Actions (`ubuntu-latest`) | Node fijado a 22.17.1 |
@@ -4244,9 +4245,8 @@ hueco vacío. Al pasar el cursor la tabla se encoge, y al soltarla rebota: la
 curva de vuelta pasa de largo y oscila hasta pararse. Con movimiento reducido no
 hace nada de esto. Esta tabla sustituye a la que figuraba como descartada en los
 logros: la pidió el usuario.
-La misma tabla hace de cabecera de la sala de trofeos
-(`student/StudentTrophiesModule.tsx`), también con letra tallada pero sin rebote:
-la tabla es `.wood-board` y el rebote va aparte en `.wood-plank`. El título y
+La cabecera de la sala de trofeos usó esta misma tabla y hoy va sobre un tronco
+(ver más abajo); la tabla es `.wood-board` y el rebote va aparte en `.wood-plank`. El título y
 el texto van en un rectángulo de madera pelada (`.wood-bare`, color `wood-bare`),
 hundido en la tabla, con la letra más honda (`.wood-deep`). La hoja y el círculo
 amarillo de la tarjeta blanca se retiraron.
@@ -4283,6 +4283,25 @@ el borde de abajo del tablón; la foto va por encima de él (`z-20` sobre `z-10`
 y por eso el tablón no lleva sombra: un `filter` lo volvería contexto de
 apilamiento y la foto no podría salir por encima. La tarjeta entera rebota al
 pasar el cursor, como los logros (`.wood-plank`).
+La cabecera de la sala y el título «Todos los logros» van también sobre troncos
+(`.trophy-log`): la cabecera a todo el ancho, el título del tamaño de su
+contenido, como un letrero. «Grandes trofeos» conserva su título suelto, en
+crema, sin tronco: se probó con él y se retiró. «Llevas N de M» sigue
+debajo, en crema, porque lo pinta `AchievementList`.
+
+Al pulsar un gran trofeo **conseguido** sale confeti (`canvas-confetti`, 23-sep-2026)
+con el color de su mundo y dorado; los pendientes no celebran, porque confeti
+sobre un trofeo en gris diría que ya se ganó. Es un botón transparente encima de
+la tarjeta, no la tarjeta hecha botón, para que el lector de pantalla siga
+leyendo el título y la descripción. Con movimiento reducido no sale nada. Lo
+cubre `StudentTrophiesModule.test.tsx`.
+
+El aviso de logro desbloqueado y de misión cumplida
+(`student/AchievementToast.tsx`) va sobre la misma tabla que los logros
+(`.wood-board`), con el texto en madera pelada, entre dos troncos delgados
+(`.trophy-log`) como los de los grandes trofeos, que le tapan los bordes de
+arriba y de abajo, para que combine con la sala.
+Mide 420 px de ancho: a 340 el rótulo y la descripción se partían.
 
 **Qué cubre**
 

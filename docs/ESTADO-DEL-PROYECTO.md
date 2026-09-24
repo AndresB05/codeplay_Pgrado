@@ -458,7 +458,8 @@ portada ni en el acceso), y **las misiones del niño** van sobre un pergamino
 rasgado (`.map-sheet`), y **cada logro** sobre una tabla de madera con
 la letra tallada (`.wood-board`); la sala de trofeos cambia el valle por
 un fondo de tablas oscuras (`.trophy-backdrop`), y sus grandes trofeos van en
-un tronco (`.trophy-log`) sobre un tablón (`.trophy-board`). **El único hueco que queda es
+un tronco (`.trophy-log`) sobre un tablón (`.trophy-board`), igual que la cabecera
+y el título de «Todos los logros», que van en troncos. **El único hueco que queda es
 el de los niveles** (`StudentWorldLevelsModule.tsx`), y se deja vacío hasta que
 llegue su imagen. El proceso y lo ya aplicado, imagen por imagen, están en
 `CONTEXT.md` §3 → P6.

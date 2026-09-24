@@ -129,31 +129,41 @@ export const AchievementToast = ({
     <div
       role="status"
       aria-live="polite"
-      className={`pointer-events-none fixed bottom-6 right-6 z-50 w-[min(340px,calc(100vw-3rem))] transition-all duration-300 ${
+      className={`pointer-events-none fixed bottom-6 right-6 z-50 w-[min(420px,calc(100vw-3rem))] transition-all duration-300 ${
         leaving ? 'translate-y-3 opacity-0' : 'translate-y-0 opacity-100'
       }`}
     >
-      <article className="card flex items-start gap-3 border-[3px] border-ink bg-sun-soft p-4 shadow-[0_6px_0_rgba(42,27,69,0.25)]">
-        <span className="shrink-0 text-sun-dark">
+      {/*
+       * La misma tabla que los logros de la sala de trofeos, entre dos troncos
+       * delgados como los de los grandes trofeos, para que el aviso y la sala
+       * combinen. Los troncos van por encima y le tapan los bordes de arriba y
+       * de abajo.
+       */}
+      <div className="trophy-log relative z-10 h-[30px]" aria-hidden="true" />
+
+      <article className="wood-board mx-3 -mt-[9px] flex items-center gap-3 px-1 py-1">
+        <span className="wood-well flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[16px] text-sun-dark">
           {current.kind === 'mission' ? <TargetBadge /> : <TrophyBadge />}
         </span>
 
-        <div className="min-w-0">
-          <p className="text-[12px] font-bold uppercase tracking-[0.06em] text-sun-dark">
+        <div className="wood-bare min-w-0 flex-1 rounded-[12px] px-3 py-1.5">
+          <p className="wood-deep text-[12px] font-bold uppercase tracking-[0.06em]">
             {current.kind === 'mission' ? '¡Misión cumplida!' : '¡Logro desbloqueado!'}
           </p>
 
-          <h3 className="font-display text-[18px] leading-tight text-ink">{current.title}</h3>
+          <h3 className="wood-deep font-display text-[18px] leading-tight">{current.title}</h3>
 
-          <p className="mt-1 text-[14px] font-semibold leading-[1.45] text-ink-soft">
+          <p className="wood-deep mt-0.5 text-[14px] font-semibold leading-[1.4]">
             {current.description}
           </p>
 
           {current.awardedXp > 0 ? (
-            <span className="chip chip-mint mt-2">+{current.awardedXp} XP</span>
+            <span className="chip wood-well wood-carved mt-1.5 py-0.5">+{current.awardedXp} XP</span>
           ) : null}
         </div>
       </article>
+
+      <div className="trophy-log relative z-10 -mt-[17px] h-[30px]" aria-hidden="true" />
 
       {/*
        * Cuántos quedan detrás. Sin esto, un manojo de tres parece uno solo que
