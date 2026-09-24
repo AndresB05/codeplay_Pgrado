@@ -4229,9 +4229,16 @@ se deforman aunque la tarjeta cambie de tamaño. Al pasar el cursor la tarjeta s
 inclina entre 1,5° y 3°, a un lado al azar cada vez, salvo con movimiento
 reducido. El texto va escrito «como en el mapa»: letra de mano **Patrick Hand**
 (`font-map`) en tinta **`sepia`**, y las etiquetas como sellos de tinta. Las dos
-cosas son nuevas en el sistema visual y **sólo las usan las misiones**. Se probó
+cosas son nuevas en el sistema visual y **sólo las usan las misiones** y las dos
+cifras del salón del niño. Se probó
 el mismo pergamino en la barra de filtros de los mundos y se retiró: no quedaba
 bien.
+Las dos cifras del salón del niño («Compañeros» y «Mundo del salón», en
+`student/StudentClassroomModule.tsx`) van también sobre el pergamino, con la
+variante `map` de `shared/StatCard.tsx`: letra de mano en tinta sepia y el icono
+en un sello de tinta del color de la tarjeta, y se inclinan al pasar el cursor
+como las misiones (la inclinación vive en `shared/pickTilt.ts`, compartida). El
+panel del tutor sigue con la tarjeta blanca.
 
 La tabla de los logros (`src/assets/brand/achievement-plank-render.webp`, 23-sep-2026),
 una por tarjeta en `AchievementList/AchievementItem.tsx`, dos columnas desde `md`.
@@ -4329,7 +4336,8 @@ tutor no cambia.
 | Portadas de mundo | `home/WorldsSection.tsx`, `student/StudentWorldsModule.tsx` | Las dos las tienen |
 | Grandes trofeos | `student/StudentTrophiesModule.tsx` | Los tres la tienen |
 | Imagen de nivel | `student/StudentWorldLevelsModule.tsx` | **Vacío** («Imagen Nivel»): falta decidir si va una por nivel o una por mundo |
-| Escenarios y fondos | Landing y paneles | Hoy son degradados y adornos SVG |
+| Escenarios y fondos | Landing y paneles | Los paneles tienen el valle (y la sala de trofeos, tablas oscuras); la landing sigue con degradados y adornos SVG |
+| Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño, misiones y cifras del salón | Aplicados: tablas, troncos, pergamino y foto clavada |
 
 **Qué NO cubre.** Los adornos de `components/decor/JungleDecor.tsx` (hojas,
 flores, tucán, liana) **seguirán siendo SVG escritos a mano**: son geometría

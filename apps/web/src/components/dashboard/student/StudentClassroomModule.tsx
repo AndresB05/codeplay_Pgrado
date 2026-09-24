@@ -143,12 +143,14 @@ export const StudentClassroomModule = () => {
           title="Compañeros"
           value={String(stats.totalStudents)}
           tone="grape"
+          variant="map"
         />
         <StatCard
           icon={<MedalIcon />}
           title="Mundo del salón"
           value={stats.averageWorldLabel}
           tone="mint"
+          variant="map"
         />
       </section>
 

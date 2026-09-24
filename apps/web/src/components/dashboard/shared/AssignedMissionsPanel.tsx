@@ -1,17 +1,10 @@
-import type { MouseEvent } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useMissionAssignments } from '../../../hooks/useMissionAssignments';
 import { formatDueDate } from '../../../lib/missionDue';
 import type { Mission } from '../../../types/classroom.types';
 import { TargetIcon } from '../teacher/TeacherIcons';
 import { TropicalFlower } from '../../decor/JungleDecor';
-
-/* Cada vez que el cursor entra se sortea el lado, para que no se incline siempre igual. */
-const pickTilt = (event: MouseEvent<HTMLElement>) => {
-  const side = Math.random() < 0.5 ? -1 : 1;
-  const degrees = 1.5 + Math.random() * 1.5;
-  event.currentTarget.style.setProperty('--tilt', `${side * degrees}deg`);
-};
+import { TILT_ON_HOVER, pickTilt } from './pickTilt';
 
 const MissionCard = ({
   mission,
@@ -25,7 +18,7 @@ const MissionCard = ({
 }) => (
   <article
     onMouseEnter={pickTilt}
-    className="relative isolate flex flex-col px-14 pb-11 pt-10 transition-transform duration-200 ease-out hover:[transform:rotate(var(--tilt))] motion-reduce:transition-none motion-reduce:hover:[transform:none]"
+    className={`relative isolate flex flex-col px-14 pb-11 pt-10 ${TILT_ON_HOVER}`}
   >
     <div aria-hidden className="map-sheet pointer-events-none absolute inset-0 -z-10" />
 
