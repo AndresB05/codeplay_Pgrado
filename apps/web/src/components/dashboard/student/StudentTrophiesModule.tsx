@@ -253,13 +253,7 @@ export const StudentTrophiesModule = () => {
       </section>
 
       <section className="mt-8">
-        {/* Sin tronco a propósito: el de «Todos los logros» sí lo lleva. */}
-        <div className="flex items-center gap-3">
-          <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft">
-            <CrownIcon />
-          </span>
-          <h2 className="title-lg dark-wood-label">Grandes trofeos</h2>
-        </div>
+        <SectionTitle icon={<CrownIcon />} title="Grandes trofeos" />
 
         <p className="subtitle dark-wood-label mt-2">
           Uno por mundo, y sólo con los tres niveles al 100.

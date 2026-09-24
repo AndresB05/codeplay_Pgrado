@@ -4283,10 +4283,10 @@ el borde de abajo del tablón; la foto va por encima de él (`z-20` sobre `z-10`
 y por eso el tablón no lleva sombra: un `filter` lo volvería contexto de
 apilamiento y la foto no podría salir por encima. La tarjeta entera rebota al
 pasar el cursor, como los logros (`.wood-plank`).
-La cabecera de la sala y el título «Todos los logros» van también sobre troncos
-(`.trophy-log`): la cabecera a todo el ancho, el título del tamaño de su
-contenido, como un letrero. «Grandes trofeos» conserva su título suelto, en
-crema, sin tronco: se probó con él y se retiró. «Llevas N de M» sigue
+La cabecera de la sala y los títulos «Grandes trofeos» y «Todos los logros» van
+también sobre troncos (`.trophy-log`): la cabecera a todo el ancho, los títulos
+del tamaño de su contenido, como letreros. La frase «Uno por mundo…» de los
+grandes trofeos queda fuera del tronco, en crema. «Llevas N de M» sigue
 debajo, en crema, porque lo pinta `AchievementList`.
 
 Al pulsar un gran trofeo **conseguido** sale confeti (`canvas-confetti`, 23-sep-2026)
@@ -4302,6 +4302,24 @@ El aviso de logro desbloqueado y de misión cumplida
 (`.trophy-log`) como los de los grandes trofeos, que le tapan los bordes de
 arriba y de abajo, para que combine con la sala.
 Mide 420 px de ancho: a 340 el rótulo y la descripción se partían.
+
+La barra lateral del niño es un tronco (`src/assets/brand/sidebar-log-tile.webp`,
+23-sep-2026, `.sidebar-log` en `Sidebar/Sidebar.tsx`), más grande que la barra:
+la punta de arriba queda bajo la barra superior, y el lado izquierdo y la punta
+de abajo fuera de la pantalla, así que la imagen ya viene recortada por esos
+lados y sólo se ven la corteza y el borde derecho. Va de fondo en su propia capa
+y sobresale 16 px por la derecha, por encima de los módulos. Donde su contorno se
+mete hacia dentro quedaba una rendija con el fondo de la página: por eso, en el
+panel del niño, los fondos (`PanelBackdrop` con `underSidebar`) se estiran 16 px
+a la izquierda, por debajo del tronco. Por eso la barra entera va en `z-20`,
+que además pone delante la pestaña de plegar. Las hojas que
+asomaban tras el avatar se retiraron. El nombre va en crema; la barra de XP, los botones y «Cerrar sesión», en madera
+pelada; el botón activo sigue en morado. El tronco va **a tamaño fijo**,
+anclado arriba a la derecha y repetido hacia abajo, no estirado: estirado se
+movía al cambiar de módulo, porque la barra mide lo que mide la página. Plegada
+enseña el mismo tronco más recortado por la izquierda. La imagen lleva debajo
+su propio reflejo para que las uniones de la repetición casen. La barra del
+tutor no cambia.
 
 **Qué cubre**
 

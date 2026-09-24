@@ -316,6 +316,26 @@ a {
   }
 
   /*
+   * El tronco de la barra lateral del niño. Es más grande que la barra: la punta
+   * de arriba se la traga la barra superior, y el lado izquierdo y la punta de
+   * abajo el borde de la pantalla, así que la imagen ya viene recortada por esos
+   * tres lados y sólo se ven la corteza y el borde derecho.
+   *
+   * A TAMAÑO FIJO y anclado arriba a la derecha, no estirado: estirado se movía
+   * al cambiar de módulo, porque la barra mide lo que mide la página. Así la
+   * página se corta donde acaba el módulo y el tronco no cambia; plegada, la
+   * barra enseña el mismo tronco más recortado por la izquierda. Se repite hacia
+   * abajo para las páginas más largas que la imagen, y la imagen lleva debajo su
+   * propio reflejo para que las uniones casen y no se vea el corte.
+   */
+  .sidebar-log {
+    background-image: url('./assets/brand/sidebar-log-tile.webp');
+    background-size: 278px auto;
+    background-position: top right;
+    background-repeat: repeat-y;
+  }
+
+  /*
    * El rebote sale de la curva de vuelta, no de una animación: al soltar, la
    * escala pasa de largo y oscila hasta quedarse quieta.
    */

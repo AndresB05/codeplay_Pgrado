@@ -5,7 +5,6 @@ import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
 import { FALLBACK_STUDENT_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
-import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
 import { XPBar } from '../../ui/XPBar';
 import { streakLabel } from '../../../lib/streak';
 import { DEV_TOOLS_ENABLED } from '../../../config/devTools';
@@ -163,26 +162,26 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
 
   return (
     <aside
-      className={`relative flex shrink-0 flex-col border-r-[3px] border-ink bg-white py-6 ${
-        collapsed ? 'w-[92px] px-3' : 'w-[262px] px-4'
+      className={`relative isolate z-20 flex shrink-0 flex-col py-6 ${
+        collapsed ? 'w-[92px] pl-2.5 pr-4' : 'w-[262px] pl-5 pr-8'
       }`}
     >
+      {/*
+       * El tronco sobresale por la derecha y va por encima de los módulos: con el
+       * borde justo en el de la barra quedaba una franja vacía entre los dos. La
+       * barra entera va en `z-20` por eso, y de paso la pestaña de plegar ya no
+       * queda detrás del contenido.
+       */}
+      <div
+        aria-hidden="true"
+        className="sidebar-log pointer-events-none absolute inset-y-0 -right-4 left-0 -z-10"
+      />
+
       <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} />
 
       {/* Plegada se queda sin la ficha: la barra superior ya enseña racha y XP. */}
       {collapsed ? null : (
         <div className="relative flex flex-col items-center">
-          {/* Hojas asomando tras el avatar: la selva entra también en la barra. */}
-          <MonsteraLeaf
-            size={58}
-            className="pointer-events-none absolute -left-1 top-1 rotate-[-18deg]"
-            color="#1F9D5B"
-          />
-          <PalmFrond
-            size={52}
-            className="pointer-events-none absolute -right-1 top-2 -scale-x-100 rotate-[14deg]"
-          />
-
           <div className="relative h-[112px] w-[112px] overflow-hidden rounded-full border-[4px] border-ink shadow-[0_6px_0_rgba(42,27,69,0.2)]">
             <img
               src={pickMascotAvatar(user?.id, user?.fullName, user?.avatarKey)}
@@ -191,7 +190,7 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
             />
           </div>
 
-          <h2 className="mt-4 text-center font-display text-[24px] leading-tight text-grape-dark">
+          <h2 className="dark-wood-label mt-4 text-center font-display text-[24px] leading-tight">
             {displayName}
           </h2>
 
@@ -200,7 +199,7 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
             <span>{streakLabel(streakDays)}</span>
           </div>
 
-          <div className="mt-3 w-full px-1">
+          <div className="wood-bare mt-3 w-full rounded-[12px] px-3 py-2">
             <XPBar xp={user?.xp ?? 0} />
           </div>
         </div>
@@ -223,7 +222,7 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
               } ${
                 isActive
                   ? 'border-ink bg-grape text-white shadow-[0_4px_0_rgba(42,27,69,0.25)]'
-                  : 'border-transparent text-ink hover:border-line hover:bg-cream'
+                  : 'wood-bare text-ink hover:brightness-105'
               }`}
             >
               <Icon active={isActive} />
@@ -244,7 +243,7 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
           onClick={() => void handleTemporaryLogout()}
           aria-label={collapsed ? 'Cerrar sesión' : undefined}
           title={collapsed ? 'Cerrar sesión' : undefined}
-          className={`flex w-full items-center gap-3 rounded-[18px] border-[3px] border-transparent py-3 text-left font-display text-[16px] text-coral-dark transition-colors hover:border-coral-soft hover:bg-coral-soft ${
+          className={`wood-bare flex w-full items-center gap-3 rounded-[18px] border-[3px] py-3 text-left font-display text-[16px] text-coral-dark transition-colors hover:brightness-105 ${
             collapsed ? 'justify-center px-0' : 'px-3'
           }`}
         >
