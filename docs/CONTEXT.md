@@ -4329,6 +4329,23 @@ enseña el mismo tronco más recortado por la izquierda. La imagen lleva debajo
 su propio reflejo para que las uniones de la repetición casen. La barra del
 tutor no cambia.
 
+La imagen de cada nivel (24-sep-2026), una por nivel y alusiva a su título, en
+`student/StudentWorldLevelsModule.tsx`: los nueve
+(`src/assets/brand/level-{siempre-adelante,camino-con-curvas,la-escalera}.webp`,
+`level-{salta-y-sube,el-gran-rodeo,la-torre}.webp` y
+`level-{dos-caminos,el-faro,muchos-caminos}.webp`, 1000 × 330; la última,
+1000 × 314). «Muchos caminos» es el leopardo estudiando un mapa sin letras con
+varias rutas: Gemini la trajo con la palabra «STARTING» en el mapa y un marco
+oscuro alrededor; la palabra se pintó encima con el color del pergamino y el
+marco se recortó, y va anclada al 75 % porque leopardo y mapa están a la derecha. Las del mundo 3 van en tierra
+firme con lagunas y cascadas de fondo, no en el mar, y «El faro» no lleva faro:
+el nivel es una subida. Se eligen **por slug** en `LEVEL_ART`, no por posición, para que la
+imagen se vaya con su nivel si se reordena. Ocupan el hueco entero (110 px de
+alto, ancho de la columna, `object-cover`) con contorno de tinta; el nivel sin
+imagen sigue con el hueco punteado. Las de «Camino con curvas» y «La escalera» recortan al 35 %, y «La torre» al 45 %, porque el
+leopardo no va centrado y en tableta la columna se estrecha a 1,6:1. El nivel
+bloqueado la enseña en gris, como el resto de la tarjeta.
+
 **Qué cubre**
 
 | Asset | Dónde va | Hueco actual |
@@ -4336,7 +4353,7 @@ tutor no cambia.
 | Mascota (un leopardo) | Landing, login, registro, ajustes, mundos, salones | Las seis ya la tienen; Ajustes además deja elegir cuál de los tres |
 | Portadas de mundo | `home/WorldsSection.tsx`, `student/StudentWorldsModule.tsx` | Las dos las tienen |
 | Grandes trofeos | `student/StudentTrophiesModule.tsx` | Los tres la tienen |
-| Imagen de nivel | `student/StudentWorldLevelsModule.tsx` | **Vacío** («Imagen Nivel»): falta decidir si va una por nivel o una por mundo |
+| Imagen de nivel | `student/StudentWorldLevelsModule.tsx` | Una por nivel: las nueve; el resto sigue vacío («Imagen Nivel») |
 | Escenarios y fondos | Landing y paneles | Los paneles tienen el valle (y la sala de trofeos, tablas oscuras); la landing sigue con degradados y adornos SVG |
 | Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño, misiones y cifras del salón | Aplicados: tablas, troncos, pergamino y foto clavada |
 

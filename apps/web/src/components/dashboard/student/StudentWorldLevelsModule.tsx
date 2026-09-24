@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import levelCaminoConCurvas from '../../../assets/brand/level-camino-con-curvas.webp';
+import levelDosCaminos from '../../../assets/brand/level-dos-caminos.webp';
+import levelElFaro from '../../../assets/brand/level-el-faro.webp';
+import levelElGranRodeo from '../../../assets/brand/level-el-gran-rodeo.webp';
+import levelLaEscalera from '../../../assets/brand/level-la-escalera.webp';
+import levelLaTorre from '../../../assets/brand/level-la-torre.webp';
+import levelMuchosCaminos from '../../../assets/brand/level-muchos-caminos.webp';
+import levelSaltaYSube from '../../../assets/brand/level-salta-y-sube.webp';
+import levelSiempreAdelante from '../../../assets/brand/level-siempre-adelante.webp';
 import { ROUTES } from '../../../constants/routes';
 import { useProgress } from '../../../hooks/useProgress';
 import { worldsService } from '../../../services/worlds.service';
@@ -68,6 +77,24 @@ const OceanIcon = () => (
     <circle cx="46" cy="16" r="5" fill="#FFF9EF" stroke="#2A1B45" strokeWidth="3" />
   </svg>
 );
+
+/*
+ * Por slug y no por posición: la ilustración pinta el título del nivel, y si un
+ * nivel se reordena la imagen tiene que irse con él. `position` desplaza el
+ * recorte cuando el leopardo no está centrado: en tableta la tarjeta se estrecha
+ * y un recorte al centro lo dejaría fuera.
+ */
+const LEVEL_ART: Record<string, { src: string; position?: string }> = {
+  'siempre-adelante': { src: levelSiempreAdelante },
+  'camino-con-curvas': { src: levelCaminoConCurvas, position: '35% 50%' },
+  'la-escalera': { src: levelLaEscalera, position: '35% 50%' },
+  'salta-y-sube': { src: levelSaltaYSube },
+  'el-gran-rodeo': { src: levelElGranRodeo },
+  'la-torre': { src: levelLaTorre, position: '45% 50%' },
+  'dos-caminos': { src: levelDosCaminos },
+  'el-faro': { src: levelElFaro },
+  'muchos-caminos': { src: levelMuchosCaminos, position: '75% 50%' },
+};
 
 const iconByTone = {
   forest: ForestIcon,
@@ -275,6 +302,8 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
           // Tres columnas y no más: cada mundo tiene tres niveles, y con más columnas sobraba medio ancho vacío.
           <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
             {cards.map(({ level, isCompleted, isCurrent, isLocked }, position) => {
+              const art = LEVEL_ART[level.slug];
+
               return (
                 <button
                   key={level.id}
@@ -325,10 +354,19 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
                   </div>
 
                   <div className="px-3 pt-3">
-                    {/* Hueco reservado para la ilustración del nivel. */}
-                    <div className="flex h-[110px] items-center justify-center rounded-[16px] border-[3px] border-dashed border-line bg-cream font-display text-[13px] text-ink-faint">
-                      Imagen Nivel
-                    </div>
+                    {art ? (
+                      <img
+                        src={art.src}
+                        alt=""
+                        className="block h-[110px] w-full rounded-[16px] border-[3px] border-ink object-cover"
+                        style={{ objectPosition: art.position }}
+                      />
+                    ) : (
+                      // Hueco reservado para la ilustración del nivel.
+                      <div className="flex h-[110px] items-center justify-center rounded-[16px] border-[3px] border-dashed border-line bg-cream font-display text-[13px] text-ink-faint">
+                        Imagen Nivel
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 px-3 pb-4 pt-3 text-center">
