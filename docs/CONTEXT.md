@@ -4263,6 +4263,27 @@ el subtítulo de los grandes trofeos y el recuento «Llevas N de M» van en crem
 oscuras que figuraba como descartado: aquél era para todos los paneles, éste
 sólo para la sala de trofeos, y lo pidió el usuario.
 
+Los grandes trofeos en madera (`src/assets/brand/trophy-log.webp` y
+`trophy-board.webp`, 23-sep-2026), en `BigTrophyCard` de
+`StudentTrophiesModule.tsx`: el título va sobre un **tronco** (`.trophy-log`) y
+la descripción, la barra, las etiquetas y la ilustración sobre un **tablón** más
+corto y más alto debajo (`.trophy-board`), los dos en nueve trozos. El tronco
+tiene el borde derecho ancho porque ahí está la rama, que no puede caer en la
+parte que se estira; el tablón lleva las grietas sólo en las esquinas. El color de
+cada mundo queda en la barra y en la medalla; el degradado de la cabecera se
+retiró. El trofeo sin conseguir va entero en gris, como los logros. La ilustración va
+dentro de una foto instantánea clavada con chincheta (`trophy-polaroid.webp`),
+**suelta encima del tablón**: se centra en el hueco que ocupaba la imagen
+enmarcada, que conserva su tamaño, así que el tablón mide lo mismo aunque la foto
+sobresalga. La ilustración va debajo del marco, girada 4,15° como su ventana; las
+posiciones en porcentaje salen de medir esa ventana en la imagen. El contorno del
+tronco y del tablón está engrosado hacia fuera en las propias imágenes. Debajo del
+tablón va un segundo tronco, del mismo alto que el de arriba y vacío, que tapa
+el borde de abajo del tablón; la foto va por encima de él (`z-20` sobre `z-10`),
+y por eso el tablón no lleva sombra: un `filter` lo volvería contexto de
+apilamiento y la foto no podría salir por encima. La tarjeta entera rebota al
+pasar el cursor, como los logros (`.wood-plank`).
+
 **Qué cubre**
 
 | Asset | Dónde va | Hueco actual |

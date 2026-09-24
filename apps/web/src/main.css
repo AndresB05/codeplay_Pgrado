@@ -292,6 +292,30 @@ a {
   }
 
   /*
+   * Los grandes trofeos: el título va sobre un tronco y el resto sobre un tablón
+   * más corto y más alto. Los dos en nueve trozos. El borde derecho del tronco es
+   * ancho porque ahí está la rama, que no puede caer en la parte que se estira.
+   *
+   * El tablón no lleva sombra a propósito: un `filter` lo volvería contexto de
+   * apilamiento y la foto, que va dentro, no podría quedar por encima del tronco
+   * de abajo.
+   */
+  .trophy-log {
+    border-style: solid;
+    border-color: transparent;
+    border-width: 14px 90px 11px 22px;
+    border-image: url('./assets/brand/trophy-log.webp') 25 163 20 40 fill stretch;
+    filter: drop-shadow(0 6px 0 rgba(42, 27, 69, 0.14));
+  }
+
+  .trophy-board {
+    border-style: solid;
+    border-color: transparent;
+    border-width: 25px 19px 27px 18px;
+    border-image: url('./assets/brand/trophy-board.webp') 125 136 133 131 fill stretch;
+  }
+
+  /*
    * El rebote sale de la curva de vuelta, no de una animación: al soltar, la
    * escala pasa de largo y oscila hasta quedarse quieta.
    */

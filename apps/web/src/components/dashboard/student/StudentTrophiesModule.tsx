@@ -7,6 +7,7 @@ import { trophyPercent, worldTrophyProgress } from '../../../lib/trophyProgress'
 import trophyWorld1 from '../../../assets/brand/trophy-world-1.webp';
 import trophyWorld2 from '../../../assets/brand/trophy-world-2.webp';
 import trophyWorld3 from '../../../assets/brand/trophy-world-3.webp';
+import trophyPolaroid from '../../../assets/brand/trophy-polaroid.webp';
 
 const TrophyIcon = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
@@ -63,37 +64,18 @@ type BigTrophyCardProps = {
   progressLabel: string;
   progressValue: number;
   awardedXp: number;
+  unlocked: boolean;
   accent: keyof typeof bigCardStyles;
   image: string;
 };
 
-
+/* El color de cada mundo sobrevive a la madera en la barra y en la medalla. */
 const bigCardStyles = {
-  jungle: {
-    gradient: 'linear-gradient(135deg, #7BE0A8 0%, #1F9D5B 100%)',
-    bar: '#1F9D5B',
-    chip: 'chip-leaf',
-    medal: '#FFC93C',
-  },
-  grape: {
-    gradient: 'linear-gradient(135deg, #A77BF3 0%, #7B3FE4 100%)',
-    bar: '#7B3FE4',
-    chip: 'chip-grape',
-    medal: '#FFC93C',
-  },
-  sun: {
-    gradient: 'linear-gradient(135deg, #FFE29A 0%, #FFC93C 100%)',
-    bar: '#FFC93C',
-    chip: 'chip-sun',
-    medal: '#FF8A3D',
-  },
+  jungle: { bar: '#1F9D5B', medal: '#FFC93C' },
+  grape: { bar: '#7B3FE4', medal: '#FFC93C' },
+  sun: { bar: '#FFC93C', medal: '#FF8A3D' },
   /* El tercero entra con el paso 22: los mundos son tres, y las tarjetas también. */
-  sky: {
-    gradient: 'linear-gradient(135deg, #8FD8F7 0%, #2BA7DD 100%)',
-    bar: '#2BA7DD',
-    chip: 'chip-sky',
-    medal: '#FFC93C',
-  },
+  sky: { bar: '#2BA7DD', medal: '#FFC93C' },
 };
 
 /*
@@ -122,63 +104,67 @@ const BigTrophyCard = ({
   progressLabel,
   progressValue,
   awardedXp,
+  unlocked,
   accent,
   image,
 }: BigTrophyCardProps) => {
   const style = bigCardStyles[accent];
 
   return (
-    <article className="card overflow-hidden">
-      <div
-        className="relative flex items-center gap-4 border-b-[3px] border-ink px-5 py-4"
-        style={{ background: style.gradient }}
-      >
-        <span className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/25" />
-
-        <span className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-[18px] border-[3px] border-ink bg-white">
+    <article className={`wood-plank ${unlocked ? '' : 'grayscale'}`}>
+      <div className="trophy-log flex items-center gap-3 py-1 pl-1">
+        <span className="wood-well flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px]">
           <MedalIcon color={style.medal} />
         </span>
 
-        <div className="relative min-w-0">
-          <h3 className="font-display text-[22px] leading-tight text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)]">
-            {title}
-          </h3>
+        <div className="wood-bare min-w-0 rounded-[12px] px-3 py-1.5">
+          <h3 className="wood-deep font-display text-[22px] leading-tight">{title}</h3>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_240px]">
-        <div className="px-5 py-5">
-          <p className="max-w-[380px] text-[15px] font-semibold leading-[1.6] text-ink-soft">
-            {description}
-          </p>
+      <div className="trophy-board relative mx-6 -mt-1 sm:mx-8">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_200px]">
+          <div className="wood-bare translate-x-2 rounded-[12px] px-4 py-3">
+            <p className="wood-deep text-[15px] font-semibold leading-[1.5]">{description}</p>
 
-          <div className="mt-5 h-[14px] w-full overflow-hidden rounded-full border-2 border-ink bg-cream">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${progressValue}%`, background: style.bar }}
-            />
+            <div className="wood-well mt-4 h-[14px] w-full overflow-hidden rounded-full">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${progressValue}%`, background: style.bar }}
+              />
+            </div>
+
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              <span className="chip wood-well wood-carved py-0.5">+{awardedXp} XP</span>
+              <span className="chip wood-well wood-carved py-0.5">{progressLabel}</span>
+            </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap justify-end gap-2">
-            <span className="chip chip-sun">+{awardedXp} XP</span>
-            <span className={`chip ${style.chip}`}>{progressLabel}</span>
+          {/*
+           * El hueco mide lo mismo que medía la imagen enmarcada, y la foto va
+           * suelta encima, centrada en él: así el tablón no cambia de tamaño
+           * aunque la foto sobresalga. La ilustración va DEBAJO del marco,
+           * girada lo mismo que su ventana; los porcentajes salen de medir esa
+           * ventana en `trophy-polaroid.webp`, así que cambian con la imagen.
+           */}
+          <div className="relative aspect-[3/2] sm:aspect-auto">
+            <div className="absolute left-1/2 top-1/2 z-20 aspect-[440/589] w-[180px] -translate-x-1/2 -translate-y-1/2">
+              <img
+                src={image}
+                alt=""
+                className="absolute left-[10.67%] top-[16.16%] h-[62.2%] w-[79%] rotate-[4.15deg] object-cover object-top"
+              />
+              <img src={trophyPolaroid} alt="" className="absolute inset-0 h-full w-full" />
+            </div>
           </div>
-        </div>
-
-        {/*
-         * Al lado del texto va absoluta, para que el alto lo marque la
-         * descripción y no la imagen. En una columna guarda proporción: una
-         * franja de alto fijo, estirada a lo ancho de una tableta, le cortaba
-         * la cara al leopardo.
-         */}
-        <div className="relative aspect-[3/2] border-t-[3px] border-line sm:aspect-auto sm:border-l-[3px] sm:border-t-0">
-          <img
-            src={image}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover object-top"
-          />
         </div>
       </div>
+
+      {/*
+       * Tapa el borde de abajo del tablón, pero la foto que sobresale va por
+       * encima de él: por eso el tronco lleva `z-10` y la foto `z-20`.
+       */}
+      <div className="trophy-log relative z-10 -mt-6 h-[84px]" aria-hidden="true" />
     </article>
   );
 };
@@ -263,6 +249,7 @@ export const StudentTrophiesModule = () => {
                 }
                 progressValue={unlocked ? 100 : trophyPercent(progress)}
                 awardedXp={achievement.awardedXp}
+                unlocked={unlocked}
                 accent={trophy.accent}
                 image={trophy.image}
               />
