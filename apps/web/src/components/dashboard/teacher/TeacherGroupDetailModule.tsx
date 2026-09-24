@@ -12,6 +12,7 @@ import { ClassroomPodium } from '../shared/ClassroomPodium';
 import { StudentRosterTable } from '../shared/StudentRosterTable';
 import { findClassGroup, getClassGroupStats } from './classroomsData';
 import { AddStudentsPanel } from './AddStudentsPanel';
+import { ExportReportMenu } from './ExportReportMenu';
 import { PendingRequestsSection } from './PendingRequestsSection';
 import {
   BackIcon,
@@ -92,11 +93,14 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
       <StoreErrorNotice error={error} />
 
       <section
-        className="card relative overflow-hidden px-5 py-5"
+        className="card relative z-10 px-5 py-5"
         style={{ background: theme.gradient }}
       >
-        <span className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/20" />
-        <span className="pointer-events-none absolute right-24 top-10 h-12 w-12 rounded-full bg-white/15" />
+        {/* El recorte va aquí y no en la tarjeta: recortaría el menú de exportar. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
+          <span className="absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/20" />
+          <span className="absolute right-24 top-10 h-12 w-12 rounded-full bg-white/15" />
+        </div>
 
         <div className="relative flex flex-wrap items-start justify-between gap-5">
           <div className="flex items-center gap-4">
@@ -134,6 +138,8 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
               <ProgressIcon />
               Ver progreso
             </button>
+
+            <ExportReportMenu group={group} />
 
             <button
               type="button"

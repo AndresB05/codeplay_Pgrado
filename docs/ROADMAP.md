@@ -1250,6 +1250,12 @@ por última vez** —decisión del usuario del 18-sep-2026, con el precedente de
 0015—. El detalle por nivel e intento sigue siendo sólo del tutor. Lo que la
 proyección doble tenga que esconder incluye ahora esas dos columnas.
 
+**Y el tutor puede sacar ese detalle de la plataforma** desde `exportar-reportes`
+(24-sep-2026): resumen y detalle por nivel en CSV y PDF, con nombre y progreso
+de cada niño. No cambia lo que el tutor ve, sólo dónde puede guardarlo, pero
+**la política tendrá que nombrar la exportación**: a partir de ahí esos datos
+viven en archivos que la plataforma no controla.
+
 **Por decidir antes de redactar:** el **correo de contacto y el domicilio** que
 figurarán en la política. **No pueden ser los personales**: este repositorio es
 público y la política se publica con la aplicación.

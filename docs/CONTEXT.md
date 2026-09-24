@@ -157,6 +157,7 @@ Entorno de referencia: **Node.js 22.17.1**, **npm 10.9.2** (`engines` exige `>=1
 | Backend | `@supabase/supabase-js` | 2.112.3 |
 | Validación | `zod` | 3.25.76 |
 | Confeti | `canvas-confetti` (+ `@types/canvas-confetti`) | 1.9.4 |
+| PDF | `jspdf` + `jspdf-autotable`, cargados bajo demanda | 4.2.1 / 5.0.8 |
 | Calidad | `eslint` 8.57.1 (config heredada) + `prettier` 3.9.6 | — |
 | Tests | `vitest` + `jsdom` + `@testing-library/react` | 3.2.7 / 30.0.1 / 16.3.2 |
 | CI | GitHub Actions (`ubuntu-latest`) | Node fijado a 22.17.1 |
@@ -734,6 +735,7 @@ con las del tutor.
 | Aceptar o rechazar solicitud; aceptar se bloquea sin cupos | ✅ | `context/ClassroomsProvider.tsx` |
 | ~~Reportes de 5 competencias con semáforo de dominio~~ | ❌ | **RETIRADO en el paso 17**, ver §2.10 |
 | Progreso real del salón, con intentos por nivel y pasos por partida | ✅ | `getClassroomProgressSummary()` en `classroomsData.ts` + `teacher/TeacherPanelModule.tsx` + `services/studentProgress.service.ts` + `hooks/useStudentProgress.ts` |
+| Exportar el reporte del salón: resumen y detalle por nivel en CSV, y los dos en un PDF | ✅ | `teacher/ExportReportMenu.tsx`, montado en `TeacherGroupDetailModule.tsx`, + `classroomReport.ts` (las filas), `classroomReportCsv.ts` y `classroomReportPdf.ts` + `getClassroomDetail()` en `services/studentProgress.service.ts` — cambio `exportar-reportes` |
 | Selector de alcance: todos los salones o uno | ✅ | `teacher/TeacherPanelModule.tsx` |
 | Asignación de misiones | ✅ | `teacher/TeacherPanelModule.tsx` + `services/missions.service.ts` — persiste en la base y obedece al selector de alcance. La capacidad entera está en §2.8, **incluida la advertencia de que una misión todavía no se puede jugar** |
 | Sumar alumnos compartiendo el ID público del salón | ✅ | `teacher/AddStudentsPanel.tsx` |
@@ -4077,7 +4079,6 @@ obliguen a nadie, ni build que copiar. Ver `DISENO-DEL-JUEGO.md` §5.
 | --- | --- | --- |
 | Envío real de invitaciones (**mitad B del paso 19**) | Elegir servicio de correo (Resend, SendGrid…) y enviarlo. Hoy el tutor comparte el enlace a mano, que es lo que hace la mitad A | P1 + **servicio contratado** |
 | Editar o archivar un salón | No existe | P1 |
-| Exportar reportes | No existe. **El dato ya está** desde el paso 17: lo que falta es sacarlo del navegador | P1 |
 | Progreso, XP y rachas reales | **El progreso y el XP están hechos**: el J9 escribe cada partida, el J10 puntúa contando el programa y concede por marca de agua, y el J11 (17-sep-2026) pone la barra por tramos de 300 con el **Nivel Explorador** y refresca el XP sin recargar. **Y desde el paso 17 el tutor los ve** (§2.10). Lo que falta es **la racha**, que no la escribe nadie: la columna «Racha» de la tabla de seguimiento enseña un cero verdadero, pero es un cero que no se va a mover hasta el paso 22 | P4 |
 | Recursos educativos con destino | Hoy son tarjetas informativas sin enlace | Contenido |
 | Abrir los cambios en OpenSpec | Convertir P1–P4 en `openspec/changes/` con `/opsx:propose` | Ninguna |

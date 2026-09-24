@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   assignMission: vi.fn(),
   getCatalog: vi.fn(),
   getDetail: vi.fn(),
+  getClassroomDetail: vi.fn(),
   /* Guarda al oyente para poder disparar un cambio como haría la base. */
   emit: null as null | (() => void),
   subscribeToAssignments: vi.fn((onChange: () => void) => {
@@ -42,6 +43,7 @@ vi.mock('../../../services/studentProgress.service', () => ({
   studentProgressService: {
     getCatalog: mocks.getCatalog,
     getDetail: mocks.getDetail,
+    getClassroomDetail: mocks.getClassroomDetail,
   },
 }));
 

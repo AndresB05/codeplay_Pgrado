@@ -18,6 +18,8 @@
     "@supabase/supabase-js": "^2.39.0",
     "blockly": "^12.5.1",
     "canvas-confetti": "^1.9.4",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0",

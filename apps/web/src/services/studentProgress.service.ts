@@ -23,6 +23,7 @@ export interface CatalogWorld {
 export interface StudentProgressService {
   getCatalog: () => ServiceResult<CatalogWorld[]>;
   getDetail: (studentId: string) => ServiceResult<StudentProgressDetail>;
+  getClassroomDetail: (groupId: string) => ServiceResult<Record<string, StudentProgressDetail>>;
 }
 
 /*
@@ -81,6 +82,22 @@ const mapAttemptRow = (row: AttemptRow): LevelAttempt => ({
   steps: row.steps,
   createdAtIso: row.created_at ?? '',
 });
+
+const groupAttemptsByLevel = (rows: AttemptRow[]): Record<string, LevelAttempt[]> => {
+  const attemptsByLevel: Record<string, LevelAttempt[]> = {};
+
+  rows.map(mapAttemptRow).forEach((attempt) => {
+    const bucket = attemptsByLevel[attempt.levelId];
+
+    if (bucket) {
+      bucket.push(attempt);
+    } else {
+      attemptsByLevel[attempt.levelId] = [attempt];
+    }
+  });
+
+  return attemptsByLevel;
+};
 
 export const studentProgressService: StudentProgressService = {
   /**
@@ -174,21 +191,72 @@ export const studentProgressService: StudentProgressService = {
       return { data: null, error: progressError(readError) };
     }
 
-    const attemptsByLevel: Record<string, LevelAttempt[]> = {};
-
-    (attempts.data ?? []).map(mapAttemptRow).forEach((attempt) => {
-      const bucket = attemptsByLevel[attempt.levelId];
-
-      if (bucket) {
-        bucket.push(attempt);
-      } else {
-        attemptsByLevel[attempt.levelId] = [attempt];
-      }
-    });
-
     return {
-      data: { levels: (progress.data ?? []).map(mapProgressRow), attemptsByLevel },
+      data: {
+        levels: (progress.data ?? []).map(mapProgressRow),
+        attemptsByLevel: groupAttemptsByLevel(attempts.data ?? []),
+      },
       error: null,
     };
+  },
+  /**
+   * El avance de todos los exploradores de un salón, en dos consultas y no en
+   * dos por explorador: es lo que pide el reporte, que necesita el salón entero
+   * de una vez. Las dos vistas ya llevan `group_id` y ya filtran por tutor.
+   *
+   * Quien no ha jugado no tiene filas y no aparece en el resultado. Decidir
+   * quién entra en el reporte le toca a quien lo construye, con el roster.
+   */
+  async getClassroomDetail(groupId: string): ServiceResult<Record<string, StudentProgressDetail>> {
+    const [progress, attempts] = await Promise.all([
+      supabase
+        .from('classroom_level_progress')
+        .select('*')
+        .eq('group_id', groupId)
+        .order('world_sort_order')
+        .order('level_sort_order'),
+      supabase
+        .from('classroom_level_attempts')
+        .select('*')
+        .eq('group_id', groupId)
+        .order('created_at'),
+    ]);
+
+    const readError = progress.error ?? attempts.error;
+
+    if (readError) {
+      return { data: null, error: progressError(readError) };
+    }
+
+    const progressByStudent: Record<string, ProgressRow[]> = {};
+    const attemptsByStudent: Record<string, AttemptRow[]> = {};
+
+    (progress.data ?? []).forEach((row) => {
+      const studentId = row.student_id ?? '';
+
+      (progressByStudent[studentId] ??= []).push(row);
+    });
+
+    (attempts.data ?? []).forEach((row) => {
+      const studentId = row.student_id ?? '';
+
+      (attemptsByStudent[studentId] ??= []).push(row);
+    });
+
+    const studentIds = new Set([
+      ...Object.keys(progressByStudent),
+      ...Object.keys(attemptsByStudent),
+    ]);
+
+    const details: Record<string, StudentProgressDetail> = {};
+
+    studentIds.forEach((studentId) => {
+      details[studentId] = {
+        levels: (progressByStudent[studentId] ?? []).map(mapProgressRow),
+        attemptsByLevel: groupAttemptsByLevel(attemptsByStudent[studentId] ?? []),
+      };
+    });
+
+    return { data: details, error: null };
   },
 };

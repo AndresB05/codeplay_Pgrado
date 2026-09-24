@@ -130,6 +130,54 @@ describe('studentProgressService.getDetail', () => {
   });
 });
 
+describe('studentProgressService.getClassroomDetail', () => {
+  it('pide las dos vistas por el salón, no por el explorador', async () => {
+    const builders: Record<string, ReturnType<typeof respondWith>> = {};
+
+    mocks.from.mockImplementation((table: string) => {
+      builders[table] = respondWith({ data: [], error: null });
+
+      return builders[table];
+    });
+
+    await studentProgressService.getClassroomDetail('g1');
+
+    expect(builders.classroom_level_progress.eq).toHaveBeenCalledWith('group_id', 'g1');
+    expect(builders.classroom_level_attempts.eq).toHaveBeenCalledWith('group_id', 'g1');
+  });
+
+  it('separa el avance de cada explorador y agrupa sus partidas por nivel', async () => {
+    stubViews(
+      [PROGRESS_ROW, { ...PROGRESS_ROW, student_id: 's2' }],
+      [
+        ATTEMPT_ROW,
+        { ...ATTEMPT_ROW, attempt_id: 'a2', steps: 32 },
+        { ...ATTEMPT_ROW, attempt_id: 'a3', student_id: 's2' },
+      ]
+    );
+
+    const { data } = await studentProgressService.getClassroomDetail('g1');
+
+    expect(Object.keys(data ?? {}).sort()).toEqual(['s1', 's2']);
+    expect(data?.s1.attemptsByLevel.l1.map((attempt) => attempt.attemptId)).toEqual(['a1', 'a2']);
+    expect(data?.s2.attemptsByLevel.l1.map((attempt) => attempt.attemptId)).toEqual(['a3']);
+    expect(data?.s2.levels).toHaveLength(1);
+  });
+
+  it('devuelve error y ningún dato si falla cualquiera de las dos vistas', async () => {
+    mocks.from.mockImplementation((table: string) =>
+      table === 'classroom_level_attempts'
+        ? respondWith({ data: null, error: { code: '42501', message: 'permission denied' } })
+        : respondWith({ data: [PROGRESS_ROW], error: null })
+    );
+
+    const { data, error } = await studentProgressService.getClassroomDetail('g1');
+
+    expect(data).toBeNull();
+    expect(error?.code).toBe('42501');
+  });
+});
+
 describe('studentProgressService.getCatalog', () => {
   const stubCatalog = (worlds: unknown[], levels: unknown[]): void => {
     mocks.from.mockImplementation((table: string) =>

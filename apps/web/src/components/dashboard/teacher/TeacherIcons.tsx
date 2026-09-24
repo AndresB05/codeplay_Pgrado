@@ -184,6 +184,19 @@ export const ProgressIcon = () => (
   </svg>
 );
 
+export const DownloadIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M12 4V15M12 15L7.5 10.5M12 15L16.5 10.5"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M5 19H19" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+  </svg>
+);
+
 export const CheckIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path

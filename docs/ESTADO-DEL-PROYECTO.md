@@ -551,6 +551,7 @@ Entorno de referencia: **Node.js 22.17.1**, **npm 10.9.2**.
 | --- | --- | --- |
 | `@supabase/supabase-js` | 2.112.3 | **En uso real.** Cliente y 12 servicios contra un proyecto conectado |
 | `zod` | 3.25.76 | Valida las variables de entorno y los formularios de acceso |
+| `jspdf` / `jspdf-autotable` | 4.2.1 / 5.0.8 | El PDF del reporte del salón. Se cargan sólo al pedir un PDF |
 
 #### Juego
 
