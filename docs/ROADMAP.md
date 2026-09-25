@@ -1262,7 +1262,7 @@ público y la política se publica con la aplicación.
 
 El texto legal citado se verificó en fuente primaria —Ley 1581 de 2012 art. 7,
 Decreto 1377 de 2013 arts. 7, 8, 10, 11, 12, 13 y 15—, pero **la lectura
-aplicada la tiene que firmar un humano competente** antes de ir a la memoria.
+aplicada la tiene que revisar el tutor asignado** antes de ir a la memoria.
 
 ### 3.5 Fecha límite para las misiones — CERRADA EL 21-SEP-2026
 
