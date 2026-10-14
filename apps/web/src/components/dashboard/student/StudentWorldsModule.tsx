@@ -12,9 +12,9 @@ import { useProgress } from '../../../hooks/useProgress';
 import { worldsService } from '../../../services/worlds.service';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
 import { pickMascotAvatar } from '../../../constants/mascotAvatars';
-import world1 from '../../../assets/brand/world-1.webp';
-import world2 from '../../../assets/brand/world-2.webp';
-import world3 from '../../../assets/brand/world-3.webp';
+import world1 from '../../../assets/brand/world-1-card.webp';
+import world2 from '../../../assets/brand/world-2-card.webp';
+import world3 from '../../../assets/brand/world-3-card.webp';
 import worldBannerChild from '../../../assets/brand/world-banner-child.webp';
 
 /*
@@ -29,6 +29,10 @@ const ALL = 'all';
  * Las ilustraciones van por orden, como la dificultad, con el mismo encuadre que
  * en la portada: la cabecera recorta una franja baja y el leopardo tiene que
  * quedar dentro. Un mundo sin ilustración conserva su degradado e icono.
+ *
+ * Son las variantes `-card`, de 1400 px: la tarjeta se pinta a 701 px como
+ * mucho hasta 1920 de ventana, y 1400 es el doble. Los originales de 2000 px
+ * siguen siendo los de la portada, que llega a pintarlos a 1127.
  */
 const WORLD_IMAGES: { src: string; position: string }[] = [
   { src: world1, position: 'object-[35%_55%]' },

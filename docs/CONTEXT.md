@@ -182,7 +182,10 @@ codeplayPGrado/
 │                             DISENO-DEL-JUEGO.md §6. `apps/game/` no existe y
 │                             ya no existirá — no hay Unity.
 │                             public/models/ guarda los 482 .glb de Kenney
-│                             (5,96 MB, CC0), con su propio README
+│                             (5,96 MB, CC0), con su propio README.
+│                             art-originals/ guarda a tamaño completo las
+│                             ilustraciones que src/assets sirve reducidas;
+│                             Vite no la empaqueta
 ├── packages/                 Código compartido — vacío (.gitkeep)
 ├── supabase/
 │   └── migrations/           29 migraciones SQL (la siembra vive en la 0012,
@@ -4781,6 +4784,33 @@ configuración plana es una tarea pendiente sin urgencia.
 `npm run build` avisa de que los chunks superan los 500 kB. Sin urgencia, pero
 conviene no perderlo de vista ahora que el juego crece. Se resolvería con
 `manualChunks` o más importaciones dinámicas por ruta.
+
+**División por rutas, 14-oct-2026.** `Dashboard` y `TeacherDashboard` se cargan
+con `lazy` en `router/AppRouter.tsx`, con el mismo `.then` que `GameSceneLoader`,
+y un único `Suspense` alrededor de `<Routes>` cuya espera es el mismo spinner de
+`PrivateRoute`, sacado a `router/RouteLoading.tsx`. **Importar cualquiera de los
+dos paneles de forma estática en otro punto los devuelve al trozo principal.**
+Medido con `vite build`: principal **712,84 → 516,96 kB** (198,79 → 144,61
+gzip); salen `Dashboard` **95,63 kB** (27,84), `TeacherDashboard` **67,17 kB**
+(20,26) y un compartido `DeleteAccountPanel` **35,38 kB** (10,51). Lo que queda
+en el principal es casi todo librería de arranque —react-dom ~127 kB, Supabase
+~215, zod ~52—; las demás páginas suman ~25 kB y no compensaba partirlas.
+
+Por pantalla, en carga en frío a 1440×900 contra `vite preview` (KiB, JS en
+gzip, imágenes y modelos tal cual): portada **1119 → 1066**, login **413 →
+360**, mundos del niño **1360 → 1345**, nivel **1056 → 1041**, panel del tutor
+**253 → 230**. El JS de la portada y del login baja de 194 a 141. **El grueso
+que queda en portada y mundos son imágenes** (913 y 1154 KiB): `world-1` se
+pinta a hasta 1127 px de ancho en la portada, así que la portada conserva los
+originales de 2000 px y la tarjeta del niño usa `world-{1,2,3}-card.webp`, de
+1400 px (2× de los 701 que alcanza hasta 1920 de ventana; webp q85): 622 →
+356 KiB en la pantalla de mundos. La regla para las demás imágenes es la misma:
+ancho máximo pintado medido, por 2; si no queda claramente por debajo del
+original, no se toca. Con ella se redujeron `world-banner-child` (235 → 139
+KiB), `signup-child` (166 → 84), `signup-tutor` (97 → 48) y `signup-form-child`
+(139 → 69); sus originales están en `apps/web/art-originals/`, con una tabla de
+medidas. `panel-backdrop`, `hero-leopard`, `login-leopard` y `leo-explains` se
+pintan a más de la mitad de su ancho y se quedan como están.
 
 **Medido el 10-sep-2026, con el J6.4 cerrado**: trozo principal **625,00 kB**
 (167,90 gzip), trozo `BlockEditor` **648,40 kB** (174,73), trozo `GameScene`

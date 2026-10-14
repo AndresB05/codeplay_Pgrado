@@ -178,7 +178,9 @@ context: |
                    en src/game/ (decidido el 4-sep-2026, ver
                    docs/DISENO-DEL-JUEGO.md §6). public/models/ guarda los
                    482 modelos .glb de Kenney (5,96 MB, CC0) con su README;
-                   van en public/ porque GLTFLoader los pide por URL
+                   van en public/ porque GLTFLoader los pide por URL.
+                   art-originals/ guarda a tamaño completo las ilustraciones
+                   que src/assets sirve reducidas; Vite no la empaqueta
   apps/game/       NO EXISTE y ya no existirá: no hay Unity
   packages/        código compartido — vacío
   supabase/        migrations/ (44 migraciones SQL; el seed vive en la 0012,
