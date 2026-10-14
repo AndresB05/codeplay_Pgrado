@@ -648,8 +648,13 @@ pueden dar se intentan igual.
 Mientras una ejecución está en curso, el sistema NO SHALL empezar otra.
 
 El sistema SHALL ofrecer, además, **devolver al personaje a la casilla de salida**
-con su orientación de partida, tanto al terminar una ejecución como durante ella
-o con ella detenida.
+con su orientación de partida **con la ejecución detenida**, sin tocar los
+bloques del lienzo. Con la ejecución **terminada** no hace falta pedirlo aparte:
+**pedir la ejecución SHALL empezar siempre desde la salida**, salvo cuando
+reanuda un recorrido detenido. Vaciar el lienzo con «Limpiar» SHALL devolverlo
+también a la salida, esté como esté la ejecución. Decidido por el usuario tras la
+prueba preliminar del 25-sep-2026: el botón «Reiniciar» repetía lo que ya hacía
+«Ejecutar».
 
 **Y SHALL ofrecer detener una ejecución en curso, que no es lo mismo.** Detenerla
 SHALL **congelar el recorrido donde va**: el personaje SHALL quedarse en la
@@ -714,7 +719,18 @@ mover a nadie y sin error.
 
 - **WHEN** se pide devolver al personaje a la salida
 - **THEN** el personaje vuelve a la casilla de salida, mirando hacia la dirección de partida
-- **AND** si había una ejecución en curso o detenida, deja de haberla
+- **AND** si había una ejecución detenida, deja de haberla
+- **AND** los bloques del lienzo siguen como estaban
+
+#### Scenario: Se vuelve a ejecutar con el recorrido terminado
+
+- **WHEN** ha terminado un recorrido y se pide ejecutar otra vez
+- **THEN** el personaje parte de la casilla de salida y recorre el programa desde el principio
+
+#### Scenario: Ya no hay botón «Reiniciar»
+
+- **WHEN** el niño mira los botones del juego
+- **THEN** ve «Ejecutar», «Detener» y «Limpiar», y ninguno se llama «Reiniciar»
 
 #### Scenario: Se detiene el recorrido a mitad
 
@@ -1626,12 +1642,15 @@ Así lo que se reanuda es siempre lo que está a la vista. Decidido por el usuar
 el 14-sep-2026.
 
 El bloqueo SHALL **decir por qué** y cómo salir de él: que el recorrido está
-detenido, que «Ejecutar» lo sigue y que «Reiniciar» deja volver a cambiar los
-bloques.
+detenido y que «Ejecutar» lo sigue. Y SHALL **ofrecer él mismo la salida para
+cambiar los bloques**: un botón «Cambiar los bloques», dentro del propio
+bloqueo, que devuelve al personaje a la salida **sin tocar el lienzo**. Desde la
+prueba preliminar del 25-sep-2026 no hay botón «Reiniciar» al que mandar, y
+«Limpiar» no sirve de salida porque se lleva los bloques.
 
-El bloqueo SHALL levantarse **al reanudar**, **al terminar** y **al devolver al
-personaje a la salida**. Mientras el recorrido está en curso sin detener, el
-lienzo NO SHALL bloquearse.
+El bloqueo SHALL levantarse **al reanudar**, **al terminar**, **al devolver al
+personaje a la salida** y **al limpiar el lienzo**. Mientras el recorrido está en
+curso sin detener, el lienzo NO SHALL bloquearse.
 
 #### Scenario: Se intenta mover un bloque con el recorrido detenido
 
@@ -1640,8 +1659,9 @@ lienzo NO SHALL bloquearse.
 
 #### Scenario: Se reinicia un recorrido detenido
 
-- **WHEN** con el recorrido detenido se devuelve al personaje a la salida
-- **THEN** los bloques se pueden volver a mover
+- **WHEN** con el recorrido detenido el niño pulsa «Cambiar los bloques» en el bloqueo
+- **THEN** el personaje vuelve a la salida y los bloques se pueden volver a mover
+- **AND** el lienzo conserva los bloques que tenía
 
 #### Scenario: Se reanuda un recorrido detenido
 
@@ -1792,7 +1812,8 @@ el recorrido se corte después: lo que decide es si el personaje llegó a pisarl
 con los pasos que tenía, no dónde acabó plantado.
 
 **Al cortarse por agotar el límite, el sistema SHALL decírselo al niño con
-palabras suyas y SHALL pedirle reiniciar** para intentarlo otra vez. NO SHALL
+palabras suyas y SHALL animarle a buscar un camino más corto y volver a
+ejecutar**, sin mandarle a ningún botón que no exista. NO SHALL
 decirle solamente que no llegó a la meta: su programa no está mal escrito, es
 demasiado largo, y son dos cosas distintas. El recorrido cortado NO SHALL poder
 reanudarse: reanudarlo regalaría los pasos que el nivel no concede.
@@ -1817,7 +1838,8 @@ jugar, como la meta sobre un hueco.
 #### Scenario: Al agotarse el máximo se le pide reiniciar
 
 - **WHEN** un recorrido se corta por agotar el máximo de pasos sin haber pisado la meta
-- **THEN** se le dice al niño que se quedó sin pasos y se le pide reiniciar para intentarlo otra vez
+- **THEN** se le dice al niño que se quedó sin pasos y se le anima a buscar un camino más corto y volver a ejecutar
+- **AND** el mensaje no nombra ningún botón «Reiniciar»
 - **AND** no se le dice sólo que no llegó a la meta
 
 #### Scenario: Un recorrido cortado no se reanuda
@@ -1969,3 +1991,77 @@ solo: es una señal de que uno de los dos recuentos se rompió.
 
 - **WHEN** termina un recorrido que no llega a la meta
 - **THEN** no se enseña ninguna puntuación
+
+### Requirement: Devolver bloques a la caja no mueve la vista del lienzo
+
+Cuando el niño devuelva a la caja un bloque o un montón de bloques encadenados,
+el sistema NO SHALL desplazar la vista del lienzo: los bloques que quedan SHALL
+seguir **en el mismo sitio de la pantalla** en que estaban antes de soltar,
+salvo el ajuste que haga falta porque el lienzo se haya quedado más corto que la
+vista. Nada de lo que queda SHALL acabar fuera de la vista por haber quitado
+otra cosa. Visto en la prueba preliminar del 25-sep-2026: los bloques que
+quedaban salían disparados hacia arriba y había que buscarlos con la barra.
+
+#### Scenario: Se devuelve a la caja un montón de varios bloques
+
+- **WHEN** el lienzo tiene tres montones separados, el niño ha bajado hasta el del medio y lo arrastra entero fuera del lienzo
+- **THEN** el montón vuelve a la caja y los otros dos se quedan donde estaban en la pantalla
+
+#### Scenario: Se devuelve a la caja un bloque suelto
+
+- **WHEN** el niño saca del lienzo un bloque sin nada encadenado debajo
+- **THEN** la vista del lienzo no se mueve
+
+#### Scenario: Se devuelven varios montones seguidos
+
+- **WHEN** el niño saca del lienzo un montón y, antes de que termine de volver a la caja, saca otro
+- **THEN** los dos vuelven a la caja y lo que queda en el lienzo sigue en el mismo sitio de la pantalla
+
+### Requirement: «Limpiar» vacía el lienzo tras confirmarlo
+
+Junto a «Ejecutar» y «Detener», el sistema SHALL ofrecer un botón **«Limpiar»**
+que **quita todos los bloques del lienzo** y devuelve al personaje a la casilla de
+salida. Ocupa el sitio del antiguo «Reiniciar». Decidido por el usuario tras la
+prueba preliminar del 25-sep-2026.
+
+**Limpiar SHALL pedir confirmación antes de borrar nada**, con palabras de niño
+que digan que se van a quitar todos los bloques. Si el niño no confirma, el
+lienzo SHALL quedarse exactamente como estaba. Perder el programa entero por un
+toque sin querer es lo que la confirmación evita.
+
+Limpiar SHALL estar **desactivado con el lienzo vacío**, porque no hay nada que
+quitar, y **mientras una ejecución está en curso** sin detener. Con el recorrido
+detenido SHALL poder pulsarse, y limpiar SHALL levantar el bloqueo.
+
+Los bloques quitados NO SHALL volver a la caja uno por uno: la caja ya los
+tiene todos, y limpiar es empezar de cero.
+
+#### Scenario: Se limpia el lienzo y se confirma
+
+- **WHEN** hay bloques en el lienzo, el niño pulsa «Limpiar» y confirma
+- **THEN** el lienzo se queda vacío, el personaje vuelve a la salida y el contador a su valor de reposo
+
+#### Scenario: Se pulsa «Limpiar» y se cancela
+
+- **WHEN** el niño pulsa «Limpiar» y cancela la confirmación, con el botón de cancelar, con Escape o tocando fuera
+- **THEN** el lienzo, el personaje y el contador siguen exactamente como estaban
+
+#### Scenario: Limpiar con el lienzo vacío
+
+- **WHEN** el lienzo no tiene ningún bloque
+- **THEN** «Limpiar» está desactivado
+
+#### Scenario: Limpiar durante una ejecución
+
+- **WHEN** hay una ejecución en curso sin detener
+- **THEN** «Limpiar» está desactivado
+
+#### Scenario: Limpiar con el recorrido detenido
+
+- **WHEN** con el recorrido detenido el niño pulsa «Limpiar» y confirma
+- **THEN** el lienzo se queda vacío, deja de haber recorrido detenido y el lienzo deja de estar bloqueado
+
+#### Scenario: Limpiar un nivel con bloques de partida
+
+- **WHEN** el nivel arrancó con bloques puestos y el niño limpia el lienzo
+- **THEN** el lienzo se queda vacío, sin volver a poner los bloques de partida
