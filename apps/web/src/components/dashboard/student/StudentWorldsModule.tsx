@@ -165,7 +165,7 @@ const WorldCard = ({ world }: { world: WorldModuleCard }) => {
       disabled={isLocked}
       onClick={() => navigate(`${ROUTES.WORLDS}/${world.id}`)}
       className={`card flex w-full flex-col overflow-hidden text-left transition-transform duration-100 ${
-        isLocked ? 'cursor-not-allowed opacity-60 grayscale' : 'hover:-translate-y-1 active:translate-y-0'
+        isLocked ? 'cursor-not-allowed grayscale' : 'hover:-translate-y-1 active:translate-y-0'
       }`}
       aria-label={isLocked ? `${world.title}: primero supera ${world.lockedBy}` : `Ingresar a ${world.title}`}
     >
