@@ -1,8 +1,9 @@
 # CodePlay
 
 Plataforma web para enseñar pensamiento computacional a niños. Proyecto de grado.
-Monorepo con npm workspaces: `apps/web` (React + TS + Vite + Tailwind),
-`supabase/` (esquema SQL) y `apps/game/` (Unity, todavía no existe).
+Monorepo con npm workspaces: `apps/web` (React + TS + Vite + Tailwind) y
+`supabase/` (esquema SQL). El juego vive dentro de la web, en
+`apps/web/src/game/` (three.js y Blockly): Unity se descartó.
 
 ## Antes de tocar nada
 
@@ -18,15 +19,18 @@ qué deuda técnica condiciona cualquier diseño nuevo.
 
 ## Estado actual
 
-El esquema de Supabase **está aplicado** en un proyecto real —salones incluidos—
-y la aplicación ya lee de él los mundos y los niveles. **El estado de salones
-sigue en `localStorage`** con datos de ejemplo: conectarlo es el paso 10.
+**La aplicación está entera sobre un backend real.** El esquema de Supabase
+está aplicado en un proyecto real (las migraciones, en `supabase/migrations/`);
+el acceso es de verdad —contraseña, Google y recuperación—; los salones viven en
+la base y se sincronizan en vivo; y los nueve niveles se juegan leyendo su
+definición de la base, con la puntuación, el XP, las rachas, los logros y las
+misiones calculados en el servidor. La prueba preliminar se hizo el 25-sep-2026
+sobre un despliegue provisional en Vercel. Lo que falta está en `docs/ROADMAP.md`.
 
-**Login real todavía no hay** —eso es el paso 12—, pero el botón «Sin login» ya
-no simula nada: **autentica de verdad** con cuentas de prueba si hay credenciales
-en `apps/web/.env`, y cae en la marca de invitado si no las hay. Sólo existe en
-desarrollo, y **está apagado para la prueba con usuarios** —él y el Laboratorio
-3D—: se enciende con `VITE_ENABLE_DEV_TOOLS=true` en `apps/web/.env`.
+El botón «Sin login» **autentica de verdad** con cuentas de prueba si hay
+credenciales en `apps/web/.env`, y cae en la marca de invitado si no las hay. Él
+y el Laboratorio 3D sólo existen en desarrollo y están apagados por defecto: se
+encienden con `VITE_ENABLE_DEV_TOOLS=true` en `apps/web/.env`.
 
 `npm run build`, `npm run lint` y `npm run test:run` pasan. No los rompas.
 
@@ -43,9 +47,9 @@ desarrollo, y **está apagado para la prueba con usuarios** —él y el Laborato
   el puntero.
 - **Huecos de la mascota** (`.mascot-slot`, `ImagePlaceholder`): se dejan
   **vacíos** hasta que existan las ilustraciones definitivas. No los rellenes.
-- **Store de salones:** ningún componente lee `localStorage` directamente, todo
-  pasa por `useClassrooms()`. `ClassroomsProvider` es el único archivo que cambia
-  de raíz al conectar Supabase. No rompas esa frontera.
+- **Store de salones:** ningún componente habla con Supabase ni con el
+  almacenamiento del navegador para los salones: todo pasa por
+  `useClassrooms()`, y `ClassroomsProvider` es la frontera. No la rompas.
 - **`types/database.types.ts` se regenera con la CLI de Supabase, nunca se edita
   a mano.** Describe el esquema real. Lanzado desde PowerShell 5.1, el `>` lo
   deja en UTF-16: si `git diff --stat` lo marca como `Bin`, pásalo a UTF-8.
