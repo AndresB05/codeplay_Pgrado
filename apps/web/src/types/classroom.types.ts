@@ -106,8 +106,8 @@ export interface ClassGroupStats {
   totalStudents: number;
   /** Cupos del salón todavía sin asignar. */
   freeSeats: number;
-  /** Niños con actividad en las últimas 24 horas. */
-  activeToday: number;
+  /** Niños con CodePlay abierto ahora mismo, según la presencia del salón. */
+  connectedNow: number;
   /** Mundo más frecuente entre los niños del salón. */
   averageWorldLabel: string;
   /** Racha más alta del salón. */

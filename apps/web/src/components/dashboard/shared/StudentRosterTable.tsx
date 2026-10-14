@@ -5,6 +5,10 @@ import type { ClassroomStudent } from '../../../types/classroom.types';
 import { XPBar } from '../../ui/XPBar';
 import { formatLastActivity } from '../teacher/classroomsData';
 import { sortRoster, type RosterSortKey } from './podiumRanking';
+import { RosterFilterBar } from './RosterFilterBar';
+import { filterRoster, NO_FILTERS, worldOptions, type RosterFilters } from './rosterFilters';
+
+const NOBODY_ONLINE: ReadonlySet<string> = new Set();
 
 const SORT_OPTIONS: { key: RosterSortKey; label: string }[] = [
   { key: 'xp', label: 'Más XP' },
@@ -68,7 +72,18 @@ export const StudentRosterTable = ({
 }: StudentRosterTableProps) => {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<RosterSortKey>('xp');
-  const sortedStudents = sortRoster(students, sortKey);
+  const [filters, setFilters] = useState<RosterFilters>(NO_FILTERS);
+
+  /*
+   * LOS FILTROS SON DEL TUTOR, y la marca que separa su vista de la del niño es
+   * la que ya existía: sólo él puede sacar a alguien del salón. Se filtra antes
+   * de ordenar, para que el orden elegido se mantenga.
+   */
+  const filterable = onRemoveStudent !== undefined;
+  const visibleStudents = filterable
+    ? filterRoster(students, filters, onlineIds ?? NOBODY_ONLINE)
+    : students;
+  const sortedStudents = sortRoster(visibleStudents, sortKey);
 
   /*
    * La columna de XP cambia de sitio según quién mira: el niño la ve junto a la
@@ -103,6 +118,15 @@ export const StudentRosterTable = ({
 
   return (
     <div>
+      {filterable && students.length > 0 ? (
+        <RosterFilterBar
+          filters={filters}
+          onChange={setFilters}
+          worlds={worldOptions(students)}
+          onClear={() => setFilters(NO_FILTERS)}
+        />
+      ) : null}
+
       <div
         role="group"
         aria-label="Ordenar exploradores"
@@ -143,6 +167,19 @@ export const StudentRosterTable = ({
           <p className="px-5 py-10 text-center text-[16px] font-semibold text-ink-faint">
             {emptyLabel}
           </p>
+        ) : sortedStudents.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <p className="text-[16px] font-semibold text-ink-faint">
+              Ningún explorador coincide con los filtros.
+            </p>
+            <button
+              type="button"
+              onClick={() => setFilters(NO_FILTERS)}
+              className="btn btn-sm btn-ghost mt-3"
+            >
+              Quitar filtros
+            </button>
+          </div>
         ) : (
           <div>
             {sortedStudents.map((student, index) => (

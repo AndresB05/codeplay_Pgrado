@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
+import { useClassrooms } from '../../../hooks/useClassrooms';
 import { useFreshClassrooms } from '../../../hooks/useFreshClassrooms';
 import { useMissionAssignments } from '../../../hooks/useMissionAssignments';
 import { useStudentProgress } from '../../../hooks/useStudentProgress';
@@ -20,6 +21,7 @@ import type {
 import type { AppError } from '../../../errors/AppError';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { StatCard } from '../shared/StatCard';
+import { MissionCompletionTable } from './MissionCompletionTable';
 import { TeacherResourceDialog } from './TeacherResourceDialog';
 import { resourceReadMinutes, teacherResources } from './teacherResources';
 import {
@@ -482,6 +484,7 @@ const AttemptSteps = ({
  */
 export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelModuleProps) => {
   useFreshClassrooms();
+  const { onlineStudentIds } = useClassrooms();
 
   const navigate = useNavigate();
 
@@ -848,38 +851,13 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
               Este salón todavía no tiene exploradores inscritos.
             </p>
           ) : (
-            <div className="card mt-4 overflow-x-auto">
-              <table className="w-full min-w-[560px] border-collapse text-left">
-                <thead>
-                  <tr className="border-b-[3px] border-line">
-                    <th className="px-5 py-4 font-display text-[15px] text-ink">Explorador</th>
-                    {assignedMissions.map((mission) => (
-                      <th key={mission.key} className="px-5 py-4 font-display text-[15px] text-ink">
-                        {mission.title}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedGroup.students.map((student) => (
-                    <tr key={student.id} className="border-b-2 border-line last:border-b-0">
-                      <td className="px-5 py-4 text-[15px] font-bold text-ink">{student.name}</td>
-                      {assignedMissions.map((mission) => {
-                        const isCompleted = completedPairs.has(`${student.id}:${mission.key}`);
-
-                        return (
-                          <td key={mission.key} className="px-5 py-4">
-                            <span className={isCompleted ? 'chip chip-mint' : 'chip chip-sun'}>
-                              {isCompleted ? 'Cumplida' : 'Pendiente'}
-                            </span>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <MissionCompletionTable
+              key={selectedGroup.id}
+              students={selectedGroup.students}
+              missions={assignedMissions}
+              completedPairs={completedPairs}
+              onlineIds={onlineStudentIds}
+            />
           )}
         </section>
       ) : null}

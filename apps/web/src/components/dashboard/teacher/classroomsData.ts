@@ -64,10 +64,15 @@ const getMostFrequentWorld = (students: ClassroomStudent[]): string => {
   return topWorld;
 };
 
-export const getClassGroupStats = (group: ClassGroup): ClassGroupStats => {
-  const activeToday = group.students.filter(
-    (student) => (student.hoursSinceLastActivity ?? Infinity) <= 24
-  ).length;
+/*
+ * Los conectados se cuentan sobre los alumnos DE ESTE salón y no sobre el
+ * conjunto: el del tutor junta la presencia de todos sus salones.
+ */
+export const getClassGroupStats = (
+  group: ClassGroup,
+  onlineIds: ReadonlySet<string> = new Set()
+): ClassGroupStats => {
+  const connectedNow = group.students.filter((student) => onlineIds.has(student.id)).length;
 
   const bestStreak = group.students.reduce(
     (best, student) => Math.max(best, student.streakDays ?? 0),
@@ -82,7 +87,7 @@ export const getClassGroupStats = (group: ClassGroup): ClassGroupStats => {
   return {
     totalStudents: group.memberCount,
     freeSeats: Math.max(group.capacity - group.memberCount, 0),
-    activeToday,
+    connectedNow,
     averageWorldLabel: getMostFrequentWorld(group.students),
     bestStreak,
   };

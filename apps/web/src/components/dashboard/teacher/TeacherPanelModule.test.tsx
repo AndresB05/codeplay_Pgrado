@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -459,8 +459,10 @@ describe('TeacherPanelModule', () => {
       renderPanel([groupWithStudents], 'g1');
 
       expect(await screen.findByText('Quién ha cumplido')).toBeInTheDocument();
-      expect(screen.getByText('Nina Prueba')).toBeInTheDocument();
-      expect(screen.getByText('Pendiente')).toBeInTheDocument();
+      const table = within(screen.getByRole('table'));
+
+      expect(table.getByText('Nina Prueba')).toBeInTheDocument();
+      expect(table.getByText('Pendiente')).toBeInTheDocument();
 
       /*
        * El aviso de que nadie podía cumplirlas se retiró con este paso: ya se
@@ -496,8 +498,57 @@ describe('TeacherPanelModule', () => {
 
       await screen.findByText('Quién ha cumplido');
 
-      expect(screen.getByText('Cumplida')).toBeInTheDocument();
-      expect(screen.getByText('Pendiente')).toBeInTheDocument();
+      const table = within(screen.getByRole('table'));
+
+      expect(table.getByText('Cumplida')).toBeInTheDocument();
+      expect(table.getByText('Pendiente')).toBeInTheDocument();
+    });
+
+    /*
+     * El estado va POR FILA: «cumplida» es tenerlas todas y «pendiente» que
+     * falte alguna. Con dos misiones, quien sólo tiene una es pendiente.
+     */
+    it('filtra por estado mirando todas las misiones de la fila', async () => {
+      const groupWithTwo: ClassGroup = {
+        ...buildGroup('g1', 'Salón A'),
+        memberCount: 2,
+        students: [
+          buildStudent({ id: 'kid-1', name: 'Nina Prueba' }),
+          buildStudent({ id: 'kid-2', name: 'Beto Prueba' }),
+        ],
+      };
+
+      mocks.listAssignments.mockResolvedValue({
+        data: [buildAssignment('g1', 'clear_world_1'), buildAssignment('g1', 'clear_world_2')],
+        error: null,
+      });
+      mocks.listCompletions.mockResolvedValue({
+        data: [
+          buildCompletion('clear_world_1', 'kid-1'),
+          buildCompletion('clear_world_2', 'kid-1'),
+          buildCompletion('clear_world_1', 'kid-2'),
+        ],
+        error: null,
+      });
+
+      renderPanel([groupWithTwo], 'g1');
+
+      await screen.findByText('Quién ha cumplido');
+
+      fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'pending' } });
+      expect(within(screen.getByRole('table')).queryByText('Nina Prueba')).not.toBeInTheDocument();
+      expect(within(screen.getByRole('table')).getByText('Beto Prueba')).toBeInTheDocument();
+
+      fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'done' } });
+      expect(within(screen.getByRole('table')).getByText('Nina Prueba')).toBeInTheDocument();
+      expect(within(screen.getByRole('table')).queryByText('Beto Prueba')).not.toBeInTheDocument();
+
+      fireEvent.change(screen.getByLabelText('Buscar por nombre'), { target: { value: 'beto' } });
+      expect(screen.getByText('Ningún explorador coincide con los filtros.')).toBeInTheDocument();
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'Quitar filtros' })[0]);
+      expect(within(screen.getByRole('table')).getByText('Nina Prueba')).toBeInTheDocument();
+      expect(within(screen.getByRole('table')).getByText('Beto Prueba')).toBeInTheDocument();
     });
 
     it('un salón sin exploradores lo dice en vez de enseñar una tabla vacía', async () => {

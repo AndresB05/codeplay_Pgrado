@@ -730,6 +730,9 @@ con las del tutor.
 | Detalle del salón con estadísticas | ✅ | `teacher/TeacherGroupDetailModule.tsx` |
 | Tabla de seguimiento (mundo, última actividad, racha) | ✅ | `shared/StudentRosterTable.tsx` — **con dato real desde el paso 17**: el mundo y la actividad salían cableados a `null` |
 | Eliminar alumno con confirmación en línea | ✅ | `shared/StudentRosterTable.tsx` |
+| **Filtros de la tabla de seguimiento**, sólo para el tutor: nombre (sin tildes ni mayúsculas), mundo —con «Sin empezar»— y actividad (conectado / inactivo), combinados; si no queda nadie, «Quitar filtros». Cambio `panel-tutor-conectados-y-filtros` (14-oct-2026) | ✅ | `shared/rosterFilters.ts` (con tests), `shared/RosterFilterBar.tsx`, `shared/StudentRosterTable.tsx` — la barra sale sólo con `onRemoveStudent`, la marca que ya separaba la vista del tutor |
+| **«Conectados ahora»** en lugar de «Activos hoy», en el detalle y en la lista de salones: cuenta la presencia en vivo, no la actividad de 24 h. Se cuenta sobre los alumnos de cada salón, porque el conjunto del tutor junta todos | ✅ | `getClassGroupStats(group, onlineIds)` en `classroomsData.ts`, `TeacherGroupDetailModule.tsx`, `TeacherGroupsModule.tsx`; `onlineStudentIds` de `useClassrooms()`, sin tocar el store |
+| **Filtros de «Quién ha cumplido»**: los mismos tres y estado **por fila** —cumplida = todas las misiones asignadas, pendiente = le falta alguna—. Cambiar de salón los vacía (la tabla lleva el salón como `key`) | ✅ | `teacher/MissionCompletionTable.tsx`, montada en `TeacherPanelModule.tsx` |
 | Eliminar salón con diálogo y recuento de afectados | ✅ | `shared/ConfirmDialog.tsx` |
 | Bandeja «Alumnos en espera» | ✅ | `teacher/PendingRequestsSection.tsx` |
 | Aceptar o rechazar solicitud; aceptar se bloquea sin cupos | ✅ | `context/ClassroomsProvider.tsx` |
@@ -743,6 +746,17 @@ con las del tutor.
 | Lista de enlaces con sus **tres** estados y purga de los caducados | ✅ | `useInvitations.ts` + `readState()` en `invitations.service.ts` |
 | Recursos educativos | 🟡 | Tarjetas informativas sin destino |
 | Ajustes de cuenta: salir y cambiar contraseña | ✅ | `teacher/TeacherSettingsModule.tsx` + `shared/ChangePasswordPanel.tsx` — desde el paso 13, ver §2.2 |
+
+**Verificado en el navegador el 14-oct-2026** (cambio `panel-tutor-conectados-y-filtros`), con
+el tutor de prueba en `http://[::1]:5174` y el niño de prueba en `localhost:5174`
+—dos orígenes, dos sesiones—: «Conectados ahora» pasa de 1 a 0 de 4 al cerrar la
+pestaña del niño y vuelve a 1 al abrirla, sin recargar, en la tarjeta y en el chip
+del salón. En la tabla: el nombre en mayúsculas y sin tilde encuentra al alumno;
+el mundo, «Sin empezar», conectado, inactivo y la combinación filtran lo que
+deben; sin coincidencias sale el aviso y «Quitar filtros» devuelve las cuatro
+filas. «Mi salón» del niño no lleva la barra. En «Quién ha cumplido», con cuatro
+misiones: «Cumplida» deja sólo a quien las tiene todas, «Pendiente» a los otros
+tres, y quitar los filtros vuelve el estado a «Todos».
 
 **Decisiones de diseño**
 

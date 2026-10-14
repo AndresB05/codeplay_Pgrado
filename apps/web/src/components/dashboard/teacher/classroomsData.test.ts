@@ -197,7 +197,7 @@ describe('buildInitials', () => {
 });
 
 describe('getClassGroupStats', () => {
-  it('calcula el total, los cupos libres, los activos, el mundo frecuente y la mejor racha', () => {
+  it('calcula el total, los cupos libres, los conectados, el mundo frecuente y la mejor racha', () => {
     const group = buildTestGroup({
       capacity: 10,
       students: [
@@ -222,16 +222,16 @@ describe('getClassGroupStats', () => {
       ],
     });
 
-    expect(getClassGroupStats(group)).toEqual({
+    expect(getClassGroupStats(group, new Set(['s1', 's3']))).toEqual({
       totalStudents: 3,
       freeSeats: 7,
-      activeToday: 2,
+      connectedNow: 2,
       averageWorldLabel: 'Mundo 2',
       bestStreak: 12,
     });
   });
 
-  it('trata al alumno sin actividad como inactivo y con racha cero', () => {
+  it('sin presencia nadie está conectado, y la racha vacía es cero', () => {
     const group = buildTestGroup({
       capacity: 5,
       students: [
@@ -247,7 +247,7 @@ describe('getClassGroupStats', () => {
     expect(getClassGroupStats(group)).toEqual({
       totalStudents: 1,
       freeSeats: 4,
-      activeToday: 0,
+      connectedNow: 0,
       averageWorldLabel: '-',
       bestStreak: 0,
     });
@@ -268,10 +268,28 @@ describe('getClassGroupStats', () => {
     expect(stats).toEqual({
       totalStudents: 0,
       freeSeats: 8,
-      activeToday: 0,
+      connectedNow: 0,
       averageWorldLabel: '-',
       bestStreak: 0,
     });
+  });
+});
+
+describe('getClassGroupStats y la presencia', () => {
+  it('no cuenta a los conectados de otros salones', () => {
+    const group = buildTestGroup({
+      students: [buildTestStudent({ id: 's1' }), buildTestStudent({ id: 's2' })],
+    });
+
+    expect(getClassGroupStats(group, new Set(['s2', 'otro-salon'])).connectedNow).toBe(1);
+  });
+
+  it('haber jugado hoy no es estar conectado', () => {
+    const group = buildTestGroup({
+      students: [buildTestStudent({ id: 's1', hoursSinceLastActivity: 1 })],
+    });
+
+    expect(getClassGroupStats(group, new Set()).connectedNow).toBe(0);
   });
 });
 

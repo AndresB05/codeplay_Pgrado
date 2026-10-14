@@ -19,13 +19,14 @@ interface TeacherGroupsModuleProps {
 
 export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModuleProps) => {
   const navigate = useNavigate();
-  const { createGroup, error } = useClassrooms();
+  const { createGroup, error, onlineStudentIds } = useClassrooms();
   const [creating, setCreating] = useState(false);
 
   const totalStudents = groups.reduce((total, group) => total + group.students.length, 0);
 
-  const totalActiveToday = groups.reduce(
-    (total, group) => total + getClassGroupStats(group).activeToday,
+  // Un niño está en un solo salón: sumar salones no lo cuenta dos veces.
+  const totalConnected = groups.reduce(
+    (total, group) => total + getClassGroupStats(group, onlineStudentIds).connectedNow,
     0
   );
 
@@ -88,8 +89,8 @@ export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModule
         />
         <StatCard
           icon={<PulseIcon />}
-          title="Activos hoy"
-          value={`${totalActiveToday} de ${totalStudents}`}
+          title="Conectados ahora"
+          value={`${totalConnected} de ${totalStudents}`}
           tone="sun"
         />
         <StatCard
@@ -116,7 +117,7 @@ export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModule
         ) : (
           <div className="mt-4 grid grid-cols-1 gap-6 xl:grid-cols-2">
             {groups.map((group) => {
-              const stats = getClassGroupStats(group);
+              const stats = getClassGroupStats(group, onlineStudentIds);
               const pending = group.pendingRequests.length;
               const theme = getGroupTheme(group.id);
 
@@ -162,10 +163,10 @@ export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModule
                       </div>
                       <div className="rounded-[16px] border-2 border-line bg-cream px-3 py-2 text-center">
                         <dt className="text-[12px] font-bold uppercase tracking-[0.04em] text-ink-faint">
-                          Activos
+                          Conectados
                         </dt>
                         <dd className="font-display text-[20px] text-mint-dark">
-                          {stats.activeToday}
+                          {stats.connectedNow}
                         </dd>
                       </div>
                       <div className="rounded-[16px] border-2 border-line bg-cream px-3 py-2 text-center">

@@ -68,7 +68,7 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
     );
   }
 
-  const stats = getClassGroupStats(group);
+  const stats = getClassGroupStats(group, onlineStudentIds);
   const theme = getGroupTheme(group.id);
   const affectedStudents = group.students.length;
   const affectedRequests = group.pendingRequests.length;
@@ -174,8 +174,8 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
         />
         <StatCard
           icon={<PulseIcon />}
-          title="Activos hoy"
-          value={`${stats.activeToday} de ${stats.totalStudents}`}
+          title="Conectados ahora"
+          value={`${stats.connectedNow} de ${stats.totalStudents}`}
           tone="sun"
         />
         <StatCard
