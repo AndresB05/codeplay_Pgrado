@@ -21,7 +21,9 @@ import type {
 import type { AppError } from '../../../errors/AppError';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { StatCard } from '../shared/StatCard';
+import { chipClass } from './chipClass';
 import { MissionCompletionTable } from './MissionCompletionTable';
+import { StudentPicker } from './StudentPicker';
 import { TeacherResourceDialog } from './TeacherResourceDialog';
 import { resourceReadMinutes, teacherResources } from './teacherResources';
 import {
@@ -653,13 +655,6 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
       ? 'Cómo van tus salones'
       : `Cómo va ${groups.find((group) => group.id === selectedGroupId)?.name ?? 'este salón'}`;
 
-  const chipClass = (active: boolean) =>
-    `rounded-full border-[3px] px-5 py-2 font-display text-[15px] transition-colors ${
-      active
-        ? 'border-ink bg-grape text-white shadow-[0_4px_0_rgba(42,27,69,0.2)]'
-        : 'border-line bg-white text-ink hover:bg-cream'
-    }`;
-
   return (
     <div className="px-5 py-5">
       <section>
@@ -752,23 +747,12 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
               Elige un explorador para ver cuánto le costó cada nivel.
             </p>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {scopedStudents.map((student) => (
-                <button
-                  key={student.id}
-                  type="button"
-                  onClick={() =>
-                    navigate(
-                      panelPath(selectedGroupId, student.id === studentId ? undefined : student.id)
-                    )
-                  }
-                  aria-pressed={student.id === studentId}
-                  className={chipClass(student.id === studentId)}
-                >
-                  {student.name}
-                </button>
-              ))}
-            </div>
+            <StudentPicker
+              key={selectedGroupId}
+              students={scopedStudents}
+              selectedId={studentId}
+              onSelect={(id) => navigate(panelPath(selectedGroupId, id))}
+            />
 
             {selectedStudent ? (
               <StudentProgressCard

@@ -352,6 +352,11 @@ El fondo de la aplicación no es un plano liso: el resplandor verde del dosel
 cayendo desde arriba, sobre una trama de lunares de `line` en `lavender`
 (`background-size: 26px 26px`).
 
+**Salvo para el tutor**: sus pantallas van sobre `lavender` liso, sin la
+ilustración del valle ni la trama (`TeacherDashboard.tsx`, desde el
+14-oct-2026). Son pantallas de trabajo para adultos y el adorno competía con las
+tablas. El niño y la portada siguen con `jungle-surface`.
+
 > El **semáforo de dominio de habilidades** (lima, sol, coral) se retiró con las
 > cinco barras de habilidades en el paso 17: ya no lo usa ninguna pantalla.
 

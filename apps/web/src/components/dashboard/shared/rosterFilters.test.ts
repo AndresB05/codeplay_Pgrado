@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { filterRoster, hasFilters, NO_FILTERS, NO_WORLD, worldOptions } from './rosterFilters';
+import {
+  filterRoster,
+  hasFilters,
+  matchesName,
+  NO_FILTERS,
+  NO_WORLD,
+  sortByName,
+  worldOptions,
+} from './rosterFilters';
 
 const student = (id: string, name: string, currentWorld: string | null) => ({
   id,
@@ -72,5 +80,55 @@ describe('hasFilters', () => {
   it('un nombre de sólo espacios no es un filtro', () => {
     expect(hasFilters({ ...NO_FILTERS, name: '   ' })).toBe(false);
     expect(hasFilters({ ...NO_FILTERS, activity: 'offline' })).toBe(true);
+  });
+});
+
+describe('matchesName', () => {
+  it('ignora tildes, mayúsculas y espacios de los lados', () => {
+    expect(matchesName('Andrés Blanco Quiñonez', ' quinonez ')).toBe(true);
+    expect(matchesName('Andrés Blanco Quiñonez', 'ANDRÉS')).toBe(true);
+    expect(matchesName('Andrés Blanco Quiñonez', 'sofia')).toBe(false);
+  });
+
+  it('una búsqueda vacía deja pasar a todos', () => {
+    expect(matchesName('Ana', '')).toBe(true);
+  });
+});
+
+describe('sortByName', () => {
+  const LIST = [
+    { name: 'beto' },
+    { name: 'Ángela' },
+    { name: 'Carla' },
+    { name: 'andrés' },
+    { name: 'Zoe' },
+  ];
+
+  it('de la A a la Z, con «Ángela» entre las A y sin contar mayúsculas', () => {
+    expect(sortByName(LIST, 'asc').map((item) => item.name)).toEqual([
+      'andrés',
+      'Ángela',
+      'beto',
+      'Carla',
+      'Zoe',
+    ]);
+  });
+
+  it('de la Z a la A es el orden contrario', () => {
+    expect(sortByName(LIST, 'desc').map((item) => item.name)).toEqual([
+      'Zoe',
+      'Carla',
+      'beto',
+      'Ángela',
+      'andrés',
+    ]);
+  });
+
+  it('no cambia la lista que recibe', () => {
+    const copy = [...LIST];
+
+    sortByName(LIST, 'asc');
+
+    expect(LIST).toEqual(copy);
   });
 });

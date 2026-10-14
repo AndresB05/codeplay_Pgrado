@@ -9,7 +9,6 @@ import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useClassrooms } from '../../hooks/useClassrooms';
 import { FALLBACK_TEACHER_NAME } from '../../services/classrooms.service';
-import { PanelBackdrop } from '../../components/decor/PanelBackdrop';
 
 export const TeacherDashboard = () => {
   const location = useLocation();
@@ -58,8 +57,12 @@ export const TeacherDashboard = () => {
     }
   };
 
+  /*
+   * FONDO LISO, a diferencia del niño: son pantallas de trabajo para adultos, y
+   * la selva ilustrada competía con las tablas. Pedido por el usuario.
+   */
   return (
-    <div className="jungle-surface min-h-screen text-ink">
+    <div className="min-h-screen bg-lavender text-ink">
       <TeacherTopBar user={user} />
 
       <div className="flex min-h-[calc(100vh-84px)]">
@@ -71,7 +74,6 @@ export const TeacherDashboard = () => {
         />
 
         <main className="relative isolate min-w-0 flex-1">
-          <PanelBackdrop />
           {renderModule()}
         </main>
       </div>

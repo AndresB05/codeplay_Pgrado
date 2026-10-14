@@ -701,6 +701,72 @@ describe('TeacherPanelModule', () => {
 
       expect(currentPath()).toBe('/teacher/panel');
     });
+    it('la «✕» del elegido lo quita de la dirección', async () => {
+      renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-1');
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Dejar de ver a Axoluk' }));
+
+      expect(currentPath()).toBe('/teacher/panel/g1');
+    });
+  });
+
+  describe('buscador de explorador', () => {
+    const BIG_GROUP: ClassGroup = {
+      ...buildGroup('g1', 'Salón A'),
+      memberCount: 3,
+      students: [
+        buildStudent({ id: 'kid-1', name: 'Axoluk' }),
+        buildStudent({ id: 'kid-2', name: 'Sofía Pérez' }),
+        buildStudent({ id: 'kid-3', name: 'Luis Gómez' }),
+      ],
+    };
+
+    it('escribir sin tilde deja sólo a quien coincide', async () => {
+      renderPanel([BIG_GROUP], 'g1');
+
+      fireEvent.change(await screen.findByLabelText('Buscar explorador'), {
+        target: { value: 'SOFIA' },
+      });
+
+      expect(screen.getByRole('button', { name: 'Sofía Pérez' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Luis Gómez' })).not.toBeInTheDocument();
+    });
+
+    it('el elegido sigue a la vista aunque la búsqueda lo deje fuera', async () => {
+      renderPanel([BIG_GROUP], 'g1', undefined, 'kid-3');
+
+      fireEvent.change(await screen.findByLabelText('Buscar explorador'), {
+        target: { value: 'sofia' },
+      });
+
+      expect(screen.getByRole('button', { name: 'Dejar de ver a Luis Gómez' })).toBeInTheDocument();
+    });
+
+    it('ordena por nombre, A-Z por defecto y Z-A al elegirlo', async () => {
+      renderPanel([BIG_GROUP], 'g1');
+
+      const names = () =>
+        screen
+          .getAllByRole('button', { pressed: false })
+          .map((button) => button.textContent)
+          .filter((name) => ['Axoluk', 'Sofía Pérez', 'Luis Gómez'].includes(name ?? ''));
+
+      await screen.findByLabelText('Buscar explorador');
+      expect(names()).toEqual(['Axoluk', 'Luis Gómez', 'Sofía Pérez']);
+
+      fireEvent.change(screen.getByLabelText('Ordenar'), { target: { value: 'desc' } });
+      expect(names()).toEqual(['Sofía Pérez', 'Luis Gómez', 'Axoluk']);
+    });
+
+    it('sin coincidencias lo dice', async () => {
+      renderPanel([BIG_GROUP], 'g1');
+
+      fireEvent.change(await screen.findByLabelText('Buscar explorador'), {
+        target: { value: 'zzz' },
+      });
+
+      expect(screen.getByText('Ningún explorador se llama así.')).toBeInTheDocument();
+    });
   });
 
   describe('recursos educativos', () => {

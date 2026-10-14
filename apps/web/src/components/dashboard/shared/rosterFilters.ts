@@ -28,15 +28,17 @@ const fold = (text: string): string =>
     .toLowerCase()
     .trim();
 
+/** Si el nombre contiene lo escrito. Una consulta vacía deja pasar a todos. */
+export const matchesName = (name: string, query: string): boolean =>
+  fold(name).includes(fold(query));
+
 export const filterRoster = <T extends Pick<ClassroomStudent, 'id' | 'name' | 'currentWorld'>>(
   students: T[],
   filters: RosterFilters,
   onlineIds: ReadonlySet<string>
 ): T[] => {
-  const name = fold(filters.name);
-
   return students.filter((student) => {
-    if (name !== '' && !fold(student.name).includes(name)) {
+    if (!matchesName(student.name, filters.name)) {
       return false;
     }
 
@@ -73,4 +75,19 @@ export const worldOptions = (
   return students.some((student) => student.currentWorld === null)
     ? [...options, { value: NO_WORLD, label: 'Sin empezar' }]
     : options;
+};
+
+export type NameOrder = 'asc' | 'desc';
+
+/*
+ * Por el nombre entero y no por apellido: el nombre es un campo libre y no hay
+ * forma fiable de saber dónde empieza el apellido. Sin distinguir tildes ni
+ * mayúsculas: «Ángela» va con las A.
+ */
+export const sortByName = <T extends { name: string }>(students: T[], order: NameOrder): T[] => {
+  const sorted = [...students].sort((a, b) =>
+    a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+  );
+
+  return order === 'asc' ? sorted : sorted.reverse();
 };
