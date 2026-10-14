@@ -25,3 +25,6 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# --- Capturas de trabajo (no se versionan) ---
+docs/capturas/
