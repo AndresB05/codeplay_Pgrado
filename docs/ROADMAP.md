@@ -143,7 +143,7 @@ dejó fuera.
 | 32 | ★ [Renombrar los mundos para que cuadren con el juego](#paso-32) | ✅ | `renombrar-mundos` |
 | 33 | ★ [Misiones que el profesor asigna, ligadas al juego](#paso-33) | ✅ | `misiones-jugables` |
 | 27.1 | ★ [Despliegue provisional para la prueba](#paso-27-1) | ✅ | **usuario** |
-| — | 🔬 [Prueba preliminar](#prueba-preliminar) | ⬜ | — |
+| — | 🔬 [Prueba preliminar](#prueba-preliminar) | ✅ | **usuario** |
 | 14 | ★ [Consentimiento del acudiente y política de privacidad](#paso-14) | 🔄 | `invitaciones-sin-correo` + §3.4 |
 | 19 | [Invitaciones: enlace canjeable (hecho) y correo real (pendiente)](#paso-19) | 🔄 | `enlace-de-invitacion` + servicio |
 | 24 | Retirar la sesión de invitado | ⬜ | — |
@@ -703,6 +703,8 @@ el 14 puede seguir detrás.
 
 **Lo que sí cambia es que habrá datos personales de terceros en un despliegue
 público**, y eso queda anotado en §2.1 como riesgo asumido, no como descuido.
+
+**HECHA el 25-sep-2026.** Dejó errores por corregir, que se abordan después.
 
 #### <a id="paso-14"></a>14 · Consentimiento del acudiente y política de privacidad
 
