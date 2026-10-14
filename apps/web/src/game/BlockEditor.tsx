@@ -118,6 +118,12 @@ interface BlockEditorProps {
   starterWorkspace: WorkspaceState;
   /* Si la caja ofrece «saltar». Como el lienzo de partida, se fija al montar. */
   withJump: boolean;
+  /*
+   * «Limpiar», ya confirmado: cada vez que cambia, el lienzo se vacía. Baja como
+   * número y no como acceso al espacio de trabajo para que ningún tipo de
+   * Blockly suba por encima de la frontera diferida.
+   */
+  clearSignal: number;
 }
 
 export const BlockEditor = ({
@@ -125,8 +131,10 @@ export const BlockEditor = ({
   flyoutHost,
   starterWorkspace,
   withJump,
+  clearSignal,
 }: BlockEditorProps) => {
   const container = useRef<HTMLDivElement>(null);
+  const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
 
   /*
    * La llamada hacia arriba viaja en una referencia para que volver a pintar el
@@ -439,6 +447,23 @@ export const BlockEditor = ({
     };
 
     /*
+     * LA VISTA NO PERSIGUE AL BLOQUE QUE SE VA A LA CAJA. Blockly 12 desplaza el
+     * lienzo hasta el bloque que recibe el foco, y lo recibe dos veces uno que
+     * sale: el propio bloque al soltarlo, fuera del lienzo, y su hijo al
+     * desecharlo, todavía con el desplazamiento del vuelo encima. Medido el
+     * 14-oct-2026: la vista se iba de 350 a 16 938 en un lienzo de 1 242 de
+     * alto, y lo que quedaba desaparecía por arriba.
+     */
+    const scrollBoundsIntoView = workspace.scrollBoundsIntoView.bind(workspace);
+    workspace.scrollBoundsIntoView = (...args) => {
+      if (inTheAir > 0 || (drop !== null && outsideCanvas(drop))) {
+        return;
+      }
+
+      scrollBoundsIntoView(...args);
+    };
+
+    /*
      * SOLTAR FUERA DEL LIENZO DEVUELVE EL BLOQUE A LA CAJA, Y SE VE VOLVER.
      *
      * Que desapareciera donde se soltó es lo que hacía la zona de borrado de
@@ -487,6 +512,12 @@ export const BlockEditor = ({
       window.setTimeout(() => {
         try {
           if (!block.isDisposed()) {
+            /*
+             * Blockly lee también el `transform` del estilo al calcular dónde
+             * está un bloque, y el del vuelo lo situaría a miles de píxeles.
+             */
+            root.style.transition = '';
+            root.style.transform = '';
             block.dispose(false);
           }
         } finally {
@@ -537,6 +568,7 @@ export const BlockEditor = ({
           outsideCanvas(drop)
         ) {
           flyBackToBox(block, drop);
+          drop = null;
         }
       }
 
@@ -588,8 +620,10 @@ export const BlockEditor = ({
       layoutBox(flyout.getContents());
     });
     observer.observe(container.current);
+    workspaceRef.current = workspace;
 
     return () => {
+      workspaceRef.current = null;
       flyoutHost.classList.remove(
         workspace.getRenderer().getClassName(),
         workspace.getTheme().getClassName(),
@@ -601,6 +635,23 @@ export const BlockEditor = ({
       workspace.dispose();
     };
   }, [flyoutHost]);
+
+  /*
+   * Al montar no: la señal empieza en su valor y no es ninguna orden. Vaciar
+   * dispara los borrados por el oyente de siempre, y con ellos sube el programa
+   * vacío; los bloques de partida no se reponen, porque limpiar es empezar de
+   * cero.
+   */
+  const lastClear = useRef(clearSignal);
+
+  useEffect(() => {
+    if (lastClear.current === clearSignal) {
+      return;
+    }
+
+    lastClear.current = clearSignal;
+    workspaceRef.current?.clear();
+  }, [clearSignal]);
 
   return <div ref={container} className="h-full w-full" />;
 };

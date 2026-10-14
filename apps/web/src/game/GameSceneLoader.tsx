@@ -77,6 +77,10 @@ interface GameSceneLoaderProps {
   /* Los dos avisos hacia arriba: si está detenido y si llegó. Sólo datos. */
   onHaltedChange?: (halted: boolean) => void;
   onFinish?: (result: LevelFinish) => void;
+  /* «Limpiar» confirmado, para que la composición vacíe el lienzo. */
+  onClear?: () => void;
+  /* Cada vez que cambia, el personaje vuelve a la salida sin tocar el lienzo. */
+  restartSignal?: number;
   /* El alto que la bandeja deja libre, para el encuadre. */
   freeHeight?: number | null;
   centerPillar?: boolean;
@@ -91,6 +95,8 @@ export const GameSceneLoader = ({
   messageHost,
   onHaltedChange,
   onFinish,
+  onClear,
+  restartSignal,
   freeHeight,
   centerPillar,
   islands,
@@ -112,6 +118,8 @@ export const GameSceneLoader = ({
         messageHost={messageHost}
         onHaltedChange={onHaltedChange}
         onFinish={onFinish}
+        onClear={onClear}
+        restartSignal={restartSignal}
         freeHeight={freeHeight}
         centerPillar={centerPillar}
         islands={islands}

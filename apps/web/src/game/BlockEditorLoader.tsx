@@ -23,6 +23,8 @@ interface BlockEditorLoaderProps {
   starterWorkspace: WorkspaceState;
   /* Si la caja ofrece «saltar»: el mundo 1 no lo lleva. */
   withJump: boolean;
+  /* Cada vez que cambia, el lienzo se vacía. Es «Limpiar», ya confirmado. */
+  clearSignal: number;
 }
 
 export const BlockEditorLoader = ({
@@ -30,6 +32,7 @@ export const BlockEditorLoader = ({
   flyoutHost,
   starterWorkspace,
   withJump,
+  clearSignal,
 }: BlockEditorLoaderProps) => (
   <Suspense
     fallback={
@@ -44,6 +47,7 @@ export const BlockEditorLoader = ({
       flyoutHost={flyoutHost}
       starterWorkspace={starterWorkspace}
       withJump={withJump}
+      clearSignal={clearSignal}
     />
   </Suspense>
 );

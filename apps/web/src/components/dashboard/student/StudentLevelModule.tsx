@@ -168,6 +168,17 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
   const [helpOpen, setHelpOpen] = useState(false);
 
   const [halted, setHalted] = useState(false);
+
+  /*
+   * Las dos órdenes que cruzan de un lado al otro de la pantalla: «Limpiar»,
+   * que confirma la escena y vacía el editor, y «Cambiar los bloques», que pide
+   * el bloqueo y devuelve al personaje. Son contadores porque lo que baja por
+   * la frontera diferida son datos.
+   */
+  const [clearSignal, setClearSignal] = useState(0);
+  const [restartSignal, setRestartSignal] = useState(0);
+  const requestClear = useCallback(() => setClearSignal((signal) => signal + 1), []);
+  const requestRestart = useCallback(() => setRestartSignal((signal) => signal + 1), []);
   const [finish, setFinish] = useState<LevelFinish | null>(null);
 
   /*
@@ -420,6 +431,8 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
             controlsHost={controlsHost}
             messageHost={messageHost}
             onHaltedChange={setHalted}
+            onClear={requestClear}
+            restartSignal={restartSignal}
             onFinish={handleFinish}
             freeHeight={trayTop}
             centerPillar={state.centerPillar}
@@ -529,10 +542,11 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
                 flyoutHost={blockBox}
                 starterWorkspace={state.level.workspace}
                 withJump={state.withJump}
+                clearSignal={clearSignal}
               />
             )}
 
-            {halted && <HaltedLock />}
+            {halted && <HaltedLock onChangeBlocks={requestRestart} />}
           </div>
 
           {/* El hueco de los tres botones, que los pinta la escena con un portal. */}

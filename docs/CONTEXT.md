@@ -1792,7 +1792,7 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/game/debugLevel.ts` | **Puro.** La rejilla de pega: 5×5, cuatro muros, un hueco, salida y meta. **No es un puzle diseñado** — los nueve los diseña el usuario y se siembran en el J7 |
 | `apps/web/src/game/movement.ts` | **Puro.** `turn`, `advance` y, desde `salto-y-alturas`, `jumpAdvance`, con `blockedBy` en `'wall' \| 'gap' \| 'edge' \| 'high' \| null`. Andando se pasa a la misma altura o más abajo; saltando se sube uno. Las dos comparten una función que sólo difiere en cuánto se puede subir. **Los reutiliza el intérprete**: nació para eso |
 | `apps/web/src/game/movement.test.ts` | Los **primeros tests del juego**: 12, contra tableros escritos en el propio test |
-| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero, el personaje, la animación con `useFrame` y **la cámara movible acotada** (`OrbitControls` de `drei`); **el contador de pasos, siempre visible**; **la superposición que dice todo lo demás** —reposo, ejecución, resultado y avisos—; y los tres botones —**«Ejecutar», «Detener» y «Reiniciar»**—, pintados **con un portal** en el hueco que baja la composición. **Desde el J7.1 el nivel LLEGA POR PROPIEDADES** —`level: LevelConfig`— y la escena no trae ninguno dentro. **Y no carga ni un modelo**: el usuario retiró los assets del J6.4, así que el tablero vuelve a ser **un cubo por casilla** —damero de dos verdes, muro, salida en azul y meta en amarillo— y se fueron `Scenery`, `Obstacles`, el `GLTFLoader` y el `Clone` de drei. **Desde `reanudar-encuadre-y-felicitaciones`**: «Ejecutar» con el recorrido detenido **lo reanuda** desde donde se quedó, sin releer el lienzo; detener **no parte un salto**; y la escena **avisa hacia arriba** con `onHaltedChange` y `onFinish` —un booleano y los dos números, nada del intento—. El encuadre ya no son números medidos a mano: `FramedView` aplica `framing.ts` con el tamaño real del lienzo y el alto libre que le mide la composición. El personaje sigue siendo el cubo. Importa `three`, `@react-three/fiber` y `@react-three/drei` |
+| `apps/web/src/game/GameScene.tsx` | La escena: `<Canvas>` con el tablero, el personaje, la animación con `useFrame` y **la cámara movible acotada** (`OrbitControls` de `drei`); **el contador de pasos, siempre visible**; **la superposición que dice todo lo demás** —reposo, ejecución, resultado y avisos—; y los tres botones —**«Ejecutar», «Detener» y «Limpiar»**, que hasta `limpiar-lienzo-y-salto-de-vista` era «Reiniciar»—, pintados **con un portal** en el hueco que baja la composición. **Desde el J7.1 el nivel LLEGA POR PROPIEDADES** —`level: LevelConfig`— y la escena no trae ninguno dentro. **Y no carga ni un modelo**: el usuario retiró los assets del J6.4, así que el tablero vuelve a ser **un cubo por casilla** —damero de dos verdes, muro, salida en azul y meta en amarillo— y se fueron `Scenery`, `Obstacles`, el `GLTFLoader` y el `Clone` de drei. **Desde `reanudar-encuadre-y-felicitaciones`**: «Ejecutar» con el recorrido detenido **lo reanuda** desde donde se quedó, sin releer el lienzo; detener **no parte un salto**; y la escena **avisa hacia arriba** con `onHaltedChange` y `onFinish` —un booleano y los dos números, nada del intento—. El encuadre ya no son números medidos a mano: `FramedView` aplica `framing.ts` con el tamaño real del lienzo y el alto libre que le mide la composición. El personaje sigue siendo el cubo. Importa `three`, `@react-three/fiber` y `@react-three/drei` |
 | `apps/web/src/game/framing.ts` | **Nuevo en `reanudar-encuadre-y-felicitaciones`. Puro.** El encuadre de partida: proyecta las esquinas de cada columna con la cámara de siempre y busca por bisección la distancia y la subida con que el tablero cabe entre la altura de los botones y la bandeja. **No deforma**: estirar la imagen a lo ancho se probó y el usuario lo retiró al verlo. Un tablero **plano con huecos** no se acerca más que el mismo rectángulo lleno, que es lo que aleja el 2 y el 3 del mundo 1. Medido a 1440 px: 11,41 · 15,5 · 15,5 en el mundo 1 y 11,42 · 13,47 · 17,01 en el mundo 2 |
 | `apps/web/src/game/fall.ts` | **Nuevo en `paso-del-coyote`. Puro.** Cuánto dura un paso y a qué altura va el personaje mientras dura. Al **bajar** se queda arriba media casilla y sólo entonces cae, con **gravedad** —`FALL_GRAVITY`, el único número que toca ajustar—, así que **el paso se alarga lo que la caída tarde**; **subir y llano siguen siendo rectas**. `COYOTE_AIR` es 0,5 porque **ahí está el borde**, no por gusto. Dueño de `STEP_SECONDS`, que se mudó aquí desde la escena. Sin `three` |
 | `apps/web/src/game/fall.test.ts` | **Nuevo en `paso-del-coyote`.** 13 casos: la duración de cada caída, que la gravedad es la misma en todas, y uno que fija **el número que la recta daba antes** en el punto donde cortaba el bloque — si alguien vuelve a poner la recta, cae |
@@ -1805,7 +1805,7 @@ esos pasos en XP es el servidor, en el J10.
 | `apps/web/src/game/levelSolutions.test.ts` | **Nuevo en el J7.2.** El `optimalSteps` de cada nivel sembrado, **comprobado en las dos direcciones** y leído de su migración: la solución a mano llega a la meta con ese número, y una búsqueda del mínimo sobre (casilla, orientación) no encuentra ningún programa más corto. Es lo único del sistema que valida ese número. Desde `salto-y-alturas` la búsqueda **salta a coste 2**, así que es Dijkstra y no anchura. **Y ya cazó un error de verdad**: el nivel 2 del mundo 2 se contó a mano en 17 y tenía un atajo de 15, antes de sembrarse |
 | `apps/web/src/components/dashboard/student/StudentLevelModule.tsx` | **Nuevo en el J7.1.** La pantalla de nivel, la primera de producto que monta el juego: lee la fila por su id, la comprueba con `openLevel`, y o monta el juego o enseña el rechazo del §7 **con palabras de niño**. Las instrucciones salen de la `narrative` de la fila. Posee la misma composición que el J6.3 ensayó en el laboratorio. **Desde `reanudar-encuadre-y-felicitaciones`**: mide dónde empieza la bandeja para el encuadre, **bloquea el lienzo y la caja** con el recorrido detenido, busca **el nivel siguiente del mundo** y abre **la ventana de felicitaciones** al llegar a la meta. **Ya no calca al laboratorio**: la caja de bloques va en la bandeja de abajo, repartidos a lo ancho en una fila (`BlockEditor` pasa a fila cuando su hueco es más ancho que alto, y sin «saltar» —mundo 1— los pinta a tamaño de lienzo), el lienzo ocupa la columna derecha con los botones debajo y su barra empieza y se queda arriba (`TopAnchoredMetrics` quita el margen que Blockly deja por encima), y las instrucciones son un único botón que empieza cerrado como «?» bajo «Vista inicial» y se abre y se cierra tocándolo |
 | `apps/web/src/components/dashboard/student/LevelCompleteDialog.tsx` | **Nuevo en `reanudar-encuadre-y-felicitaciones`.** La felicitación al llegar a la meta, **siempre**, con los pasos usados y los de la mejor solución: «¡Nivel perfecto!» o «¡Nivel completado!» con un reto de menos pasos. **«Salir al mundo»**, **«Volver a intentar»** —la pantalla vuelve a montar la escena y los bloques se quedan— y **«Siguiente nivel»**, que no se pinta en el último del mundo. **Enseña la puntuación de la partida y el XP concedido**, desde el J10: la puntuación al instante —el cliente la calcula con la misma regla que el servidor— y el XP cuando llega la respuesta, sin número ninguno si el guardado falló. Volver a superar sin mejorar la marca lo dice con palabras en vez de con un «+0». Sin mascota. Escape la cierra |
-| `apps/web/src/components/dashboard/student/HaltedLock.tsx` | **Nuevo en `reanudar-encuadre-y-felicitaciones`.** La capa que se come el puntero sobre el lienzo y la caja con el recorrido detenido. No pasa Blockly a sólo lectura porque eso se decide al inyectar |
+| `apps/web/src/components/dashboard/student/HaltedLock.tsx` | **Nuevo en `reanudar-encuadre-y-felicitaciones`.** La capa que se come el puntero sobre el lienzo y la caja con el recorrido detenido. No pasa Blockly a sólo lectura porque eso se decide al inyectar. **Desde `limpiar-lienzo-y-salto-de-vista`** la del lienzo lleva el botón «Cambiar los bloques» |
 | `apps/web/src/components/dashboard/student/nextLevel.ts` | **Nuevo en `reanudar-encuadre-y-felicitaciones`. Puro.** `nextLevelId`: el nivel de orden inmediatamente mayor del mismo mundo, o `null`. Con su test de 4 casos |
 | `apps/web/src/components/dashboard/student/submitAttempt.ts` | **Nuevo en el J9.** La traducción del anfitrión: de una partida terminada a las **dos** llamadas del apéndice del contrato. `attemptRecord` es puro y decide el estado —`completed` al superar, **`in_progress` al fallar**, decisión del usuario del 17-sep-2026— y arma el sobre y las observaciones; `submitAttempt` dispara las dos escrituras y **hace las dos aunque la primera falle**. Vive aquí y no en `game/` porque el juego no habla con el servidor |
 | `apps/web/src/components/dashboard/student/submitAttempt.test.ts` | **Nuevo en el J9.** 6 casos sobre `attemptRecord`: superado, fallado, sin pasos, la meta pisada antes de agotar el máximo, el sobre con su versión y las observaciones |
@@ -3436,6 +3436,46 @@ un programa de 15 pasos baja 10 → 8 → 6 → 4 → 3 → 1 → **0** y el per
 planta en **columna 3, fila 1**, con «Te quedaste sin pasos…»; el lienzo sigue
 editable y «Ejecutar» vuelve a empezar desde 10. Sin `stepLimit`, la píldora
 vuelve a decir **«Pasos: 0»**. El apaño del laboratorio se revirtió.
+
+#### «Limpiar» y el salto de la vista, con `limpiar-lienzo-y-salto-de-vista` (14-oct-2026)
+
+Dos cosas que salieron de la prueba preliminar del 25-sep-2026.
+
+**El salto de la vista.** Al devolver a la caja un montón de varios bloques, la
+vista del lienzo se iba miles de píxeles abajo y lo que quedaba desaparecía por
+arriba. **Causa medida:** `flyBackToBox` pinta el vuelo con `style.transform`
+sobre el SVG del propio bloque, y Blockly 12 lee ese estilo al calcular
+posiciones; al desechar el bloque, su `FocusManager` pasa el foco al hijo y
+`onNodeFocus` → `scrollBoundsIntoView` lleva la vista hasta él. Con tres montones
+y la vista en el del medio, `viewTop` pasaba de 350 a **16 938** en un lienzo de
+1 242. Un bloque suelto también la movía, menos: 93 px, por el foco al soltar.
+**Arreglo** en `apps/web/src/game/BlockEditor.tsx`: `scrollBoundsIntoView` se
+sobrescribe en la instancia y no hace nada con un bloque soltado fuera del lienzo
+o en vuelo, y el vuelo se quita antes del `dispose`.
+
+**«Reiniciar» pasa a «Limpiar».** «Ejecutar» ya empieza siempre desde la salida
+—salvo al reanudar—, así que el botón no hacía nada propio. Ahora pide
+confirmación con `ConfirmDialog` —por portal a `document.body`— y vacía el
+lienzo sin reponer los bloques de partida; se desactiva con el lienzo vacío y con
+el recorrido en marcha. Vaciar viaja como dato: `GameScene` llama a `onClear`, la
+composición sube un contador `clearSignal` y `BlockEditor` hace
+`workspace.clear()` cuando cambia. **El recorrido detenido** perdió su salida con
+el botón, y el usuario eligió que la ofrezca el bloqueo: `HaltedLock` lleva
+«Cambiar los bloques», que sube `restartSignal` y la escena llama a `reset()`
+conservando los bloques. Archivos: `GameScene.tsx`, `GameSceneLoader.tsx`,
+`BlockEditor.tsx`, `BlockEditorLoader.tsx`, `HaltedLock.tsx`,
+`StudentLevelModule.tsx` y `StudentGameLabModule.tsx`.
+
+**Verificado en el navegador** (dev, 1440×900), con un guion que arrastra con
+eventos de puntero: montón, bloque suelto y dos montones seguidos dejan `viewTop`
+en 350 y lo que queda en su sitio de pantalla, en la pantalla de nivel y en el
+laboratorio. «Limpiar»: desactivado con el lienzo vacío y durante la ejecución;
+Escape, «No, dejarlos» y tocar fuera no tocan nada; confirmar vacía el lienzo,
+vuelve el texto de lienzo vacío y el contador a 0. Detenido: «Cambiar los
+bloques» deja los seis bloques y el contador a 0; «Limpiar» detenido vacía y
+levanta el bloqueo. **No verificado en un nivel con bloques de partida**, porque
+ninguno sembrado los trae: que no se repongan sale del código, que sólo los carga
+al montar.
 
 ### 2.10 El panel del tutor, sobre progreso real (pasos 17 y 31)
 

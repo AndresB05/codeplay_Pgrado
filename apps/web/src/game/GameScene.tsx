@@ -12,6 +12,7 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { ConfirmDialog } from '../components/dashboard/shared/ConfirmDialog';
 import {
   Box3,
   MeshStandardMaterial,
@@ -156,10 +157,10 @@ const StopIcon = () => (
   </svg>
 );
 
-const ReloadIcon = () => (
+const ClearIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path
-      d="M20 12a8 8 0 1 1-2.6-5.9M20 3.5V9h-5.5"
+      d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"
       stroke="currentColor"
       strokeWidth="2.4"
       strokeLinecap="round"
@@ -962,6 +963,17 @@ interface GameSceneProps {
    */
   onFinish?: (result: LevelFinish) => void;
   /*
+   * «Limpiar» confirmado. El lienzo no es de la escena, así que lo vacía la
+   * composición; aquí sólo se devuelve al personaje a la salida.
+   */
+  onClear?: () => void;
+  /*
+   * «Cambiar los bloques», desde el bloqueo del recorrido detenido. El bloqueo
+   * es de la composición, así que la orden baja como un número que cambia: un
+   * dato cruza la frontera diferida, una función de la escena no subiría.
+   */
+  restartSignal?: number;
+  /*
    * El alto del juego que la bandeja del lienzo deja libre al abrir, en píxeles
    * desde arriba. Lo mide la composición, que es quien pone la bandeja; sin
    * medida todavía, se encuadra en el alto entero.
@@ -1031,7 +1043,7 @@ const OUTCOME_MESSAGES = {
   idle: 'Coloca bloques y pulsa «Ejecutar» para ver al personaje moverse.',
   running: 'Ejecutando el programa…',
   stopped:
-    'Has detenido el recorrido. Pulsa «Ejecutar» para seguir o «Reiniciar» para cambiar los bloques.',
+    'Has detenido el recorrido. Pulsa «Ejecutar» para seguir o «Cambiar los bloques» para tocar tu programa.',
   empty: 'No hay bloques que ejecutar. Arrastra alguno al lienzo.',
   unreadable: 'Ese programa no se puede leer.',
 };
@@ -1057,12 +1069,13 @@ const LOOSE_BLOCKS_NOTICE = 'Tienes bloques sueltos: sólo se ejecutará el mont
 
 /*
  * Un recorrido cortado por el máximo NO se reanuda —eso regalaría los pasos que
- * el nivel no da—, así que el texto manda a «Reiniciar» y no a «Ejecutar». Es la
- * diferencia con el recorrido detenido, que se parece y no es lo mismo: aquél lo
- * para el niño y sigue donde iba; éste lo para el nivel y se acabó.
+ * el nivel no da—: «Ejecutar» lo empieza de cero desde la salida, y por eso el
+ * texto pide acortar el camino antes de pulsarlo. Es la diferencia con el
+ * recorrido detenido, que se parece y no es lo mismo: aquél lo para el niño y
+ * sigue donde iba; éste lo para el nivel y se acabó.
  */
 const OUT_OF_STEPS_MESSAGE =
-  'Te quedaste sin pasos y el personaje no puede seguir. Pulsa «Reiniciar» y busca un camino más corto.';
+  'Te quedaste sin pasos y el personaje no puede seguir. Busca un camino más corto y vuelve a pulsar «Ejecutar».';
 
 /*
  * Gastar MENOS pasos que `optimalSteps` también es perfecto, y lleva texto
@@ -1107,6 +1120,8 @@ export const GameScene = ({
   messageHost,
   onHaltedChange,
   onFinish,
+  onClear,
+  restartSignal = 0,
   freeHeight = null,
   centerPillar = false,
   islands = false,
@@ -1152,6 +1167,8 @@ export const GameScene = ({
   const nextStep = step !== null && run !== null ? (run.steps[index + 1] ?? null) : null;
   const pose = run === null || index === 0 ? config.start : run.steps[index - 1].pose;
   const isRunning = step !== null;
+  const emptyCanvas = program === null || Object.keys(program.workspace).length === 0;
+  const [confirmingClear, setConfirmingClear] = useState(false);
 
   // Los pasos DADOS. La cuenta vive fuera para poder probarla sin WebGL.
   const steps = stepsTaken(run, index, isRunning);
@@ -1286,6 +1303,26 @@ export const GameScene = ({
     setIndex(0);
     setHalted(false);
   }, []);
+
+  const clear = useCallback(() => {
+    setConfirmingClear(false);
+    reset();
+    onClear?.();
+  }, [reset, onClear]);
+
+  const cancelClear = useCallback(() => setConfirmingClear(false), []);
+
+  // Al montar no: la señal empieza en su valor y no es ninguna orden.
+  const lastRestart = useRef(restartSignal);
+
+  useEffect(() => {
+    if (lastRestart.current === restartSignal) {
+      return;
+    }
+
+    lastRestart.current = restartSignal;
+    reset();
+  }, [restartSignal, reset]);
 
   // La vista de partida la guardan los propios controles al montarse.
   const resetView = useCallback(() => controls.current?.reset(), []);
@@ -1468,13 +1505,33 @@ export const GameScene = ({
             <button
               type="button"
               className="btn btn-sm btn-ghost flex-col gap-0.5 px-3 leading-none"
-              onClick={reset}
+              onClick={() => setConfirmingClear(true)}
+              disabled={emptyCanvas || isRunning}
             >
-              <ReloadIcon />
-              Reiniciar
+              <ClearIcon />
+              Limpiar
             </button>
           </div>,
           controlsHost
+        )}
+
+      {/*
+       * Al cuerpo del documento y no junto a los botones: un `fixed` dentro de
+       * un ancestro con `transform` o `backdrop-filter` deja de cubrir la
+       * pantalla, y la columna del lienzo lleva los dos cerca.
+       */}
+      {confirmingClear &&
+        createPortal(
+          <ConfirmDialog
+            title="¿Quitar todos los bloques?"
+            confirmLabel="Sí, quitar todo"
+            cancelLabel="No, dejarlos"
+            onConfirm={clear}
+            onCancel={cancelClear}
+          >
+            Se borrarán todos los bloques del lienzo y tendrás que empezar de nuevo.
+          </ConfirmDialog>,
+          document.body
         )}
     </div>
   );

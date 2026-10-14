@@ -133,6 +133,17 @@ export const StudentGameLabModule = () => {
   // Detenido, el lienzo se bloquea igual que en la pantalla de nivel.
   const [halted, setHalted] = useState(false);
 
+  /*
+   * Las dos órdenes que cruzan de un lado al otro de la pantalla: «Limpiar»,
+   * que confirma la escena y vacía el editor, y «Cambiar los bloques», que pide
+   * el bloqueo y devuelve al personaje. Son contadores porque lo que baja por
+   * la frontera diferida son datos.
+   */
+  const [clearSignal, setClearSignal] = useState(0);
+  const [restartSignal, setRestartSignal] = useState(0);
+  const requestClear = useCallback(() => setClearSignal((signal) => signal + 1), []);
+  const requestRestart = useCallback(() => setRestartSignal((signal) => signal + 1), []);
+
   // Dónde empieza la bandeja al abrir, para el encuadre: igual que en la pantalla de nivel.
   const [trayTop, setTrayTop] = useState<number | null>(null);
   const measureTray = useCallback((node: HTMLDivElement | null) => {
@@ -230,6 +241,8 @@ export const StudentGameLabModule = () => {
             controlsHost={controlsHost}
             messageHost={messageHost}
             onHaltedChange={setHalted}
+            onClear={requestClear}
+            restartSignal={restartSignal}
             freeHeight={trayTop}
             islands
           />
@@ -321,10 +334,11 @@ export const StudentGameLabModule = () => {
                     flyoutHost={blockBox}
                     starterWorkspace={{}}
                     withJump
+                    clearSignal={clearSignal}
                   />
                 )}
 
-                {halted && <HaltedLock />}
+                {halted && <HaltedLock onChangeBlocks={requestRestart} />}
               </div>
             </div>
           </div>
