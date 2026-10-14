@@ -131,10 +131,25 @@ migración 0012 y se aplica como todo lo demás.
       porque ya está aplicada; **que la recoja la próxima migración que toque
       esta función.**
 
-> **Faltan las entradas de la 0019 y la 0020**, que aplicaron los pasos 28 y 16 y
-> nunca llegaron aquí. Están descritas en `docs/CONTEXT.md` §2.7 y §2.8. Se anota
-> en vez de rellenarse: escribirlas ahora sería documentar de oídas el trabajo de
-> otros dos pasos.
+19. `202606030019_bound_generated_username.sql`
+    - Reemplaza `handle_new_user_profile`. **Por qué.** El `username` derivado
+      del correo abortaba el alta entera: la 0002 exige `^[a-z0-9_]{3,30}$` y la
+      función sólo descartaba la cadena vacía, así que `ab@gmail.com` —o un
+      correo de más de 30 caracteres antes de la arroba— respondía «Database
+      error saving new user», con contraseña y con Google.
+    - Cede la derivación, no el formato: el nombre que no encaja pasa a `null`,
+      como ya pasaba con el duplicado. Truncar o rellenar habría inventado un
+      nombre que nadie eligió y que podía chocar con otro.
+    - Mismo cuerpo que la 0018; la única diferencia es la derivación.
+
+20. `202606030020_create_mission_assignments.sql`
+    - Tabla `mission_assignments`: una misión asignada a un **salón**, no a un
+      tutor. Único por `(group_id, mission_key)`, porque la misma misión en dos
+      salones es lo normal.
+    - Lectura para el tutor del salón y sus miembros; alta y baja sólo para el
+      tutor, que debe mandar `assigned_by` igual a `auth.uid()`.
+    - `mission_key` nació como texto sin clave ajena, porque el catálogo vivía en
+      el cliente. La 0044 le puso la clave ajena al crear `mission_catalog`.
 
 21. `202606030021_publish_realtime_tables.sql`
     - Añade `join_requests`, `class_memberships` y `mission_assignments` a la
@@ -355,6 +370,139 @@ migración 0012 y se aplica como todo lo demás.
       las marcas más los logros. Los valores anteriores están en
       `docs/CONTEXT.md` §2.7.
 
+34. `202606030034_create_classroom_progress_views.sql`
+    - **El progreso del salón, leíble por su tutor (paso 17).** Tres vistas de
+      sólo lectura: `classroom_level_progress`, `classroom_student_activity` y
+      `classroom_level_attempts`. Ninguna tabla, política ni `grant` de tabla.
+    - Sin ellas el tutor veía cero filas de progreso: `user_progress_select_own`
+      es `auth.uid() = user_id`. Se concede por vista y no ampliando políticas
+      por lo mismo que la 0015: una política que cruzara a `class_memberships`
+      reabría el ciclo que arregló la 0014.
+    - **Ninguna declara `security_invoker`**, a propósito: el filtro de a quién
+      alcanza cada una va escrito dentro, y es lo primero que hay que revisar.
+      El linter las marcará como `security_definer_view`.
+    - **El alcance no se recorta por `joined_at`** (decisión del usuario): el
+      tutor ve también lo que el niño jugó antes de entrar al salón.
+
+35. `202606030035_fix_progress_view_access.sql`
+    - **Dos arreglos de la 0034, medidos.** Pedir `steps` respondía `42501`: una
+      vista sin `security_invoker` sortea la RLS de las tablas, pero el
+      `execute` de una función se comprueba contra quien consulta.
+    - Concede `execute` de `count_block_chain` y `count_program_steps` a
+      `authenticated` en vez de hacerlas `security definer`: reciben texto y
+      devuelven un número, sin tocar tablas, y el cliente ya hace el mismo
+      cálculo. `anon` sigue fuera.
+    - Rehace `classroom_student_activity`.
+
+36. `202606030036_streaks_and_achievements.sql`
+    - **Rachas y logros (paso 22).** Tabla `achievement_catalog`, leíble por
+      `authenticated`, con **veinte logros**: nueve «Perfecto» de nivel, tres de
+      mundo y «Maestro Explorador» (todo al 100), cuatro de acción que se leen
+      del programa y exigen llegar a la meta, y tres de racha (3, 7 y 30 días).
+    - `profiles.last_streak_day`: el día de Colombia de la última partida
+      superada. Sin ella `current_streak` no distingue días seguidos de sueltos.
+    - Funciones de lectura del programa (`count_jump_blocks`,
+      `max_consecutive_right_turns`, `executed_root_block`) y dos `security
+      definer` sin `execute` para nadie: `touch_streak` y `award_achievements`.
+      `achievements` sigue sin `grant insert`: sólo escriben ellas.
+    - Reescribe `submit_level_attempt` y `upsert_my_progress`, que pierde el
+      parámetro de estrellas. **Lo único que el servidor se cree sin comprobar**
+      es `is_success`: verificarlo exigiría el motor del juego en SQL. Los cuatro
+      logros de partida exigen por eso un intento con éxito de ese nivel.
+    - **Rompió el guardado de partidas**: lo arreglan la 0038 a la 0042.
+
+37. `202606030037_roster_streak_day.sql`
+    - Añade `last_streak_day` a `classroom_roster`. La racha sólo se recalcula al
+      jugar, así que un 3 de hace una semana sigue escrito; sin la fecha, la
+      tabla del salón enseñaría rachas muertas como vivas.
+
+38. `202606030038_fix_attempt_submission.sql`
+    - **Sin ella ninguna partida se guardaba** (`42883`). La 0036 reescribió
+      `submit_level_attempt` de memoria: llamaba a `count_program_steps` con
+      `::jsonb` cuando recibe `text`, y escribía el intento con un `insert` que
+      se saltaba el acotado de `create_level_attempt`.
+    - Generada desde el texto de la 0033. **La lección:** una función que ya
+      existe se reescribe partiendo de su texto y se compara antes de aplicar.
+
+39. `202606030039_surface_award_errors.sql`
+    - El `exception when others` que protege la partida se tragaba el motivo de
+      que no llegaran logros. Ahora viaja en la respuesta, en
+      `achievements_error`. **No es depuración que se retire**: si vuelve a
+      fallar, el síntoma será el mismo.
+
+40. `202606030040_fix_award_keys.sql`
+    - Dos fallos que la 0039 destapó. `earned_keys || 'perfect_all'` es ambiguo
+      y PostgreSQL lo leía como `text[]` (`22P02`): pasa a `array_append` en las
+      diez claves, no sólo en las rotas.
+    - La respuesta mentía sobre la racha: el bloque `exception` revertía lo que
+      `touch_streak` había escrito. Racha y logros van ahora en **dos bloques
+      protegidos separados**.
+
+41. `202606030041_award_from_full_history.sql`
+    - Los logros de nivel, mundo y todo salen del **historial entero**, no sólo
+      del nivel de esa partida. Antes se podía tener «Maestro Explorador» con dos
+      de los nueve «Perfecto». `perfect_all` pregunta si queda algún nivel
+      publicado por debajo de 100.
+
+42. `202606030042_restore_completed_guard.sql`
+    - Devuelve a `upsert_my_progress` el `if completion_status = 'completed'` que
+      la 0036 perdió. Por el camino normal no cambiaba nada; por la llamada
+      directa, que sigue concedida a `authenticated`, pagaba XP con el nivel en
+      `in_progress`.
+
+43. `202606030043_rename_worlds.sql`
+    - **Los tres mundos cambian de nombre**, descripción, `region_label` y
+      `slug`: Sendero de los Patrones, Cordillera de la Abstracción y
+      Encrucijada de las Decisiones, por los pilares del pensamiento
+      computacional. Los nombres viejos prometían lo que los cuatro bloques del
+      juego no permiten practicar.
+    - Un `update`, no reescribir la siembra de la 0012, que ya está aplicada.
+      También retoca los títulos de los logros de mundo. **Ninguna clave se
+      rompe**: salen del `sort_order`, no del nombre.
+
+44. `202606030044_playable_missions.sql`
+    - **Las misiones se pueden cumplir.** Tabla `mission_catalog` con **cuatro**:
+      superar cada uno de los tres mundos y «Ni un paso de más» (tres niveles
+      cualesquiera al 100). La clave de mundo lleva su **orden**
+      (`clear_world_N`), no su id. Pocas y cumplibles, por decisión del usuario.
+    - `mission_assignments.mission_key` pasa a ser clave ajena al catálogo. El
+      `delete` de claves huérfanas va antes del `alter`.
+    - Tabla `mission_completions`, una fila por niño y misión para siempre, con
+      el salón guardado y no derivado: si el niño cambia de salón, lo cumplido
+      no desaparece de los informes. Sin `grant insert`, como `achievements`.
+    - `award_missions` (`security definer`, sin `execute` para nadie),
+      `assign_mission_to_groups` para el tutor, y `submit_level_attempt` con las
+      misiones en un **tercer** bloque protegido.
+
+45. `202606030045_delete_my_account.sql`
+    - `delete_my_account()`: cada usuario borra su propia cuenta desde Ajustes.
+      Basta con borrar de `auth.users`, porque todo lo que cuelga de un usuario
+      va con `on delete cascade`. Lee `auth.uid()` dentro y no admite parámetro:
+      sólo alcanza a la cuenta propia.
+
+46. `202606030046_last_seen.sql`
+    - `profiles.last_seen_at` y `touch_last_seen()`, que el cliente llama al
+      entrar, al volver a la pestaña y cada 5 minutos. Un minuto de margen para
+      no escribir en cada llamada. Añade la columna al final de
+      `classroom_roster`: «última actividad» cuenta también entrar a mirar, no
+      sólo jugar.
+
+47. `202606030047_mission_due_date.sql`
+    - `mission_assignments.due_date`, un **día** de Colombia y no un instante:
+      la misión vale hasta el final de ese día, o sin límite.
+    - Al vencer **se retira sola sin borrar nada**: la política de lectura la
+      oculta y `award_missions` no la mira, todo a través de una única
+      `mission_assignment_is_active`. Reasignarla le pone fecha nueva; quien ya
+      la cumplió no vuelve a cobrarla.
+
+48. `202606030048_world_intros_seen.sql`
+    - `profiles.seen_world_intros uuid[]` y `mark_world_intro_seen(uuid)`: qué
+      explicaciones de mundo ha visto cada niño, para que Leo no salga dos veces.
+      **Por cuenta y no en el navegador**, porque los equipos del aula son
+      compartidos. Por id de mundo, no por `slug`, que la 0043 renombró.
+    - Se anota al cerrar la explicación y no devuelve nada: con `StrictMode`, la
+      pregunta «¿era la primera vez?» se haría dos veces.
+
 ## Cómo aplicarlo
 
 Si ya tienes el proyecto Supabase enlazado con la CLI. **Va con `npx`**: la CLI
@@ -365,7 +513,7 @@ hay ninguna instalada en el PATH, así que el comando a secas no corre.
 npx supabase db push
 ```
 
-Para reiniciar en local, aplicando de nuevo las treinta y tres migraciones
+Para reiniciar en local, aplicando de nuevo las cuarenta y ocho migraciones
 —siembra incluida—:
 
 ```sh
@@ -392,5 +540,6 @@ sólo aparecía al insertar, nunca al leer, y por eso pasó dos revisiones.
 
 - Las tablas con datos sensibles no aceptan escrituras directas desde el cliente.
 - Las escrituras principales quedan encapsuladas en RPCs para reducir manipulación directa.
-- `achievements` queda solo de lectura para el cliente autenticado; su otorgamiento debería venir de lógica segura adicional si más adelante añades Edge Functions o SQL controlado.
+- `achievements` y `mission_completions` son de solo lectura para el cliente: sólo escriben `award_achievements` y `award_missions`, `security definer` y sin `execute` para nadie, llamadas desde `submit_level_attempt`.
+- Lo único que el servidor se cree sin comprobar es si la partida llegó a la meta (`is_success`): verificarlo exigiría el motor del juego en SQL.
 - La vista `leaderboard_weekly` expone solo campos seguros para ranking semanal.
