@@ -1689,7 +1689,32 @@ La ventana SHALL ofrecer **tres botones**:
 - **«Siguiente nivel»**, que abre el nivel con el orden siguiente **del mismo
   mundo**, empezando de cero: lienzo, personaje y contador.
 
-En el **último nivel de un mundo**, «Siguiente nivel» NO SHALL aparecer.
+En el **último nivel de un mundo**, «Siguiente nivel» NO SHALL aparecer. En su
+sitio la ventana SHALL ofrecer **«Siguiente mundo»**, que abre **el primer nivel
+del mundo siguiente**, empezando de cero, sin pasar por la lista de mundos ni por
+la de niveles. Pedido por el usuario tras la prueba preliminar del 25-sep-2026.
+
+El mundo siguiente es **el de orden inmediatamente mayor que tenga algún nivel**:
+un mundo sin niveles no lleva a ningún sitio y se salta. Su primer nivel es el de
+menor orden.
+
+«Siguiente mundo» SHALL salir **sólo si ese mundo está abierto** para el niño
+según el candado de mundos, **contando como superado el nivel que acaba de
+superar** aunque su partida todavía no se haya guardado. Lo normal es que lo
+esté —el último nivel sólo se juega tras los anteriores—, pero un niño con
+niveles sueltos de antes del candado puede llegar al último sin haber superado
+todos; ahí el botón NO SHALL aparecer, porque llevaría a un mundo cerrado. Y el
+nivel al que lleva NO SHALL salir cerrado por llegar antes de que la partida se
+guarde.
+
+En el **último nivel del último mundo** —o cuando detrás no quede ningún mundo con
+niveles— «Siguiente mundo» NO SHALL aparecer. Si no se ha podido saber cuál es el
+mundo siguiente —un fallo al leer los mundos o sus niveles—, tampoco: no poder
+ofrecerlo no es motivo para no dejar jugar el nivel, y un botón que no sabe a
+dónde va no se pinta.
+
+Como la ventana sólo se abre al llegar a la meta, «Siguiente mundo» sólo aparece
+**con el nivel superado**.
 
 **La ventana SHALL enseñar la puntuación de la partida y la experiencia que se
 acaba de conceder**, no la que el nivel podría dar. NO SHALL enseñar el tope del
@@ -1787,7 +1812,42 @@ mundo al que salir, y tampoco hay nada que guardar ni experiencia que conceder.
 #### Scenario: El último nivel del mundo
 
 - **WHEN** se completa el último nivel de un mundo
-- **THEN** la ventana ofrece «Salir al mundo» y «Volver a intentar», y no «Siguiente nivel»
+- **THEN** la ventana ofrece «Salir al mundo», «Volver a intentar» y «Siguiente mundo», y no «Siguiente nivel»
+
+#### Scenario: Se pasa al siguiente mundo
+
+- **WHEN** en la ventana del último nivel del mundo 1 se pulsa «Siguiente mundo»
+- **THEN** se abre el primer nivel del mundo 2 con el lienzo vacío, el personaje en la salida y el contador a cero
+
+#### Scenario: El último nivel del último mundo
+
+- **WHEN** se completa el último nivel del último mundo con niveles
+- **THEN** la ventana ofrece «Salir al mundo» y «Volver a intentar», y ni «Siguiente nivel» ni «Siguiente mundo»
+
+#### Scenario: El mundo siguiente no tiene niveles
+
+- **WHEN** se completa el último nivel de un mundo y el mundo que le sigue en orden no tiene ningún nivel, pero el de después sí
+- **THEN** «Siguiente mundo» abre el primer nivel de ese otro mundo
+
+#### Scenario: El mundo siguiente sigue cerrado
+
+- **WHEN** se completa el último nivel de un mundo en el que el niño no ha superado todos los demás niveles
+- **THEN** la ventana sale sin «Siguiente mundo»
+
+#### Scenario: Se pasa al siguiente mundo antes de que se guarde la partida
+
+- **WHEN** el niño supera el último nivel de un mundo y pulsa «Siguiente mundo» antes de que el guardado termine
+- **THEN** el primer nivel del mundo siguiente se abre igualmente, sin salir cerrado
+
+#### Scenario: No se sabe cuál es el mundo siguiente
+
+- **WHEN** se completa el último nivel de un mundo y no se han podido leer los mundos o los niveles del siguiente
+- **THEN** la ventana sale sin «Siguiente mundo», y el nivel se ha jugado con normalidad
+
+#### Scenario: Un nivel que no es el último
+
+- **WHEN** se completa un nivel que no es el último de su mundo
+- **THEN** la ventana ofrece «Siguiente nivel» y no «Siguiente mundo»
 
 ### Requirement: Un nivel puede conceder un número máximo de pasos
 
