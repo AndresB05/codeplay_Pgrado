@@ -11,33 +11,14 @@ import levelSaltaYSube from '../../../assets/brand/level-salta-y-sube.webp';
 import levelSiempreAdelante from '../../../assets/brand/level-siempre-adelante.webp';
 import { ROUTES } from '../../../constants/routes';
 import { useProgress } from '../../../hooks/useProgress';
+import { useWorldLocks } from '../../../hooks/useWorldLocks';
 import { worldsService } from '../../../services/worlds.service';
 import type { User } from '../../../types/user.types';
 import type { Level, World } from '../../../types/world.types';
 import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
 import { blockingLevel } from './levelLock';
+import { LockIcon } from './LockIcon';
 import { getCardToneStyles, type WorldModuleCard } from './worlds/worldsData';
-
-const LockIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <rect
-      x="5"
-      y="10.5"
-      width="14"
-      height="10"
-      rx="2.5"
-      fill="#FFF9EF"
-      stroke="#2A1B45"
-      strokeWidth="2.6"
-    />
-    <path
-      d="M8.5 10.5V8A3.5 3.5 0 0115.5 8V10.5"
-      stroke="#2A1B45"
-      strokeWidth="2.6"
-      strokeLinecap="round"
-    />
-  </svg>
-);
 
 const ForestIcon = () => <MonsteraLeaf size={64} color="#FFF9EF" />;
 
@@ -142,6 +123,7 @@ type StudentWorldLevelsModuleProps = {
 export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsModuleProps) => {
   const navigate = useNavigate();
   const { progress } = useProgress(user?.id ?? null);
+  const { blockerOf, loading: locksLoading } = useWorldLocks(user?.id ?? null);
   const [state, setState] = useState<LevelsState>({ status: 'loading' });
 
   useEffect(() => {
@@ -187,7 +169,11 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
     };
   }, [worldId]);
 
-  if (state.status === 'loading') {
+  /*
+   * Se espera al candado antes de enseñar la lista: abierta por defecto, se
+   * vería un instante la de un mundo cerrado al llegar escribiendo la dirección.
+   */
+  if (state.status === 'loading' || locksLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-5 py-5">
         <div className="h-14 w-14 animate-spin rounded-full border-[5px] border-line border-t-grape" />
@@ -204,6 +190,28 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
           <p className="subtitle mx-auto mt-2 max-w-[520px]">
             Puede que lo hayan retirado. Vuelve al mapa y elige otro.
           </p>
+
+          <button
+            type="button"
+            onClick={() => navigate(ROUTES.WORLDS)}
+            className="btn btn-grape mt-5"
+          >
+            <BackIcon />
+            Volver a mundos
+          </button>
+        </section>
+      </div>
+    );
+  }
+
+  const blocker = blockerOf(worldId);
+
+  if (blocker !== null) {
+    return (
+      <div className="px-5 py-5">
+        <section className="card p-6 text-center">
+          <h1 className="title-lg">{state.world.name} todavía está cerrado</h1>
+          <p className="subtitle mx-auto mt-2 max-w-[520px]">Primero supera {blocker.name}.</p>
 
           <button
             type="button"

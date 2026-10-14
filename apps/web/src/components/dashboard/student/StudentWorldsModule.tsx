@@ -6,6 +6,8 @@ import type { User } from '../../../types/user.types';
 import { type DifficultyLabel, getCardToneStyles, type WorldModuleCard } from './worlds/worldsData';
 import { useWorlds } from '../../../hooks/useWorlds';
 import { AssignedMissionsPanel } from '../shared/AssignedMissionsPanel';
+import { useWorldLocks } from '../../../hooks/useWorldLocks';
+import { LockIcon } from './LockIcon';
 import { useProgress } from '../../../hooks/useProgress';
 import { worldsService } from '../../../services/worlds.service';
 import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
@@ -155,13 +157,17 @@ const WorldCard = ({ world }: { world: WorldModuleCard }) => {
   const tone = getCardToneStyles(world.tone);
   const progressPercent =
     world.totalLevels > 0 ? Math.round((world.completedLevels / world.totalLevels) * 100) : 0;
+  const isLocked = world.lockedBy !== null;
 
   return (
     <button
       type="button"
+      disabled={isLocked}
       onClick={() => navigate(`${ROUTES.WORLDS}/${world.id}`)}
-      className="card flex w-full flex-col overflow-hidden text-left transition-transform duration-100 hover:-translate-y-1 active:translate-y-0"
-      aria-label={`Ingresar a ${world.title}`}
+      className={`card flex w-full flex-col overflow-hidden text-left transition-transform duration-100 ${
+        isLocked ? 'cursor-not-allowed opacity-60 grayscale' : 'hover:-translate-y-1 active:translate-y-0'
+      }`}
+      aria-label={isLocked ? `${world.title}: primero supera ${world.lockedBy}` : `Ingresar a ${world.title}`}
     >
       {/*
        * `flex-col` no es de adorno: un `<button>` que la rejilla estira centra su
@@ -190,6 +196,13 @@ const WorldCard = ({ world }: { world: WorldModuleCard }) => {
         <span className="absolute left-4 top-4 rounded-full border-2 border-ink bg-white px-3 py-1 font-display text-[13px] text-ink">
           {world.difficultyLabel}
         </span>
+
+        {isLocked ? (
+          <span className="absolute right-4 top-4 flex items-center gap-1 rounded-full border-2 border-ink bg-white px-3 py-1 font-display text-[13px] text-ink">
+            <LockIcon />
+            Bloqueado
+          </span>
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col px-5 pb-5 pt-4 text-center">
@@ -197,6 +210,10 @@ const WorldCard = ({ world }: { world: WorldModuleCard }) => {
         <p className="mt-2 text-[15px] font-semibold leading-[1.6] text-ink-soft">
           {world.description}
         </p>
+
+        {isLocked ? (
+          <p className="mt-3 font-display text-[15px] text-ink">Primero supera {world.lockedBy}.</p>
+        ) : null}
 
         <div className="mt-auto pt-5">
           <div className="flex items-center justify-between text-[13px] font-bold uppercase tracking-[0.04em] text-ink-faint">
@@ -228,6 +245,7 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
   const [theme, setTheme] = useState<string>(ALL);
   const { worlds: fetchedWorlds, loading: worldsLoading, error: worldsError } = useWorlds();
   const { progress } = useProgress(user?.id ?? null);
+  const { blockerOf } = useWorldLocks(user?.id ?? null);
 
   const [worldStats, setWorldStats] = useState<
     Record<string, { total: number; completed: number }>
@@ -292,9 +310,10 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
         image: WORLD_IMAGES[index] ?? null,
         completedLevels: worldStats[world.id]?.completed ?? 0,
         totalLevels: worldStats[world.id]?.total ?? 0,
+        lockedBy: blockerOf(world.id)?.name ?? null,
       };
     });
-  }, [fetchedWorlds, worldStats]);
+  }, [fetchedWorlds, worldStats, blockerOf]);
 
   /* Los temas salen de los mundos que hay, para no ofrecer uno que deje la lista vacía. */
   const themeOptions = useMemo(

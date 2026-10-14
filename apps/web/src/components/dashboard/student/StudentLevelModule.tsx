@@ -19,7 +19,8 @@ import { HaltedLock } from './HaltedLock';
 import { AchievementToast } from './AchievementToast';
 import { LevelCompleteDialog } from './LevelCompleteDialog';
 import { blockingLevel } from './levelLock';
-import { nextLevelId } from './nextLevel';
+import { nextLevelId, worldsAfter } from './nextLevel';
+import { blockingWorld } from './worldLock';
 import { submitAttempt } from './submitAttempt';
 
 /* El rótulo de la caja: tres piezas encajadas, que es lo que se hace con los bloques. */
@@ -109,13 +110,15 @@ const HelpIcon = () => (
 type LevelState =
   | { status: 'loading' }
   | { status: 'rejected' }
-  | { status: 'locked'; previousLevelName: string }
+  | { status: 'locked'; kind: 'world' | 'level'; blockerName: string }
   | {
       status: 'ready';
       title: string;
       instructions: string;
       level: PlayableLevel;
       nextLevelId: string | null;
+      /* El primer nivel del mundo siguiente, sólo en el último nivel y si está abierto. */
+      nextWorldLevel: { worldId: string; levelId: string } | null;
       withJump: boolean;
       fillGaps: boolean;
       centerPillar: boolean;
@@ -299,27 +302,86 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         return;
       }
 
-      /*
-       * EL CANDADO QUE CUENTA ES ÉSTE, no el de la lista: aquí llega también
-       * quien escribe la dirección a mano. Si el progreso o la lista no se
-       * pudieron leer se deja jugar, porque un corte de red no debe cerrarle a
-       * un niño un nivel que quizá ya se ganó.
-       */
-      if (siblings.data !== null && progress !== null && progress.data !== null) {
-        const completedIds = new Set(
-          progress.data
-            .filter((item) => item.completionStatus === 'completed')
-            .map((item) => item.levelId)
-        );
+      const completedIds =
+        progress === null || progress.data === null
+          ? null
+          : new Set(
+              progress.data
+                .filter((item) => item.completionStatus === 'completed')
+                .map((item) => item.levelId)
+            );
 
-        if (justPassed.current) {
-          completedIds.add(justPassed.current);
+      if (completedIds !== null && justPassed.current) {
+        completedIds.add(justPassed.current);
+      }
+
+      const levelsByWorld =
+        worlds.data === null
+          ? null
+          : (await worldsService.getLevelsByWorlds(worlds.data.map((world) => world.id))).data;
+
+      if (!mounted) {
+        return;
+      }
+
+      /*
+       * LOS CANDADOS QUE CUENTAN SON ÉSTOS, no los de las listas: aquí llega
+       * también quien escribe la dirección a mano. El de mundo va primero, porque
+       * en un mundo cerrado no importa qué nivel falta. Si algo no se pudo leer
+       * se deja jugar, porque un corte de red no debe cerrarle a un niño un nivel
+       * que quizá ya se ganó.
+       */
+      if (worlds.data !== null && levelsByWorld !== null && completedIds !== null) {
+        const blocker = blockingWorld(worlds.data, levelsByWorld, row.worldId, completedIds);
+
+        if (blocker !== null) {
+          setState({ status: 'locked', kind: 'world', blockerName: blocker.name });
+          return;
         }
+      }
+
+      if (siblings.data !== null && completedIds !== null) {
         const blocker = blockingLevel(siblings.data, levelId, completedIds);
 
         if (blocker !== null) {
-          setState({ status: 'locked', previousLevelName: blocker.name });
+          setState({ status: 'locked', kind: 'level', blockerName: blocker.name });
           return;
+        }
+      }
+
+      const next = siblings.data === null ? null : nextLevelId(siblings.data, row.orderIndex);
+
+      /*
+       * EL MUNDO SIGUIENTE, sólo en el último nivel: el primero de orden mayor
+       * que tenga niveles, y sólo si está abierto contando ESTE nivel como
+       * superado —el botón sale al superarlo, y la partida puede no haberse
+       * guardado—. Un niño con niveles sueltos de antes del candado puede llegar
+       * aquí sin el resto del mundo, y ahí el botón llevaría a un mundo cerrado.
+       */
+      let nextWorldLevel: { worldId: string; levelId: string } | null = null;
+
+      if (
+        siblings.data !== null &&
+        next === null &&
+        worlds.data !== null &&
+        levelsByWorld !== null &&
+        completedIds !== null
+      ) {
+        const passed = new Set(completedIds).add(levelId);
+        const target = worldsAfter(worlds.data, row.worldId).find(
+          (world) => (levelsByWorld.get(world.id) ?? []).length > 0
+        );
+        const firstLevel =
+          target === undefined
+            ? null
+            : nextLevelId(levelsByWorld.get(target.id) ?? [], -Infinity);
+
+        if (
+          target !== undefined &&
+          firstLevel !== null &&
+          blockingWorld(worlds.data, levelsByWorld, target.id, passed) === null
+        ) {
+          nextWorldLevel = { worldId: target.id, levelId: firstLevel };
         }
       }
 
@@ -335,7 +397,8 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         title: row.name,
         instructions: row.narrative,
         level,
-        nextLevelId: siblings.data === null ? null : nextLevelId(siblings.data, row.orderIndex),
+        nextLevelId: next,
+        nextWorldLevel,
         withJump: worldPosition !== 0,
         // PRUEBA DE ASSETS: el mundo 3 se queda sin relleno, como lo aprobó el usuario.
         fillGaps: worldPosition !== 2,
@@ -387,22 +450,34 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
   }
 
   if (state.status === 'locked') {
+    const isWorld = state.kind === 'world';
+
     return (
       <div className="px-5 py-5">
         <section className="card p-6 text-center">
-          <h1 className="title-lg">Este nivel todavía está cerrado</h1>
+          <h1 className="title-lg">
+            {isWorld ? 'Este mundo todavía está cerrado' : 'Este nivel todavía está cerrado'}
+          </h1>
           <p className="subtitle mx-auto mt-2 max-w-[520px]">
-            Supera «{state.previousLevelName}» y se abrirá.
+            {isWorld
+              ? `Primero supera ${state.blockerName}.`
+              : `Supera «${state.blockerName}» y se abrirá.`}
           </p>
 
-          <button type="button" onClick={backToLevels} className="btn btn-grape mt-5">
+          <button
+            type="button"
+            onClick={isWorld ? () => navigate(ROUTES.WORLDS) : backToLevels}
+            className="btn btn-grape mt-5"
+          >
             <BackIcon />
-            Volver a los niveles
+            {isWorld ? 'Volver a mundos' : 'Volver a los niveles'}
           </button>
         </section>
       </div>
     );
   }
+
+  const nextWorld = state.nextWorldLevel;
 
   // El sobre vacío es `{}`, así que esto distingue «no hay bloques» de «no ha llegado».
   const emptyCanvas = program === null || Object.keys(program.workspace).length === 0;
@@ -567,6 +642,14 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
               ? undefined
               : () =>
                   navigate(`${ROUTES.WORLDS}/${worldId}/${state.nextLevelId}`, {
+                    state: { passedLevelId: levelId },
+                  })
+          }
+          onNextWorld={
+            nextWorld === null
+              ? undefined
+              : () =>
+                  navigate(`${ROUTES.WORLDS}/${nextWorld.worldId}/${nextWorld.levelId}`, {
                     state: { passedLevelId: levelId },
                   })
           }

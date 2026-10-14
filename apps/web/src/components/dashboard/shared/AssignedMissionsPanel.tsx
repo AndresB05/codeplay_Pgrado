@@ -1,5 +1,7 @@
 import { useAuth } from '../../../hooks/useAuth';
 import { useMissionAssignments } from '../../../hooks/useMissionAssignments';
+import { useWorldLocks } from '../../../hooks/useWorldLocks';
+import { missionWorldOrder } from '../student/worldLock';
 import { formatDueDate } from '../../../lib/missionDue';
 import type { Mission } from '../../../types/classroom.types';
 import { TargetIcon } from '../teacher/TeacherIcons';
@@ -10,11 +12,14 @@ const MissionCard = ({
   mission,
   isCompleted,
   dueDate,
+  lockedBy,
 }: {
   mission: Mission;
   isCompleted: boolean;
   /** Último día para cumplirla; `null` es sin límite. */
   dueDate: string | null;
+  /** El mundo que hay que superar antes, si la misión pide uno que sigue cerrado. */
+  lockedBy: string | null;
 }) => (
   <article
     onMouseEnter={pickTilt}
@@ -60,7 +65,9 @@ const MissionCard = ({
       </p>
     ) : (
       <p className="mt-2.5 border-t-2 border-dashed border-ink pt-1.5 font-map text-[14px] text-sepia-soft">
-        Se cumple jugando los niveles. ¡Sigue explorando!
+        {lockedBy === null
+          ? 'Se cumple jugando los niveles. ¡Sigue explorando!'
+          : `Primero supera ${lockedBy} para poder cumplirla.`}
       </p>
     )}
   </article>
@@ -87,6 +94,18 @@ const MissionCard = ({
 export const AssignedMissionsPanel = ({ hideCompleted = false }: { hideCompleted?: boolean }) => {
   const { user } = useAuth();
   const { catalog, assignments, completions, loading, error } = useMissionAssignments();
+  const { blockerOf, worlds } = useWorldLocks(user?.id ?? null);
+
+  /*
+   * La misión de un mundo lleva su ORDEN en la clave; el candado es de cada
+   * niño, así que el tutor la asigna igual y aquí se le dice qué falta.
+   */
+  const lockedBy = (missionKey: string): string | null => {
+    const order = missionWorldOrder(missionKey);
+    const target = order === null ? undefined : worlds.find((world) => world.orderIndex === order);
+
+    return target === undefined ? null : (blockerOf(target.id)?.name ?? null);
+  };
 
   if (error) {
     return (
@@ -171,6 +190,7 @@ export const AssignedMissionsPanel = ({ hideCompleted = false }: { hideCompleted
             mission={mission}
             isCompleted={myCompletions.has(mission.key)}
             dueDate={dueByMission.get(mission.key) ?? null}
+            lockedBy={lockedBy(mission.key)}
           />
         ))}
       </div>

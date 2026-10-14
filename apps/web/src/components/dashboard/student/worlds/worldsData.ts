@@ -12,6 +12,8 @@ export type WorldModuleCard = {
   image: { src: string; position: string } | null;
   completedLevels: number;
   totalLevels: number;
+  /** El mundo que hay que superar antes de abrir éste, o `null` si está abierto. */
+  lockedBy: string | null;
 };
 
 export interface WorldToneStyles {

@@ -86,6 +86,35 @@ export const worldsService = {
     return { data: data.map(mapLevelRow), error: null };
   },
 
+  /*
+   * Los niveles de varios mundos en UNA consulta, agrupados por mundo: el
+   * candado de mundos necesita todos a la vez. Cada mundo pedido sale en el
+   * mapa, también el que no tiene niveles —con la lista vacía—, porque «sin
+   * niveles» y «no se leyó» no se tratan igual.
+   */
+  async getLevelsByWorlds(worldIds: string[]): ServiceResult<Map<string, Level[]>> {
+    const { data, error } = await supabase
+      .from('levels')
+      .select('*')
+      .in('world_id', worldIds)
+      .order('sort_order');
+
+    if (error) {
+      return {
+        data: null,
+        error: createAppError(error, 'No se pudieron cargar los niveles.', 'levels_get_error'),
+      };
+    }
+
+    const byWorld = new Map<string, Level[]>(worldIds.map((id) => [id, []]));
+
+    for (const row of data) {
+      byWorld.get(row.world_id)?.push(mapLevelRow(row));
+    }
+
+    return { data: byWorld, error: null };
+  },
+
   async getWorlds(): ServiceResult<World[]> {
     const { data, error } = await supabase.from('worlds').select('*').order('sort_order');
 

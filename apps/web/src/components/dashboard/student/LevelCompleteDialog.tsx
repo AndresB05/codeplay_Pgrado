@@ -14,6 +14,8 @@ interface LevelCompleteDialogProps {
   onExit: () => void;
   /* Sin nivel siguiente en el mundo no llega, y el botón no se pinta. */
   onNext?: () => void;
+  /* Sólo en el último nivel del mundo, y si el siguiente está abierto. Nunca con `onNext`. */
+  onNextWorld?: () => void;
   /* Devuelve al personaje a la salida y deja los bloques, para mejorar el programa. */
   onRetry: () => void;
   onClose: () => void;
@@ -50,6 +52,7 @@ export const LevelCompleteDialog = ({
   saveFailed,
   onExit,
   onNext,
+  onNextWorld,
   onRetry,
   onClose,
 }: LevelCompleteDialogProps) => {
@@ -154,6 +157,12 @@ export const LevelCompleteDialog = ({
           {onNext !== undefined && (
             <button type="button" onClick={onNext} className="btn btn-mint flex-1">
               Siguiente nivel
+            </button>
+          )}
+
+          {onNextWorld !== undefined && (
+            <button type="button" onClick={onNextWorld} className="btn btn-mint flex-1">
+              Siguiente mundo
             </button>
           )}
         </div>

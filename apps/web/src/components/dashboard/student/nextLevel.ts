@@ -1,4 +1,4 @@
-import type { Level } from '../../../types/world.types';
+import type { Level, World } from '../../../types/world.types';
 
 /*
  * El nivel que sigue a otro DENTRO DE SU MUNDO: el de orden inmediatamente
@@ -12,4 +12,21 @@ export const nextLevelId = (levels: Level[], currentOrder: number): string | nul
     .sort((a, b) => a.orderIndex - b.orderIndex)[0];
 
   return next === undefined ? null : next.id;
+};
+
+/*
+ * Los mundos que van DETRÁS de uno, por orden y no por posición, por lo mismo
+ * que `nextLevelId`. Vacío en el último mundo o en uno que no está en la lista:
+ * sin saber dónde se está, no hay «siguiente» al que mandar.
+ */
+export const worldsAfter = (worlds: World[], worldId: string): World[] => {
+  const current = worlds.find((world) => world.id === worldId);
+
+  if (current === undefined) {
+    return [];
+  }
+
+  return worlds
+    .filter((world) => world.orderIndex > current.orderIndex)
+    .sort((a, b) => a.orderIndex - b.orderIndex);
 };

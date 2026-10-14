@@ -941,6 +941,7 @@ progreso conseguido.
 | Lectura desde Supabase, **sin repliegue de maqueta** (§2.12) | ✅ | `useWorlds()` en `student/StudentWorldsModule.tsx` |
 | Recuento de niveles completados por mundo | 🟡 | `worldsService.getLevelsByWorld()` + `useProgress()` |
 | Niveles de un mundo, **con candado**: el 1 siempre abierto, cada uno de los demás al superar el anterior (§4.11) | ✅ | `student/StudentWorldLevelsModule.tsx`, `student/levelLock.ts` |
+| **Mundos con candado** (`siguiente-mundo`, 14-oct-2026): el 1 siempre abierto, cada uno de los demás al superar todo el anterior; ver abajo | ✅ | `student/worldLock.ts`, `hooks/useWorldLocks.ts`, `worldsService.getLevelsByWorlds()` |
 | Sala de trofeos | 🟡 | `student/StudentTrophiesModule.tsx` + `AchievementList/` |
 | Ajustes de cuenta del alumno | 🟡 | `student/StudentSettingsModule.tsx` |
 
@@ -996,6 +997,50 @@ poner al día.
 mundos con `slug`, título, descripción y rótulo nuevos y su `sort_order` intacto;
 los nueve logros de nivel sin tocar; y en pantalla la lista de mundos, la lista
 de niveles de la Cordillera con su pilar debajo, y la landing sin sesión.
+
+#### El candado de mundos y «Siguiente mundo», con `siguiente-mundo` (14-oct-2026)
+
+Decidido por el usuario tras la prueba preliminar: un niño que entraba en el
+tercer mundo sin la base se frustraba, y al acabar un mundo tenía que volver a la
+lista a mano.
+
+**La regla** (`student/worldLock.ts`, `blockingWorld`, con tests): el primer mundo
+siempre abierto; cada uno de los demás, al superar **todos** los niveles del
+anterior. Los mundos sin niveles no cuentan. **Excepción:** un mundo con algún
+nivel ya superado sigue abierto, para quienes jugaron mundos avanzados en la
+prueba. Mira sólo el mundo anterior, sin encadenar. Sólo en el cliente, como el
+de niveles: ordena el avance, no guarda un secreto, y no pide `db push`.
+
+**Dónde se aplica:** la tarjeta de `StudentWorldsModule.tsx` (gris, «Bloqueado»,
+«Primero supera …» y sin navegar); `StudentWorldLevelsModule.tsx`, que espera al
+candado antes de enseñar la lista; y `StudentLevelModule.tsx`, que es **el que
+cuenta** y va antes que el de niveles. Las dos primeras usan
+`hooks/useWorldLocks.ts`, que deja todo abierto mientras carga y ante cualquier
+fallo; los niveles de todos los mundos llegan en una consulta,
+`worldsService.getLevelsByWorlds()`. `LockIcon.tsx` es el candado común de las
+dos listas.
+
+**«Siguiente mundo»** sale en `LevelCompleteDialog.tsx` en el último nivel de un
+mundo, si hay mundo siguiente con niveles (`worldsAfter` en `nextLevel.ts`) **y
+está abierto contando el nivel recién superado**. Navega con `passedLevelId`,
+igual que «Siguiente nivel». **Misiones:** `AssignedMissionsPanel.tsx` lee el
+mundo de la clave con `missionWorldOrder` —estricto, `^clear_world_(\d+)$`, para
+que `flawless_3` no sea el mundo 3— y, si está cerrado, el pie dice «Primero
+supera … para poder cumplirla».
+
+**Verificado en el navegador** (dev, 1440×900) con la cuenta de niño de prueba,
+que tiene los nueve niveles superados: el progreso, las misiones y un fallo de
+lectura se **simularon filtrando las respuestas en el navegador**, sin tocar la
+base. Sin progreso: mundo 1 abierto, 2 y 3 cerrados con su «Primero supera …».
+Dirección de la lista del mundo 3 y de su nivel 1: aviso, sin lista ni tablero,
+con «Volver a mundos». Con sólo «El faro» superado: el mundo 3 abierto y su nivel
+jugable, el 2 cerrado. Superando de verdad «La escalera» con los niveles 1 y 2:
+sale «Siguiente mundo» y abre «Salta y sube» con el lienzo vacío y «Pasos: 0»,
+aunque el progreso filtrado aún no tenía «La escalera». Con sólo el nivel 2: sin
+botón. «Siempre adelante»: «Siguiente nivel». «Muchos caminos»: ninguno de los
+dos. Misiones simuladas: la del mundo 3 avisa, la del 1 y `flawless_3` no. Con la
+consulta de niveles fallando: los tres mundos abiertos. Esas partidas se
+guardaron en la cuenta de prueba.
 
 ### 2.7 `backend-supabase` — Esquema de base de datos
 
