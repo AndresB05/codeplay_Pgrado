@@ -4578,6 +4578,10 @@ se edita a mano**.
 npx supabase gen types typescript --linked > apps/web/src/types/database.types.ts
 ```
 
+Desde PowerShell 5.1 esa redirección escribe UTF-16 con CRLF, y git trata el
+archivo como binario. Pasó al regenerarlo para la 0048 (14-oct-2026). Se
+arregla con `iconv -f UTF-16 -t UTF-8 | sed 's/\r$//'` desde Git Bash.
+
 ### 4.2b Los nueve niveles sembrados eran de otro juego — RESUELTO
 
 Descubierto el 4-sep-2026 leyendo la migración 0012. Las nueve filas de `levels`

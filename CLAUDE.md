@@ -47,8 +47,8 @@ desarrollo, y **está apagado para la prueba con usuarios** —él y el Laborato
   pasa por `useClassrooms()`. `ClassroomsProvider` es el único archivo que cambia
   de raíz al conectar Supabase. No rompas esa frontera.
 - **`types/database.types.ts` se regenera con la CLI de Supabase, nunca se edita
-  a mano.** Hoy está desincronizado del esquema real: ver `docs/CONTEXT.md` §4.1
-  antes de fiarte de él.
+  a mano.** Describe el esquema real. Lanzado desde PowerShell 5.1, el `>` lo
+  deja en UTF-16: si `git diff --stat` lo marca como `Bin`, pásalo a UTF-8.
 
 ## Comandos
 
