@@ -585,6 +585,143 @@ a {
     color: var(--wood-bare);
     text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
   }
+
+  /*
+   * Leo entra desde abajo como una diapositiva: rápido y con un rebote corto.
+   * La burbuja llega detrás para que la mirada vaya primero a él.
+   */
+  .leo-enter {
+    animation: leo-enter 450ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .leo-enter-late {
+    animation-delay: 120ms;
+  }
+
+  .leo-veil {
+    animation: leo-veil 200ms ease-out both;
+  }
+
+  /*
+   * Lo que manda es el ancho DEL MÓDULO y no el de la pantalla: con la barra
+   * lateral abierta, una tableta en vertical deja 500 px y las clases `sm:`
+   * ponían a Leo y la burbuja lado a lado, con la burbuja aplastada. Estrecho,
+   * la burbuja va encima de Leo; ancho, a su derecha y a la altura de su mano.
+   */
+  .leo-stage {
+    container-type: inline-size;
+  }
+
+  .leo-layout {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0 16px;
+  }
+
+  /* En columna, el tope de ancho: Leo mide de ancho el 71 % de su alto. */
+  .leo-figure {
+    height: min(45vh, 460px, 120cqw);
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  .leo-bubble {
+    padding: 16px 20px;
+  }
+
+  .leo-bubble-text {
+    font-size: 19px;
+  }
+
+  .leo-tail {
+    display: none;
+  }
+
+  @container (min-width: 720px) {
+    .leo-layout {
+      flex-direction: row;
+      gap: 16px;
+      padding: 0 40px;
+    }
+
+    /* El 60cqw impide que Leo se coma el ancho de la burbuja en módulos justos. */
+    .leo-figure {
+      height: min(64vh, 640px, 60cqw);
+    }
+
+    .leo-bubble {
+      margin-top: min(14vh, 130px);
+      padding: 24px 28px;
+    }
+
+    .leo-bubble-text {
+      font-size: 26px;
+    }
+
+    .leo-tail {
+      display: block;
+    }
+  }
+
+  /* La salida es la entrada al revés: cae rápido, sin rebote, y el velo se va detrás. */
+  .leo-leave {
+    animation: leo-leave 280ms cubic-bezier(0.5, 0, 0.75, 0) both;
+  }
+
+  .leo-veil-out {
+    animation: leo-veil-out 320ms ease-in both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .leo-enter,
+    .leo-leave,
+    .leo-veil,
+    .leo-veil-out {
+      animation: none;
+    }
+  }
+}
+
+@keyframes leo-enter {
+  from {
+    transform: translateY(110vh);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes leo-leave {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(110vh);
+  }
+}
+
+@keyframes leo-veil-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes leo-veil {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @layer utilities {

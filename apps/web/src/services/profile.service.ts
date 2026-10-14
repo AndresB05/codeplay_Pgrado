@@ -180,4 +180,44 @@ export const profileService = {
 
     return { data: null, error: null };
   },
+
+  /** Los mundos cuya explicación de Leo ya vio la cuenta. */
+  async getSeenWorldIntros(userId: string): ServiceResult<string[]> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('seen_world_intros')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      return {
+        data: null,
+        error: createAppError(
+          error,
+          'No se pudo saber qué explicaciones has visto.',
+          'profile_world_intros_error'
+        ),
+      };
+    }
+
+    return { data: data.seen_world_intros, error: null };
+  },
+
+  /** Por la función y no por `update`: el cliente no puede escribir `profiles` (0009). */
+  async markWorldIntroSeen(worldId: string): ServiceResult<null> {
+    const { error } = await supabase.rpc('mark_world_intro_seen', { input_world_id: worldId });
+
+    if (error) {
+      return {
+        data: null,
+        error: createAppError(
+          error,
+          'No se pudo guardar que viste la explicación.',
+          'profile_world_intro_mark_error'
+        ),
+      };
+    }
+
+    return { data: null, error: null };
+  },
 };

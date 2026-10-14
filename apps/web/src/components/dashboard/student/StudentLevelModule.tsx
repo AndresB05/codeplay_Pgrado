@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import leoExplains from '../../../assets/brand/leo-explains.webp';
 import { ROUTES } from '../../../constants/routes';
 import { BlockEditorLoader } from '../../../game/BlockEditorLoader';
 import type { LevelFinish } from '../../../game/GameScene';
@@ -8,6 +9,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { openLevel, type PlayableLevel } from '../../../game/levelConfig';
 import type { Program } from '../../../game/program';
 import { scoreForSteps } from '../../../game/score';
+import { profileService } from '../../../services/profile.service';
 import { progressService } from '../../../services/progress.service';
 import { worldsService } from '../../../services/worlds.service';
 import type {
@@ -22,6 +24,7 @@ import { blockingLevel } from './levelLock';
 import { nextLevelId, worldsAfter } from './nextLevel';
 import { blockingWorld } from './worldLock';
 import { submitAttempt } from './submitAttempt';
+import { WorldIntro } from './WorldIntro';
 
 /* El rótulo de la caja: tres piezas encajadas, que es lo que se hace con los bloques. */
 /*
@@ -90,6 +93,34 @@ const BackIcon = () => (
   </svg>
 );
 
+/*
+ * Copia de la de `GameScene`, que no se puede importar: está tras la frontera
+ * diferida y traerla de allí metería `three` en el paquete principal.
+ */
+const StepsIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <ellipse cx="8" cy="8.5" rx="3.2" ry="4.6" fill="currentColor" />
+    <ellipse cx="15.5" cy="15" rx="3.2" ry="4.6" fill="currentColor" opacity="0.6" />
+  </svg>
+);
+
+/*
+ * Lo que Leo cuenta al entrar al mundo 3, que es el único con máximo de pasos.
+ * La segunda burbuja enseña el contador con el máximo DE ESTE NIVEL, con el
+ * aspecto del real, porque el real queda detrás del velo.
+ */
+const stepWorldBubbles = (stepLimit: number) => [
+  '¡Hola! En este mundo los pasos están contados.',
+  <>
+    Mira arriba, a la derecha del tablero. Te dice cuántos te quedan.
+    <span className="mt-3 flex w-fit items-center gap-2.5 rounded-full bg-ink px-4 py-2 font-display text-[17px] text-white">
+      <StepsIcon />
+      Pasos restantes: {stepLimit}
+    </span>
+  </>,
+  'Si se acaban antes de la meta, toca empezar otra vez. ¡Busca el camino más corto!',
+];
+
 const HelpIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path
@@ -116,6 +147,9 @@ type LevelState =
       title: string;
       instructions: string;
       level: PlayableLevel;
+      worldId: string;
+      /* Sólo en el mundo de los pasos contados: es el que Leo explica. */
+      stepLimit: number | null;
       nextLevelId: string | null;
       /* El primer nivel del mundo siguiente, sólo en el último nivel y si está abierto. */
       nextWorldLevel: { worldId: string; levelId: string } | null;
@@ -169,6 +203,8 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
   const [trayOpen, setTrayOpen] = useState(true);
 
   const [helpOpen, setHelpOpen] = useState(false);
+
+  const [introOpen, setIntroOpen] = useState(false);
 
   const [halted, setHalted] = useState(false);
 
@@ -397,6 +433,8 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         title: row.name,
         instructions: row.narrative,
         level,
+        worldId: row.worldId,
+        stepLimit: worldPosition === 2 ? (level.config.stepLimit ?? null) : null,
         nextLevelId: next,
         nextWorldLevel,
         withJump: worldPosition !== 0,
@@ -413,6 +451,45 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
       mounted = false;
     };
   }, [levelId, userId]);
+
+  const introWorldId =
+    state.status === 'ready' && state.stepLimit !== null ? state.worldId : null;
+
+  /*
+   * Leo sale solo la primera vez, y quién lo vio se lee de la cuenta y no del
+   * navegador: los equipos del aula son compartidos. Si la lectura falla no
+   * sale, que el nivel se juega igual y el botón de la cabecera sigue ahí.
+   */
+  useEffect(() => {
+    if (introWorldId === null || userId === null) {
+      return;
+    }
+
+    let mounted = true;
+
+    void profileService.getSeenWorldIntros(userId).then((result) => {
+      if (mounted && result.data !== null && !result.data.includes(introWorldId)) {
+        setIntroOpen(true);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [introWorldId, userId]);
+
+  /*
+   * Se anota AL CERRAR y no al abrir: preguntar «¿era la primera vez?» y anotar
+   * en la misma llamada se rompe con el doble efecto de `React.StrictMode`. Si
+   * falla, lo vuelve a ver la próxima vez, que es mejor que un aviso de error.
+   */
+  const closeIntro = useCallback(() => {
+    setIntroOpen(false);
+
+    if (introWorldId !== null && userId !== null) {
+      void profileService.markWorldIntroSeen(introWorldId);
+    }
+  }, [introWorldId, userId]);
 
   const backToLevels = () => navigate(`${ROUTES.WORLDS}/${worldId}`);
   const closeFinish = useCallback(() => setFinish(null), []);
@@ -491,6 +568,21 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         </button>
 
         <h1 className="title-lg">{state.title}</h1>
+
+        {state.stepLimit !== null && (
+          <button
+            type="button"
+            onClick={() => setIntroOpen(true)}
+            className="btn btn-sm btn-ghost ml-auto"
+          >
+            <img
+              src={leoExplains}
+              alt=""
+              className="h-8 w-8 rounded-full border-2 border-ink bg-cream object-cover object-top"
+            />
+            ¿Cómo se juega aquí?
+          </button>
+        )}
       </section>
 
       {/*
@@ -628,6 +720,14 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
           <div ref={setControlsHost} className="mt-3.5" />
         </div>
       </section>
+
+      {introOpen && state.stepLimit !== null && (
+        <WorldIntro
+          image={leoExplains}
+          bubbles={stepWorldBubbles(state.stepLimit)}
+          onClose={closeIntro}
+        />
+      )}
 
       {finish !== null && (
         <LevelCompleteDialog

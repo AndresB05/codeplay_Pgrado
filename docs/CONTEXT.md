@@ -1058,6 +1058,68 @@ dos. Misiones simuladas: la del mundo 3 avisa, la del 1 y `flawless_3` no. Con l
 consulta de niveles fallando: los tres mundos abiertos. Esas partidas se
 guardaron en la cuenta de prueba.
 
+#### Leo explica el mundo 3, con `leo-explica-mundo-3` (14-oct-2026)
+
+Punto 7 de la prueba preliminar: los niños no entendían que en el mundo 3 los
+pasos están contados, y no leían el contador. **La primera vez que una cuenta
+abre un nivel del mundo 3**, la pantalla se oscurece y Leo
+(`assets/brand/leo-explains.webp`, ilustración definitiva) entra desde abajo con
+tres burbujas: los pasos están contados → una copia de la píldora «Pasos
+restantes: N» con el máximo **de ese nivel** → busca el camino más corto.
+
+**Sale en la pantalla de nivel y no en la lista**, porque el contador sólo existe
+ahí: queda detrás del velo y al cerrar está donde dijo la burbuja. El mundo 3 se
+decide por posición, como `fillGaps`.
+
+| Archivo | Qué hace |
+| --- | --- |
+| `student/WorldIntro.tsx` | El diálogo: imagen, burbujas y `onClose` por parámetro. Va **en un portal al `<main>` del panel**, con `absolute inset-0`: el velo cubre sólo el módulo y deja a la vista las barras lateral y superior. Leo va `sticky` abajo. Sale animado y el cierre espera a la animación |
+| `student/StudentLevelModule.tsx` | Lo monta en el mundo 3, lee si ya se vio y lo anota al cerrar. Botón «¿Cómo se juega aquí?» en la cabecera para repetirlo |
+| `services/profile.service.ts` | `getSeenWorldIntros` y `markWorldIntroSeen` |
+| `main.css` | Entrada y salida (`.leo-enter`, `.leo-leave`, `.leo-veil`, `.leo-veil-out`), anuladas con `prefers-reduced-motion`. El tamaño y la disposición van por *container query* sobre el ancho del módulo (`.leo-stage`), no por el de la pantalla |
+| `supabase/migrations/202606030048_world_intros_seen.sql` | `profiles.seen_world_intros uuid[]` y `mark_world_intro_seen(uuid)`, `security definer` sobre la fila propia, como la 0046 |
+
+**Se guarda por cuenta y no en el navegador** (los equipos del aula son
+compartidos), por **id** de mundo (los slugs se renombran) y **al cerrar**, no
+al abrir: con `React.StrictMode` una función que anotara y respondiera «era la
+primera vez» diría «no» en la segunda pasada y Leo no saldría nunca en
+desarrollo. Si la lectura falla, no sale y el nivel se juega igual.
+
+**Verificado** (dev, cuenta de niño de prueba, con la 0048 aplicada):
+- **Primera entrada a «Dos caminos»:** sale Leo con el foco en «Siguiente». La
+  segunda burbuja dice «Pasos restantes: 10», igual que el juego. Tocar la burbuja
+  no lo cierra. Escape lo cierra, tocar el velo también, y al cerrar el foco
+  vuelve al botón.
+- **Tras los ajustes del usuario** (velo sólo en el módulo, Leo más grande,
+  salida animada), medido por coordenadas:
+  - A 1366×768 el velo coincide con el `<main>`, las barras lateral y superior
+    quedan fuera y Leo, a 349×492, ocupa el 72 % del alto visible pegado abajo,
+    también con la página desplazada.
+  - A 1920×1080 se aplica el tope de 640 px.
+  - En tableta vertical y en móvil con la barra lateral plegada, la burbuja va
+    encima y entera.
+  - **En móvil con la barra lateral abierta, el módulo mide 113 px** y la burbuja
+    se queda en 81 px. Es el ancho que la barra le deja a todo el panel, no algo
+    propio de Leo.
+  - La salida, muestreada moviendo a mano las animaciones (el panel del
+    navegador estaba oculto y no las reproduce): Leo cae 56 px a los 140 ms y
+    845 px a los 320 ms, y el velo pasa de opacidad 1 a 0; el diálogo sigue
+    montado hasta que acaba.
+  - Usar la barra lateral con Leo abierto navega y lo desmonta sin errores.
+- **Tras recargar:** no sale, y la consulta es la de `seen_world_intros`.
+- **Contra la base:** la cuenta tiene guardado el id del mundo 3. Anotarlo dos
+  veces no lo duplica, un mundo inexistente da `P0002` y un `update` directo da
+  `42501`.
+- **El botón de la cabecera** vuelve a empezar desde la primera burbuja, y
+  «¡Entendido!» cierra en la tercera.
+- **Mundos 1 y 2:** ni Leo, ni botón, ni consulta.
+- **Movimiento reducido:** comprobado con Edge headless y
+  `--force-prefers-reduced-motion` sobre el CSS compilado: sin animación con la
+  preferencia y con ella sin la preferencia.
+
+La explicación ya consta como vista en la cuenta de prueba. Para volver a ver la
+primera entrada hay que vaciar su `seen_world_intros` desde el panel de Supabase.
+
 ### 2.7 `backend-supabase` — Esquema de base de datos
 
 **Propósito.** Definir el esquema, las políticas de seguridad y las operaciones

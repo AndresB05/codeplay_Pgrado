@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -495,6 +495,7 @@ export type Database = {
           last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]
+          seen_world_intros: string[]
           total_xp: number
           updated_at: string
           username: string | null
@@ -511,6 +512,7 @@ export type Database = {
           last_streak_day?: string | null
           max_streak?: number
           role?: Database["public"]["Enums"]["user_role"]
+          seen_world_intros?: string[]
           total_xp?: number
           updated_at?: string
           username?: string | null
@@ -527,6 +529,7 @@ export type Database = {
           last_streak_day?: string | null
           max_streak?: number
           role?: Database["public"]["Enums"]["user_role"]
+          seen_world_intros?: string[]
           total_xp?: number
           updated_at?: string
           username?: string | null
@@ -911,6 +914,10 @@ export type Database = {
         Returns: Json
       }
       is_visible_student_of: { Args: { profile_id: string }; Returns: boolean }
+      mark_world_intro_seen: {
+        Args: { input_world_id: string }
+        Returns: undefined
+      }
       max_consecutive_right_turns: {
         Args: { input_block: Json }
         Returns: number
@@ -962,6 +969,7 @@ export type Database = {
           last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]
+          seen_world_intros: string[]
           total_xp: number
           updated_at: string
           username: string | null
@@ -998,6 +1006,7 @@ export type Database = {
           last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]
+          seen_world_intros: string[]
           total_xp: number
           updated_at: string
           username: string | null
@@ -1028,6 +1037,7 @@ export type Database = {
           last_streak_day: string | null
           max_streak: number
           role: Database["public"]["Enums"]["user_role"]
+          seen_world_intros: string[]
           total_xp: number
           updated_at: string
           username: string | null
