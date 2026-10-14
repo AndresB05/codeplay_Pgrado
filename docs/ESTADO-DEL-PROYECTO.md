@@ -141,7 +141,8 @@ En la interfaz se etiqueta "Tutor"; el nombre del profesor se muestra por salón
 | Barra lateral plegable | ✅ | En los dos roles; plegada deja sólo los iconos, y se recuerda en el navegador |
 | Responsive y accesibilidad | 🟡 | Algunas pantallas ya se reordenan, pero **el panel no se repliega en móvil**: a 375 px la barra lateral se come la pantalla. Es el paso 25 |
 | Despliegue provisional | ✅ | Vercel (plan Hobby), sólo para la prueba preliminar. El definitivo va al servidor de la universidad |
-| Consentimiento del acudiente y política de privacidad | ⛔ | Obligatorio antes del primer usuario real. Es el paso 14 |
+| Política de privacidad y términos y condiciones | 🟡 | Hay borrador de la política; los términos no existen. Se cierran con el servidor de la universidad. Es el paso 14 |
+| Consentimiento del acudiente | ⏸ | Aparcado el 14-oct-2026: proyecto de grado sin asesoría legal. Se retoma si continúa fuera de la universidad |
 
 ### 1.4 Flujos de usuario principales
 

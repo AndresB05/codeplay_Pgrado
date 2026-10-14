@@ -134,7 +134,7 @@ dejó fuera.
 | 29 | ★ [Nombre editable desde Ajustes](#paso-29) | ✅ | `nombre-editable` |
 | 16 | [Persistir la asignación de misiones](#paso-16) | ✅ | `misiones-asignadas` |
 | 18 | ★ [Sincronización en vivo (Supabase Realtime)](#paso-18) | ✅ | `sincronizacion-en-vivo` |
-| 23 | ★ [Integración del juego — 23.1 hecho, a 23.2 le falta el J13](#paso-23) | 🔄 | 23.1 directo · 23.2 salvo el J13 |
+| 23 | ★ [Integración del juego — sólo falta el personaje animado](#paso-23) | 🔄 | 23.1 directo · 23.2 salvo el J13 |
 | 17 | [Reportes sobre progreso real](#paso-17) | ✅ | `reportes-de-progreso-real` |
 | 31 | ★ [Seguimiento por alumno en el panel del tutor](#paso-31) | ✅ | `avance-por-mundos` |
 | 20 | [Pantalla de nivel y puente hacia el juego](#paso-20) | ✅ | P4 |
@@ -144,9 +144,9 @@ dejó fuera.
 | 33 | ★ [Misiones que el profesor asigna, ligadas al juego](#paso-33) | ✅ | `misiones-jugables` |
 | 27.1 | ★ [Despliegue provisional para la prueba](#paso-27-1) | ✅ | **usuario** |
 | — | 🔬 [Prueba preliminar](#prueba-preliminar) | ✅ | **usuario** |
-| 14 | ★ [Consentimiento del acudiente y política de privacidad](#paso-14) | 🔄 | `invitaciones-sin-correo` + §3.4 |
+| 14 | ★ [Política de privacidad y términos y condiciones](#paso-14) — el consentimiento del acudiente, aparcado | 🔄 | `invitaciones-sin-correo` + §3.4 |
 | 19 | [Invitaciones: enlace canjeable (hecho) y correo real (pendiente)](#paso-19) | 🔄 | `enlace-de-invitacion` + servicio |
-| 24 | Retirar la sesión de invitado | ⬜ | — |
+| 24 | Retirar la sesión de invitado — **no se hace**, ver §2.1 | ✅ | **usuario** |
 | 26 | [Ilustraciones con Gemini](#paso-26) | 🔄 | P6 |
 | 25 | ★ [Responsive, accesibilidad y `ErrorBoundary`](#paso-25) | ⬜ | — |
 | 30 | ★ [Migración al servidor de la universidad](#paso-30) | ⬜ | — |
@@ -302,6 +302,10 @@ el test.
 del usuario: quiere poder entrar de un clic mientras prueba la integración. El
 coste es nulo, porque esa sesión está limitada a desarrollo por
 `import.meta.env.DEV` y nunca llega a producción.
+
+**Y el 14-oct-2026 el 24 se cerró sin hacerse**, también por decisión del
+usuario: la sesión de invitado sirve para probar cambios en desarrollo, y como no
+llega a producción no hay nada que retirar. Se conserva.
 
 **El paso 22 está separado del 21** porque no son el mismo trabajo. Progreso y
 XP tienen la fontanería escrita —las RPC `upsert_my_progress` y
@@ -525,7 +529,11 @@ de los tres mundos, que el usuario dejó **para después de la prueba preliminar
 para que la prueba no se haga con cubos grises: tablero de Kenney, islas de
 decorado generadas por reglas y la pantalla de nivel reordenada. El explorador 3D
 entró pero está apagado por su peso, así que se juega con el personaje de cubos.
-Detalle en `ROADMAP-JUEGO.md`, «Lo que lleva el J13». El diseño está en [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) y el
+Detalle en `ROADMAP-JUEGO.md`, «Lo que lleva el J13».
+
+**El 14-oct-2026 el usuario dio el aspecto por bueno: del J13 sólo falta el
+personaje principal animado**, y es trabajo suyo —meter el modelo y ponerle
+huesos para animarlo—, no de una sesión. El diseño está en [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) y el
 detalle paso a paso en [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md).
 
 #### <a id="paso-17"></a>17 · Reportes sobre progreso real
@@ -715,6 +723,16 @@ después de la prueba preliminar, y en todo caso antes del primer usuario real**
 
 Hereda dos decisiones ya tomadas: el tutor ve el historial del niño (§3.1) y los
 compañeros se ven entre sí nombre, XP y racha (§3.2).
+
+**Replanteado el 14-oct-2026 por el usuario.** Lo que sigue en curso es escribir
+la **política de privacidad** —hay un borrador de un compañero, revisado contra
+la app— y los **términos y condiciones**, que no existen. Las dos esperan al
+servidor de la universidad (paso 30), porque el alojamiento y el país de los
+servidores cambian con él, y el usuario prefiere cerrarlas de una vez. **El
+consentimiento del acudiente se aparca como no necesario por ahora:** es un
+proyecto de grado sin asesoría legal, y no se puede dar por cumplido. Se retoma
+si el proyecto continúa fuera del entorno universitario. Lo que §3.4 dejó
+decidido para él sigue valiendo entonces.
 
 #### <a id="paso-19"></a>19 · Invitaciones por correo reales y enlace canjeable
 

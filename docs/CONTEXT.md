@@ -4057,8 +4057,9 @@ el paso está cerrado entero:
   rol lleva al panel del rol.
 
 **Y Google OAuth desde el 29-ago-2026**, cambio `google-oauth` (paso 15). Con él,
-la línea P2 queda cerrada salvo la sesión de invitado, que es el paso 24 y va
-después del juego por decisión del usuario.
+la línea P2 queda cerrada. La sesión de invitado, que era el paso 24, se
+conserva: el 14-oct-2026 el usuario decidió no retirarla, porque sólo existe en
+desarrollo y sirve para probar.
 
 Lo que aporta, con sus rutas reales: la vuelta del proveedor en
 `pages/AuthCallback/`, la intención de rol en `context/oauthRole.helpers.ts`, el
@@ -4095,8 +4096,9 @@ tocar ninguna de las cuatro originales:
 - Al terminar, «salon sigma» conserva sus dos alumnos y los tres perfiles
   originales siguen con el `updated_at` del backfill de la 0018, sin moverse.
 
-De esta línea queda una sola cosa, y **no es de este paso**: retirar la sesión
-de invitado es el paso 24, que va después del juego por decisión del usuario.
+De esta línea quedaba una sola cosa, retirar la sesión de invitado (paso 24), y
+el 14-oct-2026 el usuario decidió no hacerla: sólo existe en desarrollo y sirve
+para probar.
 Lo que P2 pedía de ella —que `useActiveRole()` y `PrivateRoute` funcionen sin
 la sesión de invitado— ya se cumple.
 
@@ -4164,6 +4166,12 @@ Tres fallos vivos cerrados y una superficie nueva, cambio `arreglos-y-barra-xp`
   puede pintar un tramo distinto. Ver `DISENO-DEL-JUEGO.md` §3.
 
 ### Privacidad y consentimiento (paso 14): EN CURSO, el resto APLAZADO
+
+**Replanteado el 14-oct-2026 por el usuario** (`ROADMAP.md`, paso 14): sigue en
+curso la política de privacidad y los términos y condiciones, que esperan al
+servidor de la universidad; **el consentimiento del acudiente se aparca** como no
+necesario por ahora, al ser un proyecto de grado sin asesoría legal. Lo de abajo
+se conserva como quedó escrito.
 
 Lo exigible hoy ya está aplicado: el cambio `invitaciones-sin-correo` eliminó
 `invitations.email` —el único sitio del esquema donde se guardaba el dato de un
