@@ -6,6 +6,7 @@ import { isGuestSession } from '../context/guest.helpers';
 import { useActiveRole } from '../hooks/useActiveRole';
 import { useAuth } from '../hooks/useAuth';
 import type { UserRole } from '../types/user.types';
+import { RouteLoading } from './RouteLoading';
 
 interface PrivateRouteProps {
   children: ReactNode;
@@ -21,11 +22,7 @@ export const PrivateRoute = ({ children, role }: PrivateRouteProps) => {
   const activeRole = useActiveRole();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6F3FA]">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-[#8B5CF6]" />
-      </div>
-    );
+    return <RouteLoading />;
   }
 
   // Mientras el login no está conectado, la sesión de invitado (solo en
