@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { ClassroomStudent } from '../../../types/classroom.types';
 import { ClassroomPodium } from './ClassroomPodium';
@@ -64,5 +64,19 @@ describe('ClassroomPodium', () => {
     expect(screen.getByText('Beto')).toBeInTheDocument();
     expect(screen.getByText('300 XP')).toBeInTheDocument();
     expect(screen.getByText('Ana')).toBeInTheDocument();
+  });
+
+  it('el mapa de la esquina sacude todos los mapas sueltos', () => {
+    const { container } = render(
+      <ClassroomPodium students={[alumno({ id: 'a', name: 'Ana', xp: 50 })]} variant="map" />
+    );
+    const maps = container.querySelectorAll('.loose-map');
+
+    expect(maps.length).toBeGreaterThan(1);
+    expect(container.querySelector('.loose-map-shake')).toBeNull();
+
+    fireEvent.click(container.querySelector('button.loose-map') as HTMLElement);
+
+    maps.forEach((map) => expect(map).toHaveClass('loose-map-shake'));
   });
 });

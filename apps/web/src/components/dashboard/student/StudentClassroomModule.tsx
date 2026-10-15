@@ -154,7 +154,7 @@ export const StudentClassroomModule = () => {
         />
       </section>
 
-      <ClassroomPodium students={currentGroup.students} />
+      <ClassroomPodium students={currentGroup.students} variant="map" />
 
       <section className="mt-6">
         <StudentRosterTable students={currentGroup.students} onlineIds={onlineStudentIds} />

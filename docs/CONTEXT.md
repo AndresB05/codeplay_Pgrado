@@ -4404,8 +4404,8 @@ se deforman aunque la tarjeta cambie de tamaño. Al pasar el cursor la tarjeta s
 inclina entre 1,5° y 3°, a un lado al azar cada vez, salvo con movimiento
 reducido. El texto va escrito «como en el mapa»: letra de mano **Patrick Hand**
 (`font-map`) en tinta **`sepia`**, y las etiquetas como sellos de tinta. Las dos
-cosas son nuevas en el sistema visual y **sólo las usan las misiones** y las dos
-cifras del salón del niño. Se probó
+cosas son nuevas en el sistema visual y **sólo las usan las misiones**, las dos
+cifras del salón del niño y su podio. Se probó
 el mismo pergamino en la barra de filtros de los mundos y se retiró: no quedaba
 bien.
 Las dos cifras del salón del niño («Compañeros» y «Mundo del salón», en
@@ -4518,6 +4518,26 @@ se queda hundida y en el color de la corteza de los troncos (`wood-bark`,
 morado. «Cerrar sesión» sigue en madera pelada. Se probó antes, y se retiró, una
 grieta astillada sin marco en el mismo sitio.
 
+El podio del salón del niño en pergamino (15-oct-2026), variante `map` de
+`shared/ClassroomPodium.tsx` que sólo pasa `student/StudentClassroomModule.tsx`
+—el tutor sigue con la tarjeta blanca y los emojis—. Pergamino propio
+(`podium-scroll.webp`, `.podium-scroll`, en 3:1): el de las misiones se veía
+estirado a ese ancho. Escalones a tinta en nueve trozos (`podium-block.webp`,
+`.podium-block`), 20 px más altos que en la tarjeta blanca; sellos de lacre de
+oro, plata y bronce en lugar de los emojis (`podium-seal-{gold,silver,bronze}.webp`);
+título, nombres y XP en `font-map` y tinta sepia, y los nombres largos bajan a dos
+líneas. La tarjeta mide como máximo 920 px y va centrada. Detrás asoman seis
+mapas sueltos (`.loose-map`, los dos pergaminos alternados, cada uno con un mapa
+pequeño `podium-minimap-{1,2,3}.webp` sin repetirlo con su vecino), sólo desde
+1520 px: por debajo saldrían de la pantalla. Encima del pergamino, el camino al
+tesoro a la derecha (`podium-treasure-trail.webp`) y sus montes y palmeras solos
+a la izquierda (`podium-mountains.webp`, sacados de la misma imagen), desde
+1310 px. El mapa de la esquina va por delante y es un huevo de pascua: al
+pulsarlo, los seis papeles se sacuden (`.loose-map-shake`); no se relanza a media
+sacudida, no hace nada con movimiento reducido, y es un botón fuera del teclado y
+del lector de pantalla. Pendiente: por debajo de unos 434 px el 3.º se sale de la
+tarjeta (ya pasaba con la blanca), y a 920 px los montes rozan el escalón del 2.º.
+
 La imagen de cada nivel (24-sep-2026), una por nivel y alusiva a su título, en
 `student/StudentWorldLevelsModule.tsx`: los nueve
 (`src/assets/brand/level-{siempre-adelante,camino-con-curvas,la-escalera}.webp`,
@@ -4544,7 +4564,7 @@ bloqueado la enseña en gris, como el resto de la tarjeta.
 | Grandes trofeos | `student/StudentTrophiesModule.tsx` | Los tres la tienen |
 | Imagen de nivel | `student/StudentWorldLevelsModule.tsx` | Una por nivel: las nueve; el resto sigue vacío («Imagen Nivel») |
 | Escenarios y fondos | Landing y paneles | Los paneles tienen el valle (y la sala de trofeos, tablas oscuras); la landing sigue con degradados y adornos SVG |
-| Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño, misiones y cifras del salón | Aplicados: tablas, troncos, pergamino y foto clavada |
+| Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño, misiones, cifras y podio del salón | Aplicados: tablas, troncos, pergamino y foto clavada |
 
 **Qué NO cubre.** Los adornos de `components/decor/JungleDecor.tsx` (hojas,
 flores, tucán, liana) **seguirán siendo SVG escritos a mano**: son geometría

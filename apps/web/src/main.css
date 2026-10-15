@@ -338,6 +338,76 @@ a {
   }
 
   /*
+   * El pergamino del podio del niño. Es suyo y no el de las misiones: aquél,
+   * pensado para tarjetas pequeñas, se veía estirado a lo ancho de la pantalla;
+   * éste ya viene en 3:1, la forma del podio en escritorio.
+   */
+  .podium-scroll {
+    border: 50px solid transparent;
+    border-image: url('./assets/brand/podium-scroll.webp') 54 fill stretch;
+  }
+
+  /*
+   * La sacudida secreta de los mapas sueltos. Con `translate` y `rotate`
+   * sueltos, no con `transform`: así se suma al giro de cada papel en vez de
+   * enderezarlo mientras dura.
+   */
+  @keyframes loose-map-shake {
+    0%,
+    100% {
+      translate: 0;
+      rotate: 0deg;
+    }
+    15% {
+      translate: -9px 0;
+      rotate: -3deg;
+    }
+    30% {
+      translate: 8px 0;
+      rotate: 3deg;
+    }
+    45% {
+      translate: -6px 0;
+      rotate: -2deg;
+    }
+    60% {
+      translate: 5px 0;
+      rotate: 1.5deg;
+    }
+    75% {
+      translate: -3px 0;
+      rotate: -1deg;
+    }
+  }
+
+  .loose-map-shake {
+    animation: loose-map-shake 600ms ease-in-out both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loose-map-shake {
+      animation: none;
+    }
+  }
+
+  /* Los mapas sueltos de detrás del podio: borde más fino porque son pequeños, y sombra para separarlos. */
+  .loose-map {
+    border-width: 26px;
+    filter: drop-shadow(0 4px 0 rgba(42, 27, 69, 0.12));
+  }
+
+  /*
+   * El escalón del podio del niño, dibujado a tinta como en un mapa. En nueve
+   * trozos: cada puesto tiene su alto y la columna cambia de ancho en tableta.
+   */
+  .podium-block {
+    border-style: solid;
+    border-color: transparent;
+    border-width: 11px 9px 12px 6px;
+    border-image: url('./assets/brand/podium-block.webp') 36 30 40 20 fill stretch;
+  }
+
+  /*
    * El panel tallado del tronco, detrás del XP y los botones. En nueve trozos
    * porque cambia de tamaño: plegada es estrecho y con el Laboratorio 3D crece.
    */
