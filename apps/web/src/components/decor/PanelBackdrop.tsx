@@ -6,7 +6,7 @@
  * cuando el contenido es más corto que la pantalla, sin volverse contenedor de
  * scroll, que despegaría la imagen.
  *
- * La madera no se queda pegada: una pared de tablas quieta mientras las tablas
+ * La madera y el mapa del salón no se quedan pegados: una pared de tablas quieta mientras las tablas
  * de encima se mueven se ve falsa. Ocupa todo el alto de `<main>` y corre con
  * el contenido.
  *
@@ -19,7 +19,7 @@ export const PanelBackdrop = ({
   surface = 'valley',
   underSidebar = false,
 }: {
-  surface?: 'valley' | 'wood';
+  surface?: 'valley' | 'wood' | 'map';
   underSidebar?: boolean;
 }) => (
   <div
@@ -30,7 +30,11 @@ export const PanelBackdrop = ({
   >
     <div
       className={
-        surface === 'wood' ? 'trophy-backdrop h-full' : 'panel-backdrop sticky top-0 h-screen'
+        surface === 'wood'
+          ? 'trophy-backdrop h-full'
+          : surface === 'map'
+            ? 'classroom-map-backdrop h-full'
+            : 'panel-backdrop sticky top-0 h-screen'
       }
     />
   </div>

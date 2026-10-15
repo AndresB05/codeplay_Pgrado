@@ -1,3 +1,5 @@
+import routeX from '../../../assets/brand/route-x.webp';
+import compassRose from '../../../assets/brand/classroom-compass.webp';
 import { useClassrooms } from '../../../hooks/useClassrooms';
 import { useFreshClassrooms } from '../../../hooks/useFreshClassrooms';
 import { AssignedMissionsPanel } from '../shared/AssignedMissionsPanel';
@@ -121,20 +123,41 @@ export const StudentClassroomModule = () => {
     <div className="px-5 py-5">
       <StoreErrorNotice error={error} />
 
-      <section
-        className="card relative flex flex-wrap items-center gap-4 overflow-hidden px-5 py-5"
-        style={{ background: theme.gradient }}
-      >
-        <span className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/20" />
+      {/*
+       * El salón entero es un mapa: la cabecera es la cartela del título, con el
+       * color y la insignia que eligió el tutor en un sello de tinta.
+       */}
+      <section className="relative isolate flex flex-wrap items-center gap-5 px-16 py-7">
+        <div
+          aria-hidden
+          className="classroom-cartouche pointer-events-none absolute inset-0 -z-10"
+        />
 
-        <GroupBadge theme={theme} size={72} />
+        <GroupBadge theme={theme} size={72} shape="seal" />
 
-        <div className="relative">
-          <h1 className="font-display text-[30px] leading-tight text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)]">
-            {currentGroup.name}
+        <div className="relative min-w-0">
+          <h1 className="map-title font-display text-[34px] leading-tight text-sepia">
+            {/* La ruta punteada con su X subraya el nombre y se estira con él. */}
+            <span className="inline-flex max-w-full flex-col">
+              {currentGroup.name}
+              <span aria-hidden className="mt-0.5 flex h-[14px] items-center">
+                <span className="map-route-dashes h-full flex-1" />
+                <img src={routeX} alt="" className="h-[14px] w-auto" />
+              </span>
+            </span>
           </h1>
-          <p className="text-[16px] font-bold text-white/90">Tutor {currentGroup.teacherName}</p>
+          <p className="font-map text-[19px] text-sepia-soft">
+            Tutor {currentGroup.teacherName} · {currentGroup.students.length}{' '}
+            {currentGroup.students.length === 1 ? 'explorador' : 'exploradores'}
+          </p>
         </div>
+
+        <img
+          src={compassRose}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute right-[84px] top-1/2 hidden h-[80px] w-[80px] -translate-y-1/2 opacity-45 md:block"
+        />
       </section>
 
       <section className="mt-6 grid grid-cols-1 gap-4 lg:max-w-[760px] lg:grid-cols-2">
@@ -157,7 +180,11 @@ export const StudentClassroomModule = () => {
       <ClassroomPodium students={currentGroup.students} variant="map" />
 
       <section className="mt-6">
-        <StudentRosterTable students={currentGroup.students} onlineIds={onlineStudentIds} />
+        <StudentRosterTable
+          students={currentGroup.students}
+          onlineIds={onlineStudentIds}
+          variant="map"
+        />
       </section>
 
       {/*
@@ -165,7 +192,7 @@ export const StudentClassroomModule = () => {
        * que compañeros y podio están siempre, y son lo que se viene a mirar.
        */}
       <div className="pb-4">
-        <AssignedMissionsPanel />
+        <AssignedMissionsPanel onMap />
       </div>
     </div>
   );

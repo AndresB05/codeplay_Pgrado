@@ -1,14 +1,38 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import inkBlot from '../../../assets/brand/roster-ink-blot.webp';
+import coffeeRing from '../../../assets/brand/roster-coffee-ring.webp';
+import pawPrint from '../../../assets/brand/roster-paw.webp';
+import sealBronze from '../../../assets/brand/podium-seal-bronze.webp';
+import sealGold from '../../../assets/brand/podium-seal-gold.webp';
+import sealSilver from '../../../assets/brand/podium-seal-silver.webp';
+import streakNote from '../../../assets/brand/streak-note.webp';
 import { explorerLevel } from '../../../constants/progress';
 import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import type { ClassroomStudent } from '../../../types/classroom.types';
 import { XPBar } from '../../ui/XPBar';
 import { formatLastActivity } from '../teacher/classroomsData';
+import { pickTilt, TILT_ON_HOVER } from './pickTilt';
 import { sortRoster, type RosterSortKey } from './podiumRanking';
 import { RosterFilterBar } from './RosterFilterBar';
 import { filterRoster, NO_FILTERS, worldOptions, type RosterFilters } from './rosterFilters';
 
 const NOBODY_ONLINE: ReadonlySet<string> = new Set();
+
+const RANK_SEALS = [sealGold, sealSilver, sealBronze];
+
+/*
+ * Manchas del pergamino de la tabla, repartidas como caídas al azar. Las
+ * posiciones van en porcentaje para que se repartan igual con pocos o con
+ * muchos exploradores; son tenues porque algunas pasan por debajo del texto.
+ */
+const STAINS = [
+  { src: inkBlot, place: 'right-[30px] top-[14px] w-[130px] rotate-[14deg] opacity-60' },
+  { src: coffeeRing, place: 'left-[37%] top-[18%] w-[150px] rotate-[25deg] opacity-30' },
+  { src: pawPrint, place: 'bottom-[7%] left-[2%] w-[90px] -rotate-[18deg] opacity-25' },
+  { src: inkBlot, place: 'bottom-[18px] left-[56%] w-[100px] -rotate-[40deg] opacity-50' },
+  { src: coffeeRing, place: 'bottom-[22%] right-[1%] w-[130px] -rotate-[10deg] opacity-35' },
+  { src: pawPrint, place: 'left-[24%] top-[40%] w-[70px] rotate-[22deg] opacity-20' },
+];
 
 const SORT_OPTIONS: { key: RosterSortKey; label: string }[] = [
   { key: 'xp', label: 'Más XP' },
@@ -58,6 +82,8 @@ interface StudentRosterTableProps {
   onRemoveStudent?: (studentId: string) => void;
   /** Quién tiene CodePlay abierto ahora: lleva el punto verde y «En línea». */
   onlineIds?: ReadonlySet<string>;
+  /** `map`: sobre el pergamino del podio y escrita a mano, como el resto del salón del niño. */
+  variant?: 'card' | 'map';
 }
 
 /**
@@ -69,7 +95,19 @@ export const StudentRosterTable = ({
   emptyLabel = 'Todavía no hay exploradores en este salón.',
   onRemoveStudent,
   onlineIds,
+  variant = 'card',
 }: StudentRosterTableProps) => {
+  const onMap = variant === 'map';
+  /*
+   * El puesto es siempre el de XP, como en el podio, aunque la tabla se ordene
+   * por racha o por nombre: es el que el niño reconoce de encima.
+   */
+  const xpRank = new Map(
+    sortRoster(students, 'xp').map((student, index) => [student.id, index + 1])
+  );
+  /* Cada pieza tiene dos trajes: el de la tarjeta blanca y el del pergamino. */
+  const look = (map: string, card: string) => (onMap ? map : card);
+
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<RosterSortKey>('xp');
   const [filters, setFilters] = useState<RosterFilters>(NO_FILTERS);
@@ -101,13 +139,48 @@ export const StudentRosterTable = ({
    * va peor y está a punto de subir—, y quien mira esta tabla es justo quien
    * tiene que comparar. El número ordena; el nivel explica la barra.
    */
-  const xpCell = (xp: number) => (
-    <div className="flex flex-col gap-1">
-      <span className="font-display text-[15px] text-ink">{xp} XP</span>
-      <XPBar xp={xp} showLabel={false} />
-      <span className="text-[12px] font-semibold text-ink-soft">
-        Nivel Explorador {explorerLevel(xp)}
+  /*
+   * Centra la notita en el título de su columna, que no se mueve. Una copia
+   * invisible del título da el ancho de referencia; los márgenes negativos dejan
+   * que la notita, más ancha, sobresalga por igual a los dos lados sin empujarlo.
+   */
+  const underTitle = (title: string, content: ReactNode) => (
+    <div className="flex w-fit flex-col items-center">
+      <span aria-hidden className="invisible h-0 overflow-hidden font-map text-[20px]">
+        {title}
       </span>
+      <div className="-mx-[200px] flex justify-center">{content}</div>
+    </div>
+  );
+
+  const xpCell = (xp: number) => (
+    /* En el pergamino, el XP va en una notita de papel pegada encima de la fila. */
+    <div
+      onMouseEnter={onMap ? pickTilt : undefined}
+      className={look(`relative isolate w-[220px] -rotate-[1.5deg] px-5 py-4 ${TILT_ON_HOVER}`, '')}
+    >
+      {onMap ? (
+        <div aria-hidden className="note-paper pointer-events-none absolute inset-0 -z-10" />
+      ) : null}
+      <div className="flex flex-col gap-1">
+        <span
+          className={look(
+            'font-map text-[18px] leading-none text-sepia',
+            'font-display text-[15px] text-ink'
+          )}
+        >
+          {xp} XP
+        </span>
+        <XPBar xp={xp} showLabel={false} />
+        <span
+          className={look(
+            'font-map text-[15px] leading-none text-sepia-soft',
+            'text-[12px] font-semibold text-ink-soft'
+          )}
+        >
+          Nivel Explorador {explorerLevel(xp)}
+        </span>
+      </div>
     </div>
   );
 
@@ -132,29 +205,64 @@ export const StudentRosterTable = ({
         aria-label="Ordenar exploradores"
         className="mb-3 flex flex-wrap items-center justify-end gap-2"
       >
-        <span className="text-[14px] font-bold text-ink-faint">Ordenar por</span>
+        <span
+          className={look(
+            'font-map text-[18px] font-normal text-sepia',
+            'text-[14px] font-bold text-ink-faint'
+          )}
+        >
+          Ordenar por
+        </span>
         {SORT_OPTIONS.map((option) => (
           <button
             key={option.key}
             type="button"
             onClick={() => setSortKey(option.key)}
             aria-pressed={sortKey === option.key}
-            className={`rounded-full border-2 px-3 py-1 font-display text-[14px] transition-colors ${
-              sortKey === option.key
-                ? 'border-ink bg-grape text-white'
-                : 'border-line bg-white text-ink hover:bg-cream'
-            }`}
+            className={
+              onMap
+                ? `rounded-md border-2 px-3 py-0.5 font-map text-[18px] font-normal transition-colors ${
+                    sortKey === option.key
+                      ? 'border-wood-ink bg-wood-bark text-cream'
+                      : 'border-dashed border-sepia bg-wood-bare/70 text-sepia hover:bg-wood-bare'
+                  }`
+                : `rounded-full border-2 px-3 py-1 font-display text-[14px] transition-colors ${
+                    sortKey === option.key
+                      ? 'border-ink bg-grape text-white'
+                      : 'border-line bg-white text-ink hover:bg-cream'
+                  }`
+            }
           >
             {option.label}
           </button>
         ))}
       </div>
 
-      <section className="card overflow-hidden">
+      <section
+        className={look('relative isolate px-6 pb-8 pt-7 font-normal', 'card overflow-hidden')}
+      >
+        {onMap ? (
+          <>
+            <div aria-hidden className="podium-scroll pointer-events-none absolute inset-0 -z-10" />
+            {STAINS.map(({ src, place }) => (
+              <img
+                key={place}
+                src={src}
+                alt=""
+                aria-hidden
+                className={`pointer-events-none absolute -z-[5] ${place}`}
+              />
+            ))}
+          </>
+        ) : null}
         <div
-          className={`grid ${gridColumns} border-b-[3px] border-ink bg-grape-soft px-5 py-4 font-display text-[15px] text-grape-dark`}
+          className={`grid ${gridColumns} ${look(
+            'rounded-lg border-b-2 border-dashed border-sepia-soft bg-sepia-soft/30 px-5 py-3 font-map text-[20px] text-sepia',
+            'border-b-[3px] border-ink bg-grape-soft px-5 py-4 font-display text-[15px] text-grape-dark'
+          )}`}
         >
           <div>Explorador</div>
+          {/* En el pergamino, cada notita arranca donde arranca su título. */}
           <div>Mundo actual</div>
           <div>Última actividad</div>
           {onRemoveStudent ? null : <div>XP</div>}
@@ -164,7 +272,9 @@ export const StudentRosterTable = ({
         </div>
 
         {students.length === 0 ? (
-          <p className="px-5 py-10 text-center text-[16px] font-semibold text-ink-faint">
+          <p
+            className={`px-5 py-10 text-center ${look('font-map text-[19px] text-sepia-soft', 'text-[16px] font-semibold text-ink-faint')}`}
+          >
             {emptyLabel}
           </p>
         ) : sortedStudents.length === 0 ? (
@@ -185,11 +295,29 @@ export const StudentRosterTable = ({
             {sortedStudents.map((student, index) => (
               <div
                 key={student.id}
-                className={`grid ${gridColumns} items-center border-b-2 border-line px-5 py-4 text-[16px] text-ink last:border-b-0 ${
-                  index % 2 === 1 ? 'bg-cream' : 'bg-white'
-                }`}
+                className={`grid ${gridColumns} items-center px-5 py-4 last:border-b-0 ${look(
+                  `border-b-2 border-dashed border-sepia-soft/50 text-sepia ${index % 2 === 1 ? 'bg-sepia-soft/15' : ''}`,
+                  `border-b-2 border-line text-[16px] text-ink ${index % 2 === 1 ? 'bg-cream' : 'bg-white'}`
+                )}`}
               >
-                <div className="flex items-center gap-3">
+                {/* La notita del mundo sobresale de su columna: el nombre se queda antes y baja a dos líneas. */}
+                <div className={`flex items-center gap-3 ${look('min-w-0 pr-14', '')}`}>
+                  {onMap ? (
+                    <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center">
+                      {(xpRank.get(student.id) ?? 0) <= 3 && student.xp > 0 ? (
+                        <img
+                          src={RANK_SEALS[(xpRank.get(student.id) ?? 1) - 1]}
+                          alt={`Puesto ${xpRank.get(student.id)}`}
+                          className="h-[34px] w-[34px]"
+                        />
+                      ) : (
+                        <span className="font-map text-[22px] text-sepia-soft">
+                          <span className="sr-only">Puesto </span>
+                          {xpRank.get(student.id)}.º
+                        </span>
+                      )}
+                    </span>
+                  ) : null}
                   <div className="relative h-[44px] w-[44px] shrink-0">
                     <div className="h-full w-full overflow-hidden rounded-full border-[3px] border-ink">
                       <img
@@ -205,34 +333,88 @@ export const StudentRosterTable = ({
                       />
                     ) : null}
                   </div>
-                  <span className="font-bold">{student.name}</span>
+                  <span
+                    className={look(
+                      'min-w-0 break-words font-map text-[21px] leading-tight',
+                      'font-bold'
+                    )}
+                  >
+                    {student.name}
+                  </span>
                 </div>
 
                 <div>
                   {student.currentWorld ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-mint px-3 py-1 font-display text-[13px] text-white">
-                      <WorldBadgeIcon />
-                      {student.currentWorld}
-                    </span>
+                    onMap ? (
+                      underTitle(
+                        'Mundo actual',
+                        <span
+                          onMouseEnter={pickTilt}
+                          className={`relative isolate inline-block whitespace-nowrap rotate-[1.5deg] px-4 py-5 ${TILT_ON_HOVER}`}
+                        >
+                          <span
+                            aria-hidden
+                            className="note-paper pointer-events-none absolute inset-0 -z-10"
+                          />
+                          <span className="inline-block -rotate-[2deg] rounded-md border-2 border-dashed border-jungle-dark px-2 font-map text-[17px] text-jungle-dark">
+                            {student.currentWorld}
+                          </span>
+                        </span>
+                      )
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-mint px-3 py-1 font-display text-[13px] text-white">
+                        <WorldBadgeIcon />
+                        {student.currentWorld}
+                      </span>
+                    )
                   ) : (
-                    <span className="text-ink-faint">—</span>
+                    <span className={look('text-sepia-soft', 'text-ink-faint')}>—</span>
                   )}
                 </div>
 
                 {onlineIds?.has(student.id) ? (
-                  <div className="font-display text-[15px] text-jungle-dark">En línea</div>
+                  <div>
+                    <span
+                      className={look(
+                        'inline-block -rotate-[3deg] rounded-md border-[3px] border-double border-jungle-dark px-2 font-map text-[19px] text-jungle-dark',
+                        'font-display text-[15px] text-jungle-dark'
+                      )}
+                    >
+                      En línea
+                    </span>
+                  </div>
                 ) : (
-                  <div className="flex items-center gap-2 font-semibold text-ink-soft">
+                  <div
+                    className={`flex items-center gap-2 ${look('font-map text-[19px] text-sepia-soft', 'font-semibold text-ink-soft')}`}
+                  >
                     {student.hoursSinceLastActivity === null ? <SleepIcon /> : null}
                     {formatLastActivity(student.hoursSinceLastActivity)}
                   </div>
                 )}
 
-                {onRemoveStudent ? null : <div>{xpCell(student.xp)}</div>}
+                {onRemoveStudent ? null : (
+                  <div>{onMap ? underTitle('XP', xpCell(student.xp)) : xpCell(student.xp)}</div>
+                )}
 
                 <div>
-                  {student.streakDays !== null ? (
-                    <span className="inline-flex items-center gap-1.5 font-display text-[18px] text-sun-dark">
+                  {student.streakDays !== null && onMap ? (
+                    /* La notita de la racha, apagada en gris si la racha está en cero. */
+                    <span
+                      onMouseEnter={pickTilt}
+                      className={`relative inline-block h-[84px] w-[84px] ${TILT_ON_HOVER} ${
+                        student.streakDays === 0 ? 'grayscale' : ''
+                      }`}
+                    >
+                      <img src={streakNote} alt="" className="h-full w-full" />
+                      <span className="absolute right-[12px] top-1/2 flex w-[30px] -translate-y-1/2 justify-center font-map text-[26px] leading-none text-sepia">
+                        <span className="sr-only">Racha de </span>
+                        {student.streakDays}
+                      </span>
+                    </span>
+                  ) : student.streakDays !== null ? (
+                    <span
+                      className={`inline-flex items-center gap-1.5 ${look('font-map text-[21px] text-sepia', 'font-display text-[18px] text-sun-dark')}`}
+                    >
                       <FireIcon />
                       {student.streakDays}
                     </span>

@@ -390,6 +390,38 @@ a {
     }
   }
 
+  /*
+   * La cartela del título del salón del niño: los rollos de los extremos van en
+   * los bordes, así que no se deforman con nombres largos ni cortos.
+   */
+  .classroom-cartouche {
+    border-style: solid;
+    border-color: transparent;
+    border-width: 12px 46px;
+    border-image: url('./assets/brand/classroom-cartouche-ink.webp') 30 100 fill stretch;
+    filter: drop-shadow(0 6px 0 rgba(42, 27, 69, 0.12));
+  }
+
+  /* Los guiones de la ruta bajo el nombre del salón: se repiten, no se estiran. */
+  .map-route-dashes {
+    background-image: url('./assets/brand/route-dash.webp');
+    background-size: auto 100%;
+    background-repeat: repeat-x;
+    background-position: left center;
+  }
+
+  /* El nombre del salón con un filo de tinta alrededor, como repasado a pluma. */
+  .map-title {
+    text-shadow: 0 2px 0 rgba(42, 27, 69, 0.3);
+  }
+
+  /* Las notitas de la tabla del salón del niño, donde van el mundo y el XP. */
+  .note-paper {
+    border: 16px solid transparent;
+    border-image: url('./assets/brand/podium-scroll.webp') 54 fill stretch;
+    filter: drop-shadow(0 3px 0 rgba(42, 27, 69, 0.12));
+  }
+
   /* Los mapas sueltos de detrás del podio: borde más fino porque son pequeños, y sombra para separarlos. */
   .loose-map {
     border-width: 26px;
@@ -459,6 +491,23 @@ a {
     background-image:
       linear-gradient(rgba(232, 161, 105, 0.26), rgba(232, 161, 105, 0.26)),
       url('./assets/brand/achievements-wall.webp');
+    background-size:
+      100% 100%,
+      100% auto;
+    background-repeat: no-repeat, repeat-y;
+  }
+
+  /*
+   * El mapa entero de fondo del salón del niño, sólo en esa pantalla. Corre con
+   * el contenido y se repite hacia abajo; la imagen lleva debajo su reflejo para
+   * que las uniones casen. El velo sepia lo oscurece un poco: sin él, el fondo
+   * quedaba más claro que las tarjetas de pergamino y no se separaban.
+   */
+  .classroom-map-backdrop {
+    background-color: #e9d6b4;
+    background-image:
+      linear-gradient(rgba(107, 68, 35, 0.22), rgba(107, 68, 35, 0.22)),
+      url('./assets/brand/classroom-map-simple.webp');
     background-size:
       100% 100%,
       100% auto;

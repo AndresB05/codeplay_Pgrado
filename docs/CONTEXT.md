@@ -4538,6 +4538,34 @@ sacudida, no hace nada con movimiento reducido, y es un botón fuera del teclado
 del lector de pantalla. Pendiente: por debajo de unos 434 px el 3.º se sale de la
 tarjeta (ya pasaba con la blanca), y a 920 px los montes rozan el escalón del 2.º.
 
+**El salón del niño entero es un mapa** (15-oct-2026), igual que las misiones
+son la cabaña. Todo con variantes que sólo pasa `student/StudentClassroomModule.tsx`:
+el tutor y la pantalla de mundos no cambian.
+- **Fondo:** un mapa sencillo y tenue (`classroom-map-simple.webp`, con su
+  reflejo debajo para repetirse sin corte), con velo sepia al 22 % para que las
+  tarjetas de pergamino se separen. Lo elige `pages/Dashboard/Dashboard.tsx` por
+  la ruta (`PanelBackdrop surface="map"`, clase `.classroom-map-backdrop`) y
+  corre con el contenido, como la madera de trofeos. Se probó antes un mapa
+  detallado y se retiró: mareaba.
+- **Cabecera:** cartela de pergamino con rollos (`classroom-cartouche-ink.webp`,
+  `.classroom-cartouche`, nueve trozos) en lugar de la franja de color. El
+  nombre en Fredoka sepia con filo oscuro (`.map-title`) y subrayado con una
+  ruta punteada que acaba en X (`route-dash.webp` repetido, `route-x.webp`);
+  debajo «Tutor … · N exploradores». La insignia del tutor va como sello de
+  tinta (`GroupBadge shape="seal"`) y a la derecha una rosa de los vientos
+  tenue (`classroom-compass.webp`). Se probaron y retiraron un banderín y una
+  animación de desenrollado.
+- **Tabla de exploradores** (`shared/StudentRosterTable.tsx`, `variant="map"`):
+  sobre el pergamino del podio, cabecera oscura y filas alternas; puesto por XP
+  con los sellos de lacre o «N.º» a mano; mundo y XP en notitas de pergamino
+  (`.note-paper`, sobre `podium-scroll.webp`) centradas bajo su título; racha
+  en una notita con chincheta y fueguito (`streak-note.webp`, gris si es 0);
+  «En línea» como sello; manchas de tinta, aro de café y huella
+  (`roster-*.webp`); las notitas se inclinan al pasar el cursor. Los botones de
+  ordenar van en tinta y el elegido en `wood-bark`.
+- **Cabecera de misiones** (`shared/AssignedMissionsPanel.tsx`, prop `onMap`):
+  icono en sello, título sepia, subtítulo a mano y el recuento como sello verde.
+
 La imagen de cada nivel (24-sep-2026), una por nivel y alusiva a su título, en
 `student/StudentWorldLevelsModule.tsx`: los nueve
 (`src/assets/brand/level-{siempre-adelante,camino-con-curvas,la-escalera}.webp`,
@@ -4564,7 +4592,7 @@ bloqueado la enseña en gris, como el resto de la tarjeta.
 | Grandes trofeos | `student/StudentTrophiesModule.tsx` | Los tres la tienen |
 | Imagen de nivel | `student/StudentWorldLevelsModule.tsx` | Una por nivel: las nueve; el resto sigue vacío («Imagen Nivel») |
 | Escenarios y fondos | Landing y paneles | Los paneles tienen el valle (y la sala de trofeos, tablas oscuras); la landing sigue con degradados y adornos SVG |
-| Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño, misiones, cifras y podio del salón | Aplicados: tablas, troncos, pergamino y foto clavada |
+| Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño, misiones y el salón del niño entero (fondo de mapa, cabecera, cifras, podio y tabla) | Aplicados: tablas, troncos, pergamino y foto clavada |
 
 **Qué NO cubre.** Los adornos de `components/decor/JungleDecor.tsx` (hojas,
 flores, tucán, liana) **seguirán siendo SVG escritos a mano**: son geometría

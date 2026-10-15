@@ -367,7 +367,7 @@ tablas. El niño y la portada siguen con `jungle-surface`.
 | --- | --- | --- | --- |
 | **Fredoka** | Títulos, botones, etiquetas, números destacados | 500, 600, 700 | Google Fonts |
 | **Quicksand** | Cuerpo de texto, párrafos, tablas | 500, 600, 700 | Google Fonts |
-| **Patrick Hand** | Sólo lo que va sobre el pergamino: las misiones, las dos cifras y el podio del salón del niño (`font-map`) | 400 (la única) | Google Fonts |
+| **Patrick Hand** | Sólo lo que va sobre el pergamino: las misiones y el salón del niño (cabecera, cifras, podio y tabla de exploradores) (`font-map`) | 400 (la única) | Google Fonts |
 
 Ambas son redondeadas y de alta legibilidad. El cuerpo arranca en **peso 600**
 por defecto: en una interfaz infantil el texto fino se lee peor.

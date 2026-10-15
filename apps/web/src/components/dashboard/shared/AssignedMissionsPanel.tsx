@@ -91,7 +91,14 @@ const MissionCard = ({
  * sí se va (`hideCompleted`): ahí el niño viene a jugar, y lo ya cumplido sólo
  * le estorba entre él y los mundos.
  */
-export const AssignedMissionsPanel = ({ hideCompleted = false }: { hideCompleted?: boolean }) => {
+export const AssignedMissionsPanel = ({
+  hideCompleted = false,
+  onMap = false,
+}: {
+  hideCompleted?: boolean;
+  /** Sobre el mapa del salón: la cabecera va en tinta, como el resto de esa pantalla. */
+  onMap?: boolean;
+}) => {
   const { user } = useAuth();
   const { catalog, assignments, completions, loading, error } = useMissionAssignments();
   const { blockerOf, worlds } = useWorldLocks(user?.id ?? null);
@@ -169,17 +176,31 @@ export const AssignedMissionsPanel = ({ hideCompleted = false }: { hideCompleted
   return (
     <section className="mt-8">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft">
+        <span
+          className={
+            onMap
+              ? 'flex h-[50px] w-[50px] -rotate-[4deg] items-center justify-center rounded-full border-[3px] border-dashed border-grape-dark bg-wood-bare/70'
+              : 'flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft'
+          }
+        >
           <TargetIcon />
         </span>
-        <h2 className="title-lg">Misiones de tu salón</h2>
-        <span className="chip chip-leaf ml-auto">
-          <TropicalFlower size={16} />
-          {completedCount} de {missions.length} cumplidas
-        </span>
+        <h2 className={onMap ? 'map-title font-display text-[30px] text-sepia' : 'title-lg'}>
+          Misiones de tu salón
+        </h2>
+        {onMap ? (
+          <span className="ml-auto rotate-[3deg] rounded-md border-[3px] border-double border-jungle-dark bg-wood-bare/70 px-3 py-0.5 font-map text-[19px] font-normal text-jungle-dark">
+            {completedCount} de {missions.length} cumplidas
+          </span>
+        ) : (
+          <span className="chip chip-leaf ml-auto">
+            <TropicalFlower size={16} />
+            {completedCount} de {missions.length} cumplidas
+          </span>
+        )}
       </div>
 
-      <p className="subtitle mt-1">
+      <p className={onMap ? 'mt-1 font-map text-[19px] font-normal text-sepia' : 'subtitle mt-1'}>
         Tu tutor las eligió para ti. Dan más experiencia que un nivel normal.
       </p>
 

@@ -3,13 +3,15 @@ import type { GroupTheme } from './groupThemes';
 interface GroupBadgeProps {
   theme: GroupTheme;
   size?: number;
+  /** `seal`: redonda y con el borde punteado, como un sello de tinta sobre el mapa. */
+  shape?: 'tile' | 'seal';
 }
 
 /**
  * Insignia ilustrada del salón. La forma depende del tema, así que cada salón
  * tiene una mascota reconocible además de su color.
  */
-export const GroupBadge = ({ theme, size = 62 }: GroupBadgeProps) => {
+export const GroupBadge = ({ theme, size = 62, shape = 'tile' }: GroupBadgeProps) => {
   const stroke = '#2A1B45';
 
   const artwork = () => {
@@ -159,13 +161,15 @@ export const GroupBadge = ({ theme, size = 62 }: GroupBadgeProps) => {
     <span
       role="img"
       aria-label={`Salón ${theme.label}`}
-      className="inline-flex shrink-0 items-center justify-center rounded-[20px]"
+      className={`inline-flex shrink-0 items-center justify-center ${
+        shape === 'seal' ? '-rotate-[6deg] rounded-full' : 'rounded-[20px]'
+      }`}
       style={{
         width: size,
         height: size,
         background: theme.gradient,
-        border: '3px solid #2A1B45',
-        boxShadow: '0 4px 0 rgba(42, 27, 69, 0.18)',
+        border: shape === 'seal' ? `4px dashed ${theme.colorDark}` : '3px solid #2A1B45',
+        boxShadow: shape === 'seal' ? undefined : '0 4px 0 rgba(42, 27, 69, 0.18)',
       }}
     >
       <svg

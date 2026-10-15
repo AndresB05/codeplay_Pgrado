@@ -77,7 +77,13 @@ export const Dashboard = () => {
 
         <main className="relative isolate min-w-0 flex-1">
           <PanelBackdrop
-            surface={activeRoute === ROUTES.TROPHY_ROOM ? 'wood' : 'valley'}
+            surface={
+              activeRoute === ROUTES.TROPHY_ROOM
+                ? 'wood'
+                : activeRoute === ROUTES.CLASSROOM
+                  ? 'map'
+                  : 'valley'
+            }
             underSidebar={showSidebar}
           />
           {renderStudentModule()}
