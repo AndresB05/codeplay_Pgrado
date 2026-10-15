@@ -4565,6 +4565,23 @@ el tutor y la pantalla de mundos no cambian.
   ordenar van en tinta y el elegido en `wood-bark`.
 - **Cabecera de misiones** (`shared/AssignedMissionsPanel.tsx`, prop `onMap`):
   icono en sello, título sepia, subtítulo a mano y el recuento como sello verde.
+- **Sin salón todavía** (`student/StudentClassroomSearch.tsx`): el buscador va
+  en la misma cartela, con Leo mirando con catalejo y un mapa en blanco
+  (`classroom-search-leopard-ink.webp`) y la barra de búsqueda en una notita de
+  pergamino. Cada salón es un pergamino (`.map-sheet`) con cuatro líneas
+  intercaladas como las filas de la tabla —nombre en claro, tutor en oscuro,
+  cupos, botón—; el color del tutor sobrevive sólo en el sello, el ID es un
+  sello de doble borde, los cupos una ruta que acaba en X y «Solicitar ingreso»
+  una notita torcida con flecha a tinta. El aviso de «ningún salón coincide» va
+  sobre el rollo del podio: el mapa, estirado a lo ancho, se deformaba.
+- **En espera** (en `StudentClassroomModule.tsx`): pergamino con «En espera»
+  como antetítulo entre dos tramos de ruta, el título, Leo sentado con la carta
+  lacrada y el reloj de arena (`classroom-pending-leopard-ink.webp`), y el ID y
+  «Cancelar solicitud» en una fila. Se probó «En espera» como sello en cuatro
+  sitios y no convenció ninguno.
+- **Los dos Leo van a tinta:** salieron de Gemini en color y se pasaron a sepia
+  con transparencia según la luminancia, para que el papel se vea a través y
+  parezcan dibujados en él. En color desentonaban sobre el pergamino.
 
 La imagen de cada nivel (24-sep-2026), una por nivel y alusiva a su título, en
 `student/StudentWorldLevelsModule.tsx`: los nueve
@@ -4592,7 +4609,7 @@ bloqueado la enseña en gris, como el resto de la tarjeta.
 | Grandes trofeos | `student/StudentTrophiesModule.tsx` | Los tres la tienen |
 | Imagen de nivel | `student/StudentWorldLevelsModule.tsx` | Una por nivel: las nueve; el resto sigue vacío («Imagen Nivel») |
 | Escenarios y fondos | Landing y paneles | Los paneles tienen el valle (y la sala de trofeos, tablas oscuras); la landing sigue con degradados y adornos SVG |
-| Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño, misiones y el salón del niño entero (fondo de mapa, cabecera, cifras, podio y tabla) | Aplicados: tablas, troncos, pergamino y foto clavada |
+| Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño, misiones y el salón del niño entero (fondo de mapa, cabecera, cifras, podio, tabla, buscador y «En espera») | Aplicados: tablas, troncos, pergamino y foto clavada |
 
 **Qué NO cubre.** Los adornos de `components/decor/JungleDecor.tsx` (hojas,
 flores, tucán, liana) **seguirán siendo SVG escritos a mano**: son geometría

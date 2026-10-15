@@ -1,5 +1,6 @@
 import routeX from '../../../assets/brand/route-x.webp';
 import compassRose from '../../../assets/brand/classroom-compass.webp';
+import pendingLeopard from '../../../assets/brand/classroom-pending-leopard-ink.webp';
 import { useClassrooms } from '../../../hooks/useClassrooms';
 import { useFreshClassrooms } from '../../../hooks/useFreshClassrooms';
 import { AssignedMissionsPanel } from '../shared/AssignedMissionsPanel';
@@ -12,21 +13,6 @@ import { StudentRosterTable } from '../shared/StudentRosterTable';
 import { getClassGroupStats } from '../teacher/classroomsData';
 import { MedalIcon, StudentsIcon } from '../teacher/TeacherIcons';
 import { StudentClassroomSearch } from './StudentClassroomSearch';
-
-const HourglassIcon = () => (
-  <svg width="74" height="74" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 8H46M18 56H46" stroke="#2A1B45" strokeWidth="4" strokeLinecap="round" />
-    <path
-      d="M22 8V18C22 26 32 30 32 32C32 34 22 38 22 46V56H42V46C42 38 32 34 32 32C32 30 42 26 42 18V8"
-      fill="#FFF9EF"
-      stroke="#2A1B45"
-      strokeWidth="3.5"
-      strokeLinejoin="round"
-    />
-    <path d="M27 46C27 42 32 39 32 39C32 39 37 42 37 46H27Z" fill="#FFC93C" />
-    <circle cx="32" cy="20" r="3" fill="#FFC93C" />
-  </svg>
-);
 
 /**
  * Salón desde la cuenta del niño. Tiene tres estados: sin salón (buscador),
@@ -80,37 +66,53 @@ export const StudentClassroomModule = () => {
       <div className="px-5 py-5">
         <StoreErrorNotice error={error} />
 
-        <section className="card relative mx-auto mt-4 max-w-[680px] overflow-hidden px-8 py-10 text-center">
-          <span className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full bg-sun-soft" />
-          <span className="pointer-events-none absolute -bottom-12 -right-8 h-36 w-36 rounded-full bg-grape-soft" />
+        {/* Un pergamino más del mapa: la solicitud viaja, todavía no hay salón que pintar. */}
+        <section className="relative isolate mx-auto mt-4 max-w-[680px] px-14 pb-14 pt-12 text-center">
+          <div aria-hidden className="map-sheet pointer-events-none absolute inset-0 -z-10" />
 
-          <div className="relative flex flex-col items-center">
-            <HourglassIcon />
-
-            <span className="mt-4 rounded-full border-2 border-ink bg-sun px-5 py-1.5 font-display text-[16px] text-ink">
+          <div className="flex flex-col items-center">
+            {/* Un antetítulo entre dos tramos de ruta, no un sello más: ya hay dos en la tarjeta. */}
+            <p className="mb-2 flex items-center gap-3 font-map text-[18px] uppercase tracking-[0.12em] text-sepia-soft">
+              <span aria-hidden className="map-route-dashes h-[10px] w-10 opacity-70" />
               En espera
-            </span>
+              <span aria-hidden className="map-route-dashes h-[10px] w-10 opacity-70" />
+            </p>
 
-            <h1 className="title-xl mt-4">Tu solicitud a {currentGroup.name} está en camino</h1>
+            <h1 className="map-title font-display text-[32px] leading-tight text-sepia">
+              Tu solicitud a {currentGroup.name} está en camino
+            </h1>
 
-            <p className="subtitle mt-3 max-w-[460px]">
+            <img
+              src={pendingLeopard}
+              alt=""
+              aria-hidden
+              className="pointer-events-none mt-4 h-[180px] w-auto"
+            />
+
+            <p className="mt-4 max-w-[460px] font-map text-[19px] text-sepia-soft">
               El tutor {currentGroup.teacherName} tiene que aceptarte. En cuanto lo haga verás aquí
               a tus compañeros y podrás seguir su avance.
             </p>
 
-            <div className="mt-5 flex items-center gap-3 rounded-[20px] border-2 border-line bg-cream px-4 py-3">
-              <GroupBadge theme={theme} size={48} />
-              <div className="text-left">
-                <p className="text-[14px] font-bold uppercase tracking-[0.05em] text-ink-faint">
-                  ID del salón
-                </p>
-                <p className="font-display text-[18px] text-mint-dark">{currentGroup.publicId}</p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-7">
+              <div className="flex items-center gap-3">
+                <GroupBadge theme={theme} size={56} shape="seal" />
+                <div className="text-left">
+                  <p className="font-map text-[16px] text-sepia-soft">ID del salón</p>
+                  <p className="rotate-[2deg] rounded-md border-[3px] border-double border-sepia px-2.5 font-map text-[20px] text-sepia">
+                    {currentGroup.publicId}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <button type="button" onClick={cancelJoinRequest} className="btn btn-ghost mt-7">
-              Cancelar solicitud
-            </button>
+              <button
+                type="button"
+                onClick={cancelJoinRequest}
+                className="rounded-md border-2 border-dashed border-sepia bg-wood-bare/70 px-6 py-1.5 font-map text-[20px] text-sepia transition-colors hover:bg-wood-bare"
+              >
+                Cancelar solicitud
+              </button>
+            </div>
           </div>
         </section>
       </div>
