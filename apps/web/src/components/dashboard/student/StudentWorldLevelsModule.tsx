@@ -250,7 +250,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
           </div>
 
           {/* Una notita de pergamino escrita a mano; el color del mundo queda en la cifra. */}
-          <div className="note-paper -rotate-[2deg] px-4 py-1 text-right">
+          <div className="note-paper note-paper-bold -rotate-[2deg] px-4 py-1 text-right">
             <p className="font-map text-[17px] uppercase tracking-[0.06em] text-sepia-soft">
               Progreso actual
             </p>

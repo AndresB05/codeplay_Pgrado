@@ -425,6 +425,12 @@ a {
     filter: drop-shadow(0 3px 0 rgba(42, 27, 69, 0.12));
   }
 
+  /* La notita de «Progreso actual», con el contorno más grueso que las de la tabla. */
+  .note-paper-bold {
+    border-image: url('./assets/brand/progress-note-thin.webp') 64 fill stretch;
+    border-width: 19px;
+  }
+
   /* Los mapas sueltos de detrás del podio: borde más fino porque son pequeños, y sombra para separarlos. */
   .loose-map {
     border-width: 26px;

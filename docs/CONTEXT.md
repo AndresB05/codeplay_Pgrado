@@ -4634,6 +4634,14 @@ niveles y el nivel; estas dos ocupan el alto del panel para que quede centrado.
 El círculo pequeño se queda donde la carga es de un recuadro: escena 3D, editor
 de bloques, vuelta de Google, invitación y ranking.
 
+**Las dos rachas en pergamino** (16-oct-2026): la de la barra superior
+(`topbar-streak-scroll-bold.webp`, sólo el número) y la del tronco de la barra
+lateral (`sidebar-streak-scroll-bold.webp`, «N días»), cada una una tira con su
+fueguito dibujado y el número a mano; en gris con la racha en cero. Llevan un
+contorno fino añadido por fuera. «Progreso actual» de la lista de niveles usa su
+propia notita con contorno (`.note-paper-bold`, `progress-note-thin.webp`): las
+de la tabla del salón no cambian.
+
 **Pantallas de acceso sin ilustración propia** (16-oct-2026): recuperar y
 restablecer la contraseña, la invitación y la vuelta de Google llevan de fondo el
 valle de los paneles (`.panel-backdrop`, fijo con `bg-fixed`). La portada, el

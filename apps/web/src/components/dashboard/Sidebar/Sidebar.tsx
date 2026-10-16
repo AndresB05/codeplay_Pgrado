@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import streakScroll from '../../../assets/brand/sidebar-streak-scroll-bold.webp';
 import { ROUTES } from '../../../constants/routes';
 import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import { endGuestSession } from '../../../context/guest.helpers';
@@ -108,18 +109,6 @@ const CubeIcon = ({ active = false }: { active?: boolean }) => (
   </svg>
 );
 
-const FireIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M13.4 3C13.4 6.2 10.2 7.2 10.2 10.1C10.2 11.2 10.8 12.1 11.7 12.7C8.8 12.7 6.5 14.9 6.5 17.8C6.5 20.4 8.6 22.5 11.2 22.5C15.4 22.5 18.5 19.3 18.5 15.2C18.5 10.8 15.8 8.6 14.6 6.7C14.1 5.9 13.8 4.9 13.4 3Z"
-      fill="#FFC93C"
-      stroke="#2A1B45"
-      strokeWidth="2"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
@@ -194,9 +183,16 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
             {displayName}
           </h2>
 
-          <div className="mt-2 flex items-center gap-2 rounded-full border-2 border-ink bg-sun-soft px-4 py-1 font-display text-[16px] text-sun-dark">
-            <FireIcon />
-            <span>{streakLabel(streakDays)}</span>
+          {/* La racha en una tira de pergamino clavada al tronco; en gris mientras está en cero. */}
+          <div
+            className={`relative mt-2 h-[55px] w-[162px] drop-shadow-[0_3px_0_rgba(74,42,18,0.45)] ${
+              streakDays === 0 ? 'grayscale' : ''
+            }`}
+          >
+            <img src={streakScroll} alt="" className="h-full w-full" />
+            <span className="absolute inset-y-0 left-[46px] right-[12px] flex items-center justify-center font-map text-[22px] leading-none text-sepia">
+              {streakLabel(streakDays)}
+            </span>
           </div>
         </div>
       )}
