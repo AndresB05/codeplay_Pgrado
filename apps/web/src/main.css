@@ -514,6 +514,119 @@ a {
     background-repeat: no-repeat, repeat-y;
   }
 
+  /*
+   * «Mi cuenta» es la tienda del explorador: lona de fondo, que corre con el
+   * contenido como la madera y el mapa, con su reflejo debajo para repetirse.
+   */
+  .tent-backdrop {
+    background-color: #c99d64;
+    background-image: url('./assets/brand/settings-tent-canvas.webp');
+    background-size: 100% auto;
+    background-repeat: repeat-y;
+  }
+
+  /* La banda de cuero de «Mi cuenta»: los remaches van en las esquinas y no se estiran. */
+  .leather-band {
+    border-style: solid;
+    border-color: transparent;
+    border-width: 50px 55px;
+    border-image: url('./assets/brand/settings-leather-band.webp') 100 110 fill stretch;
+    filter: drop-shadow(0 6px 0 rgba(42, 27, 69, 0.18));
+  }
+
+  /* La página del pasaporte: crece con los formularios, así que sólo se estira el papel. */
+  .passport-page {
+    border-style: solid;
+    border-color: transparent;
+    border-width: 45px;
+    border-image: url('./assets/brand/settings-passport-page.webp') 90 fill stretch;
+    filter: drop-shadow(0 8px 0 rgba(42, 27, 69, 0.18));
+  }
+
+  /*
+   * La flecha de madera de «Volver»: la punta y el clavo van en los extremos y
+   * sólo se estira la tabla del medio, así cabe cualquier texto.
+   */
+  .back-arrow-sign {
+    display: inline-flex;
+    align-items: center;
+    height: 48px;
+    border-style: solid;
+    border-color: transparent;
+    border-width: 0 15px 0 35px;
+    border-image: url('./assets/brand/back-arrow-sign.webp') 0 70 0 160 fill stretch;
+    /* El texto se aparta del clavo de la cola. */
+    padding: 0 20px 0 6px;
+    filter: drop-shadow(0 4px 0 rgba(74, 42, 18, 0.35));
+    transition: transform 150ms ease-out;
+  }
+
+  .back-arrow-sign:hover {
+    transform: translateX(-4px);
+  }
+
+  /*
+   * El letrero de «¿Cómo se juega aquí?», uno por mundo: la tabla es la misma y
+   * cambian los remates, que no se estiran (lianas, piedras o cuerda).
+   */
+  .howto-sign {
+    display: inline-flex;
+    align-items: center;
+    height: 56px;
+    padding: 0 10px;
+    border-style: solid;
+    border-color: transparent;
+    filter: drop-shadow(0 4px 0 rgba(74, 42, 18, 0.35));
+    transition: transform 150ms ease-out;
+  }
+
+  .howto-sign:hover {
+    transform: translateY(-2px);
+  }
+
+  .howto-sign-1 {
+    border-width: 0 50px;
+    border-image: url('./assets/brand/howto-sign-world-1.webp') 0 170 fill stretch;
+  }
+
+  .howto-sign-2 {
+    border-width: 0 42px;
+    border-image: url('./assets/brand/howto-sign-world-2.webp') 0 145 fill stretch;
+  }
+
+  .howto-sign-3 {
+    border-width: 0 37px;
+    border-image: url('./assets/brand/howto-sign-world-3.webp') 0 130 fill stretch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .back-arrow-sign,
+    .howto-sign {
+      transition: none;
+    }
+  }
+
+  /* Leo de camino mientras carga: un paso arriba y abajo, quieto con movimiento reducido. */
+  @keyframes loading-leo-step {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-2deg);
+    }
+    50% {
+      transform: translateY(-8px) rotate(2deg);
+    }
+  }
+
+  .loading-leo {
+    animation: loading-leo-step 0.7s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loading-leo {
+      animation: none;
+    }
+  }
+
   /* Letra tallada: tinta oscura con el filo claro debajo, como un surco en la madera. */
   .wood-carved {
     color: var(--wood-ink);

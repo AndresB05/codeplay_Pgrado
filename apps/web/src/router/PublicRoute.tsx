@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { isAuthenticated, resolveLandingRoute } from '../context/auth.helpers';
 import { useActiveRole } from '../hooks/useActiveRole';
 import { useAuth } from '../hooks/useAuth';
+import { LoadingLeo } from '../components/ui/LoadingLeo';
 
 interface PublicRouteProps {
   children: ReactNode;
@@ -15,7 +16,7 @@ export const PublicRoute = ({ children }: PublicRouteProps) => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F6F3FA]">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-[#8B5CF6]" />
+        <LoadingLeo />
       </div>
     );
   }

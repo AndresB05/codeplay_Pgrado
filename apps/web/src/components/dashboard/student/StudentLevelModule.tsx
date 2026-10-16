@@ -24,6 +24,8 @@ import { blockingLevel } from './levelLock';
 import { nextLevelId, worldsAfter } from './nextLevel';
 import { blockingWorld } from './worldLock';
 import { submitAttempt } from './submitAttempt';
+import { LoadingLeo } from '../../ui/LoadingLeo';
+import { BackSign } from './BackSign';
 import { WorldIntro } from './WorldIntro';
 
 /* El rótulo de la caja: tres piezas encajadas, que es lo que se hace con los bloques. */
@@ -81,18 +83,6 @@ const ChevronIcon = ({ up }: { up: boolean }) => (
   </svg>
 );
 
-const BackIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path
-      d="M15 6L9 12L15 18"
-      stroke="currentColor"
-      strokeWidth="2.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 /*
  * Copia de la de `GameScene`, que no se puede importar: está tras la frontera
  * diferida y traerla de allí metería `three` en el paquete principal.
@@ -121,6 +111,39 @@ const stepWorldBubbles = (stepLimit: number) => [
   'Si se acaban antes de la meta, toca empezar otra vez. ¡Busca el camino más corto!',
 ];
 
+/* Los mundos 1 y 2 no cuentan pasos: Leo explica cómo se mueve y cómo se salta. */
+const FIRST_WORLD_BUBBLES = [
+  '¡Hola! Aquí me guías con bloques: cada bloque es una cosa que hago.',
+  'Arrastra «avanzar» y «girar» y ponlos en orden, de arriba abajo.',
+  'Pulsa «Ejecutar» y mira si llego a la meta. Si no, cambia el orden y prueba otra vez.',
+];
+
+const SECOND_WORLD_BUBBLES = [
+  'Aquí el camino sube: hay escalones y huecos.',
+  'Con «saltar» subo un escalón o cruzo un hueco.',
+  'Parte el camino en tramos: primero hasta la primera roca, luego la siguiente.',
+];
+
+/*
+ * Lo que Leo cuenta en cada mundo, por su lugar en la lista. Un nivel del
+ * mundo 3 sin límite de pasos, o un mundo que no se pudo situar, se queda sin
+ * explicación: no hay nada cierto que decirle al niño.
+ */
+const worldBubbles = (worldPosition: number, stepLimit: number | null) => {
+  if (worldPosition === 0) {
+    return FIRST_WORLD_BUBBLES;
+  }
+
+  if (worldPosition === 1) {
+    return SECOND_WORLD_BUBBLES;
+  }
+
+  return worldPosition === 2 && stepLimit !== null ? stepWorldBubbles(stepLimit) : null;
+};
+
+/* Enteras y no armadas con el índice: Tailwind sólo conserva las clases que lee tal cual. */
+const HOWTO_SIGNS = ['howto-sign-1', 'howto-sign-2', 'howto-sign-3'];
+
 const HelpIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path
@@ -148,7 +171,9 @@ type LevelState =
       instructions: string;
       level: PlayableLevel;
       worldId: string;
-      /* Sólo en el mundo de los pasos contados: es el que Leo explica. */
+      /* El lugar del mundo en la lista (0, 1, 2): elige el letrero de ayuda. */
+      worldPosition: number;
+      /* Sólo en el mundo de los pasos contados. */
       stepLimit: number | null;
       nextLevelId: string | null;
       /* El primer nivel del mundo siguiente, sólo en el último nivel y si está abierto. */
@@ -434,6 +459,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         instructions: row.narrative,
         level,
         worldId: row.worldId,
+        worldPosition,
         stepLimit: worldPosition === 2 ? (level.config.stepLimit ?? null) : null,
         nextLevelId: next,
         nextWorldLevel,
@@ -452,8 +478,9 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
     };
   }, [levelId, userId]);
 
-  const introWorldId =
-    state.status === 'ready' && state.stepLimit !== null ? state.worldId : null;
+  const introBubbles =
+    state.status === 'ready' ? worldBubbles(state.worldPosition, state.stepLimit) : null;
+  const introWorldId = state.status === 'ready' && introBubbles !== null ? state.worldId : null;
 
   /*
    * Leo sale solo la primera vez, y quién lo vio se lee de la cuenta y no del
@@ -496,9 +523,8 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
 
   if (state.status === 'loading') {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center px-5 py-5">
-        <div className="h-14 w-14 animate-spin rounded-full border-[5px] border-line border-t-grape" />
-        <span className="sr-only">Cargando el nivel…</span>
+      <div className="flex min-h-[calc(100vh-84px)] items-center justify-center px-5 py-5">
+        <LoadingLeo label="Cargando el nivel…" />
       </div>
     );
   }
@@ -517,10 +543,9 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
             Estamos preparándolo. Vuelve a la lista y prueba con otro.
           </p>
 
-          <button type="button" onClick={backToLevels} className="btn btn-grape mt-5">
-            <BackIcon />
+          <BackSign onClick={backToLevels} className="mt-5">
             Volver a los niveles
-          </button>
+          </BackSign>
         </section>
       </div>
     );
@@ -541,14 +566,9 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
               : `Supera «${state.blockerName}» y se abrirá.`}
           </p>
 
-          <button
-            type="button"
-            onClick={isWorld ? () => navigate(ROUTES.WORLDS) : backToLevels}
-            className="btn btn-grape mt-5"
-          >
-            <BackIcon />
+          <BackSign onClick={isWorld ? () => navigate(ROUTES.WORLDS) : backToLevels} className="mt-5">
             {isWorld ? 'Volver a mundos' : 'Volver a los niveles'}
-          </button>
+          </BackSign>
         </section>
       </div>
     );
@@ -562,23 +582,22 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
   return (
     <div className="px-5 py-5">
       <section className="card flex flex-wrap items-center gap-4 px-5 py-4">
-        <button type="button" onClick={backToLevels} className="btn btn-sm btn-ghost">
-          <BackIcon />
+        <BackSign onClick={backToLevels}>
           Volver a los niveles
-        </button>
+        </BackSign>
 
         <h1 className="title-lg">{state.title}</h1>
 
-        {state.stepLimit !== null && (
+        {introBubbles !== null && (
           <button
             type="button"
             onClick={() => setIntroOpen(true)}
-            className="btn btn-sm btn-ghost ml-auto"
+            className={`howto-sign ${HOWTO_SIGNS[state.worldPosition] ?? HOWTO_SIGNS[0]} wood-carved ml-auto gap-2 font-display text-[16px]`}
           >
             <img
               src={leoExplains}
               alt=""
-              className="h-8 w-8 rounded-full border-2 border-ink bg-cream object-cover object-top"
+              className="h-8 w-8 rounded-full border-2 border-wood-ink bg-cream object-cover object-top"
             />
             ¿Cómo se juega aquí?
           </button>
@@ -721,10 +740,10 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
         </div>
       </section>
 
-      {introOpen && state.stepLimit !== null && (
+      {introOpen && introBubbles !== null && (
         <WorldIntro
           image={leoExplains}
-          bubbles={stepWorldBubbles(state.stepLimit)}
+          bubbles={introBubbles}
           onClose={closeIntro}
         />
       )}

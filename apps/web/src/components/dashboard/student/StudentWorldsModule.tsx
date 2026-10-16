@@ -10,7 +10,7 @@ import { useWorldLocks } from '../../../hooks/useWorldLocks';
 import { LockIcon } from './LockIcon';
 import { useProgress } from '../../../hooks/useProgress';
 import { worldsService } from '../../../services/worlds.service';
-import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
+import { MonsteraLeaf, TropicalFlower } from '../../decor/JungleDecor';
 import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import world1 from '../../../assets/brand/world-1-card.webp';
 import world2 from '../../../assets/brand/world-2-card.webp';
@@ -360,10 +360,6 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
         </div>
 
         <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-jungle-soft lg:hidden" />
-        <PalmFrond
-          size={96}
-          className="pointer-events-none absolute -left-6 -bottom-8 rotate-[18deg] opacity-70 lg:hidden"
-        />
 
         <div className="relative flex flex-wrap items-center gap-6 lg:pr-[40%]">
           <img

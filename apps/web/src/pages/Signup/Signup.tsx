@@ -4,7 +4,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SignupField } from '../../components/auth/SignupField';
 import { signupSchema } from '../../components/auth/SignupForm.schema';
 import { SignupRoleCard } from '../../components/auth/SignupRoleCard';
-import { Canopy, TropicalFlower } from '../../components/decor/JungleDecor';
 import signupChild from '../../assets/brand/signup-child.webp';
 import signupFormChild from '../../assets/brand/signup-form-child.webp';
 import signupFormTutor from '../../assets/brand/signup-form-tutor.webp';
@@ -139,7 +138,6 @@ export const Signup = () => {
 
   return (
     <div className="jungle-surface relative min-h-screen overflow-hidden px-6 py-4 sm:px-8 lg:px-10">
-      <Canopy />
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-[1250px] flex-col">
         <Link
@@ -289,11 +287,6 @@ export const Signup = () => {
                 </form>
 
                 <div className="card-flat relative overflow-hidden bg-cream p-4 sm:p-5">
-                  <TropicalFlower
-                    size={40}
-                    className="pointer-events-none absolute -right-3 -top-3 rotate-[14deg]"
-                    color="#FF8A3D"
-                  />
 
                   <div className="relative flex h-[320px] items-center justify-center">
                     <img

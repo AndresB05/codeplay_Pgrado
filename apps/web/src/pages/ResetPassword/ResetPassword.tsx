@@ -3,7 +3,6 @@ import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { resetPasswordSchema } from '../../components/auth/ChangePasswordForm.schema';
 import { SignupField } from '../../components/auth/SignupField';
-import { Canopy, TropicalFlower } from '../../components/decor/JungleDecor';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useRoleHomeRedirect } from '../../hooks/useRoleHomeRedirect';
@@ -56,7 +55,6 @@ export const ResetPassword = () => {
 
   return (
     <div className="jungle-surface relative min-h-screen overflow-hidden px-6 py-4 sm:px-8 lg:px-10">
-      <Canopy />
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-[1250px] flex-col">
         <Link
@@ -69,11 +67,6 @@ export const ResetPassword = () => {
 
         <div className="flex flex-1 items-center justify-center py-8 sm:py-10">
           <section className="card relative w-full max-w-[560px] overflow-hidden px-7 pb-9 pt-8 sm:px-10">
-            <TropicalFlower
-              size={48}
-              className="pointer-events-none absolute -right-4 -top-4 rotate-[14deg]"
-              color="#FF8A3D"
-            />
 
             <div className="relative">
               <span className="chip chip-papaya">Última parada</span>

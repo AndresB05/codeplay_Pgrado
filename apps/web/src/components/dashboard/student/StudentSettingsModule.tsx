@@ -1,4 +1,8 @@
 import { useNavigate } from 'react-router-dom';
+import passportLeopard from '../../../assets/brand/settings-leopard-sticker.webp';
+import stampClassroom from '../../../assets/brand/settings-stamp-classroom.webp';
+import stampTrophies from '../../../assets/brand/settings-stamp-trophies.webp';
+import stampWorlds from '../../../assets/brand/settings-stamp-worlds.webp';
 import { explorerLevel } from '../../../constants/progress';
 import { ROUTES } from '../../../constants/routes';
 import { pickMascotAvatar } from '../../../constants/mascotAvatars';
@@ -6,7 +10,7 @@ import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
 import { FALLBACK_STUDENT_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
-import { MonsteraLeaf, PalmFrond, TropicalFlower } from '../../decor/JungleDecor';
+import { TropicalFlower } from '../../decor/JungleDecor';
 import { ChangeAvatarPanel } from '../shared/ChangeAvatarPanel';
 import { ChangeNamePanel } from '../shared/ChangeNamePanel';
 import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
@@ -28,6 +32,12 @@ const FireIcon = () => (
     />
   </svg>
 );
+
+const VISA_STAMPS = [
+  { label: 'Ir a mundos', route: ROUTES.WORLDS, image: stampWorlds, tilt: '-rotate-[8deg]' },
+  { label: 'Sala de trofeos', route: ROUTES.TROPHY_ROOM, image: stampTrophies, tilt: 'rotate-[5deg]' },
+  { label: 'Mi salón', route: ROUTES.CLASSROOM, image: stampClassroom, tilt: '-rotate-[3deg]' },
+];
 
 export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
   const navigate = useNavigate();
@@ -51,16 +61,24 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
   return (
     <div className="px-5 py-5">
       <div className="mx-auto max-w-[980px]">
-        <section className="card relative flex flex-wrap items-center justify-between gap-4 overflow-hidden px-6 py-6">
-          <PalmFrond
-            size={92}
-            className="pointer-events-none absolute -right-6 -top-8 -scale-x-100 rotate-[12deg] opacity-70"
+        {/* La cuenta es la tienda del explorador: la cabecera, una banda de cuero con Leo y su pasaporte. */}
+        <section className="relative isolate flex min-h-[156px] flex-wrap items-center gap-5 px-12 py-5">
+          <div aria-hidden className="leather-band pointer-events-none absolute inset-0 -z-10" />
+
+          <img
+            src={passportLeopard}
+            alt=""
+            aria-hidden
+            className="pointer-events-none -my-10 h-[200px] w-auto shrink-0 drop-shadow-[0_4px_0_rgba(42,27,69,0.25)]"
           />
 
-          <div className="relative">
-            <span className="chip chip-grape">Cuenta</span>
-            <h1 className="title-xl mt-2">Mi cuenta</h1>
-            <p className="subtitle mt-1">Aquí vive tu identidad de explorador.</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="font-display text-[40px] leading-tight text-cream drop-shadow-[0_3px_0_rgba(42,27,69,0.45)]">
+              Mi cuenta
+            </h1>
+            <p className="mt-1 text-[17px] font-bold text-cream/85">
+              Aquí vive tu identidad de explorador.
+            </p>
           </div>
 
           <button type="button" onClick={() => void handleSignOut()} className="btn btn-coral">
@@ -68,7 +86,10 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
           </button>
         </section>
 
-        <section className="card mt-6 px-6 py-6">
+        {/* Los datos del niño, en la página de su pasaporte: crece con los formularios. */}
+        <section className="relative isolate mt-6 px-14 py-12">
+          <div aria-hidden className="passport-page pointer-events-none absolute inset-0 -z-10" />
+
           <h2 className="title-lg">Detalles del explorador</h2>
 
           <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-start">
@@ -126,41 +147,37 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
           </div>
         </section>
 
-        <section className="card relative mt-6 overflow-hidden px-6 py-6">
-          <MonsteraLeaf
-            size={80}
-            className="pointer-events-none absolute -left-6 -bottom-8 rotate-[24deg] opacity-70"
-          />
+        {/* Los atajos son sellos de visado: cada uno lleva a un sitio de la expedición. */}
+        <section className="relative isolate mt-6 flex flex-wrap items-center gap-6 px-12 py-6">
+          <div aria-hidden className="leather-band pointer-events-none absolute inset-0 -z-10" />
 
-          <div className="relative">
-            <h2 className="title-lg">Vuelve a la expedición</h2>
-            <p className="subtitle mt-1">Tus mundos y trofeos siguen esperando en la selva.</p>
+          <div className="min-w-[220px] flex-1">
+            <h2 className="font-display text-[30px] leading-tight text-cream drop-shadow-[0_3px_0_rgba(42,27,69,0.45)]">
+              Vuelve a la expedición
+            </h2>
+            <p className="mt-1 text-[16px] font-bold text-cream/85">
+              Tus mundos y trofeos siguen esperando en la selva.
+            </p>
+          </div>
 
-            <div className="mt-5 flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-5">
+            {VISA_STAMPS.map((stamp) => (
               <button
+                key={stamp.label}
                 type="button"
-                onClick={() => navigate(ROUTES.WORLDS)}
-                className="btn btn-grape"
+                onClick={() => navigate(stamp.route)}
+                className="group flex flex-col items-center gap-1"
               >
-                Ir a mundos
+                <img
+                  src={stamp.image}
+                  alt=""
+                  className={`h-[88px] w-[88px] transition-transform duration-150 group-hover:rotate-0 group-hover:scale-110 motion-reduce:transition-none ${stamp.tilt}`}
+                />
+                <span className="whitespace-nowrap font-display text-[16px] text-cream drop-shadow-[0_2px_0_rgba(42,27,69,0.45)]">
+                  {stamp.label}
+                </span>
               </button>
-
-              <button
-                type="button"
-                onClick={() => navigate(ROUTES.TROPHY_ROOM)}
-                className="btn btn-sun"
-              >
-                Sala de trofeos
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate(ROUTES.CLASSROOM)}
-                className="btn btn-mint"
-              >
-                Mi salón
-              </button>
-            </div>
+            ))}
           </div>
         </section>
       </div>

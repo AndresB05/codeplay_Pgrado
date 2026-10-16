@@ -1,7 +1,6 @@
 import world1 from '../../assets/brand/world-1.webp';
 import world2 from '../../assets/brand/world-2.webp';
 import world3 from '../../assets/brand/world-3.webp';
-import { PalmFrond } from '../decor/JungleDecor';
 import { LevelBadge, SectionContainer } from './shared';
 
 const BigWorldCard = () => {
@@ -90,15 +89,6 @@ export const WorldsSection = () => {
       id="mundos"
       className="jungle-band relative scroll-mt-[100px] overflow-hidden border-y-[3px] border-ink"
     >
-      <PalmFrond
-        size={130}
-        className="pointer-events-none absolute -left-10 top-6 rotate-[14deg] opacity-70"
-      />
-      <PalmFrond
-        size={130}
-        className="pointer-events-none absolute -right-10 bottom-6 -scale-x-100 rotate-[14deg] opacity-70"
-        color="#1F9D5B"
-      />
 
       <SectionContainer className="relative z-10 py-[42px] sm:py-[50px] lg:py-[56px]">
         <div className="text-center">

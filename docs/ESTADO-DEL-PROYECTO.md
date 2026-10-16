@@ -474,8 +474,15 @@ pulsarlas; la de la sección abierta se queda hundida y en color corteza. Los
 niveles (`StudentWorldLevelsModule.tsx`) ya tienen su imagen, una por nivel. El proceso y lo ya aplicado, imagen por imagen, están en
 `CONTEXT.md` §3 → P6.
 
-Los adornos de `components/decor/` (hojas, flores, liana) **siguen siendo SVG**
-a propósito: pesan poco, escalan sin pérdida y heredan el contorno de tinta.
+Mi cuenta del niño es una tienda de explorador: lona de fondo
+(`.tent-backdrop`), cabecera y atajos en bandas de cuero (`.leather-band`) y los
+datos en una página de pasaporte (`.passport-page`). Los botones de volver son
+flechas de madera (`.back-arrow-sign`), la ayuda de cada nivel un letrero por
+mundo (`.howto-sign-1/2/3`) y las cargas, Leo caminando (`LoadingLeo`).
+
+Los adornos SVG sueltos (dosel de hojas, palmeras, flores en esquinas) **se
+retiraron de toda la web** el 16-oct-2026: no casaban con las ilustraciones. Los
+dibujos de `components/decor/` sólo quedan como iconos dentro de chips y tarjetas.
 
 #### Identidad visual de los salones
 

@@ -44,7 +44,8 @@ encienden con `VITE_ENABLE_DEV_TOOLS=true` en `apps/web/.env`.
 - **Estilos:** usa los nombres de color del tema, nunca hex sueltos. Los tokens
   están duplicados a propósito en `src/main.css` y `tailwind.config.js`.
 - **Adornos SVG:** van en `components/decor/`, con `aria-hidden` y sin capturar
-  el puntero.
+  el puntero, y sólo como iconos: no se reparten hojas ni flores por esquinas y
+  cabeceras, que se retiraron porque no casaban con las ilustraciones.
 - **Huecos de la mascota** (`.mascot-slot`, `ImagePlaceholder`): se dejan
   **vacíos** hasta que existan las ilustraciones definitivas. No los rellenes.
 - **Store de salones:** ningún componente habla con Supabase ni con el

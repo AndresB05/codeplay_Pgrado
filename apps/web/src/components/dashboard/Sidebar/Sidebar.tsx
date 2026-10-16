@@ -177,12 +177,12 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
         className="sidebar-log pointer-events-none absolute inset-y-0 -right-4 left-0 -z-10"
       />
 
-      <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} />
+      <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} wooden />
 
       {/* Plegada se queda sin la ficha: la barra superior ya enseña racha y XP. */}
       {collapsed ? null : (
         <div className="relative flex flex-col items-center">
-          <div className="relative h-[112px] w-[112px] overflow-hidden rounded-full border-[4px] border-ink shadow-[0_6px_0_rgba(42,27,69,0.2)]">
+          <div className="relative h-[112px] w-[112px] overflow-hidden rounded-full border-[4px] border-ink bg-white shadow-[0_6px_0_rgba(42,27,69,0.2)]">
             <img
               src={pickMascotAvatar(user?.id, user?.fullName, user?.avatarKey)}
               alt=""

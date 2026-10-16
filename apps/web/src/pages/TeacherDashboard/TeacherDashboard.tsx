@@ -9,6 +9,7 @@ import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useClassrooms } from '../../hooks/useClassrooms';
 import { FALLBACK_TEACHER_NAME } from '../../services/classrooms.service';
+import { LoadingLeo } from '../../components/ui/LoadingLeo';
 
 export const TeacherDashboard = () => {
   const location = useLocation();
@@ -23,7 +24,7 @@ export const TeacherDashboard = () => {
   if (authLoading || classroomsLoading) {
     return (
       <div className="jungle-surface flex min-h-screen items-center justify-center">
-        <div className="h-14 w-14 animate-spin rounded-full border-[5px] border-line border-t-grape" />
+        <LoadingLeo />
       </div>
     );
   }

@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom';
 import heroLeopard from '../../assets/brand/hero-leopard.webp';
 import { ROUTES } from '../../constants/routes';
-import { Canopy, TropicalFlower } from '../decor/JungleDecor';
+import { TropicalFlower } from '../decor/JungleDecor';
 import { SectionContainer } from './shared';
 
 export const HeroSection = () => {
   return (
     <section className="jungle-surface relative overflow-hidden">
-      <Canopy />
 
       {/*
        * La ilustración cubre el hero entero, anclada a la derecha para que el

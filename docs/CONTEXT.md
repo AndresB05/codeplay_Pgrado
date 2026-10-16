@@ -208,7 +208,7 @@ codeplayPGrado/
 | `components/dashboard/teacher/` | Panel del tutor (11 archivos) y `classroomsData.ts` (semilla + funciones puras) |
 | `components/dashboard/student/` | Módulos del alumno: salón, buscador, mundos, niveles, trofeos, ajustes |
 | `components/dashboard/shared/` | Componentes de ambos roles (`ConfirmDialog`, `StatCard`, `StudentRosterTable`, `GroupBadge`) y `groupThemes.ts` |
-| `components/decor/` | `JungleDecor.tsx`: SVG decorativos del tema selva |
+| `components/decor/` | `JungleDecor.tsx`: hoja, flor y tucán, que sólo quedan como iconos; `PanelBackdrop.tsx`: el fondo de cada panel |
 | `game/` | El juego (J1 en adelante). `GameScene.tsx` es el **único** módulo que importa `three`; `GameSceneLoader.tsx` es la frontera de carga diferida y no importa ninguno de los dos |
 | `components/home/` | Navbar, secciones de la landing y `shared.tsx` (contenedores y huecos de mascota) |
 | `components/auth/`, `components/ui/` | Formularios de acceso y primitivas antiguas |
@@ -244,7 +244,10 @@ Los tokens viven duplicados a propósito en `src/main.css` (variables CSS) y en
 El detalle completo de paleta y tipografía está en `ESTADO-DEL-PROYECTO.md` §2.
 
 **Ilustraciones.** Los SVG decorativos van en `components/decor/`, con
-`aria-hidden="true"`, `focusable="false"` y sin capturar el puntero. Contorno de
+`aria-hidden="true"`, `focusable="false"` y sin capturar el puntero. Desde el
+16-oct-2026 **no se reparten como adornos** por esquinas y cabeceras —el usuario
+los retiró de toda la web: no casaban con las ilustraciones—; sólo quedan como
+iconos dentro de chips y tarjetas. Contorno de
 tinta `#2A1B45` de unos 3 px, relleno saturado y esquinas redondeadas.
 
 **Huecos de mascota.** Los espacios reservados para la ilustración definitiva
@@ -336,7 +339,7 @@ inspirado en CodeCombat, CodeMonkey y Scratch, sobre un bioma de selva tropical.
 | Campos de formulario (`.field`, `.field-label`) | ✅ | `main.css` |
 | **Capa de selva:** colores `jungle` y `papaya`, `.btn-leaf`, `.btn-papaya`, `.chip-leaf`, `.chip-papaya` | ✅ | `main.css` + `tailwind.config.js` |
 | **Superficies de selva:** `.jungle-surface` (luz entre hojas) y `.jungle-band` (franja de tierra) | ✅ | `main.css` |
-| **Adornos SVG:** `MonsteraLeaf`, `PalmFrond`, `TropicalFlower`, `Toucan`, `VineDivider`, `Canopy`, `LeafCorner` | ✅ | `components/decor/JungleDecor.tsx` |
+| **Dibujos SVG de selva**, sólo como iconos: `MonsteraLeaf`, `TropicalFlower`, `Toucan` (`PalmFrond`, `Canopy` y `LeafCorner` se borraron con los adornos el 16-oct-2026) | ✅ | `components/decor/JungleDecor.tsx` |
 | Huecos reservados para la mascota (`.mascot-slot`, `ImagePlaceholder`) | ✅ | `main.css`, `components/home/shared.tsx` |
 | Identidad visual automática por salón: 6 temas por hash del id | ✅ | `components/dashboard/shared/groupThemes.ts` + `GroupBadge.tsx` |
 
@@ -1077,7 +1080,7 @@ decide por posición, como `fillGaps`.
 | Archivo | Qué hace |
 | --- | --- |
 | `student/WorldIntro.tsx` | El diálogo: imagen, burbujas y `onClose` por parámetro. Va **en un portal al `<main>` del panel**, con `absolute inset-0`: el velo cubre sólo el módulo y deja a la vista las barras lateral y superior. Leo va `sticky` abajo. Sale animado y el cierre espera a la animación |
-| `student/StudentLevelModule.tsx` | Lo monta en el mundo 3, lee si ya se vio y lo anota al cerrar. Botón «¿Cómo se juega aquí?» en la cabecera para repetirlo |
+| `student/StudentLevelModule.tsx` | Lo monta, lee si ya se vio y lo anota al cerrar. Botón «¿Cómo se juega aquí?» en la cabecera para repetirlo. Desde el 16-oct-2026 también en los mundos 1 y 2 (`worldBubbles`): cómo se ordenan los bloques y cómo se salta |
 | `services/profile.service.ts` | `getSeenWorldIntros` y `markWorldIntroSeen` |
 | `main.css` | Entrada y salida (`.leo-enter`, `.leo-leave`, `.leo-veil`, `.leo-veil-out`), anuladas con `prefers-reduced-motion`. El tamaño y la disposición van por *container query* sobre el ancho del módulo (`.leo-stage`), no por el de la pantalla |
 | `supabase/migrations/202606030048_world_intros_seen.sql` | `profiles.seen_world_intros uuid[]` y `mark_world_intro_seen(uuid)`, `security definer` sobre la fila propia, como la 0046 |
@@ -4583,6 +4586,45 @@ el tutor y la pantalla de mundos no cambian.
   con transparencia según la luminancia, para que el papel se vea a través y
   parezcan dibujados en él. En color desentonaban sobre el pergamino.
 
+**Mi cuenta del niño es la tienda del explorador** (16-oct-2026), en
+`student/StudentSettingsModule.tsx`:
+- **Fondo:** lona con costuras (`settings-tent-canvas.webp`, con su reflejo
+  debajo), `PanelBackdrop surface="tent"` elegido por la ruta en
+  `pages/Dashboard/Dashboard.tsx`; corre con el contenido.
+- **Cabecera y atajos:** banda de cuero con remaches en las esquinas
+  (`.leather-band`, `settings-leather-band.webp`, nueve trozos). En la cabecera,
+  Leo enseña su pasaporte como calcomanía, con borde blanco
+  (`settings-leopard-sticker.webp`); los tres atajos son sellos de visado
+  (`settings-stamp-{worlds,trophies,classroom}.webp`) que se enderezan al pasar.
+- **Detalles del explorador:** página de pasaporte con cuero verde cosido
+  (`.passport-page`, `settings-passport-page.webp`); sólo se estira el papel,
+  así que aguanta abrir los formularios. Por dentro sigue el estilo de antes.
+
+**Letreros de madera** (16-oct-2026), con contorno marrón como las demás piezas
+de madera:
+- **«Volver a mundos / a los niveles»:** flecha de madera (`.back-arrow-sign`,
+  `back-arrow-sign.webp`) en `student/BackSign.tsx`; la punta y el clavo no se
+  estiran. Sustituye a los seis botones de volver de la lista de niveles y del nivel.
+- **«¿Cómo se juega aquí?»:** un letrero por mundo, misma tabla con remates
+  distintos (`.howto-sign-1/2/3`, `howto-sign-world-{1,2,3}.webp`: lianas,
+  piedras y cuerda). Las clases van enteras en `HOWTO_SIGNS`: armadas con el
+  índice, Tailwind las descartaba.
+- **Progreso de la lista de niveles:** «Progreso actual» en una notita de
+  pergamino (`.note-paper`) con la cifra en el color del mundo.
+
+**Pantalla de carga** (`components/ui/LoadingLeo.tsx`, 16-oct-2026): Leo
+caminando con su brújula (`loading-leopard.webp`) y un pasito arriba y abajo
+(`.loading-leo`), quieto con movimiento reducido. Está en la entrada a los dos
+paneles, `RouteLoading`, `PublicRoute` y las cargas del salón, la lista de
+niveles y el nivel; estas dos ocupan el alto del panel para que quede centrado.
+El círculo pequeño se queda donde la carga es de un recuadro: escena 3D, editor
+de bloques, vuelta de Google, invitación y ranking.
+
+**Barra lateral del niño** (16-oct-2026): el botón de plegar es una rodaja de
+tronco con la flecha tallada y el contorno del tronco
+(`sidebar-toggle-log-outlined.webp`, `SidebarToggle wooden`), que da media vuelta
+al plegar; la del tutor sigue blanca. El avatar lleva fondo blanco.
+
 La imagen de cada nivel (24-sep-2026), una por nivel y alusiva a su título, en
 `student/StudentWorldLevelsModule.tsx`: los nueve
 (`src/assets/brand/level-{siempre-adelante,camino-con-curvas,la-escalera}.webp`,
@@ -4609,12 +4651,12 @@ bloqueado la enseña en gris, como el resto de la tarjeta.
 | Grandes trofeos | `student/StudentTrophiesModule.tsx` | Los tres la tienen |
 | Imagen de nivel | `student/StudentWorldLevelsModule.tsx` | Una por nivel: las nueve; el resto sigue vacío («Imagen Nivel») |
 | Escenarios y fondos | Landing y paneles | Los paneles tienen el valle (y la sala de trofeos, tablas oscuras); la landing sigue con degradados y adornos SVG |
-| Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño, misiones y el salón del niño entero (fondo de mapa, cabecera, cifras, podio, tabla, buscador y «En espera») | Aplicados: tablas, troncos, pergamino y foto clavada |
+| Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño (con la rodaja de plegar), misiones, el salón del niño entero (fondo de mapa, cabecera, cifras, podio, tabla, buscador y «En espera»), Mi cuenta del niño (tienda de lona, cuero y pasaporte), los letreros de «Volver» y de ayuda, y el progreso de la lista de niveles | Aplicados: tablas, troncos, pergamino, cuero y foto clavada |
 
-**Qué NO cubre.** Los adornos de `components/decor/JungleDecor.tsx` (hojas,
-flores, tucán, liana) **seguirán siendo SVG escritos a mano**: son geometría
-ligera, escalan sin pérdida, heredan el contorno de tinta del sistema visual y
-pesan una fracción de lo que pesaría un PNG. No hay motivo para reemplazarlos.
+**Qué NO cubre.** Los dibujos de `components/decor/JungleDecor.tsx` que quedan
+(hoja, flor, tucán) son iconos dentro de chips y tarjetas y siguen siendo SVG. Los
+adornos sueltos —dosel de hojas, palmeras y flores en las esquinas— se retiraron
+de toda la web el 16-oct-2026, a petición del usuario.
 
 **Tareas cuando llegue el momento**
 

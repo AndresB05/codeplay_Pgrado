@@ -3,7 +3,6 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { SignupField } from '../../components/auth/SignupField';
 import { loginSchema } from '../../components/auth/LoginForm.schema';
-import { Canopy } from '../../components/decor/JungleDecor';
 import loginLeopard from '../../assets/brand/login-leopard.webp';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
@@ -75,7 +74,6 @@ export const Login = () => {
 
   return (
     <div className="jungle-surface relative min-h-screen overflow-hidden px-6 py-4 sm:px-8 lg:px-10">
-      <Canopy />
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-[1250px] flex-col">
         <Link

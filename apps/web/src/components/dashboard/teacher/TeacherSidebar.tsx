@@ -8,7 +8,6 @@ import type { User } from '../../../types/user.types';
 import { TUTOR_AVATAR } from '../../../constants/mascotAvatars';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
-import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
 import { ChartIcon, GraduationIcon, LogoutIcon, SettingsIcon } from './TeacherIcons';
 import { useSidebarCollapsed } from '../../../hooks/useSidebarCollapsed';
 import { SidebarToggle } from '../Sidebar/SidebarToggle';
@@ -76,16 +75,6 @@ export const TeacherSidebar = ({
 
       {collapsed ? null : (
         <div className="relative flex flex-col items-center">
-          {/* Mismo gesto que en la barra del niño: la selva es de los dos roles. */}
-          <MonsteraLeaf
-            size={54}
-            className="pointer-events-none absolute -left-1 top-1 rotate-[-18deg]"
-            color="#1F9D5B"
-          />
-          <PalmFrond
-            size={48}
-            className="pointer-events-none absolute -right-1 top-2 -scale-x-100 rotate-[14deg]"
-          />
 
           <div className="relative h-[104px] w-[104px] overflow-hidden rounded-full border-[4px] border-ink bg-cream shadow-[0_6px_0_rgba(42,27,69,0.18)]">
             <img src={TUTOR_AVATAR} alt="" className="h-full w-full object-cover" />

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Canopy, MonsteraLeaf, Toucan } from '../../components/decor/JungleDecor';
 import { ROUTES } from '../../constants/routes';
 import {
   savePendingInvitationToken,
@@ -15,14 +14,6 @@ import type { AppError } from '../../errors/AppError';
 /* El marco de selva es el mismo en los seis estados; sólo cambia lo de dentro. */
 const Frame = ({ children }: { children: ReactNode }) => (
   <div className="jungle-surface relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-4">
-    <Canopy />
-
-    <MonsteraLeaf
-      size={120}
-      className="pointer-events-none absolute -left-6 top-10 rotate-[24deg]"
-      color="#12703D"
-    />
-    <Toucan size={96} className="pointer-events-none absolute bottom-8 right-8" />
 
     <section className="card relative z-10 w-full max-w-[520px] px-8 py-10 text-center">
       {children}

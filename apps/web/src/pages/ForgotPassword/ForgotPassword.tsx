@@ -2,7 +2,6 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { SignupField } from '../../components/auth/SignupField';
-import { Canopy, MonsteraLeaf } from '../../components/decor/JungleDecor';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { BrandLogo } from '../../components/ui/BrandLogo';
@@ -39,7 +38,6 @@ export const ForgotPassword = () => {
 
   return (
     <div className="jungle-surface relative min-h-screen overflow-hidden px-6 py-4 sm:px-8 lg:px-10">
-      <Canopy />
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-[1250px] flex-col">
         <Link
@@ -52,11 +50,6 @@ export const ForgotPassword = () => {
 
         <div className="flex flex-1 items-center justify-center py-8 sm:py-10">
           <section className="card relative w-full max-w-[560px] overflow-hidden px-7 pb-9 pt-8 sm:px-10">
-            <MonsteraLeaf
-              size={96}
-              className="pointer-events-none absolute -right-7 -top-8 rotate-[18deg] opacity-70"
-              color="#12703D"
-            />
 
             <div className="relative">
               <span className="chip chip-leaf">Te ayudamos a volver</span>

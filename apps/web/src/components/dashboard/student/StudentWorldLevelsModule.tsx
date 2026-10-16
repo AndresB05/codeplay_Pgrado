@@ -15,7 +15,9 @@ import { useWorldLocks } from '../../../hooks/useWorldLocks';
 import { worldsService } from '../../../services/worlds.service';
 import type { User } from '../../../types/user.types';
 import type { Level, World } from '../../../types/world.types';
-import { MonsteraLeaf, PalmFrond } from '../../decor/JungleDecor';
+import { MonsteraLeaf } from '../../decor/JungleDecor';
+import { LoadingLeo } from '../../ui/LoadingLeo';
+import { BackSign } from './BackSign';
 import { blockingLevel } from './levelLock';
 import { LockIcon } from './LockIcon';
 import { getCardToneStyles, type WorldModuleCard } from './worlds/worldsData';
@@ -92,18 +94,6 @@ const iconByTone = {
  */
 const TONES: WorldModuleCard['tone'][] = ['forest', 'volcano', 'ocean'];
 
-const BackIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M15 6L9 12L15 18"
-      stroke="currentColor"
-      strokeWidth="2.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 /*
  * Tres estados y no dos banderas: «cargando», «este mundo no existe» y «aquí
  * están sus niveles» se excluyen entre sí. Con banderas sueltas, el primer
@@ -175,9 +165,8 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
    */
   if (state.status === 'loading' || locksLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center px-5 py-5">
-        <div className="h-14 w-14 animate-spin rounded-full border-[5px] border-line border-t-grape" />
-        <span className="sr-only">Cargando los niveles…</span>
+      <div className="flex min-h-[calc(100vh-84px)] items-center justify-center px-5 py-5">
+        <LoadingLeo label="Cargando los niveles…" />
       </div>
     );
   }
@@ -191,14 +180,9 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
             Puede que lo hayan retirado. Vuelve al mapa y elige otro.
           </p>
 
-          <button
-            type="button"
-            onClick={() => navigate(ROUTES.WORLDS)}
-            className="btn btn-grape mt-5"
-          >
-            <BackIcon />
+          <BackSign onClick={() => navigate(ROUTES.WORLDS)} className="mt-5">
             Volver a mundos
-          </button>
+          </BackSign>
         </section>
       </div>
     );
@@ -213,14 +197,9 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
           <h1 className="title-lg">{state.world.name} todavía está cerrado</h1>
           <p className="subtitle mx-auto mt-2 max-w-[520px]">Primero supera {blocker.name}.</p>
 
-          <button
-            type="button"
-            onClick={() => navigate(ROUTES.WORLDS)}
-            className="btn btn-grape mt-5"
-          >
-            <BackIcon />
+          <BackSign onClick={() => navigate(ROUTES.WORLDS)} className="mt-5">
             Volver a mundos
-          </button>
+          </BackSign>
         </section>
       </div>
     );
@@ -253,10 +232,6 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
   return (
     <div className="px-5 py-5">
       <section className="card relative overflow-hidden p-6">
-        <PalmFrond
-          size={104}
-          className="pointer-events-none absolute -right-6 -top-8 -scale-x-100 rotate-[14deg] opacity-70"
-        />
 
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-5">
@@ -268,28 +243,24 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
             </div>
 
             <div>
-              <button
-                type="button"
-                onClick={() => navigate(ROUTES.WORLDS)}
-                className="btn btn-sm btn-ghost"
-              >
-                <BackIcon />
+              <BackSign onClick={() => navigate(ROUTES.WORLDS)}>
                 Volver a mundos
-              </button>
+              </BackSign>
 
               <h1 className="title-xl mt-3">{world.name}</h1>
               <p className="subtitle mt-1 max-w-[620px]">{world.description}</p>
             </div>
           </div>
 
-          <div className={`rounded-[22px] border-2 border-line px-5 py-4 text-right ${tone.soft}`}>
-            <p className="text-[13px] font-bold uppercase tracking-[0.05em] text-ink-faint">
+          {/* Una notita de pergamino escrita a mano; el color del mundo queda en la cifra. */}
+          <div className="note-paper -rotate-[2deg] px-4 py-1 text-right">
+            <p className="font-map text-[17px] uppercase tracking-[0.06em] text-sepia-soft">
               Progreso actual
             </p>
-            <p className={`mt-1 font-display text-[32px] leading-none ${tone.text}`}>
+            <p className={`font-display text-[34px] leading-none ${tone.text}`}>
               {completedCount}/{levels.length}
             </p>
-            <p className="mt-1 text-[14px] font-bold text-ink-soft">niveles superados</p>
+            <p className="mt-1 font-map text-[18px] text-sepia">niveles superados</p>
           </div>
         </div>
       </section>

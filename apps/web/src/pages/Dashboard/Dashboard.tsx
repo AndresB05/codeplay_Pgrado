@@ -13,6 +13,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useLastSeen } from '../../hooks/useLastSeen';
 import { DEV_TOOLS_ENABLED } from '../../config/devTools';
 import { PanelBackdrop } from '../../components/decor/PanelBackdrop';
+import { LoadingLeo } from '../../components/ui/LoadingLeo';
 
 export const Dashboard = () => {
   const location = useLocation();
@@ -28,7 +29,7 @@ export const Dashboard = () => {
   if (authLoading) {
     return (
       <div className="jungle-surface flex min-h-screen items-center justify-center">
-        <div className="h-14 w-14 animate-spin rounded-full border-[5px] border-line border-t-grape" />
+        <LoadingLeo />
       </div>
     );
   }
@@ -82,7 +83,9 @@ export const Dashboard = () => {
                 ? 'wood'
                 : activeRoute === ROUTES.CLASSROOM
                   ? 'map'
-                  : 'valley'
+                  : activeRoute === ROUTES.SETTINGS
+                    ? 'tent'
+                    : 'valley'
             }
             underSidebar={showSidebar}
           />

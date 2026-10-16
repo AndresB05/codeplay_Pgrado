@@ -210,7 +210,8 @@ context: |
   - Estilos: Tailwind con los nombres de color del tema, nunca hex sueltos. Los
     tokens están duplicados a propósito en src/main.css (variables CSS) y en
     tailwind.config.js. Las clases .btn/.card/.chip/.field viven en main.css.
-  - Adornos SVG en components/decor/, con aria-hidden y sin capturar el puntero.
+  - Adornos SVG en components/decor/, con aria-hidden y sin capturar el puntero,
+    y sólo como iconos: nada de hojas ni flores sueltas por esquinas y cabeceras.
   - Los huecos de la mascota (.mascot-slot, ImagePlaceholder) se dejan VACÍOS a
     propósito hasta que existan las ilustraciones definitivas.
   - El formato del juego lo fija el contrato, no el código: `config` y el sobre

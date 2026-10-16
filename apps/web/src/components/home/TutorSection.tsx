@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import tutorLeopard from '../../assets/brand/tutor-leopard.webp';
-import { LeafCorner } from '../decor/JungleDecor';
 import { CheckBullet, InfoBadge, SectionContainer } from './shared';
 
 export const TutorSection = () => {
@@ -9,7 +8,6 @@ export const TutorSection = () => {
     <section id="tutores" className="jungle-surface scroll-mt-[100px]">
       <SectionContainer className="py-[40px] sm:py-[54px]">
         <div className="card relative overflow-hidden px-6 py-8 sm:px-10 sm:py-10 lg:px-[48px] lg:py-[42px]">
-          <LeafCorner className="-right-4 -top-4 rotate-[12deg]" />
 
           <div className="relative grid grid-cols-1 items-center gap-10 lg:grid-cols-[300px_1fr] lg:gap-[74px]">
             <div className="flex justify-center">

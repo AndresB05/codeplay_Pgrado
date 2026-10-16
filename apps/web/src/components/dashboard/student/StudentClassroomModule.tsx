@@ -13,6 +13,7 @@ import { StudentRosterTable } from '../shared/StudentRosterTable';
 import { getClassGroupStats } from '../teacher/classroomsData';
 import { MedalIcon, StudentsIcon } from '../teacher/TeacherIcons';
 import { StudentClassroomSearch } from './StudentClassroomSearch';
+import { LoadingLeo } from '../../ui/LoadingLeo';
 
 /**
  * Salón desde la cuenta del niño. Tiene tres estados: sin salón (buscador),
@@ -40,7 +41,7 @@ export const StudentClassroomModule = () => {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-14 w-14 animate-spin rounded-full border-[5px] border-line border-t-grape" />
+        <LoadingLeo label="Cargando tu salón…" />
       </div>
     );
   }

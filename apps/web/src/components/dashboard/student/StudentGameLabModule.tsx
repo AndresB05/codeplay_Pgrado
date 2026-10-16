@@ -3,7 +3,6 @@ import { BlockEditorLoader } from '../../../game/BlockEditorLoader';
 import { debugLevel } from '../../../game/debugLevel';
 import { GameSceneLoader } from '../../../game/GameSceneLoader';
 import type { Program } from '../../../game/program';
-import { PalmFrond } from '../../decor/JungleDecor';
 import { HaltedLock } from './HaltedLock';
 
 const CubeIcon = () => (
@@ -200,10 +199,6 @@ export const StudentGameLabModule = () => {
     <div className="px-5 py-5">
       <section className="card relative overflow-hidden px-5 py-5">
         <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-grape-soft" />
-        <PalmFrond
-          size={84}
-          className="pointer-events-none absolute -left-6 -bottom-10 rotate-[18deg] opacity-80"
-        />
 
         <div className="relative flex flex-wrap items-center gap-4">
           <span className="flex h-[56px] w-[56px] items-center justify-center rounded-[18px] border-[3px] border-ink bg-grape-soft shadow-[0_4px_0_rgba(42,27,69,0.2)]">
