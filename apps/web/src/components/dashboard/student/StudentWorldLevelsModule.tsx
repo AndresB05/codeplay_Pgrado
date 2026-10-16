@@ -42,6 +42,21 @@ const LEVEL_ART: Record<string, { src: string; position?: string }> = {
   'muchos-caminos': { src: levelMuchosCaminos, position: '75% 50%' },
 };
 
+/* Enteras y no armadas: Tailwind sólo conserva las clases que lee tal cual. */
+const PIN_COLORS = ['bg-coral', 'bg-sky', 'bg-sun'];
+
+/* La chincheta que clava al corcho cada papel del tablero. */
+/*
+ * En las notas, el borde del pergamino queda fuera de la caja del contenido: la
+ * chincheta sube con `onNote` para clavarse en el papel y no en el texto.
+ */
+const Pin = ({ color, onNote = false }: { color: string; onNote?: boolean }) => (
+  <span
+    aria-hidden
+    className={`pointer-events-none absolute left-1/2 z-10 h-[18px] w-[18px] -translate-x-1/2 ${onNote ? '-top-[14px]' : 'top-[2px]'} rounded-full border-[3px] border-ink shadow-[inset_-3px_-3px_0_rgba(42,27,69,0.25),0_3px_0_rgba(42,27,69,0.3)] ${color}`}
+  />
+);
+
 /* Un emblema por mundo, en el mismo orden que el color: la posición en la lista. */
 const EMBLEMS = [worldEmblem1, worldEmblem2, worldEmblem3];
 
@@ -191,25 +206,35 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
 
   return (
     <div className="px-5 py-5">
-      <section className="card relative overflow-hidden p-6">
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-5">
-            <img
-              src={emblem}
-              alt=""
-              className="h-[112px] w-[112px] shrink-0 drop-shadow-[0_5px_0_rgba(42,27,69,0.18)]"
-            />
+      {/*
+       * La flecha arriba, sola; debajo, en una fila, el emblema, la nota del
+       * título y la del progreso, clavadas al corcho a la misma altura.
+       */}
+      <section className="cork-board relative isolate px-3 py-2">
+        <BackSign onClick={() => navigate(ROUTES.WORLDS)} className="relative">
+          Volver a mundos
+        </BackSign>
 
-            <div>
-              <BackSign onClick={() => navigate(ROUTES.WORLDS)}>Volver a mundos</BackSign>
+        <div className="relative mt-3 flex flex-col gap-5 lg:flex-row lg:items-center">
+          <img
+            src={emblem}
+            alt=""
+            className="h-[120px] w-[120px] shrink-0 self-center drop-shadow-[0_5px_0_rgba(42,27,69,0.18)]"
+          />
 
-              <h1 className="title-xl mt-3">{world.name}</h1>
-              <p className="subtitle mt-1 max-w-[620px]">{world.description}</p>
-            </div>
+          <div className="note-paper note-paper-bold relative min-w-0 flex-1 px-4 py-1">
+            <Pin color="bg-grape" onNote />
+            <h1 className="map-title font-display text-[32px] leading-tight text-sepia">
+              {world.name}
+            </h1>
+            <p className="mt-0.5 font-map text-[19px] leading-[1.3] text-sepia-soft">
+              {world.description}
+            </p>
           </div>
 
           {/* Una notita de pergamino escrita a mano; el color del mundo queda en la cifra. */}
-          <div className="note-paper note-paper-bold -rotate-[2deg] px-4 py-1 text-right">
+          <div className="note-paper note-paper-bold relative rotate-[2deg] shrink-0 self-center px-4 py-1 text-right">
+            <Pin color="bg-coral" onNote />
             <p className="font-map text-[17px] uppercase tracking-[0.06em] text-sepia-soft">
               Progreso actual
             </p>
@@ -221,11 +246,14 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
         </div>
       </section>
 
-      <section className="card mt-6 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="title-lg">Selecciona un nivel</h2>
-            <p className="subtitle mt-1">{world.regionLabel}</p>
+      <section className="cork-board relative isolate mt-6 px-3 py-2">
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
+          <div className="note-paper note-paper-bold relative -rotate-[1deg] px-4 py-1">
+            <Pin color="bg-mint" onNote />
+            <h2 className="map-title font-display text-[24px] leading-tight text-sepia">
+              Selecciona un nivel
+            </h2>
+            <p className="font-map text-[18px] text-sepia-soft">{world.regionLabel}</p>
           </div>
         </div>
 
@@ -235,7 +263,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
           </p>
         ) : (
           // Tres columnas y no más: cada mundo tiene tres niveles, y con más columnas sobraba medio ancho vacío.
-          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <div className="relative mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
             {cards.map(({ level, isCompleted, isCurrent, isLocked }, position) => {
               const art = LEVEL_ART[level.slug];
 
@@ -260,6 +288,8 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
                     aria-hidden
                     className="map-sheet pointer-events-none absolute inset-0 -z-10 [border-width:30px]"
                   />
+
+                  <Pin color={PIN_COLORS[position % PIN_COLORS.length]} />
 
                   <div className="flex min-h-[34px] items-center justify-between gap-2 px-1">
                     <span className="font-map text-[20px] leading-none text-sepia">

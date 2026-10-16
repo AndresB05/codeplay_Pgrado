@@ -638,6 +638,18 @@ a {
     }
   }
 
+  /*
+   * El tablero de corcho de la lista de niveles, para la cabecera y para la caja
+   * de los niveles: el marco y sus clavos no se estiran, sólo el corcho.
+   */
+  .cork-board {
+    border-style: solid;
+    border-color: transparent;
+    border-width: 30px;
+    border-image: url('./assets/brand/cork-board-soft.webp') 92 fill stretch;
+    filter: drop-shadow(0 6px 0 rgba(42, 27, 69, 0.18));
+  }
+
   /* Letra tallada: tinta oscura con el filo claro debajo, como un surco en la madera. */
   .wood-carved {
     color: var(--wood-ink);

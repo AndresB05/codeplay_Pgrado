@@ -4633,6 +4633,16 @@ niveles y el nivel; estas dos ocupan el alto del panel para que quede centrado.
 El círculo pequeño se queda donde la carga es de un recuadro: escena 3D, editor
 de bloques, vuelta de Google, invitación y ranking.
 
+**La lista de niveles en tablero de corcho** (16-oct-2026,
+`StudentWorldLevelsModule.tsx`): la cabecera y la caja de los niveles van sobre
+el mismo tablero (`.cork-board`, `cork-board-soft.webp`, nueve trozos: marco y
+clavos fijos, sólo se estira el corcho, aclarado sobre la imagen de Gemini).
+Arriba, la flecha sola y debajo, en fila, el emblema, el nombre del mundo en una
+nota de pergamino y la notita de progreso; «Selecciona un nivel» también va en
+una nota. Cada papel lleva una chincheta (`Pin`) y cada hoja de nivel la suya.
+Se probaron y retiraron papeles sueltos amontonados en el corcho y un segundo
+marco con el corcho granulado.
+
 **Las dos rachas en pergamino** (16-oct-2026): la de la barra superior
 (`topbar-streak-scroll-bold.webp`, sólo el número) y la del tronco de la barra
 lateral (`sidebar-streak-scroll-bold.webp`, «N días»), cada una una tira con su
