@@ -168,18 +168,21 @@ const WorldCard = ({ world }: { world: WorldModuleCard }) => {
       type="button"
       disabled={isLocked}
       onClick={() => navigate(`${ROUTES.WORLDS}/${world.id}`)}
-      className={`card flex w-full flex-col overflow-hidden text-left transition-transform duration-100 ${
+      className={`flex w-full flex-col text-left transition-transform duration-100 ${
         isLocked ? 'cursor-not-allowed grayscale' : 'hover:-translate-y-1 active:translate-y-0'
       }`}
-      aria-label={isLocked ? `${world.title}: primero supera ${world.lockedBy}` : `Ingresar a ${world.title}`}
+      aria-label={
+        isLocked ? `${world.title}: primero supera ${world.lockedBy}` : `Ingresar a ${world.title}`
+      }
     >
       {/*
        * `flex-col` no es de adorno: un `<button>` que la rejilla estira centra su
        * contenido en vertical, y la tarjeta de texto más corto enseñaba una
        * franja blanca encima de la cabecera.
        */}
+      {/* Por encima del papel: tapa su borde rasgado de arriba. */}
       <div
-        className="relative flex h-[168px] items-center justify-center overflow-hidden border-b-[3px] border-ink"
+        className="relative z-10 flex h-[168px] items-center justify-center overflow-hidden rounded-t-[26px] border-[3px] border-ink"
         style={{ background: tone.gradient }}
       >
         {world.image ? (
@@ -209,25 +212,37 @@ const WorldCard = ({ world }: { world: WorldModuleCard }) => {
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col px-5 pb-5 pt-4 text-center">
-        <h3 className="font-display text-[22px] leading-tight text-ink">{world.title}</h3>
-        <p className="mt-2 text-[15px] font-semibold leading-[1.6] text-ink-soft">
+      {/*
+       * Debajo, una hoja de pergamino que se mete bajo la imagen: su rasgadura de
+       * abajo es el final de la tarjeta, sin marco recto debajo. El relleno de
+       * abajo deja sitio a los picos para que no toquen la barra.
+       */}
+      <div className="relative isolate flex flex-1 flex-col px-8 pb-[46px] pt-4 text-center">
+        <div
+          aria-hidden
+          className="map-sheet pointer-events-none absolute inset-x-0 -top-[26px] bottom-0 -z-10 [border-width:30px]"
+        />
+
+        <h3 className="map-title font-display text-[22px] leading-tight text-sepia">
+          {world.title}
+        </h3>
+        <p className="mt-2 font-map text-[18px] leading-[1.35] text-sepia-soft">
           {world.description}
         </p>
 
         {isLocked ? (
-          <p className="mt-3 font-display text-[15px] text-ink">Primero supera {world.lockedBy}.</p>
+          <p className="mt-3 font-map text-[18px] text-sepia">Primero supera {world.lockedBy}.</p>
         ) : null}
 
         <div className="mt-auto pt-5">
-          <div className="flex items-center justify-between text-[13px] font-bold uppercase tracking-[0.04em] text-ink-faint">
+          <div className="flex items-center justify-between font-map text-[17px] uppercase tracking-[0.06em] text-sepia-soft">
             <span>Progreso</span>
             <span>
               {world.completedLevels}/{world.totalLevels} niveles
             </span>
           </div>
 
-          <div className="mt-2 h-[14px] w-full overflow-hidden rounded-full border-2 border-ink bg-cream">
+          <div className="mt-2 h-[14px] w-full overflow-hidden rounded-full border-2 border-sepia bg-cream/70">
             <div
               className="h-full rounded-full"
               style={{ width: `${progressPercent}%`, background: tone.color }}

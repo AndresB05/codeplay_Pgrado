@@ -287,49 +287,62 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
                   disabled={isLocked}
                   onClick={() => navigate(`${ROUTES.WORLDS}/${world.id}/${level.id}`)}
                   title={isLocked ? 'Supera el nivel anterior para abrirlo' : undefined}
-                  className={`card flex flex-col overflow-hidden text-left transition-transform duration-100 ${
+                  className={`relative isolate flex flex-col px-5 pb-6 pt-5 text-left transition-transform duration-100 ${
                     isLocked
                       ? 'cursor-not-allowed opacity-60 grayscale'
                       : 'hover:-translate-y-1 active:translate-y-0'
                   }`}
                 >
+                  {/*
+                   * Cada nivel, una hoja de pergamino. Lo que antes iba en la franja
+                   * de color es ahora un sello de tinta: superado, en curso o cerrado.
+                   */}
                   <div
-                    className="flex items-center justify-between border-b-[3px] border-ink px-3 py-2"
-                    style={{ background: tone.gradient }}
-                  >
-                    <span className="font-display text-[14px] text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)]">
+                    aria-hidden
+                    className="map-sheet pointer-events-none absolute inset-0 -z-10 [border-width:30px]"
+                  />
+
+                  <div className="flex min-h-[34px] items-center justify-between gap-2 px-1">
+                    <span className="font-map text-[20px] leading-none text-sepia">
                       Nivel {position + 1}
                     </span>
 
                     {isCompleted ? (
-                      <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full border-2 border-ink bg-mint">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <span className="flex -rotate-[8deg] items-center gap-1 rounded-md border-[3px] border-double border-jungle-dark px-2 font-map text-[17px] uppercase tracking-[0.04em] text-jungle-dark">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          aria-hidden="true"
+                        >
                           <path
                             d="M5 12.5L10 17.5L19 7"
-                            stroke="#FFF9EF"
+                            stroke="currentColor"
                             strokeWidth="3.6"
                             strokeLinecap="round"
                             strokeLinejoin="round"
                           />
                         </svg>
+                        Superado
                       </span>
                     ) : null}
 
                     {isCurrent ? (
-                      <span className="rounded-full border-2 border-ink bg-sun px-2 py-0.5 font-display text-[11px] text-ink">
+                      <span className="-rotate-[6deg] rounded-md border-[3px] border-double border-papaya-dark px-2 font-map text-[17px] uppercase tracking-[0.04em] text-papaya-dark">
                         Aquí vas
                       </span>
                     ) : null}
 
                     {isLocked ? (
-                      <span className="flex items-center gap-1 rounded-full border-2 border-ink bg-white px-2 py-0.5 font-display text-[11px] text-ink">
+                      <span className="flex -rotate-[4deg] items-center gap-1 rounded-md border-[3px] border-double border-sepia px-2 font-map text-[17px] uppercase tracking-[0.04em] text-sepia">
                         <LockIcon />
                         Bloqueado
                       </span>
                     ) : null}
                   </div>
 
-                  <div className="px-3 pt-3">
+                  <div className="pt-2">
                     {art ? (
                       <img
                         src={art.src}
@@ -345,9 +358,11 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
                     )}
                   </div>
 
-                  <div className="flex-1 px-3 pb-4 pt-3 text-center">
-                    <div className="font-display text-[17px] text-ink">{level.name}</div>
-                    <p className="mt-1 text-[12px] font-semibold leading-[1.4] text-ink-soft">
+                  <div className="flex-1 px-1 pt-3 text-center">
+                    <div className="map-title font-display text-[18px] text-sepia">
+                      {level.name}
+                    </div>
+                    <p className="mt-1 font-map text-[16px] leading-[1.3] text-sepia-soft">
                       {level.description}
                     </p>
                   </div>

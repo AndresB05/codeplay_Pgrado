@@ -4615,6 +4615,14 @@ de madera:
   (`.wood-board`): volver, el nombre en una placa clara (`.wood-bare`) y la ayuda,
   repartidos a lo ancho. Se probaron una viga de tronco, el título en pergamino,
   un cartel colgado y los letreros más grandes, y se descartaron.
+- **Tarjetas de mundo** (`StudentWorldsModule.tsx`): sin la tarjeta blanca; la
+  imagen lleva su propio marco y va por encima de una hoja rasgada (`.map-sheet`)
+  que se mete debajo, así que tapa su borde de arriba y su rasgadura de abajo es
+  el final de la tarjeta. Textos en tinta sepia y a mano; la barra conserva el
+  color del mundo.
+- **Tarjetas de nivel** (`StudentWorldLevelsModule.tsx`): cada nivel en una hoja
+  rasgada. La franja de color se cambió por un sello de tinta de doble borde:
+  «Superado» en verde, «Aquí vas» en naranja y «Bloqueado» en sepia.
 - **Progreso de la lista de niveles:** «Progreso actual» en una notita de
   pergamino (`.note-paper`) con la cifra en el color del mundo.
 
