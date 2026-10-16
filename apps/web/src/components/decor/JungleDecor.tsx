@@ -75,39 +75,3 @@ export const TropicalFlower = ({
     <circle cx="24" cy="24" r="6" fill="#FFC93C" stroke={INK} strokeWidth="2.8" />
   </svg>
 );
-
-/** Tucán: la mascota del bioma, hasta que llegue la mascota definitiva. */
-export const Toucan = ({ size = 64, className = '' }: DecorProps) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 64 64"
-    fill="none"
-    className={className}
-    aria-hidden="true"
-    focusable="false"
-  >
-    <path
-      d="M38 20C46 20 52 27 52 36C52 47 43 55 32 55C21 55 14 47 14 37C14 27 21 20 30 20"
-      fill="#2A1B45"
-      stroke={INK}
-      strokeWidth="3.2"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M36 26C36 26 22 22 12 26C18 31 26 33 34 32"
-      fill="#FF8A3D"
-      stroke={INK}
-      strokeWidth="3.2"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M30 40C36 38 42 40 45 45C40 50 33 50 28 46"
-      fill="#FFC93C"
-      stroke={INK}
-      strokeWidth="3"
-      strokeLinejoin="round"
-    />
-    <circle cx="38" cy="24" r="3.4" fill="#FFF9EF" stroke={INK} strokeWidth="2.4" />
-  </svg>
-);

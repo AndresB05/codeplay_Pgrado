@@ -208,7 +208,7 @@ codeplayPGrado/
 | `components/dashboard/teacher/` | Panel del tutor (11 archivos) y `classroomsData.ts` (semilla + funciones puras) |
 | `components/dashboard/student/` | Módulos del alumno: salón, buscador, mundos, niveles, trofeos, ajustes |
 | `components/dashboard/shared/` | Componentes de ambos roles (`ConfirmDialog`, `StatCard`, `StudentRosterTable`, `GroupBadge`) y `groupThemes.ts` |
-| `components/decor/` | `JungleDecor.tsx`: hoja, flor y tucán, que sólo quedan como iconos; `PanelBackdrop.tsx`: el fondo de cada panel |
+| `components/decor/` | `JungleDecor.tsx`: hoja y flor, que sólo quedan como iconos; `PanelBackdrop.tsx`: el fondo de cada panel |
 | `game/` | El juego (J1 en adelante). `GameScene.tsx` es el **único** módulo que importa `three`; `GameSceneLoader.tsx` es la frontera de carga diferida y no importa ninguno de los dos |
 | `components/home/` | Navbar, secciones de la landing y `shared.tsx` (contenedores y huecos de mascota) |
 | `components/auth/`, `components/ui/` | Formularios de acceso y primitivas antiguas |
@@ -339,7 +339,7 @@ inspirado en CodeCombat, CodeMonkey y Scratch, sobre un bioma de selva tropical.
 | Campos de formulario (`.field`, `.field-label`) | ✅ | `main.css` |
 | **Capa de selva:** colores `jungle` y `papaya`, `.btn-leaf`, `.btn-papaya`, `.chip-leaf`, `.chip-papaya` | ✅ | `main.css` + `tailwind.config.js` |
 | **Superficies de selva:** `.jungle-surface` (luz entre hojas) y `.jungle-band` (franja de tierra) | ✅ | `main.css` |
-| **Dibujos SVG de selva**, sólo como iconos: `MonsteraLeaf`, `TropicalFlower`, `Toucan` (`PalmFrond`, `Canopy` y `LeafCorner` se borraron con los adornos el 16-oct-2026) | ✅ | `components/decor/JungleDecor.tsx` |
+| **Dibujos SVG de selva**, sólo como iconos: `MonsteraLeaf` y `TropicalFlower` (`PalmFrond`, `Canopy`, `LeafCorner` y `Toucan` se borraron el 16-oct-2026) | ✅ | `components/decor/JungleDecor.tsx` |
 | Huecos reservados para la mascota (`.mascot-slot`, `ImagePlaceholder`) | ✅ | `main.css`, `components/home/shared.tsx` |
 | Identidad visual automática por salón: 6 temas por hash del id | ✅ | `components/dashboard/shared/groupThemes.ts` + `GroupBadge.tsx` |
 
@@ -356,9 +356,8 @@ inspirado en CodeCombat, CodeMonkey y Scratch, sobre un bioma de selva tropical.
 - Los nombres de color antiguos (`primary`, `secondary`, `tertiary`, `neutral`)
   se conservan en `tailwind.config.js` **a propósito**, para no romper pantallas
   que aún no se han migrado.
-- El tucán de `JungleDecor` es **provisional**: ocupa el sitio hasta que exista
-  la mascota definitiva (un leopardo), que ya se nombra en el copy del registro
-  y que se generará con IA (P6).
+- El tucán de `JungleDecor` ocupó el sitio de la mascota hasta que llegó Leo;
+  se borró el 16-oct-2026, cuando la portada pasó a sus ilustraciones.
 
 **Alcance del tema selva.** Aplicado en: landing completa (héroe, mundos,
 tutores, cómo se aprende, pie), login, registro, panel del alumno, panel del
@@ -4649,6 +4648,11 @@ SVG; y cada logro, una insignia de madera por familia del catálogo
 (`achievement-{medal,crown,trophy,compass,wing,maze,bandage,flame}.webp`,
 en `AchievementList/AchievementItem.tsx`) en lugar del emoji.
 
+**Portada, «¿Cómo aprender?»** (`home/LearningSection.tsx`, 16-oct-2026): las
+tres tarjetas llevan a Leo en lugar de los círculos con hoja, flor y tucán
+(`learn-{blocks,challenges,rewards}.webp`, 170 px). Donde Leo es de medio cuerpo,
+el corte de abajo se desvanece con una máscara.
+
 **Pantallas de acceso sin ilustración propia** (16-oct-2026): recuperar y
 restablecer la contraseña, la invitación y la vuelta de Google llevan de fondo el
 valle de los paneles (`.panel-backdrop`, fijo con `bg-fixed`). La portada, el
@@ -4688,7 +4692,7 @@ bloqueado la enseña en gris, como el resto de la tarjeta.
 | Madera y pergamino | Sala de trofeos, aviso de logro, barra lateral del niño (con la rodaja de plegar), misiones, el salón del niño entero (fondo de mapa, cabecera, cifras, podio, tabla, buscador y «En espera»), Mi cuenta del niño (tienda de lona, cuero y pasaporte), los letreros de «Volver» y de ayuda, y el progreso de la lista de niveles | Aplicados: tablas, troncos, pergamino, cuero y foto clavada |
 
 **Qué NO cubre.** Los dibujos de `components/decor/JungleDecor.tsx` que quedan
-(hoja, flor, tucán) son iconos dentro de chips y tarjetas y siguen siendo SVG. Los
+(hoja y flor) son iconos dentro de chips y tarjetas y siguen siendo SVG. Los
 adornos sueltos —dosel de hojas, palmeras y flores en las esquinas— se retiraron
 de toda la web el 16-oct-2026, a petición del usuario.
 
