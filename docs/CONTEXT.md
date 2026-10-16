@@ -4603,12 +4603,18 @@ el tutor y la pantalla de mundos no cambian.
 **Letreros de madera** (16-oct-2026), con contorno marrón como las demás piezas
 de madera:
 - **«Volver a mundos / a los niveles»:** flecha de madera (`.back-arrow-sign`,
-  `back-arrow-sign.webp`) en `student/BackSign.tsx`; la punta y el clavo no se
-  estiran. Sustituye a los seis botones de volver de la lista de niveles y del nivel.
+  `back-arrow-sign-bold.webp`) en `student/BackSign.tsx`; la punta y el clavo no
+  se estiran. Sustituye a los seis botones de volver de la lista de niveles y del
+  nivel. Las flechas y los letreros llevan un contorno marrón grueso añadido por
+  fuera de la imagen de Gemini (de ahí el `-bold`), y el texto no se parte.
 - **«¿Cómo se juega aquí?»:** un letrero por mundo, misma tabla con remates
-  distintos (`.howto-sign-1/2/3`, `howto-sign-world-{1,2,3}.webp`: lianas,
+  distintos (`.howto-sign-1/2/3`, `howto-sign-world-{1,2,3}-bold.webp`: lianas,
   piedras y cuerda). Las clases van enteras en `HOWTO_SIGNS`: armadas con el
   índice, Tailwind las descartaba.
+- **Cabecera del nivel:** sin tarjeta blanca, sobre la tabla de los logros
+  (`.wood-board`): volver, el nombre en una placa clara (`.wood-bare`) y la ayuda,
+  repartidos a lo ancho. Se probaron una viga de tronco, el título en pergamino,
+  un cartel colgado y los letreros más grandes, y se descartaron.
 - **Progreso de la lista de niveles:** «Progreso actual» en una notita de
   pergamino (`.note-paper`) con la cifra en el color del mundo.
 
@@ -4619,6 +4625,11 @@ paneles, `RouteLoading`, `PublicRoute` y las cargas del salón, la lista de
 niveles y el nivel; estas dos ocupan el alto del panel para que quede centrado.
 El círculo pequeño se queda donde la carga es de un recuadro: escena 3D, editor
 de bloques, vuelta de Google, invitación y ranking.
+
+**Pantallas de acceso sin ilustración propia** (16-oct-2026): recuperar y
+restablecer la contraseña, la invitación y la vuelta de Google llevan de fondo el
+valle de los paneles (`.panel-backdrop`, fijo con `bg-fixed`). La portada, el
+login y el registro siguen con la suya.
 
 **Barra lateral del niño** (16-oct-2026): el botón de plegar es una rodaja de
 tronco con la flecha tallada y el contorno del tronco

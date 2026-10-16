@@ -433,9 +433,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
           (world) => (levelsByWorld.get(world.id) ?? []).length > 0
         );
         const firstLevel =
-          target === undefined
-            ? null
-            : nextLevelId(levelsByWorld.get(target.id) ?? [], -Infinity);
+          target === undefined ? null : nextLevelId(levelsByWorld.get(target.id) ?? [], -Infinity);
 
         if (
           target !== undefined &&
@@ -566,7 +564,10 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
               : `Supera «${state.blockerName}» y se abrirá.`}
           </p>
 
-          <BackSign onClick={isWorld ? () => navigate(ROUTES.WORLDS) : backToLevels} className="mt-5">
+          <BackSign
+            onClick={isWorld ? () => navigate(ROUTES.WORLDS) : backToLevels}
+            className="mt-5"
+          >
             {isWorld ? 'Volver a mundos' : 'Volver a los niveles'}
           </BackSign>
         </section>
@@ -581,18 +582,24 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
 
   return (
     <div className="px-5 py-5">
-      <section className="card flex flex-wrap items-center gap-4 px-5 py-4">
-        <BackSign onClick={backToLevels}>
-          Volver a los niveles
-        </BackSign>
+      {/*
+       * La cabecera es una tabla de madera, la misma de los logros: volver, el
+       * nombre del nivel en una placa clara y la ayuda del mundo.
+       */}
+      <section className="wood-board flex flex-wrap items-center justify-between gap-3 py-2">
+        <BackSign onClick={backToLevels}>Volver a los niveles</BackSign>
 
-        <h1 className="title-lg">{state.title}</h1>
+        <div className="wood-bare rounded-[12px] px-5 py-1.5">
+          <h1 className="wood-deep text-center font-display text-[26px] leading-tight">
+            {state.title}
+          </h1>
+        </div>
 
         {introBubbles !== null && (
           <button
             type="button"
             onClick={() => setIntroOpen(true)}
-            className={`howto-sign ${HOWTO_SIGNS[state.worldPosition] ?? HOWTO_SIGNS[0]} wood-carved ml-auto gap-2 font-display text-[16px]`}
+            className={`howto-sign ${HOWTO_SIGNS[state.worldPosition] ?? HOWTO_SIGNS[0]} wood-carved gap-2 font-display text-[16px]`}
           >
             <img
               src={leoExplains}
@@ -741,11 +748,7 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
       </section>
 
       {introOpen && introBubbles !== null && (
-        <WorldIntro
-          image={leoExplains}
-          bubbles={introBubbles}
-          onClose={closeIntro}
-        />
+        <WorldIntro image={leoExplains} bubbles={introBubbles} onClose={closeIntro} />
       )}
 
       {finish !== null && (

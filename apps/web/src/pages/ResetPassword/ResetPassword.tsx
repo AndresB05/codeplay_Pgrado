@@ -54,8 +54,7 @@ export const ResetPassword = () => {
   };
 
   return (
-    <div className="jungle-surface relative min-h-screen overflow-hidden px-6 py-4 sm:px-8 lg:px-10">
-
+    <div className="panel-backdrop relative bg-fixed min-h-screen overflow-hidden px-6 py-4 sm:px-8 lg:px-10">
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-[1250px] flex-col">
         <Link
           to={ROUTES.LANDING}
@@ -67,7 +66,6 @@ export const ResetPassword = () => {
 
         <div className="flex flex-1 items-center justify-center py-8 sm:py-10">
           <section className="card relative w-full max-w-[560px] overflow-hidden px-7 pb-9 pt-8 sm:px-10">
-
             <div className="relative">
               <span className="chip chip-papaya">Última parada</span>
 

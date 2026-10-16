@@ -259,8 +259,11 @@ a {
   }
 
   /*
-   * Fondo ilustrado de los paneles del niño y del tutor, nunca de la landing ni
-   * del acceso. Lo pinta `PanelBackdrop`, que decide dónde se centra.
+   * Fondo ilustrado de los paneles del niño y del tutor. Lo pinta
+   * `PanelBackdrop`, que decide dónde se centra. Lo llevan también, fijo, las
+   * pantallas de acceso que no tienen ilustración propia (recuperar y
+   * restablecer la contraseña, la invitación y la vuelta de Google); la landing,
+   * el login y el registro siguen con la suya.
    */
   .panel-backdrop {
     background-color: var(--jungle-dark);
@@ -550,11 +553,12 @@ a {
   .back-arrow-sign {
     display: inline-flex;
     align-items: center;
-    height: 48px;
+    height: 55px;
+    white-space: nowrap;
     border-style: solid;
     border-color: transparent;
-    border-width: 0 15px 0 35px;
-    border-image: url('./assets/brand/back-arrow-sign.webp') 0 70 0 160 fill stretch;
+    border-width: 0 19px 0 38px;
+    border-image: url('./assets/brand/back-arrow-sign-bold.webp') 0 86 0 176 fill stretch;
     /* El texto se aparta del clavo de la cola. */
     padding: 0 20px 0 6px;
     filter: drop-shadow(0 4px 0 rgba(74, 42, 18, 0.35));
@@ -572,8 +576,9 @@ a {
   .howto-sign {
     display: inline-flex;
     align-items: center;
-    height: 56px;
+    height: 64px;
     padding: 0 10px;
+    white-space: nowrap;
     border-style: solid;
     border-color: transparent;
     filter: drop-shadow(0 4px 0 rgba(74, 42, 18, 0.35));
@@ -585,18 +590,18 @@ a {
   }
 
   .howto-sign-1 {
-    border-width: 0 50px;
-    border-image: url('./assets/brand/howto-sign-world-1.webp') 0 170 fill stretch;
+    border-width: 0 54px;
+    border-image: url('./assets/brand/howto-sign-world-1-bold.webp') 0 186 fill stretch;
   }
 
   .howto-sign-2 {
-    border-width: 0 42px;
-    border-image: url('./assets/brand/howto-sign-world-2.webp') 0 145 fill stretch;
+    border-width: 0 47px;
+    border-image: url('./assets/brand/howto-sign-world-2-bold.webp') 0 161 fill stretch;
   }
 
   .howto-sign-3 {
-    border-width: 0 37px;
-    border-image: url('./assets/brand/howto-sign-world-3.webp') 0 130 fill stretch;
+    border-width: 0 40px;
+    border-image: url('./assets/brand/howto-sign-world-3-bold.webp') 0 146 fill stretch;
   }
 
   @media (prefers-reduced-motion: reduce) {

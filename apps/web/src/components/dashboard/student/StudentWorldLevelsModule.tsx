@@ -232,7 +232,6 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
   return (
     <div className="px-5 py-5">
       <section className="card relative overflow-hidden p-6">
-
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-5">
             <div
@@ -243,9 +242,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
             </div>
 
             <div>
-              <BackSign onClick={() => navigate(ROUTES.WORLDS)}>
-                Volver a mundos
-              </BackSign>
+              <BackSign onClick={() => navigate(ROUTES.WORLDS)}>Volver a mundos</BackSign>
 
               <h1 className="title-xl mt-3">{world.name}</h1>
               <p className="subtitle mt-1 max-w-[620px]">{world.description}</p>

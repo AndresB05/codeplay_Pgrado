@@ -13,8 +13,7 @@ import type { AppError } from '../../errors/AppError';
 
 /* El marco de selva es el mismo en los seis estados; sólo cambia lo de dentro. */
 const Frame = ({ children }: { children: ReactNode }) => (
-  <div className="jungle-surface relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-4">
-
+  <div className="panel-backdrop relative bg-fixed flex min-h-screen items-center justify-center overflow-hidden px-6 py-4">
     <section className="card relative z-10 w-full max-w-[520px] px-8 py-10 text-center">
       {children}
     </section>

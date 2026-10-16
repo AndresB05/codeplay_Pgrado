@@ -478,7 +478,9 @@ Mi cuenta del niño es una tienda de explorador: lona de fondo
 (`.tent-backdrop`), cabecera y atajos en bandas de cuero (`.leather-band`) y los
 datos en una página de pasaporte (`.passport-page`). Los botones de volver son
 flechas de madera (`.back-arrow-sign`), la ayuda de cada nivel un letrero por
-mundo (`.howto-sign-1/2/3`) y las cargas, Leo caminando (`LoadingLeo`).
+mundo (`.howto-sign-1/2/3`), la cabecera del nivel una tabla de madera
+(`.wood-board`) y las cargas, Leo caminando (`LoadingLeo`). Las pantallas de
+acceso sin ilustración propia llevan el valle de los paneles de fondo.
 
 Los adornos SVG sueltos (dosel de hojas, palmeras, flores en esquinas) **se
 retiraron de toda la web** el 16-oct-2026: no casaban con las ilustraciones. Los
