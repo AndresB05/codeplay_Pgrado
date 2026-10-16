@@ -4642,6 +4642,13 @@ contorno fino añadido por fuera. «Progreso actual» de la lista de niveles usa
 propia notita con contorno (`.note-paper-bold`, `progress-note-thin.webp`): las
 de la tabla del salón no cambian.
 
+**Emblemas de mundo e insignias de logros** (16-oct-2026): la cabecera de la
+lista de niveles lleva el medallón ilustrado de su mundo
+(`world-emblem-{1,2,3}.webp`, por posición como el color) en lugar del icono
+SVG; y cada logro, una insignia de madera por familia del catálogo
+(`achievement-{medal,crown,trophy,compass,wing,maze,bandage,flame}.webp`,
+en `AchievementList/AchievementItem.tsx`) en lugar del emoji.
+
 **Pantallas de acceso sin ilustración propia** (16-oct-2026): recuperar y
 restablecer la contraseña, la invitación y la vuelta de Google llevan de fondo el
 valle de los paneles (`.panel-backdrop`, fijo con `bg-fixed`). La portada, el

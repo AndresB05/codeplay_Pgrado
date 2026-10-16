@@ -9,57 +9,20 @@ import levelLaTorre from '../../../assets/brand/level-la-torre.webp';
 import levelMuchosCaminos from '../../../assets/brand/level-muchos-caminos.webp';
 import levelSaltaYSube from '../../../assets/brand/level-salta-y-sube.webp';
 import levelSiempreAdelante from '../../../assets/brand/level-siempre-adelante.webp';
+import worldEmblem1 from '../../../assets/brand/world-emblem-1.webp';
+import worldEmblem2 from '../../../assets/brand/world-emblem-2.webp';
+import worldEmblem3 from '../../../assets/brand/world-emblem-3.webp';
 import { ROUTES } from '../../../constants/routes';
 import { useProgress } from '../../../hooks/useProgress';
 import { useWorldLocks } from '../../../hooks/useWorldLocks';
 import { worldsService } from '../../../services/worlds.service';
 import type { User } from '../../../types/user.types';
 import type { Level, World } from '../../../types/world.types';
-import { MonsteraLeaf } from '../../decor/JungleDecor';
 import { LoadingLeo } from '../../ui/LoadingLeo';
 import { BackSign } from './BackSign';
 import { blockingLevel } from './levelLock';
 import { LockIcon } from './LockIcon';
 import { getCardToneStyles, type WorldModuleCard } from './worlds/worldsData';
-
-const ForestIcon = () => <MonsteraLeaf size={64} color="#FFF9EF" />;
-
-const VolcanoIcon = () => (
-  <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-    <path
-      d="M12 52L26 24H38L52 52H12Z"
-      fill="#FFF9EF"
-      stroke="#2A1B45"
-      strokeWidth="3.4"
-      strokeLinejoin="round"
-    />
-    <path d="M26 24C28 28 36 28 38 24" stroke="#2A1B45" strokeWidth="3.2" strokeLinecap="round" />
-    <path
-      d="M32 8V18M22 14L18 8M42 14L46 8"
-      stroke="#2A1B45"
-      strokeWidth="3.2"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const OceanIcon = () => (
-  <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-    <path
-      d="M8 26C14 20 20 20 26 26C32 32 38 32 44 26C50 20 54 20 58 24"
-      stroke="#FFF9EF"
-      strokeWidth="4.4"
-      strokeLinecap="round"
-    />
-    <path
-      d="M8 40C14 34 20 34 26 40C32 46 38 46 44 40C50 34 54 34 58 38"
-      stroke="#FFF9EF"
-      strokeWidth="4.4"
-      strokeLinecap="round"
-    />
-    <circle cx="46" cy="16" r="5" fill="#FFF9EF" stroke="#2A1B45" strokeWidth="3" />
-  </svg>
-);
 
 /*
  * Por slug y no por posición: la ilustración pinta el título del nivel, y si un
@@ -79,11 +42,8 @@ const LEVEL_ART: Record<string, { src: string; position?: string }> = {
   'muchos-caminos': { src: levelMuchosCaminos, position: '75% 50%' },
 };
 
-const iconByTone = {
-  forest: ForestIcon,
-  volcano: VolcanoIcon,
-  ocean: OceanIcon,
-};
+/* Un emblema por mundo, en el mismo orden que el color: la posición en la lista. */
+const EMBLEMS = [worldEmblem1, worldEmblem2, worldEmblem3];
 
 /*
  * El bioma sale de la POSICIÓN del mundo en la lista ordenada, que es el mismo
@@ -207,7 +167,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
 
   const { world, index, levels } = state;
   const tone = getCardToneStyles(TONES[index % TONES.length]);
-  const Icon = iconByTone[TONES[index % TONES.length]];
+  const emblem = EMBLEMS[index % EMBLEMS.length];
 
   const completedIds = new Set(
     progress.filter((item) => item.completionStatus === 'completed').map((item) => item.levelId)
@@ -234,12 +194,11 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
       <section className="card relative overflow-hidden p-6">
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-5">
-            <div
-              className="flex h-[104px] w-[104px] shrink-0 items-center justify-center rounded-[26px] border-[3px] border-ink shadow-[0_6px_0_rgba(42,27,69,0.18)]"
-              style={{ background: tone.gradient }}
-            >
-              <Icon />
-            </div>
+            <img
+              src={emblem}
+              alt=""
+              className="h-[112px] w-[112px] shrink-0 drop-shadow-[0_5px_0_rgba(42,27,69,0.18)]"
+            />
 
             <div>
               <BackSign onClick={() => navigate(ROUTES.WORLDS)}>Volver a mundos</BackSign>

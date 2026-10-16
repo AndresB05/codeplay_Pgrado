@@ -1,3 +1,11 @@
+import bandageBadge from '../../../assets/brand/achievement-bandage.webp';
+import compassBadge from '../../../assets/brand/achievement-compass.webp';
+import crownBadge from '../../../assets/brand/achievement-crown.webp';
+import flameBadge from '../../../assets/brand/achievement-flame.webp';
+import mazeBadge from '../../../assets/brand/achievement-maze.webp';
+import medalBadge from '../../../assets/brand/achievement-medal.webp';
+import trophyBadge from '../../../assets/brand/achievement-trophy.webp';
+import wingBadge from '../../../assets/brand/achievement-wing.webp';
 import type { CatalogAchievement } from '../../../services/achievements.service';
 
 interface AchievementItemProps {
@@ -8,19 +16,19 @@ const formatUnlockedAt = (iso: string): string =>
   new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 
 /*
- * Un dibujo por familia de logro. El catálogo guarda un nombre de icono y no un
- * emoji porque la base no decide cómo se ve nada; el que no reconozcamos sale
+ * Una insignia por familia de logro. El catálogo guarda un nombre de icono y no
+ * una imagen porque la base no decide cómo se ve nada; el que no reconozcamos sale
  * con el trofeo, que es lo que era todo hasta el paso 22.
  */
 const ICONS: Record<string, string> = {
-  medal: '🏅',
-  crown: '👑',
-  trophy: '🏆',
-  compass: '🧭',
-  wing: '🪽',
-  maze: '🌀',
-  bandage: '🩹',
-  flame: '🔥',
+  medal: medalBadge,
+  crown: crownBadge,
+  trophy: trophyBadge,
+  compass: compassBadge,
+  wing: wingBadge,
+  maze: mazeBadge,
+  bandage: bandageBadge,
+  flame: flameBadge,
 };
 
 export const AchievementItem = ({ achievement }: AchievementItemProps) => {
@@ -29,16 +37,18 @@ export const AchievementItem = ({ achievement }: AchievementItemProps) => {
   return (
     <article className={`wood-board wood-plank px-1 py-1 ${unlocked ? '' : 'wood-plank-locked'}`}>
       <div className="flex items-center gap-3">
-        <span
-          className="wood-well flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[16px] text-[24px]"
+        <img
+          src={ICONS[achievement.iconName] ?? ICONS.trophy}
+          alt=""
           aria-hidden="true"
-        >
-          {ICONS[achievement.iconName] ?? ICONS.trophy}
-        </span>
+          className="h-[52px] w-[52px] shrink-0 drop-shadow-[0_3px_0_rgba(74,42,18,0.35)]"
+        />
 
         <div className="wood-bare min-w-0 flex-1 rounded-[12px] px-3 py-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <h4 className="wood-deep font-display text-[19px] leading-tight">{achievement.title}</h4>
+            <h4 className="wood-deep font-display text-[19px] leading-tight">
+              {achievement.title}
+            </h4>
 
             {/*
              * Las palabras distinguen los dos estados, no sólo el gris: para
