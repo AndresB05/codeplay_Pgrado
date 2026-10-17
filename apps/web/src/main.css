@@ -383,6 +383,37 @@ a {
     }
   }
 
+  /*
+   * Una hoja de fondo del corcho, al tocar su chincheta: da un saltito y se cae
+   * de la pantalla. Con `translate` y `rotate`, que se suman a la inclinación que
+   * la hoja ya lleva en `transform`. Se queda caída: sólo vuelve al recargar.
+   */
+  @keyframes cork-sheet-fall {
+    0% {
+      translate: 0;
+      rotate: 0deg;
+    }
+    20% {
+      translate: 0 -18px;
+      rotate: -3deg;
+    }
+    100% {
+      translate: 40px 140vh;
+      rotate: 35deg;
+    }
+  }
+
+  .cork-sheet-fall {
+    animation: cork-sheet-fall 1100ms cubic-bezier(0.45, 0, 0.9, 0.6) forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cork-sheet-fall {
+      animation: none;
+      visibility: hidden;
+    }
+  }
+
   .loose-map-shake {
     animation: loose-map-shake 600ms ease-in-out both;
   }

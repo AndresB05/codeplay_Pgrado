@@ -4643,6 +4643,17 @@ una nota. Cada papel lleva una chincheta (`Pin`) y cada hoja de nivel la suya.
 Se probaron y retiraron papeles sueltos amontonados en el corcho y un segundo
 marco con el corcho granulado.
 
+Las hojas de nivel y las notas van torcidas, cada una por su posición (no al
+azar, que cambiaría en cada repintado). Detrás de lo importante hay hojas de
+fondo con un mapita (`BackSheets`, en el mismo archivo), colocadas según un
+boceto del usuario: en el tablero del título, del papel de las notas; en el de
+los niveles, del pergamino de las hojas. **Huevo de pascua:** tocar la chincheta
+de una hoja de fondo la suelta y se cae de la pantalla (`.cork-sheet-fall`)
+hasta que se recarga; las notas con información y las hojas de nivel no caen.
+La chincheta es un botón fuera del teclado y del lector de pantalla, como el
+mapa del podio; la fila de «Selecciona un nivel» no captura el puntero para
+que el clic llegue a las chinchetas de detrás.
+
 **Las dos rachas en pergamino** (16-oct-2026): la de la barra superior
 (`topbar-streak-scroll-bold.webp`, sólo el número) y la del tronco de la barra
 lateral (`sidebar-streak-scroll-bold.webp`, «N días»), cada una una tira con su

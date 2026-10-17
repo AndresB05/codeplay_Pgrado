@@ -9,6 +9,9 @@ import levelLaTorre from '../../../assets/brand/level-la-torre.webp';
 import levelMuchosCaminos from '../../../assets/brand/level-muchos-caminos.webp';
 import levelSaltaYSube from '../../../assets/brand/level-salta-y-sube.webp';
 import levelSiempreAdelante from '../../../assets/brand/level-siempre-adelante.webp';
+import miniMap1 from '../../../assets/brand/podium-minimap-1.webp';
+import miniMap2 from '../../../assets/brand/podium-minimap-2.webp';
+import miniMap3 from '../../../assets/brand/podium-minimap-3.webp';
 import worldEmblem1 from '../../../assets/brand/world-emblem-1.webp';
 import worldEmblem2 from '../../../assets/brand/world-emblem-2.webp';
 import worldEmblem3 from '../../../assets/brand/world-emblem-3.webp';
@@ -45,6 +48,13 @@ const LEVEL_ART: Record<string, { src: string; position?: string }> = {
 /* Enteras y no armadas: Tailwind sólo conserva las clases que lee tal cual. */
 const PIN_COLORS = ['bg-coral', 'bg-sky', 'bg-sun'];
 
+/*
+ * Cada hoja, algo torcida, como clavada a mano. Por posición y no al azar: con
+ * `Math.random` cambiaría de inclinación en cada repintado, y dos vecinas nunca
+ * quedan igual de torcidas.
+ */
+const SHEET_TILTS = ['-rotate-[2.5deg]', 'rotate-[1.5deg]', '-rotate-[1deg]'];
+
 /* La chincheta que clava al corcho cada papel del tablero. */
 /*
  * En las notas, el borde del pergamino queda fuera de la caja del contenido: la
@@ -56,6 +66,85 @@ const Pin = ({ color, onNote = false }: { color: string; onNote?: boolean }) => 
     className={`pointer-events-none absolute left-1/2 z-10 h-[18px] w-[18px] -translate-x-1/2 ${onNote ? '-top-[14px]' : 'top-[2px]'} rounded-full border-[3px] border-ink shadow-[inset_-3px_-3px_0_rgba(42,27,69,0.25),0_3px_0_rgba(42,27,69,0.3)] ${color}`}
   />
 );
+
+/*
+ * Hojas de pergamino con un mapita, por detrás de lo que hay en cada tablero,
+ * donde las dibujó el usuario: asoman por arriba y por los huecos. Van en orden
+ * de apilado —la última queda encima— y sólo en escritorio, que es donde el
+ * contenido va en fila y deja esos huecos.
+ */
+type BackSheet = { place: string; pin?: string; map: string };
+
+const HEADER_SHEETS: BackSheet[] = [
+  { place: 'left-[19%] top-[16%] h-[72%] w-[36%] rotate-[10deg]', pin: 'bg-sky', map: miniMap3 },
+  { place: 'left-[43%] top-[16%] h-[66%] w-[29%] -rotate-[11deg]', pin: 'bg-mint', map: miniMap1 },
+  { place: 'left-[70%] top-[6%] h-[52%] w-[18%] rotate-[3deg]', pin: 'bg-sun', map: miniMap2 },
+];
+
+const LEVEL_SHEETS: BackSheet[] = [
+  { place: 'left-[8%] top-[40px] h-[250px] w-[34%] rotate-[3deg]', pin: 'bg-grape', map: miniMap1 },
+  {
+    place: 'left-[67%] top-[30px] h-[310px] w-[30%] rotate-[4deg]',
+    pin: 'bg-coral',
+    map: miniMap3,
+  },
+  {
+    place: 'left-[52%] top-[80px] h-[290px] w-[30%] -rotate-[3deg]',
+    pin: 'bg-mint',
+    map: miniMap2,
+  },
+];
+
+/*
+ * El secreto del corcho: tocar la chincheta de una hoja de fondo la suelta, y la
+ * hoja se cae de la pantalla hasta que se recarga. Sólo en éstas, que no llevan
+ * nada que leer; la chincheta es un botón fuera del
+ * teclado y del lector de pantalla, como el mapa del podio: un huevo de pascua,
+ * no una acción de la página.
+ */
+const BackSheets = ({
+  sheets,
+  paper = 'map-sheet [border-width:30px]',
+}: {
+  sheets: BackSheet[];
+  /** El papel: el de las hojas de nivel, o el de las notas de título. */
+  paper?: string;
+}) => {
+  const [falling, setFalling] = useState<ReadonlySet<string>>(new Set());
+  const [fallen, setFallen] = useState<ReadonlySet<string>>(new Set());
+
+  const drop = (place: string) =>
+    setFalling((current) => (current.has(place) ? current : new Set(current).add(place)));
+
+  // Al acabar la caída deja de pintarse, para que no quede nada debajo de la página.
+  const gone = (place: string) => setFallen((current) => new Set(current).add(place));
+
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 hidden lg:block">
+      {sheets
+        .filter(({ place }) => !fallen.has(place))
+        .map(({ place, pin, map }) => (
+          <div
+            key={place}
+            onAnimationEnd={() => gone(place)}
+            className={`absolute ${paper} ${place} ${falling.has(place) ? 'cork-sheet-fall' : ''}`}
+          >
+            {pin ? (
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => drop(place)}
+                className="pointer-events-auto absolute left-1/2 -top-[16px] z-10 h-[22px] w-[22px] -translate-x-1/2 cursor-pointer bg-transparent p-0"
+              >
+                <Pin color={pin} />
+              </button>
+            ) : null}
+            <img src={map} alt="" className="h-full w-full object-contain opacity-80" />
+          </div>
+        ))}
+    </div>
+  );
+};
 
 /* Un emblema por mundo, en el mismo orden que el color: la posición en la lista. */
 const EMBLEMS = [worldEmblem1, worldEmblem2, worldEmblem3];
@@ -211,6 +300,8 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
        * título y la del progreso, clavadas al corcho a la misma altura.
        */}
       <section className="cork-board relative isolate px-3 py-2">
+        <BackSheets sheets={HEADER_SHEETS} paper="note-paper note-paper-bold" />
+
         <BackSign onClick={() => navigate(ROUTES.WORLDS)} className="relative">
           Volver a mundos
         </BackSign>
@@ -222,7 +313,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
             className="h-[120px] w-[120px] shrink-0 self-center drop-shadow-[0_5px_0_rgba(42,27,69,0.18)]"
           />
 
-          <div className="note-paper note-paper-bold relative min-w-0 flex-1 px-4 py-1">
+          <div className="note-paper note-paper-bold relative min-w-0 flex-1 -rotate-[1.5deg] px-4 py-1">
             <Pin color="bg-grape" onNote />
             <h1 className="map-title font-display text-[32px] leading-tight text-sepia">
               {world.name}
@@ -247,8 +338,11 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
       </section>
 
       <section className="cork-board relative isolate mt-6 px-3 py-2">
-        <div className="relative flex flex-wrap items-center justify-between gap-4">
-          <div className="note-paper note-paper-bold relative -rotate-[1deg] px-4 py-1">
+        <BackSheets sheets={LEVEL_SHEETS} />
+
+        {/* Sin capturar el puntero: deja llegar el clic a las chinchetas de las hojas de fondo. */}
+        <div className="pointer-events-none relative flex flex-wrap items-center justify-between gap-4">
+          <div className="note-paper note-paper-bold pointer-events-auto relative -rotate-[3deg] px-4 py-1">
             <Pin color="bg-mint" onNote />
             <h2 className="map-title font-display text-[24px] leading-tight text-sepia">
               Selecciona un nivel
@@ -274,7 +368,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
                   disabled={isLocked}
                   onClick={() => navigate(`${ROUTES.WORLDS}/${world.id}/${level.id}`)}
                   title={isLocked ? 'Supera el nivel anterior para abrirlo' : undefined}
-                  className={`relative isolate flex flex-col px-5 pb-6 pt-5 text-left transition-transform duration-100 ${
+                  className={`relative isolate flex flex-col px-5 pb-6 pt-5 text-left transition-transform duration-100 ${SHEET_TILTS[position % SHEET_TILTS.length]} ${
                     isLocked
                       ? 'cursor-not-allowed opacity-60 grayscale'
                       : 'hover:-translate-y-1 active:translate-y-0'
