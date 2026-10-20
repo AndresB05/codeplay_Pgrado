@@ -9,7 +9,6 @@ import { StatCard } from '../shared/StatCard';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { getClassGroupStats } from './classroomsData';
 import { CreateGroupForm } from './CreateGroupForm';
-import { PulseIcon, SeatIcon, StudentsIcon } from './TeacherIcons';
 
 interface TeacherGroupsModuleProps {
   groups: ClassGroup[];
@@ -49,150 +48,132 @@ export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModule
   };
 
   return (
-    <div className="px-5 py-5">
-      <section className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="title-xl">Mis salones</h1>
-          <p className="subtitle mt-1">
-            Administra tus grupos de clase y sigue el avance de cada explorador.
-          </p>
-        </div>
-
-        {!creating ? (
-          <button type="button" onClick={() => setCreating(true)} className="btn btn-grape">
-            <span className="text-[22px] leading-none">+</span>
-            Crear salón
-          </button>
-        ) : null}
-      </section>
-
-      <div className="mt-5">
-        <StoreErrorNotice error={error} />
-      </div>
-
-      {creating ? (
-        <div className="mt-5">
-          <CreateGroupForm
-            defaultTeacherName={teacherName}
-            onCreate={handleCreate}
-            onCancel={() => setCreating(false)}
-          />
-        </div>
-      ) : null}
-
-      <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard
-          icon={<StudentsIcon />}
-          title="Exploradores"
-          value={String(totalStudents)}
-          tone="grape"
-        />
-        <StatCard
-          icon={<PulseIcon />}
-          title="Conectados ahora"
-          value={`${totalConnected} de ${totalStudents}`}
-          tone="sun"
-        />
-        <StatCard
-          icon={<SeatIcon />}
-          title="Cupos libres"
-          value={String(totalFreeSeats)}
-          tone="sky"
-        />
-      </section>
-
-      <section className="mt-8 pb-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="title-lg">Grupos de clase</h2>
-
-          {totalPending > 0 ? (
-            <span className="chip chip-sun">{totalPending} en espera</span>
-          ) : null}
-        </div>
-
-        {groups.length === 0 ? (
-          <p className="card mt-4 px-5 py-10 text-center text-[16px] font-semibold text-ink-faint">
-            Todavía no administras ningún salón. Crea el primero con el botón de arriba.
-          </p>
-        ) : (
-          <div className="mt-4 grid grid-cols-1 gap-6 xl:grid-cols-2">
-            {groups.map((group) => {
-              const stats = getClassGroupStats(group, onlineStudentIds);
-              const pending = group.pendingRequests.length;
-              const theme = getGroupTheme(group.id);
-
-              return (
-                <article key={group.id} className="card overflow-hidden">
-                  <div
-                    className="relative flex items-center gap-4 border-b-[3px] border-ink px-5 py-4"
-                    style={{ background: theme.gradient }}
-                  >
-                    {/* Burbujas decorativas de la cabecera */}
-                    <span className="pointer-events-none absolute -right-4 -top-6 h-20 w-20 rounded-full bg-white/25" />
-                    <span className="pointer-events-none absolute right-14 top-8 h-8 w-8 rounded-full bg-white/20" />
-
-                    <GroupBadge theme={theme} />
-
-                    <div className="relative min-w-0">
-                      <h3 className="font-display text-[24px] leading-tight text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)]">
-                        {group.name}
-                      </h3>
-                      <p className="text-[15px] font-bold text-white/90">{group.gradeLabel}</p>
-                    </div>
-
-                    <span className="relative ml-auto shrink-0 rounded-full border-2 border-ink bg-white px-3 py-1 font-display text-[13px] tracking-[0.04em] text-ink">
-                      {group.publicId}
-                    </span>
-                  </div>
-
-                  <div className="px-5 py-4">
-                    {pending > 0 ? (
-                      <p className="mb-4 rounded-[16px] border-2 border-sun-dark bg-sun-soft px-4 py-2 text-[15px] font-bold text-sun-dark">
-                        {pending} explorador{pending === 1 ? '' : 'es'} esperando tu respuesta
-                      </p>
-                    ) : null}
-
-                    <dl className="grid grid-cols-3 gap-3">
-                      <div className="rounded-[16px] border-2 border-line bg-cream px-3 py-2 text-center">
-                        <dt className="text-[12px] font-bold uppercase tracking-[0.04em] text-ink-faint">
-                          Niños
-                        </dt>
-                        <dd className="font-display text-[20px] text-ink">
-                          {stats.totalStudents}/{group.capacity}
-                        </dd>
-                      </div>
-                      <div className="rounded-[16px] border-2 border-line bg-cream px-3 py-2 text-center">
-                        <dt className="text-[12px] font-bold uppercase tracking-[0.04em] text-ink-faint">
-                          Conectados
-                        </dt>
-                        <dd className="font-display text-[20px] text-mint-dark">
-                          {stats.connectedNow}
-                        </dd>
-                      </div>
-                      <div className="rounded-[16px] border-2 border-line bg-cream px-3 py-2 text-center">
-                        <dt className="text-[12px] font-bold uppercase tracking-[0.04em] text-ink-faint">
-                          Racha top
-                        </dt>
-                        <dd className="font-display text-[20px] text-sun-dark">
-                          {stats.bestStreak}
-                        </dd>
-                      </div>
-                    </dl>
-
-                    <button
-                      type="button"
-                      onClick={() => navigate(`${ROUTES.TEACHER_GROUPS}/${group.id}`)}
-                      className="btn btn-grape mt-4 w-full"
-                    >
-                      Ver salón
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+    <div className="tutor-scope px-6 py-6 lg:px-8">
+      <div className="max-w-[1160px]">
+        <section className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-[26px] leading-tight text-tutor-ink">Mis salones</h1>
+            <p className="mt-1 text-tutor-ink-soft">
+              Administra tus grupos de clase y sigue el avance de cada explorador.
+            </p>
           </div>
-        )}
-      </section>
+
+          {!creating ? (
+            <button
+              type="button"
+              onClick={() => setCreating(true)}
+              className="tutor-btn tutor-btn-primary"
+            >
+              <span aria-hidden="true" className="text-[18px] leading-none">
+                +
+              </span>
+              Crear salón
+            </button>
+          ) : null}
+        </section>
+
+        <div className="mt-5">
+          <StoreErrorNotice error={error} variant="tutor" />
+        </div>
+
+        {creating ? (
+          <div className="mb-5">
+            <CreateGroupForm
+              defaultTeacherName={teacherName}
+              onCreate={handleCreate}
+              onCancel={() => setCreating(false)}
+            />
+          </div>
+        ) : null}
+
+        <dl className="tutor-stats grid-cols-1 sm:grid-cols-3">
+          <StatCard title="Exploradores" value={String(totalStudents)} variant="tutor" />
+          <StatCard
+            title="Conectados ahora"
+            value={`${totalConnected} de ${totalStudents}`}
+            variant="tutor"
+          />
+          <StatCard title="Cupos libres" value={String(totalFreeSeats)} variant="tutor" />
+        </dl>
+
+        <section className="mt-8 pb-4">
+          <div className="tutor-section-head">
+            <h2>Grupos de clase</h2>
+            <span className="text-[14px] text-tutor-ink-soft">{groups.length}</span>
+
+            {totalPending > 0 ? (
+              <span className="tutor-badge tutor-badge-warn">{totalPending} en espera</span>
+            ) : null}
+          </div>
+
+          {groups.length === 0 ? (
+            <p className="tutor-card mt-4 px-5 py-10 text-center text-tutor-ink-soft">
+              Todavía no administras ningún salón. Crea el primero con el botón de arriba.
+            </p>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+              {groups.map((group) => {
+                const stats = getClassGroupStats(group, onlineStudentIds);
+                const pending = group.pendingRequests.length;
+                const theme = getGroupTheme(group.id);
+
+                return (
+                  <article key={group.id} className="tutor-card flex overflow-hidden">
+                    {/* La pestaña de la carpeta: el color del salón vive aquí y en la barra lateral. */}
+                    <span aria-hidden className="w-[6px] shrink-0" style={{ background: theme.color }} />
+
+                    <div className="min-w-0 flex-1 p-4">
+                      <div className="flex items-center gap-3">
+                        <GroupBadge theme={theme} size={44} shape="plain" />
+
+                        <div className="min-w-0 flex-1">
+                          <h3
+                            title={group.name}
+                            className="truncate text-[19px] leading-tight text-tutor-ink"
+                          >
+                            {group.name}
+                          </h3>
+                          <p className="text-[14px] text-tutor-ink-soft">{group.gradeLabel}</p>
+                        </div>
+
+                        <span className="shrink-0 rounded-[6px] border border-tutor-rule-strong px-2 py-0.5 text-[13px] font-semibold tracking-[0.04em] text-tutor-ink">
+                          {group.publicId}
+                        </span>
+                      </div>
+
+                      {pending > 0 ? (
+                        <p className="mt-3">
+                          <span className="tutor-badge tutor-badge-warn">
+                            {pending} explorador{pending === 1 ? '' : 'es'} esperando tu respuesta
+                          </span>
+                        </p>
+                      ) : null}
+
+                      <dl className="tutor-stats mt-3 grid-cols-3 [&>*]:px-3 [&>*]:py-2">
+                        <StatCard
+                          title="Niños"
+                          value={`${stats.totalStudents} de ${group.capacity}`}
+                          variant="tutor"
+                        />
+                        <StatCard title="Conectados" value={String(stats.connectedNow)} variant="tutor" />
+                        <StatCard title="Racha top" value={String(stats.bestStreak)} variant="tutor" />
+                      </dl>
+
+                      <button
+                        type="button"
+                        onClick={() => navigate(`${ROUTES.TEACHER_GROUPS}/${group.id}`)}
+                        className="tutor-btn tutor-btn-secondary mt-3 w-full"
+                      >
+                        Ver salón
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 };

@@ -3,8 +3,11 @@ import type { GroupTheme } from './groupThemes';
 interface GroupBadgeProps {
   theme: GroupTheme;
   size?: number;
-  /** `seal`: redonda y con el borde punteado, como un sello de tinta sobre el mapa. */
-  shape?: 'tile' | 'seal';
+  /**
+   * `seal`: redonda y con el borde punteado, como un sello de tinta sobre el mapa.
+   * `plain`: la del tutor, sobre el tono suave del tema, sin contorno, sombra ni degradado.
+   */
+  shape?: 'tile' | 'seal' | 'plain';
 }
 
 /**
@@ -156,6 +159,27 @@ export const GroupBadge = ({ theme, size = 62, shape = 'tile' }: GroupBadgeProps
         );
     }
   };
+
+  if (shape === 'plain') {
+    return (
+      <span
+        role="img"
+        aria-label={`Salón ${theme.label}`}
+        className="inline-flex shrink-0 items-center justify-center rounded-[10px]"
+        style={{ width: size, height: size, background: theme.colorSoft }}
+      >
+        <svg
+          width={size * 0.72}
+          height={size * 0.72}
+          viewBox="0 0 64 64"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {artwork()}
+        </svg>
+      </span>
+    );
+  }
 
   return (
     <span

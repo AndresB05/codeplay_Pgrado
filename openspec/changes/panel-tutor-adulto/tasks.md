@@ -17,13 +17,13 @@
 
 Cada pantalla que se migra lleva `tutor-scope` en su raíz.
 
-- [ ] 3.0 `GroupBadge.tsx`: forma `'plain'` (fondo `theme.colorSoft`, radio 10 px, sin contorno, sin sombra ni degradado, misma ilustración); verificar con captura que el buscador de salones y el salón del child, que usan `seal`, se ven igual
-- [ ] 3.1 `StatCard.tsx`: variante `'tutor'` como celda de `tutor-stats`; verificar con captura que `StudentClassroomModule` y `StudentWorldsModule` se ven igual que antes
-- [ ] 3.2 `TeacherGroupsModule.tsx` y `CreateGroupForm.tsx` con las piezas del tutor, la franja de cifras y cada salón como carpeta con pestaña y `GroupBadge` `plain` a 44 px, sin degradado en la cabecera; verificar con captura, incluido el formulario abierto con un error de validación
-- [ ] 3.3 `StoreErrorNotice.tsx`, `ConfirmDialog.tsx` y `RosterFilterBar.tsx` (`FilterSelect` incluido): variante `'tutor'`; verificar que el diálogo de borrar cuenta del child y el del juego se ven igual
-- [ ] 3.4 `StudentRosterTable.tsx` y `ClassroomPodium.tsx`: variante `'tutor'` (tabla densa con números a la derecha y los leopardos reales de `pickMascotAvatar`; podio como lista de tres); verificar con captura de `StudentClassroomModule` y `StudentWorldsModule` que el child no cambia
-- [ ] 3.5 `TeacherGroupDetailModule.tsx`, `PendingRequestsSection.tsx`, `AddStudentsPanel.tsx` y `ExportReportMenu.tsx` con las piezas del tutor y la cabecera de carpeta (pestaña de color y `GroupBadge` `plain` a 48 px, sin degradado), con «Eliminar salón» separado del resto de acciones como dice design.md §7; verificar que `ExportReportMenu.test.tsx` pasa sin cambiar sus aserciones, y captura del detalle con solicitudes, panel de sumar abierto y menú de exportar abierto
-- [ ] 3.6 Pasada con teclado de la tanda: foco visible en tarjetas de salón, formulario, acciones del detalle, menú de exportar, solicitudes, filtros, tabla y diálogo de eliminar
+- [x] 3.0 `GroupBadge.tsx`: forma `'plain'` (fondo `theme.colorSoft`, radio 10 px, sin contorno, sin sombra ni degradado, misma ilustración); verificar con captura que el buscador de salones y el salón del child, que usan `seal`, se ven igual
+- [x] 3.1 `StatCard.tsx`: variante `'tutor'` como celda de `tutor-stats`; verificar con captura que `StudentClassroomModule` y `StudentWorldsModule` se ven igual que antes
+- [x] 3.2 `TeacherGroupsModule.tsx` y `CreateGroupForm.tsx` con las piezas del tutor, la franja de cifras y cada salón como carpeta con pestaña y `GroupBadge` `plain` a 44 px, sin degradado en la cabecera; verificar con captura, incluido el formulario abierto con un error de validación
+- [x] 3.3 `StoreErrorNotice.tsx`, `ConfirmDialog.tsx` y `RosterFilterBar.tsx` (`FilterSelect` incluido): variante `'tutor'`; verificar que el diálogo de borrar cuenta del child y el del juego se ven igual
+- [x] 3.4 `StudentRosterTable.tsx` y `ClassroomPodium.tsx`: variante `'tutor'` (tabla densa con números a la derecha y los leopardos reales de `pickMascotAvatar`; podio como lista de tres); verificar con captura de `StudentClassroomModule` y `StudentWorldsModule` que el child no cambia
+- [x] 3.5 `TeacherGroupDetailModule.tsx`, `PendingRequestsSection.tsx`, `AddStudentsPanel.tsx` y `ExportReportMenu.tsx` con las piezas del tutor y la cabecera de carpeta (pestaña de color y `GroupBadge` `plain` a 48 px, sin degradado), con «Eliminar salón» separado del resto de acciones como dice design.md §7; verificar que `ExportReportMenu.test.tsx` pasa sin cambiar sus aserciones, y captura del detalle con solicitudes, panel de sumar abierto y menú de exportar abierto
+- [x] 3.6 Pasada con teclado de la tanda: foco visible en tarjetas de salón, formulario, acciones del detalle, menú de exportar, solicitudes, filtros, tabla y diálogo de eliminar
 
 ## 4. Panel de información (tanda 3)
 
@@ -45,5 +45,5 @@ Cada pantalla que se migra lleva `tutor-scope` en su raíz.
 
 - [ ] 6.1 Buscar en `components/dashboard/teacher/` y `TeacherDashboard.tsx` las clases del child como palabra completa (`\bcard\b`, `\bbtn\b`, `\bchip\b`, `\bfield\b`, `\bfont-display\b`, `\bborder-ink\b`) y `shadow-\[`, para que `tutor-card` o `tutor-btn` no den falsos positivos, y retirarlas; verificar con `grep -E` que no queda ninguna
 - [ ] 6.2 Capturas del child (`StudentClassroomModule`, `StudentWorldsModule` y «Mi cuenta») comparadas con las de antes del cambio, sin diferencias
-- [ ] 6.3 Actualizar `docs/CONTEXT.md` §2.1 y `docs/ESTADO-DEL-PROYECTO.md` §2 con el sistema del tutor; replicar en `openspec/config.yaml` y verificar con `npx openspec doctor`
+- [ ] 6.3 Actualizar `docs/CONTEXT.md` §2.1 y `docs/ESTADO-DEL-PROYECTO.md` §2 con el sistema del tutor; apuntar en `docs/CONTEXT.md` §4 la deuda del niño encontrada en la tanda 2 (con «Eliminar mi cuenta» abierto, su barra superior queda sin velo porque el `<main>` del panel es `relative isolate` y el `z-50` del diálogo no sale de ese contexto; el del tutor ya va por portal; captura de referencia `t2c/nino-borrar.png` de la tanda 2); replicar en `openspec/config.yaml` y verificar con `npx openspec doctor`
 - [ ] 6.4 Ejecutar `npm run lint`, `npm run test:run` y `npm run build` desde la raíz y verificar que los tres pasan

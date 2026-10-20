@@ -9,21 +9,13 @@ import { getGroupTheme } from '../shared/groupThemes';
 import { StatCard } from '../shared/StatCard';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { ClassroomPodium } from '../shared/ClassroomPodium';
+import { podiumRanking } from '../shared/podiumRanking';
 import { StudentRosterTable } from '../shared/StudentRosterTable';
 import { findClassGroup, getClassGroupStats } from './classroomsData';
 import { AddStudentsPanel } from './AddStudentsPanel';
 import { ExportReportMenu } from './ExportReportMenu';
 import { PendingRequestsSection } from './PendingRequestsSection';
-import {
-  BackIcon,
-  InviteIcon,
-  MedalIcon,
-  ProgressIcon,
-  PulseIcon,
-  SeatIcon,
-  StudentsIcon,
-  TrashIcon,
-} from './TeacherIcons';
+import { BackIcon, InviteIcon, ProgressIcon, TrashIcon } from './TeacherIcons';
 
 interface TeacherGroupDetailModuleProps {
   groupId: string | undefined;
@@ -50,16 +42,16 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
 
   if (!group) {
     return (
-      <div className="px-5 py-5">
-        <section className="card px-6 py-12 text-center">
-          <h1 className="title-lg">Ese salón ya no existe</h1>
-          <p className="subtitle mt-2">
+      <div className="tutor-scope px-6 py-6 lg:px-8">
+        <section className="tutor-card max-w-[1160px] px-6 py-12 text-center">
+          <h1 className="text-[22px] leading-tight text-tutor-ink">Ese salón ya no existe</h1>
+          <p className="mt-2 text-tutor-ink-soft">
             Puede que lo hayas eliminado o que el enlace esté equivocado.
           </p>
           <button
             type="button"
             onClick={() => navigate(ROUTES.TEACHER_GROUPS)}
-            className="btn btn-grape mt-6"
+            className="tutor-btn tutor-btn-primary mt-5"
           >
             Volver a mis salones
           </button>
@@ -79,136 +71,140 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
     navigate(ROUTES.TEACHER_GROUPS);
   };
 
+  /* El podio sólo existe si alguien ha ganado XP; sin él, las solicitudes ocupan la fila entera. */
+  const hasPodium = podiumRanking(group.students).length > 0;
+
   return (
-    <div className="px-5 py-5">
-      <button
-        type="button"
-        onClick={() => navigate(ROUTES.TEACHER_GROUPS)}
-        className="mb-4 flex items-center gap-1.5 font-display text-[15px] text-grape-dark hover:underline"
-      >
-        <BackIcon />
-        Mis salones
-      </button>
+    <div className="tutor-scope px-6 py-6 lg:px-8">
+      <div className="max-w-[1160px]">
+        <button
+          type="button"
+          onClick={() => navigate(ROUTES.TEACHER_GROUPS)}
+          className="tutor-focus mb-3 inline-flex items-center gap-1 rounded-[6px] text-[14.5px] font-semibold text-tutor-accent hover:underline"
+        >
+          <BackIcon variant="tutor" />
+          Mis salones
+        </button>
 
-      <StoreErrorNotice error={error} />
+        <StoreErrorNotice error={error} variant="tutor" />
 
-      <section
-        className="card relative z-10 px-5 py-5"
-        style={{ background: theme.gradient }}
-      >
-        {/* El recorte va aquí y no en la tarjeta: recortaría el menú de exportar. */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
-          <span className="absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/20" />
-          <span className="absolute right-24 top-10 h-12 w-12 rounded-full bg-white/15" />
-        </div>
+        {/*
+         * La pestaña de la carpeta es el borde izquierdo de la tarjeta y no una
+         * franja recortada: sin overflow-hidden, el menú de exportar puede salir.
+         */}
+        <section
+          className="tutor-card relative z-10 border-l-[6px] px-5 py-4"
+          style={{ borderLeftColor: theme.color }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3.5">
+              <GroupBadge theme={theme} size={48} shape="plain" />
 
-        <div className="relative flex flex-wrap items-start justify-between gap-5">
-          <div className="flex items-center gap-4">
-            <GroupBadge theme={theme} size={78} />
+              <div className="min-w-0">
+                <h1 className="text-[24px] leading-tight text-tutor-ink">{group.name}</h1>
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-tutor-ink-soft">
+                  <span>
+                    {group.gradeLabel} · Tutor{' '}
+                    <span className="font-semibold text-tutor-ink">{group.teacherName}</span>
+                  </span>
+                  <span className="rounded-[6px] border border-tutor-rule-strong px-2 py-0.5 text-[13px] font-semibold tracking-[0.04em] text-tutor-ink">
+                    ID: {group.publicId}
+                  </span>
+                </p>
+              </div>
+            </div>
 
-            <div>
-              <h1 className="font-display text-[32px] leading-tight text-white drop-shadow-[0_2px_0_rgba(42,27,69,0.35)]">
-                {group.name}
-              </h1>
-              <p className="text-[16px] font-bold text-white/90">
-                {group.gradeLabel} · Tutor {group.teacherName}
-              </p>
-              <span className="mt-2 inline-flex rounded-full border-2 border-ink bg-white px-3 py-1 font-display text-[13px] tracking-[0.05em] text-ink">
-                ID: {group.publicId}
-              </span>
+            <div className="flex flex-wrap items-start gap-2">
+              <button
+                type="button"
+                onClick={() => setAddStudentsOpen((open) => !open)}
+                aria-expanded={addStudentsOpen}
+                className="tutor-btn tutor-btn-primary"
+              >
+                <InviteIcon variant="tutor" />
+                Sumar alumnos
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate(`${ROUTES.TEACHER_PANEL}/${group.id}`)}
+                className="tutor-btn tutor-btn-secondary"
+              >
+                <ProgressIcon variant="tutor" />
+                Ver progreso
+              </button>
+
+              <ExportReportMenu group={group} />
+
+              {/* Aparte y sin relleno: no puede quedar a mano de «Sumar alumnos» y pulsarse por inercia. */}
+              <span aria-hidden className="mx-1 h-[36px] w-px bg-tutor-rule" />
+
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="tutor-btn tutor-btn-ghost-danger"
+              >
+                <TrashIcon variant="tutor" />
+                Eliminar salón
+              </button>
             </div>
           </div>
+        </section>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setAddStudentsOpen((open) => !open)}
-              aria-expanded={addStudentsOpen}
-              className="btn btn-sun"
-            >
-              <InviteIcon />
-              Sumar alumnos
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigate(`${ROUTES.TEACHER_PANEL}/${group.id}`)}
-              className="btn btn-mint"
-            >
-              <ProgressIcon />
-              Ver progreso
-            </button>
-
-            <ExportReportMenu group={group} />
-
-            <button
-              type="button"
-              onClick={() => setConfirmingDelete(true)}
-              className="btn btn-coral"
-            >
-              <TrashIcon />
-              Eliminar salón
-            </button>
+        {addStudentsOpen ? (
+          <div className="mt-4">
+            <AddStudentsPanel group={group} freeSeats={stats.freeSeats} />
           </div>
+        ) : null}
+
+        <dl className="tutor-stats mt-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard title="Exploradores" value={String(stats.totalStudents)} variant="tutor" />
+          <StatCard title="Mundo más común" value={stats.averageWorldLabel} variant="tutor" />
+          <StatCard
+            title="Conectados ahora"
+            value={`${stats.connectedNow} de ${stats.totalStudents}`}
+            variant="tutor"
+          />
+          <StatCard title="Cupos libres" value={String(stats.freeSeats)} variant="tutor" />
+        </dl>
+
+        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-start">
+          <div className="min-w-0 flex-1">
+            <PendingRequestsSection
+              group={group}
+              freeSeats={stats.freeSeats}
+              onAccept={(requestId) => acceptRequest(group.id, requestId)}
+              onReject={(requestId) => rejectRequest(group.id, requestId)}
+            />
+          </div>
+
+          {hasPodium ? (
+            <div className="lg:w-[320px] lg:shrink-0">
+              <ClassroomPodium students={group.students} variant="tutor" />
+            </div>
+          ) : null}
         </div>
-      </section>
 
-      {addStudentsOpen ? (
-        <div className="mt-5">
-          <AddStudentsPanel group={group} freeSeats={stats.freeSeats} />
-        </div>
-      ) : null}
+        <section className="mt-8 pb-4">
+          <div className="tutor-section-head">
+            <h2>Seguimiento de los exploradores</h2>
+            <span className="text-[14px] text-tutor-ink-soft">{group.students.length}</span>
+          </div>
 
-      <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          icon={<StudentsIcon />}
-          title="Exploradores"
-          value={String(stats.totalStudents)}
-          tone="grape"
-        />
-        <StatCard
-          icon={<MedalIcon />}
-          title="Mundo más común"
-          value={stats.averageWorldLabel}
-          tone="mint"
-        />
-        <StatCard
-          icon={<PulseIcon />}
-          title="Conectados ahora"
-          value={`${stats.connectedNow} de ${stats.totalStudents}`}
-          tone="sun"
-        />
-        <StatCard
-          icon={<SeatIcon />}
-          title="Cupos libres"
-          value={String(stats.freeSeats)}
-          tone="sky"
-        />
-      </section>
-
-      <div className="mt-6">
-        <PendingRequestsSection
-          group={group}
-          freeSeats={stats.freeSeats}
-          onAccept={(requestId) => acceptRequest(group.id, requestId)}
-          onReject={(requestId) => rejectRequest(group.id, requestId)}
-        />
+          <div className="mt-3">
+            <StudentRosterTable
+              students={group.students}
+              onlineIds={onlineStudentIds}
+              onRemoveStudent={(studentId) => removeStudent(group.id, studentId)}
+              variant="tutor"
+            />
+          </div>
+        </section>
       </div>
-
-      <ClassroomPodium students={group.students} />
-
-      <section className="mt-6 pb-4">
-        <h2 className="title-lg mb-4">Seguimiento de los exploradores</h2>
-
-        <StudentRosterTable
-          students={group.students}
-          onlineIds={onlineStudentIds}
-          onRemoveStudent={(studentId) => removeStudent(group.id, studentId)}
-        />
-      </section>
 
       {confirmingDelete ? (
         <ConfirmDialog
+          variant="tutor"
           title={`¿Eliminar ${group.name}?`}
           confirmLabel="Sí, eliminar"
           onConfirm={handleDelete}
@@ -230,7 +226,7 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
             </p>
           ) : null}
 
-          <p className="mt-2 font-bold text-coral-dark">Esta acción no se puede deshacer.</p>
+          <p className="mt-2 font-semibold text-tutor-danger">Esta acción no se puede deshacer.</p>
         </ConfirmDialog>
       ) : null}
     </div>

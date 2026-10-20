@@ -2,19 +2,6 @@ import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import type { ClassGroup } from '../../../types/classroom.types';
 import { formatRelativeTime } from './classroomsData';
 
-const HandIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M9 11V5.5a1.5 1.5 0 013 0V11m0-1.5a1.5 1.5 0 013 0V12m0-1a1.5 1.5 0 013 0v4.5c0 3-2.4 5.5-5.5 5.5h-1a5.5 5.5 0 01-5.5-5.5V9.5a1.5 1.5 0 013 0V13"
-      fill="#FFC93C"
-      stroke="#2A1B45"
-      strokeWidth="2"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
 interface PendingRequestsSectionProps {
   group: ClassGroup;
   freeSeats: number;
@@ -36,24 +23,21 @@ export const PendingRequestsSection = ({
   const noSeatsLeft = freeSeats === 0;
 
   return (
-    <section className="card overflow-hidden">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b-[3px] border-ink bg-sun-soft px-5 py-4">
-        <div className="flex items-center gap-3">
-          <HandIcon />
-          <h2 className="font-display text-[20px] text-ink">Alumnos en espera</h2>
+    <section className="tutor-card overflow-hidden">
+      <header className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-b border-tutor-rule px-4 py-3">
+        <h2 className="text-[17px] leading-tight text-tutor-ink">Alumnos en espera</h2>
 
-          {requests.length > 0 ? (
-            <span className="rounded-full border-2 border-ink bg-sun px-3 py-0.5 font-display text-[14px] text-ink">
-              {requests.length}
-            </span>
-          ) : null}
-        </div>
+        {requests.length > 0 ? (
+          <span className="tutor-badge tutor-badge-warn">{requests.length} en espera</span>
+        ) : null}
 
-        <p className="text-[14px] font-bold text-sun-dark">Solicitudes de ingreso a {group.name}</p>
+        <p className="ml-auto text-[13.5px] text-tutor-ink-soft">
+          Solicitudes de ingreso a {group.name}
+        </p>
       </header>
 
       {requests.length === 0 ? (
-        <p className="px-5 py-10 text-center text-[16px] font-semibold text-ink-faint">
+        <p className="px-4 py-6 text-center text-tutor-ink-soft">
           No hay solicitudes pendientes ahora mismo.
         </p>
       ) : (
@@ -61,32 +45,30 @@ export const PendingRequestsSection = ({
           {requests.map((request) => (
             <li
               key={request.id}
-              className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-line px-5 py-4 last:border-b-0"
+              className="flex flex-wrap items-center justify-between gap-3 border-b border-tutor-rule px-4 py-2.5 last:border-b-0"
             >
-              <div className="flex items-center gap-3">
-                <div className="h-[44px] w-[44px] overflow-hidden rounded-full border-[3px] border-ink">
-                  <img
-                    src={pickMascotAvatar(request.studentId, request.studentName)}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                </div>
+              <div className="flex min-w-0 items-center gap-2.5">
+                <img
+                  src={pickMascotAvatar(request.studentId, request.studentName)}
+                  alt=""
+                  className="h-[30px] w-[30px] shrink-0 rounded-full border border-tutor-rule object-cover"
+                />
 
-                <div>
-                  <p className="text-[16px] font-bold text-ink">{request.studentName}</p>
-                  <p className="text-[14px] font-semibold text-ink-faint">
-                    Solicitó {formatRelativeTime(request.requestedAtIso)}
-                  </p>
-                </div>
+                <p className="min-w-0">
+                  <span className="font-semibold text-tutor-ink">{request.studentName}</span>{' '}
+                  <span className="text-[14px] text-tutor-ink-soft">
+                    · solicitó {formatRelativeTime(request.requestedAtIso)}
+                  </span>
+                </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => onAccept(request.id)}
                   disabled={noSeatsLeft}
                   title={noSeatsLeft ? 'El salón no tiene cupos libres' : undefined}
-                  className="btn btn-sm btn-mint"
+                  className="tutor-btn tutor-btn-primary tutor-btn-sm"
                 >
                   Aceptar
                 </button>
@@ -94,7 +76,7 @@ export const PendingRequestsSection = ({
                 <button
                   type="button"
                   onClick={() => onReject(request.id)}
-                  className="btn btn-sm btn-coral"
+                  className="tutor-btn tutor-btn-secondary tutor-btn-sm"
                 >
                   Rechazar
                 </button>
@@ -105,7 +87,7 @@ export const PendingRequestsSection = ({
       )}
 
       {noSeatsLeft && requests.length > 0 ? (
-        <p className="border-t-2 border-line bg-coral-soft px-5 py-3 text-[15px] font-bold text-coral-dark">
+        <p className="border-t border-tutor-rule bg-tutor-danger-soft px-4 py-2.5 text-[14.5px] font-semibold text-tutor-danger">
           El salón está lleno. Quita a algún explorador o amplía los cupos para aceptar más.
         </p>
       ) : null}

@@ -82,9 +82,14 @@ interface StudentRosterTableProps {
   onRemoveStudent?: (studentId: string) => void;
   /** Quién tiene CodePlay abierto ahora: lleva el punto verde y «En línea». */
   onlineIds?: ReadonlySet<string>;
-  /** `map`: sobre el pergamino del podio y escrita a mano, como el resto del salón del niño. */
-  variant?: 'card' | 'map';
+  /**
+   * `map`: sobre el pergamino del podio y escrita a mano, como el resto del salón del niño.
+   * `tutor`: tabla densa, con los filtros y el orden dentro de la misma superficie blanca.
+   */
+  variant?: 'card' | 'map' | 'tutor';
 }
+
+const streakLabel = (days: number): string => (days === 1 ? '1 día' : `${days} días`);
 
 /**
  * Tabla de seguimiento de los niños de un salón. La usan tanto el panel del
@@ -188,6 +193,178 @@ export const StudentRosterTable = ({
     onRemoveStudent?.(studentId);
     setConfirmingId(null);
   };
+
+  if (variant === 'tutor') {
+    return (
+      <div className="tutor-card overflow-hidden">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-tutor-rule px-4 py-3">
+          {filterable && students.length > 0 ? (
+            <div className="min-w-0 flex-1">
+              <RosterFilterBar
+                filters={filters}
+                onChange={setFilters}
+                worlds={worldOptions(students)}
+                onClear={() => setFilters(NO_FILTERS)}
+                variant="tutor"
+              />
+            </div>
+          ) : null}
+
+          <div role="group" aria-label="Ordenar exploradores" className="flex items-center gap-2">
+            <span className="text-[13.5px] font-medium text-tutor-ink-soft">Ordenar</span>
+            <div className="tutor-seg">
+              {SORT_OPTIONS.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => setSortKey(option.key)}
+                  aria-pressed={sortKey === option.key}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {students.length === 0 ? (
+          <p className="px-4 py-10 text-center text-[15px] text-tutor-ink-soft">{emptyLabel}</p>
+        ) : sortedStudents.length === 0 ? (
+          <div className="px-4 py-10 text-center">
+            <p className="text-[15px] text-tutor-ink-soft">Ningún explorador coincide con los filtros.</p>
+            <button
+              type="button"
+              onClick={() => setFilters(NO_FILTERS)}
+              className="tutor-btn tutor-btn-secondary tutor-btn-sm mt-3"
+            >
+              Quitar filtros
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="tutor-table min-w-[720px]">
+              <thead>
+                <tr>
+                  <th scope="col">Explorador</th>
+                  <th scope="col">Mundo actual</th>
+                  <th scope="col">Última actividad</th>
+                  <th scope="col" className="tutor-num">
+                    Racha
+                  </th>
+                  <th scope="col">XP</th>
+                  {onRemoveStudent ? (
+                    <th scope="col" className="tutor-num">
+                      Acciones
+                    </th>
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody>
+                {sortedStudents.map((student) => {
+                  const online = onlineIds?.has(student.id) ?? false;
+
+                  return (
+                    <tr key={student.id}>
+                      <td>
+                        <div className="flex items-center gap-2.5 font-semibold">
+                          <span className="relative h-[30px] w-[30px] shrink-0">
+                            <img
+                              src={pickMascotAvatar(student.id, student.name)}
+                              alt=""
+                              className="h-full w-full rounded-full border border-tutor-rule object-cover"
+                            />
+                            {online ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute -bottom-0.5 -right-0.5 h-[10px] w-[10px] rounded-full border-2 border-tutor-surface bg-tutor-ok"
+                              />
+                            ) : null}
+                          </span>
+                          {student.name}
+                        </div>
+                      </td>
+
+                      <td>
+                        {student.currentWorld ?? <span className="text-tutor-ink-faint">—</span>}
+                      </td>
+
+                      <td>
+                        {online ? (
+                          <span className="tutor-badge tutor-badge-ok">En línea</span>
+                        ) : (
+                          <span
+                            className={
+                              student.hoursSinceLastActivity === null
+                                ? 'text-tutor-ink-faint'
+                                : 'text-tutor-ink-soft'
+                            }
+                          >
+                            {formatLastActivity(student.hoursSinceLastActivity)}
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="tutor-num whitespace-nowrap">
+                        {student.streakDays === null ? (
+                          <span className="text-tutor-ink-faint">—</span>
+                        ) : (
+                          streakLabel(student.streakDays)
+                        )}
+                      </td>
+
+                      {/*
+                       * SIN BARRA, a diferencia del niño: la barra mide el tramo del
+                       * nivel, y en una columna se lee como comparación entre
+                       * alumnos —quien acaba de subir sale casi vacío—. Al profesor
+                       * le basta el número, que es lo que ordena.
+                       */}
+                      <td className="py-1.5">
+                        <span className="block whitespace-nowrap">{student.xp} XP</span>
+                        <span className="block whitespace-nowrap text-[12.5px] text-tutor-ink-faint">
+                          Nivel Explorador {explorerLevel(student.xp)}
+                        </span>
+                      </td>
+
+                      {onRemoveStudent ? (
+                        <td className="tutor-num">
+                          {confirmingId === student.id ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleRemove(student.id)}
+                                className="tutor-btn tutor-btn-danger-solid tutor-btn-sm"
+                              >
+                                Confirmar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmingId(null)}
+                                className="tutor-btn tutor-btn-secondary tutor-btn-sm"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingId(student.id)}
+                              className="tutor-btn tutor-btn-danger tutor-btn-sm"
+                            >
+                              Quitar
+                            </button>
+                          )}
+                        </td>
+                      ) : null}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>

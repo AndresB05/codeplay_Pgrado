@@ -89,8 +89,11 @@ const LOOSE_MAPS = [
 
 interface ClassroomPodiumProps {
   students: ClassroomStudent[];
-  /** `map`: sobre su propio pergamino, con escalones a tinta y sellos de lacre. */
-  variant?: 'card' | 'map';
+  /**
+   * `map`: sobre su propio pergamino, con escalones a tinta y sellos de lacre.
+   * `tutor`: una lista de tres, con el puesto en palabras y sin pedestales.
+   */
+  variant?: 'card' | 'map' | 'tutor';
 }
 
 /**
@@ -116,6 +119,38 @@ export const ClassroomPodium = ({ students, variant = 'card' }: ClassroomPodiumP
 
   if (ranking.length === 0) {
     return null;
+  }
+
+  if (variant === 'tutor') {
+    return (
+      <section className="tutor-card px-4 py-3.5">
+        <h2 className="text-[17px] leading-tight text-tutor-ink">Podio del salón</h2>
+        <p className="text-[13.5px] text-tutor-ink-soft">Los tres con más experiencia.</p>
+
+        <ol className="mt-3 space-y-1">
+          {ranking.map((student, place) => (
+            <li key={student.id} className="flex items-center gap-2.5 py-1">
+              <span className="w-[30px] shrink-0 text-[13.5px] font-semibold text-tutor-ink-soft">
+                <span className="sr-only">Puesto </span>
+                {PLACES[place].label}
+              </span>
+              <img
+                src={pickMascotAvatar(student.id, student.name)}
+                alt=""
+                className="h-[28px] w-[28px] shrink-0 rounded-full border border-tutor-rule object-cover"
+              />
+              <span
+                title={student.name}
+                className="min-w-0 flex-1 truncate font-semibold text-tutor-ink"
+              >
+                {student.name}
+              </span>
+              <span className="shrink-0 text-[14px] text-tutor-ink-soft">{student.xp} XP</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    );
   }
 
   const onMap = variant === 'map';

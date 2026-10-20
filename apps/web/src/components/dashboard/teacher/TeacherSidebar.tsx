@@ -139,7 +139,9 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
                           </span>
                         ) : (
                           <>
-                            <span className="flex-1 truncate text-[14px]">{group.name}</span>
+                            <span title={group.name} className="flex-1 truncate text-[14px]">
+                              {group.name}
+                            </span>
                             <span className="text-[13px] text-tutor-ink-faint">
                               {group.students.length}
                             </span>

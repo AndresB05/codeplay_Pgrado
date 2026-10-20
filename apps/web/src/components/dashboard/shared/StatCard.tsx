@@ -4,13 +4,20 @@ import { TILT_ON_HOVER, pickTilt } from './pickTilt';
 export type StatTone = 'grape' | 'mint' | 'sun' | 'sky' | 'coral';
 
 interface StatCardProps {
-  icon: ReactNode;
+  /** La celda del tutor no lleva icono ni color: lo que se lee es la cifra. */
+  icon?: ReactNode;
   title: string;
   value: string;
-  tone: StatTone;
-  /** `map`: sobre el pergamino de las misiones y escrita como en él. */
-  variant?: 'card' | 'map';
+  tone?: StatTone;
+  /**
+   * `map`: sobre el pergamino de las misiones y escrita como en él.
+   * `tutor`: una celda de la franja `tutor-stats`; la franja la pone quien la monta.
+   */
+  variant?: 'card' | 'map' | 'tutor';
 }
+
+/* «3 de 4»: el total va más pequeño para que la cifra que importa se lea primero. */
+const FRACTION = /^(\d+) (de \d+.*)$/;
 
 const TONE_STYLES: Record<StatTone, { bubble: string; value: string; stamp: string }> = {
   grape: { bubble: 'bg-grape-soft', value: 'text-grape-dark', stamp: 'border-grape-dark' },
@@ -20,8 +27,33 @@ const TONE_STYLES: Record<StatTone, { bubble: string; value: string; stamp: stri
   coral: { bubble: 'bg-coral-soft', value: 'text-coral-dark', stamp: 'border-coral-dark' },
 };
 
-export const StatCard = ({ icon, title, value, tone, variant = 'card' }: StatCardProps) => {
+export const StatCard = ({ icon, title, value, tone = 'grape', variant = 'card' }: StatCardProps) => {
   const styles = TONE_STYLES[tone];
+
+  if (variant === 'tutor') {
+    const fraction = value.match(FRACTION);
+
+    return (
+      <div>
+        <dt className="text-[13.5px] font-medium text-tutor-ink-soft">{title}</dt>
+        {/* Un nombre, como el del mundo más común, baja de tamaño para caber en una línea. */}
+        <dd
+          className={`mt-0.5 font-bold leading-tight text-tutor-ink ${
+            /^\d/.test(value) ? 'text-[22px]' : 'text-[17px]'
+          }`}
+        >
+          {fraction ? (
+            <>
+              {fraction[1]}{' '}
+              <span className="text-[14px] font-medium text-tutor-ink-soft">{fraction[2]}</span>
+            </>
+          ) : (
+            value
+          )}
+        </dd>
+      </div>
+    );
+  }
 
   /*
    * El dato escrito a mano en tinta café y el icono en un sello de tinta, como

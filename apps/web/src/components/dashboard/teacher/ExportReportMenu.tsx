@@ -97,14 +97,14 @@ export const ExportReportMenu = ({ group }: ExportReportMenuProps) => {
         disabled={isEmpty || busy}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="btn btn-sky disabled:cursor-not-allowed disabled:opacity-60"
+        className="tutor-btn tutor-btn-secondary"
       >
-        <DownloadIcon />
+        <DownloadIcon variant="tutor" />
         {busy ? 'Generando…' : 'Exportar reporte'}
       </button>
 
       {isEmpty ? (
-        <p className="mt-1.5 text-[13px] font-bold text-white/90">
+        <p className="mt-1 text-[13px] text-tutor-ink-soft">
           No hay exploradores que reportar.
         </p>
       ) : null}
@@ -113,7 +113,7 @@ export const ExportReportMenu = ({ group }: ExportReportMenuProps) => {
         <ul
           role="menu"
           aria-label="Formato del reporte"
-          className="card absolute right-0 z-20 mt-2 w-60 overflow-hidden p-1.5"
+          className="tutor-card absolute right-0 z-20 mt-1.5 w-60 overflow-hidden p-1 shadow-lg"
         >
           {EXPORT_OPTIONS.map((option) => (
             <li key={option.label} role="none">
@@ -121,7 +121,7 @@ export const ExportReportMenu = ({ group }: ExportReportMenuProps) => {
                 type="button"
                 role="menuitem"
                 onClick={() => void handleExport(option)}
-                className="w-full rounded-xl px-3 py-2 text-left font-display text-[15px] text-ink hover:bg-grape-soft"
+                className="tutor-focus w-full rounded-[6px] px-3 py-2 text-left text-[14.5px] text-tutor-ink hover:bg-tutor-accent-soft hover:text-tutor-accent"
               >
                 {option.label}
               </button>
@@ -133,7 +133,7 @@ export const ExportReportMenu = ({ group }: ExportReportMenuProps) => {
       {error ? (
         <p
           role="alert"
-          className="chip chip-coral absolute right-0 z-20 mt-2 block w-64 rounded-[18px] px-4 py-2.5 text-[14px] leading-snug"
+          className="absolute right-0 z-20 mt-1.5 block w-64 rounded-[8px] border border-tutor-danger/30 bg-tutor-danger-soft px-4 py-2.5 text-[14px] font-semibold leading-snug text-tutor-danger shadow-lg"
         >
           {error}
         </p>

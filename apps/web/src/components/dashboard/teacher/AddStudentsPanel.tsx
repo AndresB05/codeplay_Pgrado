@@ -9,36 +9,6 @@ interface AddStudentsPanelProps {
   freeSeats: number;
 }
 
-const IdCardIcon = () => (
-  <svg
-    width="26"
-    height="26"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-    focusable="false"
-  >
-    <rect
-      x="2.5"
-      y="5"
-      width="19"
-      height="14"
-      rx="3"
-      fill="#FFC93C"
-      stroke="#2A1B45"
-      strokeWidth="2"
-    />
-    <circle cx="8.5" cy="11" r="2.2" stroke="#2A1B45" strokeWidth="2" />
-    <path
-      d="M5.5 16.2C6.2 14.9 7.3 14.3 8.5 14.3C9.7 14.3 10.8 14.9 11.5 16.2M14 10H18.5M14 13.5H17"
-      stroke="#2A1B45"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
 /** Enlace absoluto que el tutor comparte por donde quiera. */
 const buildInviteUrl = (token: string): string =>
   `${window.location.origin}${ROUTES.INVITE}/${token}`;
@@ -55,10 +25,10 @@ const STATE_LABELS: Record<InvitationState, string> = {
   expired: 'Caducado',
 };
 
-const STATE_CHIPS: Record<InvitationState, string> = {
-  valid: 'chip chip-leaf',
-  used: 'chip chip-mint',
-  expired: 'chip chip-coral',
+const STATE_BADGES: Record<InvitationState, string> = {
+  valid: 'tutor-badge tutor-badge-ok',
+  used: 'tutor-badge tutor-badge-mute',
+  expired: 'tutor-badge tutor-badge-danger',
 };
 
 const formatDate = (iso: string): string =>
@@ -102,122 +72,119 @@ export const AddStudentsPanel = ({ group, freeSeats }: AddStudentsPanelProps) =>
   };
 
   return (
-    <section className="card px-6 py-5">
-      <div className="flex items-center gap-3">
-        <IdCardIcon />
-        <h2 className="font-display text-[20px] text-ink">Suma exploradores a {group.name}</h2>
-      </div>
+    <section className="tutor-card px-5 py-5">
+      <h2 className="text-[19px] leading-tight text-tutor-ink">Suma exploradores a {group.name}</h2>
 
-      <p className="subtitle mt-2">
+      <p className="mt-1 text-tutor-ink-soft">
         Comparte el ID del salón con la familia o con el alumno. Quedan {freeSeats} cupos libres.
       </p>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[18px] border-2 border-line bg-cream px-4 py-3">
-        <span className="text-[13px] font-bold uppercase tracking-[0.05em] text-ink-faint">
-          ID del salón
-        </span>
-        <span className="font-display text-[26px] tracking-[0.06em] text-grape-dark">
-          {group.publicId}
-        </span>
-      </div>
+      <div className="mt-4 grid gap-5 lg:grid-cols-2">
+        <div>
+          <div className="flex flex-wrap items-baseline gap-3 rounded-[8px] border border-tutor-rule bg-tutor-sunken px-4 py-3">
+            <span className="text-[13.5px] font-medium text-tutor-ink-soft">ID del salón</span>
+            <span className="text-[22px] font-bold tracking-[0.06em] text-tutor-accent">
+              {group.publicId}
+            </span>
+          </div>
 
-      <ol className="mt-4 space-y-3">
-        <li className="flex gap-3">
-          <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sun font-display text-[15px] text-ink">
-            1
-          </span>
-          <p className="text-[16px] font-semibold text-ink-soft">
-            El alumno entra en <strong className="text-ink">Mi salón</strong> y busca ese ID.
-          </p>
-        </li>
-
-        <li className="flex gap-3">
-          <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sun font-display text-[15px] text-ink">
-            2
-          </span>
-          <p className="text-[16px] font-semibold text-ink-soft">
-            Pulsa <strong className="text-ink">Solicitar ingreso</strong> y queda en espera.
-          </p>
-        </li>
-
-        <li className="flex gap-3">
-          <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sun font-display text-[15px] text-ink">
-            3
-          </span>
-          <p className="text-[16px] font-semibold text-ink-soft">
-            Su solicitud aparece aquí, en <strong className="text-ink">Alumnos en espera</strong>, y
-            tú la aceptas.
-          </p>
-        </li>
-      </ol>
-
-      <div className="mt-6 border-t-2 border-line pt-5">
-        <h3 className="font-display text-[17px] text-ink">O envíale un enlace directo</h3>
-        <p className="subtitle mt-1">
-          Quien abra el enlace entra al salón sin que tengas que aceptarlo. Sirve una sola vez y
-          caduca a los 14 días. Compártelo tú: nosotros no enviamos correos.
-        </p>
-
-        <button
-          type="button"
-          onClick={handleCreate}
-          disabled={loading}
-          className="btn btn-sun btn-sm mt-4"
-        >
-          Generar enlace
-        </button>
-
-        {error ? (
-          <p className="mt-4 rounded-[16px] border-2 border-coral-dark bg-coral-soft px-4 py-3 text-[15px] font-bold text-coral-dark">
-            {error.message}
-          </p>
-        ) : null}
-
-        {invitations.length > 0 ? (
-          <ul className="mt-4 space-y-3">
-            {invitations.map((invitation) => (
-              <li
-                key={invitation.id}
-                className="rounded-[18px] border-2 border-line bg-cream px-4 py-3"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={STATE_CHIPS[invitation.state]}>
-                    {STATE_LABELS[invitation.state]}
-                  </span>
-                  <span className="text-[13px] font-bold text-ink-faint">
-                    {invitation.state === 'used'
-                      ? `Usado el ${formatDate(invitation.acceptedAt ?? invitation.sentAt)}`
-                      : `Caduca el ${formatDate(invitation.expiresAt)}`}
-                  </span>
-                </div>
-
-                <p className="mt-2 break-all text-[14px] font-semibold text-ink-soft">
-                  {buildInviteUrl(invitation.token)}
-                </p>
-
-                {invitation.state === 'valid' ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void handleCopy(invitation)}
-                      className="btn btn-ghost btn-sm"
-                    >
-                      {copiedToken === invitation.token ? '¡Copiado!' : 'Copiar enlace'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => void revoke(invitation.id)}
-                      className="btn btn-ghost btn-sm"
-                    >
-                      Retirar
-                    </button>
-                  </div>
-                ) : null}
+          <ol className="mt-4 space-y-2.5">
+            {[
+              <>
+                El alumno entra en <strong className="font-semibold text-tutor-ink">Mi salón</strong> y
+                busca ese ID.
+              </>,
+              <>
+                Pulsa <strong className="font-semibold text-tutor-ink">Solicitar ingreso</strong> y
+                queda en espera.
+              </>,
+              <>
+                Su solicitud aparece aquí, en{' '}
+                <strong className="font-semibold text-tutor-ink">Alumnos en espera</strong>, y tú la
+                aceptas.
+              </>,
+            ].map((step, index) => (
+              <li key={index} className="flex gap-2.5">
+                <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-tutor-accent-soft text-[13px] font-semibold text-tutor-accent">
+                  {index + 1}
+                </span>
+                <p className="text-tutor-ink-soft">{step}</p>
               </li>
             ))}
-          </ul>
-        ) : null}
+          </ol>
+        </div>
+
+        <div className="border-t border-tutor-rule pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+          <h3 className="text-[16px] leading-tight text-tutor-ink">O envíale un enlace directo</h3>
+          <p className="mt-1 text-[14.5px] text-tutor-ink-soft">
+            Quien abra el enlace entra al salón sin que tengas que aceptarlo. Sirve una sola vez y
+            caduca a los 14 días. Compártelo tú: nosotros no enviamos correos.
+          </p>
+
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={loading}
+            className="tutor-btn tutor-btn-secondary tutor-btn-sm mt-3"
+          >
+            Generar enlace
+          </button>
+
+          {error ? (
+            <p
+              role="alert"
+              className="mt-3 rounded-[8px] border border-tutor-danger/30 bg-tutor-danger-soft px-4 py-2.5 text-[14.5px] font-semibold text-tutor-danger"
+            >
+              {error.message}
+            </p>
+          ) : null}
+
+          {invitations.length > 0 ? (
+            <ul className="mt-3 space-y-2">
+              {invitations.map((invitation) => (
+                <li
+                  key={invitation.id}
+                  className="rounded-[8px] border border-tutor-rule px-3 py-2.5"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={STATE_BADGES[invitation.state]}>
+                      {STATE_LABELS[invitation.state]}
+                    </span>
+                    <span className="text-[13px] text-tutor-ink-soft">
+                      {invitation.state === 'used'
+                        ? `Usado el ${formatDate(invitation.acceptedAt ?? invitation.sentAt)}`
+                        : `Caduca el ${formatDate(invitation.expiresAt)}`}
+                    </span>
+                  </div>
+
+                  <p className="mt-1.5 break-all text-[13.5px] text-tutor-ink-soft">
+                    {buildInviteUrl(invitation.token)}
+                  </p>
+
+                  {invitation.state === 'valid' ? (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => void handleCopy(invitation)}
+                        className="tutor-btn tutor-btn-secondary tutor-btn-sm"
+                      >
+                        {copiedToken === invitation.token ? '¡Copiado!' : 'Copiar enlace'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => void revoke(invitation.id)}
+                        className="tutor-btn tutor-btn-ghost tutor-btn-sm"
+                      >
+                        Retirar
+                      </button>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       </div>
     </section>
   );

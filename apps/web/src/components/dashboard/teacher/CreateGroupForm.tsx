@@ -11,6 +11,10 @@ interface CreateGroupFormProps {
 const MIN_CAPACITY = 1;
 const MAX_CAPACITY = 60;
 
+const ERROR_ID = 'create-group-error';
+
+type FieldKey = 'name' | 'grade' | 'capacity';
+
 export const CreateGroupForm = ({
   defaultTeacherName,
   onCreate,
@@ -20,18 +24,22 @@ export const CreateGroupForm = ({
   const [gradeLabel, setGradeLabel] = useState('');
   const [teacherName, setTeacherName] = useState(defaultTeacherName);
   const [capacity, setCapacity] = useState('30');
-  const [error, setError] = useState<string | null>(null);
+  /* Qué campo falla, además del mensaje: el lector de pantalla lo anuncia en ese campo. */
+  const [error, setError] = useState<{ field: FieldKey; message: string } | null>(null);
+
+  const invalidProps = (field: FieldKey) =>
+    error?.field === field ? { 'aria-invalid': true, 'aria-describedby': ERROR_ID } : {};
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (name.trim().length < 3) {
-      setError('El nombre del salón necesita al menos 3 caracteres.');
+      setError({ field: 'name', message: 'El nombre del salón necesita al menos 3 caracteres.' });
       return;
     }
 
     if (gradeLabel.trim().length === 0) {
-      setError('Indica a qué grado o curso pertenece el salón.');
+      setError({ field: 'grade', message: 'Indica a qué grado o curso pertenece el salón.' });
       return;
     }
 
@@ -42,7 +50,10 @@ export const CreateGroupForm = ({
       parsedCapacity < MIN_CAPACITY ||
       parsedCapacity > MAX_CAPACITY
     ) {
-      setError(`Los cupos deben estar entre ${MIN_CAPACITY} y ${MAX_CAPACITY}.`);
+      setError({
+        field: 'capacity',
+        message: `Los cupos deben estar entre ${MIN_CAPACITY} y ${MAX_CAPACITY}.`,
+      });
       return;
     }
 
@@ -55,17 +66,17 @@ export const CreateGroupForm = ({
   };
 
   return (
-    <section className="card px-6 py-6">
-      <h2 className="font-display text-[24px] text-grape-dark">Crear un salón nuevo</h2>
-      <p className="subtitle mt-1">
+    <section className="tutor-card px-5 py-5">
+      <h2 className="text-[19px] leading-tight text-tutor-ink">Crear un salón nuevo</h2>
+      <p className="mt-1 max-w-[72ch] text-tutor-ink-soft">
         Al crearlo recibirá un ID único y su propia insignia, para que los exploradores lo
         reconozcan al buscarlo.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-5">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <form onSubmit={handleSubmit} className="mt-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="group-name" className="field-label">
+            <label htmlFor="group-name" className="text-[13.5px] font-medium text-tutor-ink-soft">
               Nombre del salón
             </label>
             <input
@@ -76,12 +87,13 @@ export const CreateGroupForm = ({
                 setError(null);
               }}
               placeholder="Salón 3C"
-              className="field mt-2"
+              {...invalidProps('name')}
+              className="tutor-field mt-1.5"
             />
           </div>
 
           <div>
-            <label htmlFor="group-grade" className="field-label">
+            <label htmlFor="group-grade" className="text-[13.5px] font-medium text-tutor-ink-soft">
               Grado o curso
             </label>
             <input
@@ -92,24 +104,25 @@ export const CreateGroupForm = ({
                 setError(null);
               }}
               placeholder="Tercero de primaria"
-              className="field mt-2"
+              {...invalidProps('grade')}
+              className="tutor-field mt-1.5"
             />
           </div>
 
           <div>
-            <label htmlFor="group-teacher" className="field-label">
+            <label htmlFor="group-teacher" className="text-[13.5px] font-medium text-tutor-ink-soft">
               Tutor a cargo
             </label>
             <input
               id="group-teacher"
               value={teacherName}
               onChange={(event) => setTeacherName(event.target.value)}
-              className="field mt-2"
+              className="tutor-field mt-1.5"
             />
           </div>
 
           <div>
-            <label htmlFor="group-capacity" className="field-label">
+            <label htmlFor="group-capacity" className="text-[13.5px] font-medium text-tutor-ink-soft">
               Cupos
             </label>
             <input
@@ -122,19 +135,28 @@ export const CreateGroupForm = ({
                 setCapacity(event.target.value);
                 setError(null);
               }}
-              className="field mt-2"
+              {...invalidProps('capacity')}
+              className="tutor-field mt-1.5"
             />
           </div>
         </div>
 
-        {error ? <p className="mt-4 text-[15px] font-bold text-coral-dark">{error}</p> : null}
+        {error ? (
+          <p
+            id={ERROR_ID}
+            role="alert"
+            className="mt-4 text-[14.5px] font-semibold text-tutor-danger"
+          >
+            {error.message}
+          </p>
+        ) : null}
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <button type="submit" className="btn btn-grape">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <button type="submit" className="tutor-btn tutor-btn-primary">
             Crear salón
           </button>
 
-          <button type="button" onClick={onCancel} className="btn btn-ghost">
+          <button type="button" onClick={onCancel} className="tutor-btn tutor-btn-secondary">
             Cancelar
           </button>
         </div>
