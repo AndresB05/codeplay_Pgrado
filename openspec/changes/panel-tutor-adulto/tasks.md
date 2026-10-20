@@ -47,3 +47,9 @@ Cada pantalla que se migra lleva `tutor-scope` en su raíz.
 - [x] 6.2 Capturas del child (`StudentClassroomModule`, `StudentWorldsModule` y «Mi cuenta») comparadas con las de antes del cambio, sin diferencias
 - [x] 6.3 Actualizar `docs/CONTEXT.md` §2.1 y `docs/ESTADO-DEL-PROYECTO.md` §2 con el sistema del tutor; apuntar en `docs/CONTEXT.md` §4 la deuda del niño encontrada en la tanda 2 (con «Eliminar mi cuenta» abierto, su barra superior queda sin velo porque el `<main>` del panel es `relative isolate` y el `z-50` del diálogo no sale de ese contexto; el del tutor ya va por portal; captura de referencia `t2c/nino-borrar.png` de la tanda 2); replicar en `openspec/config.yaml` y verificar con `npx openspec doctor`
 - [x] 6.4 Ejecutar `npm run lint`, `npm run test:run` y `npm run build` desde la raíz y verificar que los tres pasan
+
+## 7. Centrado y barra superior (tanda 5)
+
+- [x] 7.1 Centrar el contenido en el `<main>` con `mx-auto w-full` en los contenedores de ancho máximo de `TeacherGroupsModule`, `TeacherGroupDetailModule` (sus dos returns), `TeacherPanelModule` y `TeacherSettingsModule`; verificar midiendo el hueco a cada lado del contenido a 1916 px y a 1280 px, con la barra desplegada y plegada, que el contenido queda centrado y al plegar se desplaza sólo la mitad de lo que encoge la barra
+- [x] 7.2 `TeacherTopBar.tsx` en `grape-dark` liso con texto blanco (elegido por el usuario: opción A): logo en su disco con aro blanco de 2 px, «Tutor» en blanco al 80 %, enlace activo en blanco al 15 % y hover al 10 %, avatar con borde blanco y foco visible en blanco; verificar los contrastes medidos (design.md §6) y el foco con Tab
+- [x] 7.3 Capturas reales de «Mis salones» a 1916 px desplegada y plegada, y del detalle y el panel a 1280 px; lint, test:run y build en verde

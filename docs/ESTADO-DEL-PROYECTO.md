@@ -600,6 +600,11 @@ Hyperlegible Next** en todo lo demás —cuerpo, tablas, controles, cifras con
 Los componentes compartidos con el niño eligen su traje con `variant="tutor"`
 (o `shape="plain"` en `GroupBadge`); sin la prop se ven como siempre.
 
+La **barra superior** del tutor va en `grape-dark` liso con el texto en blanco
+(elegido por el usuario): enlace activo en blanco al 15 %, hover al 10 % y el foco
+visible en blanco, porque el contorno morado no se ve sobre el morado. El
+contenido de cada pantalla va centrado en su `<main>` (`mx-auto`).
+
 ---
 
 ## 3. Herramientas y stack

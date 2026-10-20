@@ -676,7 +676,7 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
 
   return (
     <div className="px-6 py-6 lg:px-8">
-      <div className="max-w-[1160px]">
+      <div className="mx-auto w-full max-w-[1160px]">
         <section>
           <h1 className="text-[26px] leading-tight text-tutor-ink">Panel de información</h1>
           <p className="mt-1 text-tutor-ink-soft">

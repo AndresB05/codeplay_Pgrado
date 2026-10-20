@@ -184,6 +184,15 @@ Fredoka, como en el resto de la web, y «Tutor» como rótulo al lado (sustituye
 chip «Panel de Tutor»); los dos enlaces de siempre como pestañas de texto; a la
 derecha, `TUTOR_AVATAR` y el nombre, que llevan a Ajustes.
 
+**Tanda 5 (decidido por el usuario tras verlo en su pantalla de 1916 px):** la
+barra superior pasa a **`grape-dark` liso con texto blanco** —el aro blanco
+del logo, «Tutor» al 80 %, el enlace activo en blanco al 15 % y el hover al 10 %,
+sin degradado—, y el **foco visible va en blanco** porque el contorno morado no
+se ve sobre el morado. Contrastes medidos: blanco sobre la barra 9,42:1; sobre el
+activo, 6,65:1; sobre el hover, 7,51:1; «Tutor» al 80 %, 6,52:1. Y el contenido
+de cada pantalla va **centrado en el `<main>`** (`mx-auto`): sin él, en una
+pantalla ancha quedaba pegado a la izquierda y al plegar la barra saltaba entero.
+
 Barra lateral de 240 px desplegada y 64 px plegada: elementos de 36 px, el
 activo con fondo `tutor-accent-soft` y texto en el acento. Los salones cuelgan de
 «Salón de clases» con su pestaña de color, nombre y recuento. Plegada, cada salón

@@ -379,6 +379,8 @@ bordes de 1 px, radios de 12/8 px y tablas compactas.
 | Atkinson Hyperlegible Next para cuerpo, tablas y cifras (`font-tutor`, `tabular-nums`) | `@import` de `main.css`; la activa `.tutor-scope` |
 | Piezas `tutor-card`, `tutor-btn*`, `tutor-badge*`, `tutor-field`, `tutor-seg`, `tutor-table`, `tutor-section-head`, `tutor-stats` | Un bloque `@layer components` propio en `main.css` |
 | `.tutor-scope` en el contenedor del tutor | `pages/TeacherDashboard/TeacherDashboard.tsx`; los dos diálogos lo llevan aparte porque van por portal |
+| La barra superior en `grape-dark` liso con texto blanco y foco en blanco (tanda 5, elegida por el usuario) | `teacher/TeacherTopBar.tsx` |
+| El contenido centrado en el `<main>` (`mx-auto`), para que en pantallas anchas no quede a la izquierda ni salte al plegar | Los cuatro módulos del tutor |
 | La pestaña de color del salón y la insignia `GroupBadge shape="plain"` | `teacher/TeacherSidebar.tsx`, `TeacherGroupsModule.tsx`, `TeacherGroupDetailModule.tsx` |
 
 **El niño no cambia, y es estructural.** Las clases `.card`, `.btn`, `.chip` y

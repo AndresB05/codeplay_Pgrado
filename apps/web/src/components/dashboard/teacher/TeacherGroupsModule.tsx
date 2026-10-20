@@ -49,7 +49,7 @@ export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModule
 
   return (
     <div className="px-6 py-6 lg:px-8">
-      <div className="max-w-[1160px]">
+      <div className="mx-auto w-full max-w-[1160px]">
         <section className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-[26px] leading-tight text-tutor-ink">Mis salones</h1>
