@@ -231,7 +231,9 @@ export const StudentRosterTable = ({
           <p className="px-4 py-10 text-center text-[15px] text-tutor-ink-soft">{emptyLabel}</p>
         ) : sortedStudents.length === 0 ? (
           <div className="px-4 py-10 text-center">
-            <p className="text-[15px] text-tutor-ink-soft">Ningún explorador coincide con los filtros.</p>
+            <p className="text-[15px] text-tutor-ink-soft">
+              Ningún explorador coincide con los filtros.
+            </p>
             <button
               type="button"
               onClick={() => setFilters(NO_FILTERS)}

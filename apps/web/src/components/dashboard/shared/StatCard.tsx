@@ -27,7 +27,13 @@ const TONE_STYLES: Record<StatTone, { bubble: string; value: string; stamp: stri
   coral: { bubble: 'bg-coral-soft', value: 'text-coral-dark', stamp: 'border-coral-dark' },
 };
 
-export const StatCard = ({ icon, title, value, tone = 'grape', variant = 'card' }: StatCardProps) => {
+export const StatCard = ({
+  icon,
+  title,
+  value,
+  tone = 'grape',
+  variant = 'card',
+}: StatCardProps) => {
   const styles = TONE_STYLES[tone];
 
   if (variant === 'tutor') {

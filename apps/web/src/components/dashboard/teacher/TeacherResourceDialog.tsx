@@ -83,7 +83,10 @@ export const TeacherResourceDialog = ({ resource, onClose }: TeacherResourceDial
             <span className="tutor-badge tutor-badge-info tutor-badge-plain">
               {resource.categoryLabel}
             </span>
-            <h2 id="teacher-resource-title" className="mt-2 text-[21px] leading-tight text-tutor-ink">
+            <h2
+              id="teacher-resource-title"
+              className="mt-2 text-[21px] leading-tight text-tutor-ink"
+            >
               {resource.title}
             </h2>
             <p className="mt-1 text-[14px] text-tutor-ink-soft">

@@ -110,7 +110,10 @@ export const CreateGroupForm = ({
           </div>
 
           <div>
-            <label htmlFor="group-teacher" className="text-[13.5px] font-medium text-tutor-ink-soft">
+            <label
+              htmlFor="group-teacher"
+              className="text-[13.5px] font-medium text-tutor-ink-soft"
+            >
               Tutor a cargo
             </label>
             <input
@@ -122,7 +125,10 @@ export const CreateGroupForm = ({
           </div>
 
           <div>
-            <label htmlFor="group-capacity" className="text-[13.5px] font-medium text-tutor-ink-soft">
+            <label
+              htmlFor="group-capacity"
+              className="text-[13.5px] font-medium text-tutor-ink-soft"
+            >
               Cupos
             </label>
             <input

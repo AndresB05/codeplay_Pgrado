@@ -10,15 +10,19 @@ interface IconProps {
 
 /* Lo que cambia en la variante del tutor: el color, el grosor y el tamaño. */
 const look = (variant: IconProps['variant'], color: string, width: number, size: number) =>
-  variant === 'tutor'
-    ? { color: 'currentColor', width: 1.6, size: 18 }
-    : { color, width, size };
+  variant === 'tutor' ? { color: 'currentColor', width: 1.6, size: 18 } : { color, width, size };
 
 export const GraduationIcon = ({ active = false, variant }: IconProps) => {
   const { color, width, size } = look(variant, active ? '#FFFFFF' : '#2A1B45', 1.9, 22);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M3 9.5L12 5L21 9.5L12 14L3 9.5Z"
         stroke={color}
@@ -39,7 +43,13 @@ export const StudentsIcon = ({ variant }: IconProps) => {
   const { color, width, size } = look(variant, '#7B3FE4', 1.8, 20);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <circle cx="8" cy="9" r="2.5" stroke={color} strokeWidth={width} />
       <circle cx="16" cy="10" r="2" stroke={color} strokeWidth={width} />
       <path
@@ -62,7 +72,13 @@ export const MedalIcon = ({ variant }: IconProps) => {
   const { color, width, size } = look(variant, '#0C8577', 1.8, 20);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path d="M8 3H11L12 6L13 3H16L14 8H10L8 3Z" fill={color} />
       <circle cx="12" cy="14" r="5" stroke={color} strokeWidth={width} />
       <path
@@ -77,7 +93,13 @@ export const PulseIcon = ({ variant }: IconProps) => {
   const { color, width, size } = look(variant, '#D99A00', 1.9, 20);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M3 12H7L9.5 5L14.5 19L17 12H21"
         stroke={color}
@@ -93,7 +115,13 @@ export const SeatIcon = ({ variant }: IconProps) => {
   const { color, width, size } = look(variant, '#1C6DC4', 1.8, 20);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M5 11V6.5C5 5.67 5.67 5 6.5 5H17.5C18.33 5 19 5.67 19 6.5V11"
         stroke={color}
@@ -115,7 +143,13 @@ export const LogoutIcon = ({ variant }: IconProps) => {
   const { color, width, size } = look(variant, '#C72C2C', 1.9, 22);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M10 17L15 12L10 7"
         stroke={color}
@@ -138,7 +172,13 @@ export const BackIcon = ({ variant }: IconProps) => {
   const { color, width, size } = look(variant, '#6D42D9', 2, 18);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M14 6L8 12L14 18"
         stroke={color}
@@ -154,7 +194,13 @@ export const ChartIcon = ({ active = false, variant }: IconProps) => {
   const { color, width, size } = look(variant, active ? '#FFFFFF' : '#2A1B45', 1.9, 22);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M4 20V10M10 20V4M16 20V13M22 20H2"
         stroke={color}
@@ -169,7 +215,13 @@ export const TargetIcon = ({ variant }: IconProps) => {
   const { color, width, size } = look(variant, '#7B3FE4', 1.8, 20);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <circle cx="12" cy="12" r="8.5" stroke={color} strokeWidth={width} />
       <circle cx="12" cy="12" r="4.5" stroke={color} strokeWidth={width} />
       <circle cx="12" cy="12" r="1.4" fill={color} />
@@ -181,7 +233,13 @@ export const BookIcon = ({ variant }: IconProps) => {
   const { color, width, size } = look(variant, '#0C8577', 1.8, 20);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M4 5.5C4 4.67 4.67 4 5.5 4H11V19H5.5C4.67 19 4 18.33 4 17.5V5.5Z"
         stroke={color}
@@ -202,7 +260,13 @@ export const SettingsIcon = ({ active = false, variant }: IconProps) => {
   const { color, width, size } = look(variant, active ? '#FFFFFF' : '#2A1B45', 1.9, 22);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <circle cx="12" cy="12" r="3" stroke={color} strokeWidth={width} />
       <path
         d="M12 3.5L13.4 5.9C13.9 6 14.4 6.2 14.8 6.5L17.4 5.8L19 8.6L17.1 10.4C17.2 10.9 17.2 11.4 17.1 11.9L19 13.7L17.4 16.5L14.8 15.8C14.4 16.1 13.9 16.3 13.4 16.4L12 18.8L10.6 16.4C10.1 16.3 9.6 16.1 9.2 15.8L6.6 16.5L5 13.7L6.9 11.9C6.8 11.4 6.8 10.9 6.9 10.4L5 8.6L6.6 5.8L9.2 6.5C9.6 6.2 10.1 6 10.6 5.9L12 3.5Z"
@@ -226,7 +290,12 @@ export const InviteIcon = ({ variant }: IconProps) => {
         strokeWidth={width}
         strokeLinecap="round"
       />
-      <path d="M18 14V20M15 17H21" stroke="currentColor" strokeWidth={width} strokeLinecap="round" />
+      <path
+        d="M18 14V20M15 17H21"
+        stroke="currentColor"
+        strokeWidth={width}
+        strokeLinecap="round"
+      />
     </svg>
   );
 };

@@ -56,7 +56,9 @@ export const FilterSelect = ({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className={
-          variant === 'tutor' ? 'tutor-field appearance-none pr-9' : 'field appearance-none pr-10 font-display'
+          variant === 'tutor'
+            ? 'tutor-field appearance-none pr-9'
+            : 'field appearance-none pr-10 font-display'
         }
       >
         {options.map((option) => (
@@ -100,7 +102,9 @@ export const RosterFilterBar = ({
   return (
     <div className={`flex flex-wrap items-end ${tutor ? 'gap-2.5' : 'mb-3 gap-3'}`}>
       <label className={`block flex-1 ${tutor ? 'min-w-[180px]' : 'min-w-[200px]'}`}>
-        <span className={`mb-2 block ${tutor ? TUTOR_LABEL : 'field-label'}`}>Buscar por nombre</span>
+        <span className={`mb-2 block ${tutor ? TUTOR_LABEL : 'field-label'}`}>
+          Buscar por nombre
+        </span>
         <input
           type="search"
           value={filters.name}

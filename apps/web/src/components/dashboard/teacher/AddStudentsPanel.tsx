@@ -91,8 +91,8 @@ export const AddStudentsPanel = ({ group, freeSeats }: AddStudentsPanelProps) =>
           <ol className="mt-4 space-y-2.5">
             {[
               <>
-                El alumno entra en <strong className="font-semibold text-tutor-ink">Mi salón</strong> y
-                busca ese ID.
+                El alumno entra en{' '}
+                <strong className="font-semibold text-tutor-ink">Mi salón</strong> y busca ese ID.
               </>,
               <>
                 Pulsa <strong className="font-semibold text-tutor-ink">Solicitar ingreso</strong> y

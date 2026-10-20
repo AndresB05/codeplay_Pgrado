@@ -120,7 +120,11 @@ export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModule
                 return (
                   <article key={group.id} className="tutor-card flex overflow-hidden">
                     {/* La pestaña de la carpeta: el color del salón vive aquí y en la barra lateral. */}
-                    <span aria-hidden className="w-[6px] shrink-0" style={{ background: theme.color }} />
+                    <span
+                      aria-hidden
+                      className="w-[6px] shrink-0"
+                      style={{ background: theme.color }}
+                    />
 
                     <div className="min-w-0 flex-1 p-4">
                       <div className="flex items-center gap-3">
@@ -155,8 +159,16 @@ export const TeacherGroupsModule = ({ groups, teacherName }: TeacherGroupsModule
                           value={`${stats.totalStudents} de ${group.capacity}`}
                           variant="tutor"
                         />
-                        <StatCard title="Conectados" value={String(stats.connectedNow)} variant="tutor" />
-                        <StatCard title="Racha top" value={String(stats.bestStreak)} variant="tutor" />
+                        <StatCard
+                          title="Conectados"
+                          value={String(stats.connectedNow)}
+                          variant="tutor"
+                        />
+                        <StatCard
+                          title="Racha top"
+                          value={String(stats.bestStreak)}
+                          variant="tutor"
+                        />
                       </dl>
 
                       <button

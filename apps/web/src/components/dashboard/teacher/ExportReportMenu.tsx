@@ -104,9 +104,7 @@ export const ExportReportMenu = ({ group }: ExportReportMenuProps) => {
       </button>
 
       {isEmpty ? (
-        <p className="mt-1 text-[13px] text-tutor-ink-soft">
-          No hay exploradores que reportar.
-        </p>
+        <p className="mt-1 text-[13px] text-tutor-ink-soft">No hay exploradores que reportar.</p>
       ) : null}
 
       {open ? (

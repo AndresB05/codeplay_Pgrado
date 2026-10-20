@@ -303,8 +303,8 @@ const StudentProgressCard = ({
            * de debajo.
            */}
           <p className="text-[14px] text-tutor-ink-soft">
-            {completedLevels} de {totalLevels} niveles superados · {finishedWorlds} de {worlds.length}{' '}
-            mundos terminados · {student.totalAttempts} partidas
+            {completedLevels} de {totalLevels} niveles superados · {finishedWorlds} de{' '}
+            {worlds.length} mundos terminados · {student.totalAttempts} partidas
             {student.hoursSinceLastActivity === null
               ? null
               : ` · última actividad ${formatLastActivity(student.hoursSinceLastActivity)}`}
@@ -753,7 +753,9 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
                 />
                 <StatCard
                   title="Eficiencia media"
-                  value={summary.averageBestScore === null ? '—' : `${summary.averageBestScore}/100`}
+                  value={
+                    summary.averageBestScore === null ? '—' : `${summary.averageBestScore}/100`
+                  }
                   variant="tutor"
                 />
               </dl>
