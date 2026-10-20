@@ -4680,6 +4680,16 @@ botones del juego (`game/GameScene.tsx`) son teclas de madera (`.wood-key`) y
 «Ejecutar», la verde (`.wood-key-go`); la tecla apagada sale en gris y no se
 hunde. El Laboratorio 3D comparte esos botones.
 
+**Barra de arriba, tarjetas de mundo y salida** (20-oct-2026): la barra de arriba
+del niño (`StudentTopBar.tsx`) es del color de las teclas del tronco
+(`.wood-top-bar`), con el logo en tinta de madera; la del tutor no cambia. Cada
+tarjeta de mundo (`StudentWorldsModule.tsx`) es una página del pasaporte: la
+ilustración a todo el ancho de arriba, la dificultad como sello de tinta y, en
+lugar de la barra de progreso, una casilla por nivel que se sella al superarlo;
+el sello es el de mundos de «Mi cuenta» con el tono girado al color del mundo
+(`STAMP_HUE`: verde, naranja, azul). El botón «Cerrar sesión» sale del tronco
+(`Sidebar.tsx`): se cierra desde «Mi cuenta».
+
 **Las dos rachas en pergamino** (16-oct-2026): la de la barra superior
 (`topbar-streak-scroll-bold.webp`, sólo el número) y la del tronco de la barra
 lateral (`sidebar-streak-scroll-bold.webp`, «N días»), cada una una tira con su

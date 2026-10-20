@@ -793,6 +793,12 @@ a {
     box-shadow: inset 0 3px 6px rgba(74, 42, 18, 0.5);
   }
 
+  /* La barra de arriba del niño, del color de las teclas del tronco, sin la veta. */
+  .wood-top-bar {
+    background-color: var(--wood-bare);
+    box-shadow: 0 5px 0 rgba(74, 42, 18, 0.35);
+  }
+
   /* La tecla de «Ejecutar»: la misma madera, teñida de verde para que se vea primero. */
   .wood-key-go {
     background-color: var(--jungle-light);

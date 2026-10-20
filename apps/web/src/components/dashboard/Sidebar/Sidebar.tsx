@@ -2,8 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import streakScroll from '../../../assets/brand/sidebar-streak-scroll-bold.webp';
 import { ROUTES } from '../../../constants/routes';
 import { pickMascotAvatar } from '../../../constants/mascotAvatars';
-import { endGuestSession } from '../../../context/guest.helpers';
-import { useAuth } from '../../../hooks/useAuth';
 import { FALLBACK_STUDENT_NAME } from '../../../services/classrooms.service';
 import type { User } from '../../../types/user.types';
 import { XPBar } from '../../ui/XPBar';
@@ -72,25 +70,6 @@ const GraduationIcon = ({ active = false }: { active?: boolean }) => (
   </svg>
 );
 
-const LogoutIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M10 17L15 12L10 7"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path d="M15 12H6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-    <path
-      d="M12 4H18C19.1 4 20 4.9 20 6V18C20 19.1 19.1 20 18 20H12"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
 const CubeIcon = ({ active = false }: { active?: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
@@ -111,7 +90,6 @@ const CubeIcon = ({ active = false }: { active?: boolean }) => (
 
 export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 
   const displayName = user?.fullName || FALLBACK_STUDENT_NAME;
@@ -136,18 +114,6 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
       ? [{ route: ROUTES.GAME_LAB, label: 'Laboratorio 3D', icon: CubeIcon, dev: true }]
       : []),
   ];
-
-  /*
-   * Borrar la marca de invitado no basta: el acceso sin login autentica de
-   * verdad cuando hay cuentas de prueba, y sin `signOut` la sesión de Supabase
-   * sobreviviría. `PrivateRoute` la daría por buena y se volvería al panel
-   * escribiendo la dirección.
-   */
-  const handleTemporaryLogout = async (): Promise<void> => {
-    endGuestSession();
-    await signOut();
-    navigate(ROUTES.LANDING);
-  };
 
   return (
     <aside
@@ -239,21 +205,6 @@ export const Sidebar = ({ user, activeRoute }: SidebarProps) => {
             );
           })}
         </nav>
-      </div>
-
-      <div className="mt-auto pt-8">
-        <button
-          type="button"
-          onClick={() => void handleTemporaryLogout()}
-          aria-label={collapsed ? 'Cerrar sesión' : undefined}
-          title={collapsed ? 'Cerrar sesión' : undefined}
-          className={`wood-bare flex w-full items-center gap-3 rounded-[18px] border-[3px] py-3 text-left font-display text-[16px] text-coral-dark transition-colors hover:brightness-105 ${
-            collapsed ? 'justify-center px-0' : 'px-3'
-          }`}
-        >
-          <LogoutIcon />
-          {collapsed ? null : 'Cerrar sesión'}
-        </button>
       </div>
     </aside>
   );

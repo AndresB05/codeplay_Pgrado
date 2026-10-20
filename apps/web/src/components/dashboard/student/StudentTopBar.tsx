@@ -15,11 +15,11 @@ export const StudentTopBar = ({ user }: StudentTopBarProps) => {
   const streakDays = user?.streakDays ?? 0;
 
   return (
-    <header className="flex h-[84px] items-center justify-between border-b-[3px] border-ink bg-white px-5">
+    <header className="wood-top-bar relative z-10 flex h-[84px] items-center justify-between border-b-4 border-wood-ink px-5">
       <button
         type="button"
         onClick={() => navigate(ROUTES.WORLDS)}
-        className="flex items-center gap-2 font-display text-[32px] tracking-[-0.02em] text-grape-dark"
+        className="flex items-center gap-2 font-display text-[32px] tracking-[-0.02em] text-wood-ink"
       >
         <BrandLogo size={52} />
         CodePlay

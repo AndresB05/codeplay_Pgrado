@@ -491,6 +491,9 @@ Los filtros de dificultad y tema están apagados mientras haya tres mundos.
 La pantalla del nivel sigue el mismo pasaporte: la escena enmarcada
 (`.passport-frame`), la bandeja de bloques y el lienzo en sus páginas, y los
 botones del juego como teclas de madera, con «Ejecutar» en verde (`.wood-key-go`).
+Las tarjetas de mundo también son páginas del pasaporte, con una casilla sellada
+por nivel superado en el color de su mundo; la barra de arriba del niño, del
+color liso de la madera (`.wood-top-bar`). Cerrar sesión sólo está en «Mi cuenta».
 
 Los adornos SVG sueltos (dosel de hojas, palmeras, flores en esquinas) **se
 retiraron de toda la web** el 16-oct-2026: no casaban con las ilustraciones. Los
