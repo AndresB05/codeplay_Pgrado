@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@500;600;700&family=Patrick+Hand&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@500;600;700&family=Patrick+Hand&family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -79,6 +79,34 @@
   --wood-bare: #f9dfba;
   /* El botón seleccionado de la barra del niño: el color de la corteza de los troncos. */
   --wood-bark: #ac5c34;
+
+  /*
+   * El tutor: la misma marca en voz de adulto. Cuatro repiten un valor del niño
+   * (canvas = lavender, rule = line, accent = grape-dark, accent-soft =
+   * grape-soft) y llevan nombre propio para separarse sin tocar al niño.
+   * Contrastes medidos en el design de panel-tutor-adulto: el texto faint nunca
+   * va sobre accent-soft (4,36:1) y los campos van siempre sobre blanco.
+   */
+  --tutor-canvas: #f4eeff;
+  --tutor-surface: #ffffff;
+  --tutor-sunken: #faf7ff;
+  --tutor-rule: #e3d9f7;
+  --tutor-rule-strong: #cfc6e6;
+  --tutor-control: #8f8aa1;
+  --tutor-ink: #1e1a2b;
+  --tutor-ink-soft: #565068;
+  --tutor-ink-faint: #6e6982;
+  --tutor-accent: #5620b0;
+  --tutor-accent-hover: #47199a;
+  --tutor-accent-soft: #f0e6ff;
+  --tutor-ok: #1d7352;
+  --tutor-ok-soft: #e3f2eb;
+  --tutor-warn: #8a5a00;
+  --tutor-warn-soft: #fbf0d9;
+  --tutor-danger: #b02c2c;
+  --tutor-danger-soft: #fbe8e8;
+  --tutor-info: #285f9f;
+  --tutor-info-soft: #e5edf7;
 
   /* Compatibilidad con las utilidades previas */
   --primary: var(--grape);
@@ -1033,6 +1061,251 @@ a {
     .leo-veil-out {
       animation: none;
     }
+  }
+}
+
+/*
+ * El tutor. Clases propias en vez de redefinir .card/.btn dentro de su
+ * contenedor: así ningún componente compartido hereda a medias, y el niño no
+ * puede cambiar por accidente. Los h1-h3 siguen en Fredoka por la regla global.
+ */
+@layer components {
+  .tutor-scope {
+    font-family: 'Atkinson Hyperlegible Next', 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--tutor-ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tutor-card {
+    @apply rounded-[12px];
+    background-color: var(--tutor-surface);
+    border: 1px solid var(--tutor-rule);
+  }
+
+  /* ---------- Botones ---------- */
+  .tutor-btn {
+    @apply inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-3.5 text-[14px] font-semibold transition-colors;
+    height: 36px;
+    border: 1px solid transparent;
+  }
+
+  .tutor-btn:focus-visible,
+  .tutor-field:focus-visible,
+  .tutor-focus:focus-visible {
+    outline: 2px solid var(--tutor-accent);
+    outline-offset: 2px;
+  }
+
+  .tutor-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .tutor-btn-sm {
+    height: 30px;
+    @apply px-2.5 text-[13.5px];
+  }
+
+  .tutor-btn-primary {
+    @apply text-white;
+    background-color: var(--tutor-accent);
+    border-color: var(--tutor-accent);
+  }
+
+  .tutor-btn-primary:hover:not(:disabled) {
+    background-color: var(--tutor-accent-hover);
+    border-color: var(--tutor-accent-hover);
+  }
+
+  .tutor-btn-secondary {
+    background-color: var(--tutor-surface);
+    border-color: var(--tutor-rule-strong);
+    color: var(--tutor-ink);
+  }
+
+  .tutor-btn-secondary:hover:not(:disabled) {
+    background-color: var(--tutor-sunken);
+    border-color: var(--tutor-control);
+  }
+
+  .tutor-btn-danger {
+    background-color: var(--tutor-surface);
+    border-color: var(--tutor-rule-strong);
+    color: var(--tutor-danger);
+  }
+
+  .tutor-btn-danger:hover:not(:disabled) {
+    background-color: var(--tutor-danger-soft);
+    border-color: var(--tutor-danger);
+  }
+
+  .tutor-btn-ghost {
+    background-color: transparent;
+    color: var(--tutor-ink-soft);
+  }
+
+  .tutor-btn-ghost:hover:not(:disabled) {
+    background-color: var(--tutor-accent-soft);
+    color: var(--tutor-accent);
+  }
+
+  .tutor-btn-ghost-danger {
+    background-color: transparent;
+    color: var(--tutor-danger);
+  }
+
+  .tutor-btn-ghost-danger:hover:not(:disabled) {
+    background-color: var(--tutor-danger-soft);
+  }
+
+  /* ---------- Etiquetas de estado: la palabra siempre, el color de apoyo ---------- */
+  .tutor-badge {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-[12.5px] font-semibold;
+    padding-top: 1px;
+    padding-bottom: 1px;
+  }
+
+  .tutor-badge::before {
+    content: '';
+    @apply h-1.5 w-1.5 shrink-0 rounded-full;
+    background-color: currentColor;
+  }
+
+  .tutor-badge-plain::before {
+    content: none;
+  }
+
+  .tutor-badge-ok {
+    background-color: var(--tutor-ok-soft);
+    color: var(--tutor-ok);
+  }
+
+  .tutor-badge-warn {
+    background-color: var(--tutor-warn-soft);
+    color: var(--tutor-warn);
+  }
+
+  .tutor-badge-danger {
+    background-color: var(--tutor-danger-soft);
+    color: var(--tutor-danger);
+  }
+
+  .tutor-badge-info {
+    background-color: var(--tutor-info-soft);
+    color: var(--tutor-info);
+  }
+
+  .tutor-badge-mute {
+    background-color: var(--tutor-canvas);
+    color: var(--tutor-ink-soft);
+  }
+
+  /* ---------- Campos: siempre sobre blanco, el borde no llega a 3:1 en la lavanda ---------- */
+  .tutor-field {
+    @apply w-full rounded-[8px] px-3 text-[14.5px] transition-colors;
+    height: 36px;
+    background-color: var(--tutor-surface);
+    border: 1px solid var(--tutor-control);
+    color: var(--tutor-ink);
+  }
+
+  .tutor-field::placeholder {
+    color: var(--tutor-ink-faint);
+  }
+
+  .tutor-field:focus {
+    border-color: var(--tutor-accent);
+  }
+
+  /* ---------- Selector segmentado: alcance y orden ---------- */
+  .tutor-seg {
+    @apply inline-flex max-w-full flex-wrap overflow-hidden rounded-[8px];
+    background-color: var(--tutor-surface);
+    border: 1px solid var(--tutor-rule-strong);
+  }
+
+  .tutor-seg > button {
+    @apply px-3 text-[13.5px] font-semibold transition-colors;
+    height: 32px;
+    color: var(--tutor-ink-soft);
+    border-left: 1px solid var(--tutor-rule);
+  }
+
+  .tutor-seg > button:first-child {
+    border-left: 0;
+  }
+
+  .tutor-seg > button:hover {
+    background-color: var(--tutor-sunken);
+    color: var(--tutor-ink);
+  }
+
+  .tutor-seg > button[aria-pressed='true'] {
+    background-color: var(--tutor-accent-soft);
+    color: var(--tutor-accent);
+  }
+
+  .tutor-seg > button:focus-visible {
+    outline: 2px solid var(--tutor-accent);
+    outline-offset: -2px;
+  }
+
+  /* ---------- Tablas ---------- */
+  .tutor-table {
+    @apply w-full border-collapse text-left text-[14.5px];
+  }
+
+  .tutor-table th {
+    @apply px-4 py-2.5 text-[13px] font-semibold;
+    color: var(--tutor-ink-soft);
+    background-color: var(--tutor-sunken);
+    border-bottom: 1px solid var(--tutor-rule);
+  }
+
+  .tutor-table td {
+    @apply px-4;
+    height: 46px;
+    border-bottom: 1px solid var(--tutor-rule);
+  }
+
+  .tutor-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .tutor-table tbody tr:hover td {
+    background-color: var(--tutor-sunken);
+  }
+
+  .tutor-num {
+    text-align: right;
+  }
+
+  /* ---------- Cabecera de sección: título, recuento y controles en una línea ---------- */
+  .tutor-section-head {
+    @apply flex flex-wrap items-center gap-x-2.5 gap-y-2 pb-2.5;
+    border-bottom: 1px solid var(--tutor-rule);
+  }
+
+  .tutor-section-head > h2 {
+    @apply text-[19px] leading-tight;
+    color: var(--tutor-ink);
+  }
+
+  /* ---------- Franja de cifras: una superficie partida, no una tarjeta por dato ---------- */
+  .tutor-stats {
+    @apply grid overflow-hidden rounded-[12px];
+    background-color: var(--tutor-surface);
+    border: 1px solid var(--tutor-rule);
+    gap: 1px;
+    background-image: linear-gradient(var(--tutor-rule), var(--tutor-rule));
+  }
+
+  .tutor-stats > * {
+    @apply px-5 py-3.5;
+    background-color: var(--tutor-surface);
   }
 }
 

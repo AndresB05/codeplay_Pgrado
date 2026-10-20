@@ -5,11 +5,48 @@ interface SidebarToggleProps {
   onToggle: () => void;
   /** La del niño es una rodaja del tronco de su barra; la del tutor sigue blanca. */
   wooden?: boolean;
+  /** `tutor`: botón fino de borde de 1 px, sin el contorno en tinta ni la sombra sólida. */
+  variant?: 'default' | 'tutor';
 }
 
 /** La pestaña que asoma del borde derecho de la barra y la pliega o despliega. */
-export const SidebarToggle = ({ collapsed, onToggle, wooden = false }: SidebarToggleProps) => {
+export const SidebarToggle = ({
+  collapsed,
+  onToggle,
+  wooden = false,
+  variant = 'default',
+}: SidebarToggleProps) => {
   const label = collapsed ? 'Mostrar la barra lateral' : 'Ocultar la barra lateral';
+
+  if (variant === 'tutor') {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={label}
+        aria-expanded={!collapsed}
+        title={label}
+        className="tutor-focus absolute -right-[14px] top-4 z-10 flex h-[28px] w-[28px] items-center justify-center rounded-full border border-tutor-rule-strong bg-tutor-surface text-tutor-ink-soft transition-colors hover:border-tutor-control hover:text-tutor-ink"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className={collapsed ? 'rotate-180' : ''}
+        >
+          <path
+            d="M15 5L8 12L15 19"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    );
+  }
 
   if (wooden) {
     return (

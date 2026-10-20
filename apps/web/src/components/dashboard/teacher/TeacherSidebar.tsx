@@ -2,18 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
-import { FALLBACK_TEACHER_NAME } from '../../../services/classrooms.service';
 import type { ClassGroup } from '../../../types/classroom.types';
-import type { User } from '../../../types/user.types';
-import { TUTOR_AVATAR } from '../../../constants/mascotAvatars';
-import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 import { ChartIcon, GraduationIcon, LogoutIcon, SettingsIcon } from './TeacherIcons';
 import { useSidebarCollapsed } from '../../../hooks/useSidebarCollapsed';
 import { SidebarToggle } from '../Sidebar/SidebarToggle';
 
 interface TeacherSidebarProps {
-  user: User | null;
   groups: ClassGroup[];
   /** Id del salón abierto, o `null` fuera de la vista de un salón. */
   activeGroupId: string | null;
@@ -21,18 +16,11 @@ interface TeacherSidebarProps {
   activeSection: string;
 }
 
-export const TeacherSidebar = ({
-  user,
-  groups,
-  activeGroupId,
-  activeSection,
-}: TeacherSidebarProps) => {
+export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: TeacherSidebarProps) => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 
-  const displayName = user?.fullName || FALLBACK_TEACHER_NAME;
-  const totalStudents = groups.reduce((total, group) => total + group.students.length, 0);
   const totalPending = groups.reduce((total, group) => total + group.pendingRequests.length, 0);
 
   const isGroupsSection = activeSection === ROUTES.TEACHER_GROUPS;
@@ -67,68 +55,59 @@ export const TeacherSidebar = ({
 
   return (
     <aside
-      className={`relative flex shrink-0 flex-col border-r-[3px] border-ink bg-white py-6 ${
-        collapsed ? 'w-[92px] px-3' : 'w-[262px] px-4'
+      className={`tutor-scope relative flex shrink-0 flex-col border-r border-tutor-rule bg-tutor-surface py-4 ${
+        collapsed ? 'w-[64px] px-2' : 'w-[240px] px-3'
       }`}
     >
-      <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} />
+      <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} variant="tutor" />
 
-      {collapsed ? null : (
-        <div className="relative flex flex-col items-center">
-
-          <div className="relative h-[104px] w-[104px] overflow-hidden rounded-full border-[4px] border-ink bg-cream shadow-[0_6px_0_rgba(42,27,69,0.18)]">
-            <img src={TUTOR_AVATAR} alt="" className="h-full w-full object-cover" />
-          </div>
-
-          <h2 className="mt-4 text-center font-display text-[22px] leading-tight text-grape-dark">
-            {displayName}
-          </h2>
-
-          <span className="chip chip-mint mt-2">Tutor</span>
-
-          <p className="mt-2 text-center text-[14px] font-bold text-ink-faint">
-            {groups.length} {groups.length === 1 ? 'salón' : 'salones'} · {totalStudents} niños
-          </p>
-        </div>
-      )}
-
-      <nav className={`${collapsed ? 'mt-12' : 'mt-7'} space-y-2.5`}>
+      <nav className={`${collapsed ? 'mt-10' : 'mt-1'} space-y-1`}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const showPending = item.route === ROUTES.TEACHER_GROUPS && totalPending > 0;
+          const pendingLabel = `${totalPending} ${totalPending === 1 ? 'solicitud' : 'solicitudes'} en espera`;
 
           return (
             <div key={item.route}>
               <button
                 type="button"
                 onClick={() => navigate(item.route)}
-                aria-label={collapsed ? item.label : undefined}
+                aria-label={
+                  collapsed ? `${item.label}${showPending ? `, ${pendingLabel}` : ''}` : undefined
+                }
+                aria-current={item.active ? 'page' : undefined}
                 title={collapsed ? item.label : undefined}
-                className={`relative flex h-[52px] w-full items-center gap-3 rounded-[18px] border-[3px] text-left font-display text-[16px] transition-all ${
-                  collapsed ? 'justify-center px-0' : 'px-4'
+                className={`tutor-focus relative flex h-[36px] w-full items-center gap-2.5 rounded-[8px] text-left text-[14.5px] font-semibold transition-colors ${
+                  collapsed ? 'justify-center px-0' : 'px-2.5'
                 } ${
                   item.active
-                    ? 'border-ink bg-grape text-white shadow-[0_4px_0_rgba(42,27,69,0.25)]'
-                    : 'border-transparent text-ink hover:border-line hover:bg-cream'
+                    ? 'bg-tutor-accent-soft text-tutor-accent'
+                    : 'text-tutor-ink-soft hover:bg-tutor-canvas hover:text-tutor-ink'
                 }`}
               >
-                <Icon active={item.active} />
-                {collapsed ? null : <span className="flex-1">{item.label}</span>}
+                <Icon variant="tutor" />
+                {collapsed ? null : <span className="flex-1 truncate">{item.label}</span>}
 
                 {showPending ? (
                   <span
-                    className={`flex h-[26px] min-w-[26px] items-center justify-center rounded-full border-2 border-ink bg-sun px-1.5 text-[13px] text-ink ${
-                      collapsed ? 'absolute -right-2 -top-2' : ''
+                    title={pendingLabel}
+                    className={`flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-tutor-warn-soft px-1.5 text-[12.5px] font-semibold text-tutor-warn ${
+                      collapsed ? 'absolute -right-1 -top-1 ring-2 ring-tutor-surface' : ''
                     }`}
                   >
                     {totalPending}
+                    <span className="sr-only"> {pendingLabel}</span>
                   </span>
                 ) : null}
               </button>
 
-              {/* Los salones cuelgan de "Salón de clases": es la navegación rápida entre grupos. */}
+              {/*
+               * Los salones cuelgan de "Salón de clases": es la navegación rápida
+               * entre grupos. Aquí sólo va la pestaña de color; la insignia
+               * ilustrada se queda donde hay sitio, en la tarjeta y la cabecera.
+               */}
               {item.route === ROUTES.TEACHER_GROUPS ? (
-                <div className={`mt-2 space-y-1.5 ${collapsed ? '' : 'pl-1'}`}>
+                <div className={`mt-1 space-y-0.5 ${collapsed ? '' : 'pl-2'}`}>
                   {groups.map((group) => {
                     const isActive = isGroupsSection && activeGroupId === group.id;
                     const theme = getGroupTheme(group.id);
@@ -139,22 +118,29 @@ export const TeacherSidebar = ({
                         type="button"
                         onClick={() => navigate(`${ROUTES.TEACHER_GROUPS}/${group.id}`)}
                         aria-label={collapsed ? group.name : undefined}
+                        aria-current={isActive ? 'page' : undefined}
                         title={collapsed ? group.name : undefined}
-                        className={`flex w-full items-center gap-2.5 rounded-[16px] border-2 py-2 text-left transition-colors ${
-                          collapsed ? 'justify-center px-0' : 'px-3'
+                        className={`tutor-focus flex h-[34px] w-full items-center gap-2.5 rounded-[8px] text-left transition-colors ${
+                          collapsed ? 'justify-center px-0' : 'px-2.5'
                         } ${
                           isActive
-                            ? 'border-ink bg-cream'
-                            : 'border-transparent hover:border-line hover:bg-cream'
+                            ? 'bg-tutor-canvas font-semibold text-tutor-ink'
+                            : 'text-tutor-ink hover:bg-tutor-canvas'
                         }`}
                       >
-                        <GroupBadge theme={theme} size={34} />
-                        {collapsed ? null : (
+                        <span
+                          aria-hidden
+                          className="h-[18px] w-[4px] shrink-0 rounded-full"
+                          style={{ background: theme.color }}
+                        />
+                        {collapsed ? (
+                          <span aria-hidden className="text-[13.5px] font-semibold uppercase">
+                            {group.name.trim().charAt(0)}
+                          </span>
+                        ) : (
                           <>
-                            <span className="flex-1 truncate text-[15px] font-bold text-ink">
-                              {group.name}
-                            </span>
-                            <span className="text-[13px] font-bold text-ink-faint">
+                            <span className="flex-1 truncate text-[14px]">{group.name}</span>
+                            <span className="text-[13px] text-tutor-ink-faint">
                               {group.students.length}
                             </span>
                           </>
@@ -169,17 +155,17 @@ export const TeacherSidebar = ({
         })}
       </nav>
 
-      <div className="mt-auto pt-8">
+      <div className="mt-auto pt-6">
         <button
           type="button"
           onClick={() => void handleLogout()}
           aria-label={collapsed ? 'Cerrar sesión' : undefined}
           title={collapsed ? 'Cerrar sesión' : undefined}
-          className={`flex w-full items-center gap-3 rounded-[18px] border-[3px] border-transparent py-3 text-left font-display text-[16px] text-coral-dark transition-colors hover:border-coral-soft hover:bg-coral-soft ${
-            collapsed ? 'justify-center px-0' : 'px-3'
+          className={`tutor-focus flex h-[36px] w-full items-center gap-2.5 rounded-[8px] text-left text-[14.5px] font-semibold text-tutor-danger transition-colors hover:bg-tutor-danger-soft ${
+            collapsed ? 'justify-center px-0' : 'px-2.5'
           }`}
         >
-          <LogoutIcon />
+          <LogoutIcon variant="tutor" />
           {collapsed ? null : 'Cerrar sesión'}
         </button>
       </div>

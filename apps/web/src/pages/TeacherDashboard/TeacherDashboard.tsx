@@ -63,12 +63,11 @@ export const TeacherDashboard = () => {
    * la selva ilustrada competía con las tablas. Pedido por el usuario.
    */
   return (
-    <div className="min-h-screen bg-lavender text-ink">
+    <div className="min-h-screen bg-tutor-canvas text-ink">
       <TeacherTopBar user={user} />
 
-      <div className="flex min-h-[calc(100vh-84px)]">
+      <div className="flex min-h-[calc(100vh-56px)]">
         <TeacherSidebar
-          user={user}
           groups={groups}
           activeGroupId={activeSection === ROUTES.TEACHER_GROUPS ? (groupId ?? null) : null}
           activeSection={activeSection}

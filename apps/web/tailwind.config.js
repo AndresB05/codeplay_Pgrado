@@ -8,6 +8,8 @@ export default {
         display: ['Fredoka', 'Quicksand', 'sans-serif'],
         // Letra de mano de las misiones: parece escrita sobre el mapa y se lee bien.
         map: ['"Patrick Hand"', 'Quicksand', 'sans-serif'],
+        // Lectura del tutor: cuerpo, tablas y cifras. Los títulos siguen en Fredoka.
+        tutor: ['"Atkinson Hyperlegible Next"', 'Segoe UI', 'sans-serif'],
       },
       colors: {
         grape: {
@@ -87,6 +89,30 @@ export default {
           light: '#F6C49A',
           bare: '#F9DFBA',
           bark: '#AC5C34',
+        },
+
+        // El tutor. Duplicado a mano en main.css, con los contrastes medidos allí.
+        tutor: {
+          canvas: '#F4EEFF',
+          surface: '#FFFFFF',
+          sunken: '#FAF7FF',
+          rule: '#E3D9F7',
+          'rule-strong': '#CFC6E6',
+          control: '#8F8AA1',
+          ink: '#1E1A2B',
+          'ink-soft': '#565068',
+          'ink-faint': '#6E6982',
+          accent: '#5620B0',
+          'accent-hover': '#47199A',
+          'accent-soft': '#F0E6FF',
+          ok: '#1D7352',
+          'ok-soft': '#E3F2EB',
+          warn: '#8A5A00',
+          'warn-soft': '#FBF0D9',
+          danger: '#B02C2C',
+          'danger-soft': '#FBE8E8',
+          info: '#285F9F',
+          'info-soft': '#E5EDF7',
         },
 
         // Se conservan los nombres anteriores para no romper pantallas antiguas.

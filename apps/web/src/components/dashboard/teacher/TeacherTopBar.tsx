@@ -21,17 +21,23 @@ export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
   const displayName = user?.fullName || FALLBACK_TEACHER_NAME;
 
   return (
-    <header className="flex h-[84px] items-center justify-between border-b-[3px] border-ink bg-white px-5">
-      <button
-        type="button"
-        onClick={() => navigate(ROUTES.TEACHER_GROUPS)}
-        className="flex items-center gap-2 font-display text-[32px] tracking-[-0.02em] text-grape-dark"
-      >
-        <BrandLogo size={52} />
-        CodePlay
-      </button>
+    <header className="tutor-scope flex h-[56px] items-center gap-6 border-b border-tutor-rule bg-tutor-surface px-5">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => navigate(ROUTES.TEACHER_GROUPS)}
+          className="tutor-focus flex items-center gap-2 rounded-[8px] font-display text-[22px] font-semibold tracking-[-0.01em] text-tutor-accent"
+        >
+          <BrandLogo size={34} />
+          CodePlay
+        </button>
 
-      <nav className="hidden items-center gap-3 md:flex">
+        <span className="border-l border-tutor-rule pl-3 text-[14px] font-semibold text-tutor-ink-soft">
+          Tutor
+        </span>
+      </div>
+
+      <nav className="hidden items-center gap-1 md:flex">
         {topLinks.map((link) => {
           const isActive = location.pathname.startsWith(link.route);
 
@@ -40,10 +46,11 @@ export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
               key={link.label}
               type="button"
               onClick={() => navigate(link.route)}
-              className={`rounded-full border-[3px] px-5 py-2 font-display text-[16px] transition-colors ${
+              aria-current={isActive ? 'page' : undefined}
+              className={`tutor-focus h-[34px] rounded-[8px] px-3 text-[14.5px] font-semibold transition-colors ${
                 isActive
-                  ? 'border-ink bg-grape-soft text-grape-dark'
-                  : 'border-transparent text-ink hover:bg-cream'
+                  ? 'bg-tutor-accent-soft text-tutor-accent'
+                  : 'text-tutor-ink-soft hover:bg-tutor-canvas hover:text-tutor-ink'
               }`}
             >
               {link.label}
@@ -52,23 +59,19 @@ export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
         })}
       </nav>
 
-      <div className="flex items-center gap-3">
-        <span className="chip chip-mint hidden lg:inline-flex">Panel de Tutor</span>
-
-        <button
-          type="button"
-          onClick={() => navigate(ROUTES.TEACHER_SETTINGS)}
-          className="flex h-[52px] items-center gap-2.5 rounded-full border-[3px] border-ink bg-grape-soft pl-1.5 pr-4 shadow-[0_4px_0_rgba(42,27,69,0.15)] transition-transform active:translate-y-[2px]"
-          aria-label="Ajustes de cuenta"
-        >
-          <img
-            src={TUTOR_AVATAR}
-            alt=""
-            className="h-[34px] w-[34px] rounded-full border-2 border-ink bg-cream object-cover"
-          />
-          <span className="font-display text-[16px] text-grape-dark">{displayName}</span>
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => navigate(ROUTES.TEACHER_SETTINGS)}
+        className="tutor-focus ml-auto flex h-[40px] items-center gap-2.5 rounded-[8px] pl-1 pr-2.5 transition-colors hover:bg-tutor-canvas"
+        aria-label="Ajustes de cuenta"
+      >
+        <img
+          src={TUTOR_AVATAR}
+          alt=""
+          className="h-[32px] w-[32px] rounded-full border border-tutor-rule-strong bg-tutor-sunken object-cover"
+        />
+        <span className="text-[14.5px] font-semibold text-tutor-ink">{displayName}</span>
+      </button>
     </header>
   );
 };
