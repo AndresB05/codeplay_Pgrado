@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import { ROUTES } from '../../../constants/routes';
 import { useClassrooms } from '../../../hooks/useClassrooms';
 import { useFreshClassrooms } from '../../../hooks/useFreshClassrooms';
@@ -21,7 +22,6 @@ import type {
 import type { AppError } from '../../../errors/AppError';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { StatCard } from '../shared/StatCard';
-import { chipClass } from './chipClass';
 import { MissionCompletionTable } from './MissionCompletionTable';
 import { StudentPicker } from './StudentPicker';
 import { TeacherResourceDialog } from './TeacherResourceDialog';
@@ -34,16 +34,7 @@ import {
   type StudentLevelProgress,
   type StudentWorldProgress,
 } from './classroomsData';
-import {
-  BookIcon,
-  CheckIcon,
-  ChartIcon,
-  MedalIcon,
-  ProgressIcon,
-  PulseIcon,
-  StudentsIcon,
-  TargetIcon,
-} from './TeacherIcons';
+import { CheckIcon } from './TeacherIcons';
 
 interface TeacherPanelModuleProps {
   groups: ClassGroup[];
@@ -135,50 +126,50 @@ const MissionCard = ({
   };
 
   return (
-    <article className="card flex flex-col p-5">
+    <article className="tutor-card flex flex-col p-4">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-display text-[19px] leading-tight text-ink">{mission.title}</h3>
-        <span className="chip chip-grape shrink-0">{mission.difficultyLabel}</span>
+        <h3 className="text-[17px] leading-tight text-tutor-ink">{mission.title}</h3>
+        <span className="tutor-badge tutor-badge-mute tutor-badge-plain shrink-0">
+          {mission.difficultyLabel}
+        </span>
       </div>
 
-      <p className="mt-2 flex-1 text-[15px] font-semibold leading-[1.6] text-ink-soft">
+      <p className="mt-1.5 flex-1 text-[14.5px] leading-[1.55] text-tutor-ink-soft">
         {mission.description}
       </p>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="chip chip-sun">+{mission.xpReward} XP</span>
-      </div>
+      <p className="mt-3 text-[14px] font-semibold text-tutor-ink">+{mission.xpReward} XP</p>
 
       {assignedPartially ? (
-        <p className="mt-3 text-[14px] font-bold text-ink-faint">
+        <p className="mt-1 text-[14px] text-tutor-ink-soft">
           Asignada en {assignedCount} de {scopeSize} salones.
         </p>
       ) : null}
 
-      {due ? <p className="mt-2 text-[14px] font-bold text-grape-dark">{due}</p> : null}
+      {due ? <p className="mt-1 text-[14px] font-semibold text-tutor-accent">{due}</p> : null}
 
       {choosingDate ? (
-        <div className="mt-4 rounded-[18px] border-2 border-line bg-cream p-4">
-          <p className="font-display text-[15px] text-ink">¿Hasta cuándo?</p>
+        <div className="mt-3 rounded-[8px] border border-tutor-rule bg-tutor-sunken p-3">
+          <p className="font-semibold text-tutor-ink">¿Hasta cuándo?</p>
 
-          <label className="mt-3 flex items-center gap-2 text-[15px] font-bold text-ink">
+          <label className="mt-2 flex items-center gap-2 text-[14.5px] text-tutor-ink">
             <input
               type="radio"
               name={`due-${mission.key}`}
               checked={dueDate === ''}
               onChange={() => setDueDate('')}
-              className="h-4 w-4 accent-grape"
+              className="h-4 w-4 accent-tutor-accent"
             />
             Sin fecha límite
           </label>
 
-          <label className="mt-2 flex flex-wrap items-center gap-2 text-[15px] font-bold text-ink">
+          <label className="mt-1.5 flex flex-wrap items-center gap-2 text-[14.5px] text-tutor-ink">
             <input
               type="radio"
               name={`due-${mission.key}`}
               checked={dueDate !== ''}
               onChange={() => setDueDate(today)}
-              className="h-4 w-4 accent-grape"
+              className="h-4 w-4 accent-tutor-accent"
             />
             Hasta el
             <input
@@ -187,16 +178,16 @@ const MissionCard = ({
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
               aria-label="Último día para cumplirla"
-              className="rounded-[12px] border-2 border-line bg-white px-2 py-1 font-semibold text-ink"
+              className="tutor-field h-[32px] w-auto"
             />
           </label>
 
-          <div className="mt-4 flex gap-2">
+          <div className="mt-3 flex gap-1.5">
             <button
               type="button"
               onClick={confirmAssign}
               disabled={busy || (dueDate !== '' && dueDate < today)}
-              className="btn btn-sm btn-grape flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+              className="tutor-btn tutor-btn-primary tutor-btn-sm flex-1"
             >
               Asignar
             </button>
@@ -206,7 +197,7 @@ const MissionCard = ({
                 setChoosingDate(false);
                 setDueDate('');
               }}
-              className="btn btn-sm btn-ghost"
+              className="tutor-btn tutor-btn-secondary tutor-btn-sm"
             >
               Cancelar
             </button>
@@ -218,12 +209,20 @@ const MissionCard = ({
           onClick={assignedEverywhere ? onUnassign : () => setChoosingDate(true)}
           aria-pressed={assignedEverywhere}
           disabled={scopeSize === 0 || busy}
-          title={scopeSize === 0 ? 'Primero crea un salón' : undefined}
-          className={`btn mt-4 w-full ${assignedEverywhere ? 'btn-mint' : 'btn-grape'} disabled:cursor-not-allowed disabled:opacity-50`}
+          title={
+            scopeSize === 0
+              ? 'Primero crea un salón'
+              : assignedEverywhere
+                ? 'Pulsa para quitarla de los salones'
+                : undefined
+          }
+          className={`tutor-btn mt-3 w-full ${
+            assignedEverywhere ? 'tutor-btn-secondary text-tutor-ok' : 'tutor-btn-primary'
+          }`}
         >
           {assignedEverywhere ? (
             <>
-              <CheckIcon />
+              <CheckIcon variant="tutor" />
               Asignada
             </>
           ) : assignedPartially ? (
@@ -271,14 +270,14 @@ const StudentProgressCard = ({
   if (error) {
     return (
       <div className="mt-4">
-        <StoreErrorNotice error={error} />
+        <StoreErrorNotice error={error} variant="tutor" />
       </div>
     );
   }
 
   if (loading || !detail) {
     return (
-      <p className="mt-4 rounded-[18px] border-2 border-line bg-cream px-5 py-4 text-[15px] font-bold text-ink-faint">
+      <p className="tutor-card mt-4 px-4 py-3 text-tutor-ink-soft">
         Cargando el avance de {student.name}…
       </p>
     );
@@ -289,21 +288,28 @@ const StudentProgressCard = ({
   const finishedWorlds = worlds.filter(isWorldFinished).length;
 
   return (
-    <section className="card mt-4 overflow-x-auto">
-      <div className="border-b-[3px] border-ink bg-grape-soft px-5 py-4">
-        <h3 className="font-display text-[19px] text-grape-dark">{student.name}</h3>
-        {/*
-         * La última actividad se calla cuando no la hay: «última actividad Sin
-         * actividad» es lo que salía, y de quien no ha jugado ya lo dice el aviso
-         * de debajo.
-         */}
-        <p className="text-[14px] font-semibold text-grape-dark">
-          {completedLevels} de {totalLevels} niveles superados · {finishedWorlds} de {worlds.length}{' '}
-          mundos terminados · {student.totalAttempts} partidas
-          {student.hoursSinceLastActivity === null
-            ? null
-            : ` · última actividad ${formatLastActivity(student.hoursSinceLastActivity)}`}
-        </p>
+    <section className="tutor-card mt-4 overflow-x-auto">
+      <div className="flex items-center gap-3 border-b border-tutor-rule px-4 py-3">
+        <img
+          src={pickMascotAvatar(student.id, student.name)}
+          alt=""
+          className="h-[36px] w-[36px] shrink-0 rounded-full border border-tutor-rule object-cover"
+        />
+        <div className="min-w-0">
+          <h3 className="text-[19px] leading-tight text-tutor-ink">{student.name}</h3>
+          {/*
+           * La última actividad se calla cuando no la hay: «última actividad Sin
+           * actividad» es lo que salía, y de quien no ha jugado ya lo dice el aviso
+           * de debajo.
+           */}
+          <p className="text-[14px] text-tutor-ink-soft">
+            {completedLevels} de {totalLevels} niveles superados · {finishedWorlds} de {worlds.length}{' '}
+            mundos terminados · {student.totalAttempts} partidas
+            {student.hoursSinceLastActivity === null
+              ? null
+              : ` · última actividad ${formatLastActivity(student.hoursSinceLastActivity)}`}
+          </p>
+        </div>
       </div>
 
       {/*
@@ -312,18 +318,23 @@ const StudentProgressCard = ({
        * al explorador le espera entero.
        */}
       {detail.levels.length === 0 ? (
-        <p className="border-b-2 border-line bg-cream px-5 py-3 text-[15px] font-bold text-ink-faint">
+        <p className="border-b border-tutor-rule bg-tutor-sunken px-4 py-2.5 text-tutor-ink-soft">
           {student.name} todavía no ha jugado ningún nivel.
         </p>
       ) : null}
 
-      <table className="w-full min-w-[640px] border-collapse text-left">
+      <table className="tutor-table min-w-[640px]">
         <thead>
-          <tr className="border-b-2 border-line">
-            <th className="px-5 py-3 font-display text-[14px] text-ink">Nivel</th>
-            <th className="px-5 py-3 font-display text-[14px] text-ink">Marca</th>
-            <th className="px-5 py-3 font-display text-[14px] text-ink">Intentos</th>
-            <th className="px-5 py-3 font-display text-[14px] text-ink">Pasos de cada partida</th>
+          <tr>
+            <th scope="col">Nivel</th>
+            <th scope="col">Marca</th>
+            <th scope="col" className="tutor-num">
+              Intentos
+            </th>
+            <th scope="col">
+              Pasos de cada partida{' '}
+              <span className="ml-1 font-medium text-tutor-ink-faint">× no llegó a la meta</span>
+            </th>
           </tr>
         </thead>
 
@@ -342,17 +353,25 @@ const StudentProgressCard = ({
  */
 const WorldSection = ({ world }: { world: StudentWorldProgress }) => (
   <tbody>
-    <tr className="border-b-2 border-line bg-grape-soft">
-      <th colSpan={4} scope="colgroup" className="px-5 py-2.5 text-left">
-        <span className="font-display text-[16px] text-grape-dark">{world.title}</span>
-        <span className={`chip ml-2 ${isWorldFinished(world) ? 'chip-mint' : 'chip-sky'}`}>
+    <tr>
+      <th
+        colSpan={4}
+        scope="colgroup"
+        className="!bg-tutor-surface !pt-4 text-left !text-[15.5px] !text-tutor-ink"
+      >
+        <span className="font-bold">{world.title}</span>
+        <span
+          className={`tutor-badge tutor-badge-plain ml-2 ${
+            isWorldFinished(world) ? 'tutor-badge-ok' : 'tutor-badge-info'
+          }`}
+        >
           {world.completedLevels} de {world.totalLevels}
         </span>
       </th>
     </tr>
 
-    {world.levels.map((level, index) => (
-      <LevelRow key={level.levelId} level={level} striped={index % 2 === 1} />
+    {world.levels.map((level) => (
+      <LevelRow key={level.levelId} level={level} />
     ))}
   </tbody>
 );
@@ -364,41 +383,35 @@ const WorldSection = ({ world }: { world: StudentWorldProgress }) => (
  * color, porque son dos cosas distintas y el tutor hace algo distinto con cada
  * una: no haber ido nunca, y haber ido y no haber podido.
  */
-const LevelRow = ({ level, striped }: { level: StudentLevelProgress; striped: boolean }) => {
+const LevelRow = ({ level }: { level: StudentLevelProgress }) => {
   const { progress } = level;
 
   return (
-    <tr className={`border-b-2 border-line ${striped ? 'bg-cream' : 'bg-white'}`}>
-      <td className="px-5 py-3">
-        <span className={`font-bold ${progress ? 'text-ink' : 'text-ink-faint'}`}>
-          {level.title}
-        </span>
-      </td>
+    <tr>
+      <td className={progress ? 'text-tutor-ink' : 'text-tutor-ink-faint'}>{level.title}</td>
 
-      <td className="px-5 py-3">
+      <td>
         {!progress ? (
-          <span className="inline-flex rounded-full border-2 border-line bg-white px-3 py-0.5 font-display text-[13px] text-ink-faint">
-            Sin empezar
-          </span>
+          <span className="tutor-badge tutor-badge-mute">Sin empezar</span>
         ) : progress.completed ? (
-          <span className="chip chip-mint">{progress.bestScore}/100</span>
+          <span className="tutor-badge tutor-badge-ok">{progress.bestScore}/100</span>
         ) : (
-          <span className="chip chip-sun">Sin superar</span>
+          <span className="tutor-badge tutor-badge-warn">Sin superar</span>
         )}
       </td>
 
-      <td className="px-5 py-3">
+      <td className="tutor-num py-1.5">
         {progress ? (
           <AttemptCount
             attemptCount={progress.attemptCount}
             storedAttempts={level.attempts.length}
           />
         ) : (
-          <span className="text-[15px] font-semibold text-ink-faint">—</span>
+          <span className="text-tutor-ink-faint">—</span>
         )}
       </td>
 
-      <td className="px-5 py-3">
+      <td className="py-1.5">
         <AttemptSteps attempts={level.attempts} optimalSteps={progress?.optimalSteps ?? null} />
       </td>
     </tr>
@@ -422,9 +435,9 @@ const AttemptCount = ({
   storedAttempts: number;
 }) => (
   <>
-    <span className="font-display text-[16px] text-ink">{attemptCount}</span>
+    <span className="block font-semibold text-tutor-ink">{attemptCount}</span>
     {storedAttempts < attemptCount ? (
-      <span className="block text-[12px] font-semibold text-ink-faint">
+      <span className="block whitespace-nowrap text-[12px] text-tutor-ink-faint">
         {storedAttempts} con programa guardado
       </span>
     ) : null}
@@ -444,37 +457,43 @@ const AttemptSteps = ({
   optimalSteps: number | null;
 }) => {
   if (attempts.length === 0) {
-    return <span className="text-[15px] font-semibold text-ink-faint">—</span>;
+    return <span className="text-tutor-ink-faint">—</span>;
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      {attempts.map((attempt) => (
-        <span
-          key={attempt.attemptId}
-          aria-label={`${attempt.steps ?? 'pasos sin contar'}, ${
-            attempt.isSuccess ? 'llegó a la meta' : 'no llegó a la meta'
-          }`}
-          className={`rounded-full border-2 px-2.5 py-0.5 font-display text-[14px] ${
-            attempt.isSuccess
-              ? 'border-mint-dark bg-mint-soft text-mint-dark'
-              : 'border-line bg-white text-ink-faint'
-          }`}
-        >
-          {/*
-           * La cruz no es decoración: una partida que no llega a la meta puede
-           * tener MENOS pasos que el óptimo —quedarse corto es la forma normal
-           * de fallar—, así que sin ella la tira se lee como si el explorador
-           * hubiera batido el récord una y otra vez. Y va además del color,
-           * porque el color solo no lo dice para quien no lo distingue.
-           */}
-          {attempt.isSuccess ? '' : '×'}
-          {attempt.steps ?? '?'}
-        </span>
-      ))}
+    <div className="flex flex-wrap items-center gap-1">
+      {attempts.map((attempt) => {
+        /* «×4» se lee como «cuatro veces»: la frase entera va al pasar el ratón y al lector de pantalla. */
+        const label = `${attempt.isSuccess ? 'Superada' : 'No superada'} · ${
+          attempt.steps === null ? 'pasos sin contar' : `${attempt.steps} pasos`
+        }`;
+
+        return (
+          <span
+            key={attempt.attemptId}
+            title={label}
+            aria-label={label}
+            className={`min-w-[28px] rounded-[6px] border px-1.5 text-center text-[13px] font-semibold ${
+              attempt.isSuccess
+                ? 'border-transparent bg-tutor-ok-soft text-tutor-ok'
+                : 'border-tutor-rule-strong text-tutor-ink-soft'
+            }`}
+          >
+            {/*
+             * La cruz no es decoración: una partida que no llega a la meta puede
+             * tener MENOS pasos que el óptimo —quedarse corto es la forma normal
+             * de fallar—, así que sin ella la tira se lee como si el explorador
+             * hubiera batido el récord una y otra vez. Y va además del color,
+             * porque el color solo no lo dice para quien no lo distingue.
+             */}
+            {attempt.isSuccess ? '' : '×'}
+            {attempt.steps ?? '?'}
+          </span>
+        );
+      })}
 
       {optimalSteps === null ? null : (
-        <span className="text-[13px] font-bold text-ink-faint">óptimo {optimalSteps}</span>
+        <span className="ml-1 text-[13px] text-tutor-ink-faint">óptimo {optimalSteps}</span>
       )}
     </div>
   );
@@ -656,226 +675,227 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
       : `Cómo va ${groups.find((group) => group.id === selectedGroupId)?.name ?? 'este salón'}`;
 
   return (
-    <div className="px-5 py-5">
-      <section>
-        <h1 className="title-xl">Panel de información</h1>
-        <p className="subtitle mt-1">
-          Cuánto llevan jugado tus exploradores y qué puedes hacer al respecto.
-        </p>
-      </section>
-
-      <section className="mt-5 flex flex-wrap items-center gap-2">
-        <span className="text-[13px] font-bold uppercase tracking-[0.05em] text-ink-faint">
-          Salón
-        </span>
-
-        {/*
-         * Cambiar de alcance SUELTA al explorador: un alumno pertenece a un
-         * solo salón, así que mantenerlo elegido dejaría abierta la ficha de
-         * alguien que ya no está en la lista de chips de debajo.
-         */}
-        <button
-          type="button"
-          onClick={() => navigate(panelPath(ALL_GROUPS))}
-          className={chipClass(selectedGroupId === ALL_GROUPS)}
-        >
-          Todos
-        </button>
-
-        {groups.map((group) => (
-          <button
-            key={group.id}
-            type="button"
-            onClick={() => navigate(panelPath(group.id))}
-            className={chipClass(selectedGroupId === group.id)}
-          >
-            {group.name}
-          </button>
-        ))}
-      </section>
-
-      <section className="mt-6">
-        <div className="flex items-center gap-3">
-          <ChartIcon />
-          <h2 className="title-lg">{progressTitle}</h2>
-        </div>
-
-        <p className="subtitle mt-2">
-          Lo que los exploradores llevan jugado. Los que todavía no han entrado cuentan en el total,
-          pero no en el promedio de eficiencia.
-        </p>
-
-        {summary.totalStudents === 0 ? (
-          <p className="mt-4 rounded-[18px] border-2 border-line bg-cream px-5 py-4 text-[15px] font-bold text-ink-faint">
-            Todavía no hay exploradores inscritos, así que no hay avance que contar.
+    <div className="tutor-scope px-6 py-6 lg:px-8">
+      <div className="max-w-[1160px]">
+        <section>
+          <h1 className="text-[26px] leading-tight text-tutor-ink">Panel de información</h1>
+          <p className="mt-1 text-tutor-ink-soft">
+            Cuánto llevan jugado tus exploradores y qué puedes hacer al respecto.
           </p>
-        ) : summary.activeStudents === 0 ? (
-          <p className="mt-4 rounded-[18px] border-2 border-sun-dark bg-sun-soft px-5 py-4 text-[15px] font-bold text-sun-dark">
-            Ninguno de tus exploradores ha jugado todavía. En cuanto alguno empiece, aquí verás
-            cuánto lleva y cuánto le costó.
-          </p>
-        ) : (
-          <>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <StatCard
-                icon={<StudentsIcon />}
-                title="Han jugado"
-                value={`${summary.activeStudents} de ${summary.totalStudents}`}
-                tone="grape"
-              />
-              <StatCard
-                icon={<ProgressIcon />}
-                title="Niveles superados"
-                value={`${summary.completedLevels} de ${summary.reachableLevels}`}
-                tone="mint"
-              />
-              <StatCard
-                icon={<MedalIcon />}
-                title="Mundos terminados"
-                value={`${summary.completedWorlds} de ${summary.reachableWorlds}`}
-                tone="sky"
-              />
-              <StatCard
-                icon={<PulseIcon />}
-                title="Eficiencia media"
-                value={summary.averageBestScore === null ? '—' : `${summary.averageBestScore}/100`}
-                tone="sun"
-              />
-            </div>
+        </section>
 
-            <p className="subtitle mt-6">
-              Elige un explorador para ver cuánto le costó cada nivel.
-            </p>
+        <section className="mt-5 flex flex-wrap items-center gap-2.5">
+          <span className="text-[13.5px] font-medium text-tutor-ink-soft">Salón</span>
 
-            <StudentPicker
-              key={selectedGroupId}
-              students={scopedStudents}
-              selectedId={studentId}
-              onSelect={(id) => navigate(panelPath(selectedGroupId, id))}
-            />
+          {/*
+           * Cambiar de alcance SUELTA al explorador: un alumno pertenece a un
+           * solo salón, así que mantenerlo elegido dejaría abierta la ficha de
+           * alguien que ya no está en la lista de chips de debajo.
+           */}
+          <div role="group" aria-label="Salón" className="tutor-seg">
+            <button
+              type="button"
+              onClick={() => navigate(panelPath(ALL_GROUPS))}
+              aria-pressed={selectedGroupId === ALL_GROUPS}
+            >
+              Todos
+            </button>
 
-            {selectedStudent ? (
-              <StudentProgressCard
-                student={selectedStudent}
-                catalog={catalog}
-                detail={detail}
-                loading={detailLoading}
-                error={detailError}
-              />
-            ) : null}
-          </>
-        )}
-      </section>
+            {groups.map((group) => (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => navigate(panelPath(group.id))}
+                aria-pressed={selectedGroupId === group.id}
+              >
+                {group.name}
+              </button>
+            ))}
+          </div>
+        </section>
 
-      <section className="mt-8">
-        <div className="flex items-center gap-3">
-          <TargetIcon />
-          <h2 className="title-lg">Asignación de misiones</h2>
-        </div>
-
-        <p className="subtitle mt-1">
-          Retos personalizados para {scopeLabel}. Dan más experiencia que un nivel normal, y el niño
-          sólo ve las que le asignas.
-        </p>
-
-        {/*
-         * Con la ficha de un alumno abierta encima, asignar parecía cosa suya. La
-         * asignación es del salón (0020): se dice para que nadie lo dude.
-         */}
-        {selectedStudent ? (
-          <p className="mt-3 rounded-[18px] border-2 border-sky bg-sky-soft px-5 py-3 text-[15px] font-bold text-sky-dark">
-            Las misiones se asignan a {scopeLabel}, no sólo a {selectedStudent.name}.
-          </p>
-        ) : null}
-
-        {groups.length === 0 ? (
-          <p className="mt-4 rounded-[18px] border-2 border-sun-dark bg-sun-soft px-5 py-4 text-[15px] font-bold text-sun-dark">
-            Todavía no tienes ningún salón, así que no hay a quién asignarle una misión. Crea uno y
-            vuelve por aquí.
-          </p>
-        ) : null}
-
-        <div className="mt-4">
-          <StoreErrorNotice error={missionsError} />
-        </div>
-
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
-          {missionCatalog.map((mission) => (
-            <MissionCard
-              key={mission.key}
-              mission={mission}
-              assignedCount={dueDatesInScope(mission.key).length}
-              dueDates={dueDatesInScope(mission.key)}
-              scopeSize={scopedGroupIds.length}
-              busy={busyMissionId === mission.key}
-              onUnassign={() => {
-                void unassignMission(mission.key);
-              }}
-              onAssign={(dueDate) => {
-                void assignMission(mission.key, dueDate);
-              }}
-            />
-          ))}
-        </div>
-      </section>
-
-      {selectedGroup && assignedMissions.length > 0 ? (
-        <section className="mt-8">
-          <div className="flex items-center gap-3">
-            <CheckIcon />
-            <h2 className="title-lg">Quién ha cumplido</h2>
+        <section className="mt-7">
+          <div className="tutor-section-head">
+            <h2>{progressTitle}</h2>
           </div>
 
-          <p className="subtitle mt-1">
-            Misiones asignadas a {selectedGroup.name} y cómo va cada explorador.
+          <p className="mt-2 max-w-[80ch] text-[14.5px] text-tutor-ink-soft">
+            Lo que los exploradores llevan jugado. Los que todavía no han entrado cuentan en el
+            total, pero no en el promedio de eficiencia.
           </p>
 
-          {selectedGroup.students.length === 0 ? (
-            <p className="mt-4 rounded-[18px] border-2 border-line bg-cream px-5 py-4 text-[15px] font-bold text-ink-faint">
-              Este salón todavía no tiene exploradores inscritos.
+          {summary.totalStudents === 0 ? (
+            <p className="tutor-card mt-4 px-4 py-3 text-tutor-ink-soft">
+              Todavía no hay exploradores inscritos, así que no hay avance que contar.
+            </p>
+          ) : summary.activeStudents === 0 ? (
+            <p className="mt-4 rounded-[8px] border border-tutor-warn/30 bg-tutor-warn-soft px-4 py-3 font-semibold text-tutor-warn">
+              Ninguno de tus exploradores ha jugado todavía. En cuanto alguno empiece, aquí verás
+              cuánto lleva y cuánto le costó.
             </p>
           ) : (
-            <MissionCompletionTable
-              key={selectedGroup.id}
-              students={selectedGroup.students}
-              missions={assignedMissions}
-              completedPairs={completedPairs}
-              onlineIds={onlineStudentIds}
-            />
+            <>
+              <dl className="tutor-stats mt-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard
+                  title="Han jugado"
+                  value={`${summary.activeStudents} de ${summary.totalStudents}`}
+                  variant="tutor"
+                />
+                <StatCard
+                  title="Niveles superados"
+                  value={`${summary.completedLevels} de ${summary.reachableLevels}`}
+                  variant="tutor"
+                />
+                <StatCard
+                  title="Mundos terminados"
+                  value={`${summary.completedWorlds} de ${summary.reachableWorlds}`}
+                  variant="tutor"
+                />
+                <StatCard
+                  title="Eficiencia media"
+                  value={summary.averageBestScore === null ? '—' : `${summary.averageBestScore}/100`}
+                  variant="tutor"
+                />
+              </dl>
+
+              {/* Los campos del buscador van sobre blanco: su borde no llega a 3:1 en la lavanda. */}
+              <div className="tutor-card mt-4 p-4">
+                <p className="mb-3 font-semibold text-tutor-ink">
+                  Elige un explorador para ver cuánto le costó cada nivel.
+                </p>
+
+                <StudentPicker
+                  key={selectedGroupId}
+                  students={scopedStudents}
+                  selectedId={studentId}
+                  onSelect={(id) => navigate(panelPath(selectedGroupId, id))}
+                />
+              </div>
+
+              {selectedStudent ? (
+                <StudentProgressCard
+                  student={selectedStudent}
+                  catalog={catalog}
+                  detail={detail}
+                  loading={detailLoading}
+                  error={detailError}
+                />
+              ) : null}
+            </>
           )}
         </section>
-      ) : null}
 
-      <section className="mt-8 pb-4">
-        <div className="flex items-center gap-3">
-          <BookIcon />
-          <h2 className="title-lg">Recursos educativos</h2>
-        </div>
+        <section className="mt-9">
+          <div className="tutor-section-head">
+            <h2>Asignación de misiones</h2>
+          </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2">
-          {teacherResources.map((resource) => (
-            <button
-              key={resource.id}
-              type="button"
-              onClick={() => setOpenResourceId(resource.id)}
-              className="card p-5 text-left transition-transform hover:-translate-y-0.5"
-            >
-              <span className="chip chip-mint">{resource.categoryLabel}</span>
+          <p className="mt-2 max-w-[80ch] text-[14.5px] text-tutor-ink-soft">
+            Retos personalizados para {scopeLabel}. Dan más experiencia que un nivel normal, y el
+            niño sólo ve las que le asignas.
+          </p>
 
-              <h3 className="mt-3 font-display text-[19px] text-ink">{resource.title}</h3>
+          {/*
+           * Con la ficha de un alumno abierta encima, asignar parecía cosa suya. La
+           * asignación es del salón (0020): se dice para que nadie lo dude.
+           */}
+          {selectedStudent ? (
+            <p className="mt-3 rounded-[8px] border border-tutor-info/30 bg-tutor-info-soft px-4 py-2.5 font-semibold text-tutor-info">
+              Las misiones se asignan a {scopeLabel}, no sólo a {selectedStudent.name}.
+            </p>
+          ) : null}
 
-              <p className="mt-2 text-[15px] font-semibold leading-[1.6] text-ink-soft">
-                {resource.description}
+          {groups.length === 0 ? (
+            <p className="mt-4 rounded-[8px] border border-tutor-warn/30 bg-tutor-warn-soft px-4 py-3 font-semibold text-tutor-warn">
+              Todavía no tienes ningún salón, así que no hay a quién asignarle una misión. Crea uno
+              y vuelve por aquí.
+            </p>
+          ) : null}
+
+          <div className="mt-4">
+            <StoreErrorNotice error={missionsError} variant="tutor" />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {missionCatalog.map((mission) => (
+              <MissionCard
+                key={mission.key}
+                mission={mission}
+                assignedCount={dueDatesInScope(mission.key).length}
+                dueDates={dueDatesInScope(mission.key)}
+                scopeSize={scopedGroupIds.length}
+                busy={busyMissionId === mission.key}
+                onUnassign={() => {
+                  void unassignMission(mission.key);
+                }}
+                onAssign={(dueDate) => {
+                  void assignMission(mission.key, dueDate);
+                }}
+              />
+            ))}
+          </div>
+        </section>
+
+        {selectedGroup && assignedMissions.length > 0 ? (
+          <section className="mt-9">
+            <div className="tutor-section-head">
+              <h2>Quién ha cumplido</h2>
+            </div>
+
+            <p className="mt-2 text-[14.5px] text-tutor-ink-soft">
+              Misiones asignadas a {selectedGroup.name} y cómo va cada explorador.
+            </p>
+
+            {selectedGroup.students.length === 0 ? (
+              <p className="tutor-card mt-4 px-4 py-3 text-tutor-ink-soft">
+                Este salón todavía no tiene exploradores inscritos.
               </p>
+            ) : (
+              <MissionCompletionTable
+                key={selectedGroup.id}
+                students={selectedGroup.students}
+                missions={assignedMissions}
+                completedPairs={completedPairs}
+                onlineIds={onlineStudentIds}
+              />
+            )}
+          </section>
+        ) : null}
 
-              <p className="mt-3 text-[14px] font-bold text-ink-faint">
-                {resourceReadMinutes(resource)} min de lectura ·{' '}
-                <span className="text-grape-dark">Leer</span>
-              </p>
-            </button>
-          ))}
-        </div>
-      </section>
+        <section className="mt-9 pb-4">
+          <div className="tutor-section-head">
+            <h2>Recursos educativos</h2>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {teacherResources.map((resource) => (
+              <button
+                key={resource.id}
+                type="button"
+                onClick={() => setOpenResourceId(resource.id)}
+                className="tutor-card tutor-focus p-4 text-left transition-colors hover:border-tutor-rule-strong hover:bg-tutor-sunken"
+              >
+                <span className="tutor-badge tutor-badge-info tutor-badge-plain">
+                  {resource.categoryLabel}
+                </span>
+
+                <h3 className="mt-2.5 text-[17px] leading-tight text-tutor-ink">
+                  {resource.title}
+                </h3>
+
+                <p className="mt-1.5 text-[14.5px] leading-[1.55] text-tutor-ink-soft">
+                  {resource.description}
+                </p>
+
+                <p className="mt-2.5 text-[14px] text-tutor-ink-soft">
+                  {resourceReadMinutes(resource)} min de lectura ·{' '}
+                  <span className="font-semibold text-tutor-accent">Leer</span>
+                </p>
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
 
       {openResource ? (
         <TeacherResourceDialog resource={openResource} onClose={() => setOpenResourceId(null)} />

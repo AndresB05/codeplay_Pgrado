@@ -27,11 +27,11 @@ Cada pantalla que se migra lleva `tutor-scope` en su raíz.
 
 ## 4. Panel de información (tanda 3)
 
-- [ ] 4.1 `chipClass.ts` y `StudentPicker.tsx`: alcance y orden como `tutor-seg`, explorador como botón seleccionable con `aria-pressed`, sin la «✕» del elegido (se confunde con el «×» de la tira de pasos) y con `title` «Pulsa otra vez para cerrar la ficha»; verificar que el buscador sigue filtrando y vaciándose al cambiar de salón
-- [ ] 4.2 `TeacherPanelModule.tsx`: cifras en franja, ficha del explorador con sus datos de cabecera, filas de mundo y de nivel con `tutor-badge` («Sin empezar» mudo, «Sin superar» en espera, marca en ok) y la tira de pasos con «×» y «?», cada partida con `title` y `aria-label` («No superada · 4 pasos») y la leyenda en la cabecera de la columna (design.md §7), con «N con programa guardado» dentro de la columna Intentos, alineado a la derecha bajo la cifra; verificar que `TeacherPanelModule.test.tsx` pasa sin aflojar ninguna aserción
-- [ ] 4.3 `MissionCard`, `MissionCompletionTable.tsx`, recursos y `TeacherResourceDialog.tsx` con las piezas del tutor; verificar con captura con una misión eligiendo fecha y la tabla de cumplimiento visible
-- [ ] 4.4 Abrir `/teacher/panel/<salón>/<explorador>` con un enlace directo y comprobar que abre la misma ficha que antes
-- [ ] 4.5 Pasada con teclado de la tanda: foco visible en alcance, buscador, orden, exploradores, misiones (también eligiendo fecha), recursos y su diálogo
+- [x] 4.1 `chipClass.ts` y `StudentPicker.tsx`: alcance como `tutor-seg` con `aria-pressed`; orden como `<select>` (`FilterSelect` variante tutor), porque el test lo cambia con `fireEvent.change` sobre su etiqueta; explorador como botón seleccionable con `aria-pressed` y `title` «Pulsa otra vez para cerrar la ficha»; sin la «✕» del elegido (se confunde con el «×» de la tira de pasos), que pasa a un botón con palabras, «Dejar de ver a …»; verificar que el buscador sigue filtrando y vaciándose al cambiar de salón
+- [x] 4.2 `TeacherPanelModule.tsx`: cifras en franja, ficha del explorador con sus datos de cabecera, filas de mundo y de nivel con `tutor-badge` («Sin empezar» mudo, «Sin superar» en espera, marca en ok) y la tira de pasos con «×» y «?», cada partida con `title` y `aria-label` («No superada · 4 pasos») y la leyenda en la cabecera de la columna (design.md §7), con «N con programa guardado» dentro de la columna Intentos, alineado a la derecha bajo la cifra; verificar que `TeacherPanelModule.test.tsx` pasa sin aflojar ninguna aserción
+- [x] 4.3 `MissionCard`, `MissionCompletionTable.tsx`, recursos y `TeacherResourceDialog.tsx` con las piezas del tutor; verificar con captura con una misión eligiendo fecha y la tabla de cumplimiento visible
+- [x] 4.4 Abrir `/teacher/panel/<salón>/<explorador>` con un enlace directo y comprobar que abre la misma ficha que antes
+- [x] 4.5 Pasada con teclado de la tanda: foco visible en alcance, buscador, orden, exploradores, misiones (también eligiendo fecha), recursos y su diálogo
 
 ## 5. Ajustes (tanda 4)
 

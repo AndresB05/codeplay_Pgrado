@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { TeacherResource } from '../../../types/classroom.types';
 import { resourceReadMinutes } from './teacherResources';
 
@@ -62,9 +63,10 @@ export const TeacherResourceDialog = ({ resource, onClose }: TeacherResourceDial
     };
   }, []);
 
-  return (
+  /* Al cuerpo del documento, como ConfirmDialog: dentro del <main isolate> el botón de plegar quedaba encima del velo. */
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4 py-6 backdrop-blur-sm"
+      className="tutor-scope fixed inset-0 z-50 flex items-center justify-center bg-tutor-ink/40 px-4 py-6"
       role="presentation"
       onClick={onClose}
     >
@@ -73,16 +75,18 @@ export const TeacherResourceDialog = ({ resource, onClose }: TeacherResourceDial
         role="dialog"
         aria-modal="true"
         aria-labelledby="teacher-resource-title"
-        className="card flex max-h-full w-full max-w-[720px] flex-col shadow-[0_16px_0_rgba(42,27,69,0.18)]"
+        className="tutor-card flex max-h-full w-full max-w-[720px] flex-col shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b-[3px] border-ink px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-tutor-rule px-6 py-4">
           <div>
-            <span className="chip chip-mint">{resource.categoryLabel}</span>
-            <h2 id="teacher-resource-title" className="title-lg mt-3">
+            <span className="tutor-badge tutor-badge-info tutor-badge-plain">
+              {resource.categoryLabel}
+            </span>
+            <h2 id="teacher-resource-title" className="mt-2 text-[21px] leading-tight text-tutor-ink">
               {resource.title}
             </h2>
-            <p className="mt-1 text-[14px] font-bold text-ink-faint">
+            <p className="mt-1 text-[14px] text-tutor-ink-soft">
               {resourceReadMinutes(resource)} min de lectura
             </p>
           </div>
@@ -92,9 +96,9 @@ export const TeacherResourceDialog = ({ resource, onClose }: TeacherResourceDial
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="btn btn-sm btn-ghost shrink-0"
+            className="tutor-btn tutor-btn-secondary tutor-btn-sm shrink-0"
           >
-            ×
+            Cerrar
           </button>
         </div>
 
@@ -102,15 +106,15 @@ export const TeacherResourceDialog = ({ resource, onClose }: TeacherResourceDial
           tabIndex={0}
           role="region"
           aria-label={resource.title}
-          className="overflow-y-auto px-6 py-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-grape"
+          className="overflow-y-auto px-6 py-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tutor-accent"
         >
           {resource.sections.map((section) => (
             <section key={section.heading} className="mb-6 last:mb-0">
-              <h3 className="font-display text-[18px] text-ink">{section.heading}</h3>
+              <h3 className="text-[17px] leading-tight text-tutor-ink">{section.heading}</h3>
               {section.paragraphs.map((paragraph) => (
                 <p
                   key={paragraph}
-                  className="mt-2 text-[15px] font-semibold leading-[1.65] text-ink-soft"
+                  className="mt-2 max-w-[72ch] text-[15px] leading-[1.65] text-tutor-ink-soft"
                 >
                   {paragraph}
                 </p>
@@ -119,6 +123,7 @@ export const TeacherResourceDialog = ({ resource, onClose }: TeacherResourceDial
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

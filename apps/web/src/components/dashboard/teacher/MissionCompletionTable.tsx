@@ -49,29 +49,34 @@ export const MissionCompletionTable = ({
   };
 
   return (
-    <div className="mt-4">
-      <RosterFilterBar
-        filters={filters}
-        onChange={setFilters}
-        worlds={worldOptions(students)}
-        extraActive={status !== 'all'}
-        onClear={clear}
-      >
-        <FilterSelect
-          label="Estado"
-          value={status}
-          onChange={(value) => setStatus(value as StatusFilter)}
-          options={STATUS_OPTIONS}
-        />
-      </RosterFilterBar>
+    <div className="tutor-card mt-4 overflow-hidden">
+      {/* Los filtros dentro de la tarjeta: los campos van sobre blanco. */}
+      <div className="border-b border-tutor-rule px-4 py-3">
+        <RosterFilterBar
+          filters={filters}
+          onChange={setFilters}
+          worlds={worldOptions(students)}
+          extraActive={status !== 'all'}
+          onClear={clear}
+          variant="tutor"
+        >
+          <FilterSelect
+            label="Estado"
+            value={status}
+            onChange={(value) => setStatus(value as StatusFilter)}
+            options={STATUS_OPTIONS}
+            variant="tutor"
+          />
+        </RosterFilterBar>
+      </div>
 
-      <div className="card overflow-x-auto">
-        <table className="w-full min-w-[560px] border-collapse text-left">
+      <div className="overflow-x-auto">
+        <table className="tutor-table min-w-[560px]">
           <thead>
-            <tr className="border-b-[3px] border-line">
-              <th className="px-5 py-4 font-display text-[15px] text-ink">Explorador</th>
+            <tr>
+              <th scope="col">Explorador</th>
               {missions.map((mission) => (
-                <th key={mission.key} className="px-5 py-4 font-display text-[15px] text-ink">
+                <th key={mission.key} scope="col">
                   {mission.title}
                 </th>
               ))}
@@ -79,14 +84,16 @@ export const MissionCompletionTable = ({
           </thead>
           <tbody>
             {rows.map((student) => (
-              <tr key={student.id} className="border-b-2 border-line last:border-b-0">
-                <td className="px-5 py-4 text-[15px] font-bold text-ink">{student.name}</td>
+              <tr key={student.id}>
+                <td className="font-semibold text-tutor-ink">{student.name}</td>
                 {missions.map((mission) => {
                   const isCompleted = completedPairs.has(`${student.id}:${mission.key}`);
 
                   return (
-                    <td key={mission.key} className="px-5 py-4">
-                      <span className={isCompleted ? 'chip chip-mint' : 'chip chip-sun'}>
+                    <td key={mission.key}>
+                      <span
+                        className={`tutor-badge ${isCompleted ? 'tutor-badge-ok' : 'tutor-badge-warn'}`}
+                      >
                         {isCompleted ? 'Cumplida' : 'Pendiente'}
                       </span>
                     </td>
@@ -98,11 +105,13 @@ export const MissionCompletionTable = ({
         </table>
 
         {rows.length === 0 ? (
-          <div className="px-5 py-10 text-center">
-            <p className="text-[16px] font-semibold text-ink-faint">
-              Ningún explorador coincide con los filtros.
-            </p>
-            <button type="button" onClick={clear} className="btn btn-sm btn-ghost mt-3">
+          <div className="px-4 py-8 text-center">
+            <p className="text-tutor-ink-soft">Ningún explorador coincide con los filtros.</p>
+            <button
+              type="button"
+              onClick={clear}
+              className="tutor-btn tutor-btn-secondary tutor-btn-sm mt-3"
+            >
               Quitar filtros
             </button>
           </div>

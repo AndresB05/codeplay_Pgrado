@@ -1,7 +1,7 @@
-/** La píldora de elegir del panel: el alcance y el explorador. */
+/** El botón de elegir explorador en el panel. El alcance va en un `tutor-seg`. */
 export const chipClass = (active: boolean) =>
-  `rounded-full border-[3px] px-5 py-2 font-display text-[15px] transition-colors ${
+  `tutor-focus h-[30px] rounded-[8px] border px-2.5 text-[13.5px] font-semibold transition-colors ${
     active
-      ? 'border-ink bg-grape text-white shadow-[0_4px_0_rgba(42,27,69,0.2)]'
-      : 'border-line bg-white text-ink hover:bg-cream'
+      ? 'border-tutor-accent bg-tutor-accent text-white'
+      : 'border-tutor-rule-strong bg-tutor-surface text-tutor-ink hover:bg-tutor-sunken'
   }`;

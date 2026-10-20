@@ -34,17 +34,24 @@ export const StudentPicker = ({
     order
   );
 
+  /*
+   * Sin «✕» en el elegido: en la misma pantalla la cruz dice «no llegó a la
+   * meta» en la tira de pasos. Quitar la elección se dice con palabras, y el
+   * elegido de la lista también la quita si se pulsa otra vez.
+   */
   return (
-    <div className="mt-3">
-      <div className="flex flex-wrap items-end gap-3">
+    <div>
+      <div className="flex flex-wrap items-end gap-2.5">
         <label className="block min-w-[220px] flex-1">
-          <span className="field-label mb-2 block">Buscar explorador</span>
+          <span className="mb-2 block text-[13.5px] font-medium text-tutor-ink-soft">
+            Buscar explorador
+          </span>
           <input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Escribe un nombre"
-            className="field"
+            className="tutor-field"
           />
         </label>
 
@@ -56,35 +63,40 @@ export const StudentPicker = ({
             { value: 'asc', label: 'A-Z' },
             { value: 'desc', label: 'Z-A' },
           ]}
+          variant="tutor"
         />
 
         {selected !== null ? (
           <button
             type="button"
             onClick={() => onSelect(undefined)}
-            aria-label={`Dejar de ver a ${selected.name}`}
-            className={chipClass(true)}
+            className="tutor-btn tutor-btn-ghost"
           >
-            {selected.name} ✕
+            Dejar de ver a {selected.name}
           </button>
         ) : null}
       </div>
 
       {matches.length === 0 ? (
-        <p className="mt-3 text-[15px] font-bold text-ink-faint">Ningún explorador se llama así.</p>
+        <p className="mt-3 text-tutor-ink-soft">Ningún explorador se llama así.</p>
       ) : (
-        <div className="mt-3 flex max-h-[156px] flex-wrap items-center gap-2 overflow-y-auto pr-1">
-          {matches.map((student) => (
-            <button
-              key={student.id}
-              type="button"
-              onClick={() => onSelect(student.id === selectedId ? undefined : student.id)}
-              aria-pressed={student.id === selectedId}
-              className={chipClass(student.id === selectedId)}
-            >
-              {student.name}
-            </button>
-          ))}
+        <div className="mt-3 flex max-h-[140px] flex-wrap items-center gap-1.5 overflow-y-auto p-0.5">
+          {matches.map((student) => {
+            const isSelected = student.id === selectedId;
+
+            return (
+              <button
+                key={student.id}
+                type="button"
+                onClick={() => onSelect(isSelected ? undefined : student.id)}
+                aria-pressed={isSelected}
+                title={isSelected ? 'Pulsa otra vez para cerrar la ficha' : undefined}
+                className={chipClass(isSelected)}
+              >
+                {student.name}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
