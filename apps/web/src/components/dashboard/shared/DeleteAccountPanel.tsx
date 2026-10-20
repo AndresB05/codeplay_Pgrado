@@ -12,7 +12,13 @@ import { ConfirmDialog } from './ConfirmDialog';
  * pantallas de Ajustes. El aviso cambia con el rol porque al tutor se le van
  * también sus salones, y a sus alumnos con ellos.
  */
-export const DeleteAccountPanel = () => {
+interface DeleteAccountPanelProps {
+  /** `tutor`: con las piezas del panel del tutor. El niño lo monta sin la prop y no cambia. */
+  variant?: 'default' | 'tutor';
+}
+
+export const DeleteAccountPanel = ({ variant = 'default' }: DeleteAccountPanelProps) => {
+  const tutor = variant === 'tutor';
   const navigate = useNavigate();
   const { deleteAccount, error, user } = useAuth();
 
@@ -40,9 +46,27 @@ export const DeleteAccountPanel = () => {
   };
 
   return (
-    <div className="mt-6 border-t-[3px] border-line pt-6">
-      <h3 className="font-display text-[19px] text-coral-dark">Eliminar cuenta</h3>
-      <p className="mt-1 max-w-[520px] text-[15px] font-semibold leading-[1.6] text-ink-soft">
+    <div
+      className={
+        tutor ? 'mt-6 border-t border-tutor-rule pt-5' : 'mt-6 border-t-[3px] border-line pt-6'
+      }
+    >
+      <h3
+        className={
+          tutor
+            ? 'text-[17px] leading-tight text-tutor-danger'
+            : 'font-display text-[19px] text-coral-dark'
+        }
+      >
+        Eliminar cuenta
+      </h3>
+      <p
+        className={
+          tutor
+            ? 'mt-1 max-w-[520px] text-[14.5px] leading-[1.6] text-tutor-ink-soft'
+            : 'mt-1 max-w-[520px] text-[15px] font-semibold leading-[1.6] text-ink-soft'
+        }
+      >
         {isTutor
           ? 'Se borran tu cuenta y tus salones. Tus alumnos quedarán sin salón.'
           : 'Se borran tu cuenta, tu progreso y tus logros.'}{' '}
@@ -52,7 +76,11 @@ export const DeleteAccountPanel = () => {
       {failed && error ? (
         <p
           role="alert"
-          className="mt-4 max-w-[520px] rounded-[16px] border-2 border-coral-dark bg-coral-soft px-4 py-3 text-[15px] font-bold text-coral-dark"
+          className={
+            tutor
+              ? 'mt-3 max-w-[520px] rounded-[8px] border border-tutor-danger/30 bg-tutor-danger-soft px-4 py-2.5 text-[14.5px] font-semibold text-tutor-danger'
+              : 'mt-4 max-w-[520px] rounded-[16px] border-2 border-coral-dark bg-coral-soft px-4 py-3 text-[15px] font-bold text-coral-dark'
+          }
         >
           {error.message}
         </p>
@@ -62,13 +90,16 @@ export const DeleteAccountPanel = () => {
         type="button"
         onClick={() => setConfirming(true)}
         disabled={deleting}
-        className="btn btn-coral mt-4 disabled:opacity-60"
+        className={
+          tutor ? 'tutor-btn tutor-btn-danger mt-3' : 'btn btn-coral mt-4 disabled:opacity-60'
+        }
       >
         {deleting ? 'Eliminando...' : 'Eliminar mi cuenta'}
       </button>
 
       {confirming ? (
         <ConfirmDialog
+          variant={variant}
           title="¿Eliminar tu cuenta?"
           confirmLabel="Sí, eliminarla"
           onConfirm={() => void handleConfirm()}

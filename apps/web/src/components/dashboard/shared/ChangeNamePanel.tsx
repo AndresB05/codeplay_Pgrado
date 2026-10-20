@@ -17,7 +17,12 @@ import { useAuth } from '../../../hooks/useAuth';
  * A diferencia del panel de contraseña, el campo arranca con el valor actual: un
  * nombre casi siempre se corrige, no se reinventa.
  */
-export const ChangeNamePanel = () => {
+interface ChangeNamePanelProps {
+  /** `tutor`: una fila de ajustes del panel del tutor. El niño lo monta sin la prop y no cambia. */
+  variant?: 'default' | 'tutor';
+}
+
+export const ChangeNamePanel = ({ variant = 'default' }: ChangeNamePanelProps) => {
   const { clearError, error, updateFullName, user } = useAuth();
 
   const currentName = user?.fullName ?? '';
@@ -61,6 +66,91 @@ export const ChangeNamePanel = () => {
       setChanged(true);
     }
   };
+
+  /*
+   * En el tutor es una fila de ajustes: el rótulo, lo que hay ahora y «Cambiar».
+   * Abierta, el rótulo hace de título y Guardar y Cancelar van juntos al final,
+   * para que se sepa qué se edita. El nombre accesible del botón no cambia.
+   */
+  if (variant === 'tutor') {
+    return (
+      <div className="border-t border-tutor-rule py-3.5">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <h3 className="w-[120px] shrink-0 font-tutor text-[14.5px] font-semibold text-tutor-ink">
+            Nombre
+          </h3>
+          {open ? null : (
+            <>
+              <span className="min-w-0 flex-1 truncate text-tutor-ink-soft">{currentName}</span>
+              <button
+                type="button"
+                onClick={handleToggle}
+                aria-label="Cambiar nombre"
+                className="tutor-btn tutor-btn-secondary tutor-btn-sm"
+              >
+                Cambiar
+              </button>
+            </>
+          )}
+        </div>
+
+        {changed && !open ? (
+          <p
+            role="status"
+            className="mt-3 rounded-[8px] border border-tutor-ok/30 bg-tutor-ok-soft px-4 py-2.5 text-[14.5px] font-semibold text-tutor-ok"
+          >
+            Tu nombre quedó cambiado. Así te verán en tus salones.
+          </p>
+        ) : null}
+
+        {open ? (
+          <form onSubmit={handleSubmit} className="mt-3 max-w-[420px] space-y-3">
+            {displayedError ? (
+              <p
+                role="alert"
+                className="rounded-[8px] border border-tutor-danger/30 bg-tutor-danger-soft px-4 py-2.5 text-[14.5px] font-semibold text-tutor-danger"
+              >
+                {displayedError}
+              </p>
+            ) : null}
+
+            {changed ? (
+              <p
+                role="status"
+                className="rounded-[8px] border border-tutor-ok/30 bg-tutor-ok-soft px-4 py-2.5 text-[14.5px] font-semibold text-tutor-ok"
+              >
+                Tu nombre quedó cambiado. Así te verán en tus salones.
+              </p>
+            ) : null}
+
+            <SignupField
+              variant="tutor"
+              label="Nombre nuevo"
+              type="text"
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              placeholder="Cómo quieres que te llamen"
+              autoComplete="name"
+              required
+            />
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button type="submit" disabled={submitting} className="tutor-btn tutor-btn-primary">
+                {submitting ? 'Guardando...' : 'Guardar nombre'}
+              </button>
+              <button
+                type="button"
+                onClick={handleToggle}
+                className="tutor-btn tutor-btn-secondary"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="mt-6">

@@ -9,7 +9,6 @@ import { TUTOR_AVATAR } from '../../../constants/mascotAvatars';
 import { ChangeNamePanel } from '../shared/ChangeNamePanel';
 import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
 import { DeleteAccountPanel } from '../shared/DeleteAccountPanel';
-import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
 
 interface TeacherSettingsModuleProps {
@@ -35,91 +34,106 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
   };
 
   return (
-    <div className="px-5 py-5">
-      <div className="mx-auto max-w-[980px]">
-        <section className="card flex flex-wrap items-center justify-between gap-4 px-6 py-6">
+    <div className="tutor-scope px-6 py-6 lg:px-8">
+      <div className="max-w-[980px]">
+        <section className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <span className="chip chip-grape">Cuenta</span>
-            <h1 className="title-xl mt-2">Mi cuenta</h1>
+            <h1 className="text-[26px] leading-tight text-tutor-ink">Mi cuenta</h1>
+            <p className="mt-1 text-tutor-ink-soft">Tus datos, tu contraseña y tus salones.</p>
           </div>
 
-          <button type="button" onClick={() => void handleSignOut()} className="btn btn-coral">
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            className="tutor-btn tutor-btn-danger"
+          >
             Cerrar sesión
           </button>
         </section>
 
-        <section className="card mt-6 px-6 py-6">
-          <h2 className="title-lg">Detalles del usuario</h2>
+        <section className="tutor-card mt-6 px-5 py-5">
+          <div className="tutor-section-head">
+            <h2>Detalles del usuario</h2>
+          </div>
 
-          <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-start">
-            <div className="h-[112px] w-[112px] shrink-0 overflow-hidden rounded-full border-[3px] border-ink bg-cream shadow-[0_6px_0_rgba(42,27,69,0.18)]">
-              <img src={TUTOR_AVATAR} alt="" className="h-full w-full object-cover" />
-            </div>
+          <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
+            <img
+              src={TUTOR_AVATAR}
+              alt=""
+              className="h-[72px] w-[72px] shrink-0 rounded-full border border-tutor-rule bg-tutor-sunken object-cover"
+            />
 
             <div className="min-w-0 flex-1">
-              <h3 className="font-display text-[30px] leading-tight text-grape-dark">
-                {displayName}
-              </h3>
-              <p className="mt-1 text-[16px] font-bold text-ink-soft">
+              <h3 className="text-[22px] leading-tight text-tutor-ink">{displayName}</h3>
+              <p className="mt-0.5 text-tutor-ink-soft">
                 {groups.length} {groups.length === 1 ? 'salón' : 'salones'} · {totalStudents} niños
                 a cargo
               </p>
 
-              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="rounded-[18px] border-2 border-line bg-cream px-4 py-3">
-                  <p className="text-[13px] font-bold uppercase tracking-[0.05em] text-ink-faint">
-                    Correo
-                  </p>
-                  <p className="mt-1 break-words text-[17px] font-bold text-ink">
-                    {email ?? <span className="text-ink-faint">Sin correo asociado</span>}
-                  </p>
+              <dl className="tutor-stats mt-4 grid-cols-1 sm:grid-cols-2">
+                <div>
+                  <dt className="text-[13.5px] font-medium text-tutor-ink-soft">Correo</dt>
+                  <dd className="mt-0.5 break-words font-semibold text-tutor-ink">
+                    {email ?? <span className="text-tutor-ink-faint">Sin correo asociado</span>}
+                  </dd>
                 </div>
 
-                <div className="rounded-[18px] border-2 border-line bg-cream px-4 py-3">
-                  <p className="text-[13px] font-bold uppercase tracking-[0.05em] text-ink-faint">
-                    Rol
-                  </p>
-                  <p className="mt-1 text-[17px] font-bold text-mint-dark">Tutor</p>
+                <div>
+                  <dt className="text-[13.5px] font-medium text-tutor-ink-soft">Rol</dt>
+                  <dd className="mt-0.5 font-semibold text-tutor-ink">Tutor</dd>
                 </div>
+              </dl>
+
+              <div className="mt-5">
+                <ChangeNamePanel variant="tutor" />
+                <ChangePasswordPanel variant="tutor" />
               </div>
-
-              <ChangeNamePanel />
-              <ChangePasswordPanel />
-              <DeleteAccountPanel />
+              <DeleteAccountPanel variant="tutor" />
             </div>
           </div>
         </section>
 
-        <section className="card mt-6 px-6 py-6">
-          <h2 className="title-lg">Mis salones</h2>
+        <section className="tutor-card mt-6 overflow-hidden">
+          <div className="px-5 pt-5">
+            <div className="tutor-section-head">
+              <h2>Mis salones</h2>
+              <span className="text-[14px] text-tutor-ink-soft">{groups.length}</span>
+            </div>
+          </div>
 
-          <ul className="mt-5 space-y-3">
+          <ul className="mt-2">
             {groups.map((group) => {
               const theme = getGroupTheme(group.id);
 
               return (
                 <li
                   key={group.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border-2 border-line bg-cream px-4 py-3"
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-tutor-rule px-5 py-3 last:border-b-0"
                 >
-                  <div className="flex items-center gap-3">
-                    <GroupBadge theme={theme} size={48} />
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span
+                      aria-hidden
+                      className="h-[22px] w-[4px] shrink-0 rounded-full"
+                      style={{ background: theme.color }}
+                    />
 
-                    <div>
-                      <p className="font-display text-[18px] text-ink">{group.name}</p>
-                      <p className="text-[14px] font-bold text-ink-faint">{group.gradeLabel}</p>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-tutor-ink" title={group.name}>
+                        {group.name}
+                      </p>
+                      <p className="text-[14px] text-tutor-ink-soft">{group.gradeLabel}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="text-[14px] font-bold text-ink-soft">
-                      {group.students.length}/{group.capacity} niños
+                    <span className="text-[14px] text-tutor-ink-soft">
+                      {group.students.length} de {group.capacity} niños
                     </span>
 
                     <button
                       type="button"
                       onClick={() => navigate(`${ROUTES.TEACHER_GROUPS}/${group.id}`)}
-                      className="btn btn-sm btn-ghost"
+                      className="tutor-btn tutor-btn-secondary tutor-btn-sm"
                     >
                       Abrir
                     </button>

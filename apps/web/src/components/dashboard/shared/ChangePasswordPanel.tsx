@@ -16,7 +16,12 @@ import { useAuth } from '../../../hooks/useAuth';
  * compartidos, donde quien se siente ante la sesión de un compañero podría
  * dejarlo fuera de su cuenta.
  */
-export const ChangePasswordPanel = () => {
+interface ChangePasswordPanelProps {
+  /** `tutor`: una fila de ajustes del panel del tutor. El niño lo monta sin la prop y no cambia. */
+  variant?: 'default' | 'tutor';
+}
+
+export const ChangePasswordPanel = ({ variant = 'default' }: ChangePasswordPanelProps) => {
   const { changePassword, clearError, error } = useAuth();
 
   const [open, setOpen] = useState(false);
@@ -69,6 +74,116 @@ export const ChangePasswordPanel = () => {
       setChanged(true);
     }
   };
+
+  /*
+   * En el tutor es una fila de ajustes: el rótulo, lo que hay ahora y «Cambiar».
+   * Abierta, el rótulo hace de título y Guardar y Cancelar van juntos al final,
+   * para que se sepa qué se edita. El nombre accesible del botón no cambia.
+   */
+  if (variant === 'tutor') {
+    return (
+      <div className="border-t border-tutor-rule py-3.5">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <h3 className="w-[120px] shrink-0 font-tutor text-[14.5px] font-semibold text-tutor-ink">
+            Contraseña
+          </h3>
+          {open ? null : (
+            <>
+              <span className="min-w-0 flex-1 text-tutor-ink-soft">
+                <span aria-hidden="true">••••••••</span>
+                <span className="sr-only">Oculta</span>
+              </span>
+              <button
+                type="button"
+                onClick={handleToggle}
+                aria-label="Cambiar contraseña"
+                className="tutor-btn tutor-btn-secondary tutor-btn-sm"
+              >
+                Cambiar
+              </button>
+            </>
+          )}
+        </div>
+
+        {changed && !open ? (
+          <p
+            role="status"
+            className="mt-3 rounded-[8px] border border-tutor-ok/30 bg-tutor-ok-soft px-4 py-2.5 text-[14.5px] font-semibold text-tutor-ok"
+          >
+            Tu contraseña quedó cambiada. Úsala la próxima vez que entres.
+          </p>
+        ) : null}
+
+        {open ? (
+          <form onSubmit={handleSubmit} className="mt-3 max-w-[420px] space-y-3">
+            {displayedError ? (
+              <p
+                role="alert"
+                className="rounded-[8px] border border-tutor-danger/30 bg-tutor-danger-soft px-4 py-2.5 text-[14.5px] font-semibold text-tutor-danger"
+              >
+                {displayedError}
+              </p>
+            ) : null}
+
+            {changed ? (
+              <p
+                role="status"
+                className="rounded-[8px] border border-tutor-ok/30 bg-tutor-ok-soft px-4 py-2.5 text-[14.5px] font-semibold text-tutor-ok"
+              >
+                Tu contraseña quedó cambiada. Úsala la próxima vez que entres.
+              </p>
+            ) : null}
+
+            <SignupField
+              variant="tutor"
+              label="Contraseña actual"
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder="La que usas ahora"
+              autoComplete="current-password"
+              required
+            />
+
+            <SignupField
+              variant="tutor"
+              label="Contraseña nueva"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Tu clave secreta nueva"
+              autoComplete="new-password"
+              required
+            />
+
+            <SignupField
+              variant="tutor"
+              label="Repite la contraseña nueva"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Otra vez, para estar seguros"
+              autoComplete="new-password"
+              required
+            />
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button type="submit" disabled={submitting} className="tutor-btn tutor-btn-primary">
+                {submitting ? 'Guardando...' : 'Guardar contraseña'}
+              </button>
+              <button
+                type="button"
+                onClick={handleToggle}
+                className="tutor-btn tutor-btn-secondary"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="mt-6">

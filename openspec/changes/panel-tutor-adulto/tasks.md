@@ -35,9 +35,9 @@ Cada pantalla que se migra lleva `tutor-scope` en su raíz.
 
 ## 5. Ajustes (tanda 4)
 
-- [ ] 5.1 `ChangeNamePanel.tsx`, `ChangePasswordPanel.tsx` y `DeleteAccountPanel.tsx`: variante `'tutor'`; verificar que los tests de los tres pasan y captura de «Mi cuenta» del child igual que antes
-- [ ] 5.2 `TeacherSettingsModule.tsx` con las piezas del tutor, `TUTOR_AVATAR` real y la lista de salones con su pestaña; verificar con captura
-- [ ] 5.3 Pasada con teclado de la tanda: foco visible en cerrar sesión, los tres paneles abiertos y la lista de salones
+- [x] 5.1 `ChangeNamePanel.tsx`, `ChangePasswordPanel.tsx` y `DeleteAccountPanel.tsx`: variante `'tutor'`; verificar que los tests de los tres pasan y captura de «Mi cuenta» del child igual que antes
+- [x] 5.2 `TeacherSettingsModule.tsx` con las piezas del tutor, `TUTOR_AVATAR` real y la lista de salones con su pestaña; verificar con captura
+- [x] 5.3 Pasada con teclado de la tanda: foco visible en cerrar sesión, los tres paneles abiertos y la lista de salones
 
 ## 6. Cierre
 
