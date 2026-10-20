@@ -42,7 +42,7 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
 
   if (!group) {
     return (
-      <div className="tutor-scope px-6 py-6 lg:px-8">
+      <div className="px-6 py-6 lg:px-8">
         <section className="tutor-card max-w-[1160px] px-6 py-12 text-center">
           <h1 className="text-[22px] leading-tight text-tutor-ink">Ese salón ya no existe</h1>
           <p className="mt-2 text-tutor-ink-soft">
@@ -75,7 +75,7 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
   const hasPodium = podiumRanking(group.students).length > 0;
 
   return (
-    <div className="tutor-scope px-6 py-6 lg:px-8">
+    <div className="px-6 py-6 lg:px-8">
       <div className="max-w-[1160px]">
         <button
           type="button"

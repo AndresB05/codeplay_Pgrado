@@ -675,7 +675,7 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
       : `Cómo va ${groups.find((group) => group.id === selectedGroupId)?.name ?? 'este salón'}`;
 
   return (
-    <div className="tutor-scope px-6 py-6 lg:px-8">
+    <div className="px-6 py-6 lg:px-8">
       <div className="max-w-[1160px]">
         <section>
           <h1 className="text-[26px] leading-tight text-tutor-ink">Panel de información</h1>

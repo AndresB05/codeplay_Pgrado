@@ -61,9 +61,11 @@ export const TeacherDashboard = () => {
   /*
    * FONDO LISO, a diferencia del niño: son pantallas de trabajo para adultos, y
    * la selva ilustrada competía con las tablas. Pedido por el usuario.
+   * `tutor-scope` pone la letra de lectura del tutor; los títulos siguen en
+   * Fredoka. Los diálogos lo llevan aparte porque van por portal fuera de aquí.
    */
   return (
-    <div className="min-h-screen bg-tutor-canvas text-ink">
+    <div className="tutor-scope min-h-screen bg-tutor-canvas">
       <TeacherTopBar user={user} />
 
       <div className="flex min-h-[calc(100vh-56px)]">

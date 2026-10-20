@@ -55,7 +55,7 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
 
   return (
     <aside
-      className={`tutor-scope relative flex shrink-0 flex-col border-r border-tutor-rule bg-tutor-surface py-4 ${
+      className={`relative flex shrink-0 flex-col border-r border-tutor-rule bg-tutor-surface py-4 ${
         collapsed ? 'w-[64px] px-2' : 'w-[240px] px-3'
       }`}
     >

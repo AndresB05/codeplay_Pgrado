@@ -356,7 +356,8 @@ cayendo desde arriba, sobre una trama de lunares de `line` en `lavender`
 **Salvo para el tutor**: sus pantallas van sobre `lavender` liso, sin la
 ilustración del valle ni la trama (`TeacherDashboard.tsx`, desde el
 14-oct-2026). Son pantallas de trabajo para adultos y el adorno competía con las
-tablas. El niño y la portada siguen con `jungle-surface`.
+tablas. El niño y la portada siguen con `jungle-surface`. Desde el 20-oct-2026 el
+tutor tiene además su propio lenguaje visual: ver §2.5.
 
 > El **semáforo de dominio de habilidades** (lima, sol, coral) se retiró con las
 > cinco barras de habilidades en el paso 17: ya no lo usa ninguna pantalla.
@@ -516,7 +517,9 @@ obtiene el mismo tema.
 
 Cada tema aporta color sólido, degradado de cabecera (135°, claro → saturado) y
 una **ilustración SVG propia**, presente en la tarjeta, la barra lateral y la
-vista del alumno.
+vista del alumno. **En el tutor** no hay degradado: el color va como pestaña de
+carpeta (en la barra lateral, sólo eso) y la ilustración sale en la tarjeta y la
+cabecera del salón con `GroupBadge shape="plain"`, sobre el tono suave del tema.
 
 ### 2.4 Espaciado, radios y sombras
 
@@ -552,9 +555,50 @@ Escala de 4 px (la de Tailwind). Ritmos habituales:
 | Separación entre secciones | `mt-6` a `mt-8` (24–32 px) |
 | Rejilla de tarjetas | `gap-5` / `gap-6` |
 | Grupos de botones | `gap-3` |
-| Altura de barras superiores | 84 px |
-| Ancho de barras laterales | 262 px |
+| Altura de barras superiores | 84 px (el tutor, 56 px) |
+| Ancho de barras laterales | 262 px (el tutor, 240 px y 64 plegada) |
 | Grosor de contornos | 3 px estructural, 2 px secundario |
+
+### 2.5 El área del tutor
+
+La misma marca en voz de adulto, desde el 20-oct-2026 (`panel-tutor-adulto`).
+Todo lo anterior de esta sección es del niño, la portada y el acceso; el tutor
+usa **sus propias piezas** y no toca las de arriba.
+
+#### Tokens
+
+| Token (`tutor-*`) | Hex | Uso |
+| --- | --- | --- |
+| `canvas` / `surface` / `sunken` | `#F4EEFF` / `#FFFFFF` / `#FAF7FF` | Fondo, superficies, cabecera de tabla |
+| `rule` / `rule-strong` / `control` | `#E3D9F7` / `#CFC6E6` / `#8F8AA1` | Reglas, borde de botón secundario, borde de campo |
+| `ink` / `ink-soft` / `ink-faint` | `#1E1A2B` / `#565068` / `#6E6982` | Texto principal, secundario y terciario |
+| `accent` / `accent-hover` / `accent-soft` | `#5620B0` / `#47199A` / `#F0E6FF` | El morado de la marca: acción, selección, foco |
+| `ok`, `warn`, `danger`, `info` (+ `-soft`) | `#1D7352`, `#8A5A00`, `#B02C2C`, `#285F9F` | Estados, siempre con la palabra además del color |
+
+Dos reglas: el texto `ink-faint` **nunca** sobre `accent-soft` (4,36:1), y los
+campos **siempre** sobre superficie blanca (su borde da 2,93:1 sobre la lavanda).
+
+#### Tipografía
+
+**Fredoka 600** en los títulos (`h1`–`h3`, por la regla global) y **Atkinson
+Hyperlegible Next** en todo lo demás —cuerpo, tablas, controles, cifras con
+`tabular-nums`—. La activa `.tutor-scope`, que lleva el contenedor de
+`TeacherDashboard`; sin mayúsculas sostenidas en los rótulos.
+
+#### Piezas
+
+| Clase | Qué es |
+| --- | --- |
+| `tutor-card` | Superficie blanca, borde de 1 px, radio 12 |
+| `tutor-btn` + `-primary`, `-secondary`, `-danger`, `-danger-solid`, `-ghost`, `-ghost-danger`, `-sm` | 36 px (30 con `-sm`), radio 8, sin relieve. `-danger-solid` sólo para confirmar algo que no se deshace |
+| `tutor-badge` + `-ok`, `-warn`, `-danger`, `-info`, `-mute`, `-plain` | Píldora fina con punto de color y la palabra |
+| `tutor-field` | Campo de 36 px; con `aria-invalid="true"` el borde pasa a peligro |
+| `tutor-seg` | Selector segmentado con `aria-pressed` (alcance, orden) |
+| `tutor-table`, `tutor-num` | Tabla densa; números a la derecha |
+| `tutor-section-head`, `tutor-stats` | Cabecera de sección con su recuento; franja de cifras partida |
+
+Los componentes compartidos con el niño eligen su traje con `variant="tutor"`
+(o `shape="plain"` en `GroupBadge`); sin la prop se ven como siempre.
 
 ---
 

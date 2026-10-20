@@ -41,9 +41,9 @@ Cada pantalla que se migra lleva `tutor-scope` en su raíz.
 
 ## 6. Cierre
 
-- [ ] 6.0 Subir `tutor-scope` al contenedor de `TeacherDashboard.tsx` y quitarlo de las raíces sueltas (barras y pantallas); verificar con `grep` que sólo queda en el contenedor y con capturas que nada cambia
+- [x] 6.0 Subir `tutor-scope` al contenedor de `TeacherDashboard.tsx` y quitarlo de las raíces sueltas (barras y pantallas); verificar con `grep` que sólo queda en el contenedor y con capturas que nada cambia
 
-- [ ] 6.1 Buscar en `components/dashboard/teacher/` y `TeacherDashboard.tsx` las clases del child como palabra completa (`\bcard\b`, `\bbtn\b`, `\bchip\b`, `\bfield\b`, `\bfont-display\b`, `\bborder-ink\b`) y `shadow-\[`, para que `tutor-card` o `tutor-btn` no den falsos positivos, y retirarlas; verificar con `grep -E` que no queda ninguna
-- [ ] 6.2 Capturas del child (`StudentClassroomModule`, `StudentWorldsModule` y «Mi cuenta») comparadas con las de antes del cambio, sin diferencias
-- [ ] 6.3 Actualizar `docs/CONTEXT.md` §2.1 y `docs/ESTADO-DEL-PROYECTO.md` §2 con el sistema del tutor; apuntar en `docs/CONTEXT.md` §4 la deuda del niño encontrada en la tanda 2 (con «Eliminar mi cuenta» abierto, su barra superior queda sin velo porque el `<main>` del panel es `relative isolate` y el `z-50` del diálogo no sale de ese contexto; el del tutor ya va por portal; captura de referencia `t2c/nino-borrar.png` de la tanda 2); replicar en `openspec/config.yaml` y verificar con `npx openspec doctor`
-- [ ] 6.4 Ejecutar `npm run lint`, `npm run test:run` y `npm run build` desde la raíz y verificar que los tres pasan
+- [x] 6.1 Buscar en `components/dashboard/teacher/` y `TeacherDashboard.tsx` las clases del child como palabra completa (`\bcard\b`, `\bbtn\b`, `\bchip\b`, `\bfield\b`, `\bfont-display\b`, `\bborder-ink\b`) y `shadow-\[`, para que `tutor-card` o `tutor-btn` no den falsos positivos, y retirarlas; verificar con `grep -E` que no queda ninguna
+- [x] 6.2 Capturas del child (`StudentClassroomModule`, `StudentWorldsModule` y «Mi cuenta») comparadas con las de antes del cambio, sin diferencias
+- [x] 6.3 Actualizar `docs/CONTEXT.md` §2.1 y `docs/ESTADO-DEL-PROYECTO.md` §2 con el sistema del tutor; apuntar en `docs/CONTEXT.md` §4 la deuda del niño encontrada en la tanda 2 (con «Eliminar mi cuenta» abierto, su barra superior queda sin velo porque el `<main>` del panel es `relative isolate` y el `z-50` del diálogo no sale de ese contexto; el del tutor ya va por portal; captura de referencia `t2c/nino-borrar.png` de la tanda 2); replicar en `openspec/config.yaml` y verificar con `npx openspec doctor`
+- [x] 6.4 Ejecutar `npm run lint`, `npm run test:run` y `npm run build` desde la raíz y verificar que los tres pasan

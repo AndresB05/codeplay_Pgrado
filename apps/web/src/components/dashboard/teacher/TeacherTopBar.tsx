@@ -21,7 +21,7 @@ export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
   const displayName = user?.fullName || FALLBACK_TEACHER_NAME;
 
   return (
-    <header className="tutor-scope flex h-[56px] items-center gap-6 border-b border-tutor-rule bg-tutor-surface px-5">
+    <header className="flex h-[56px] items-center gap-6 border-b border-tutor-rule bg-tutor-surface px-5">
       <div className="flex items-center gap-3">
         <button
           type="button"

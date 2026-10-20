@@ -210,6 +210,13 @@ context: |
   - Estilos: Tailwind con los nombres de color del tema, nunca hex sueltos. Los
     tokens están duplicados a propósito en src/main.css (variables CSS) y en
     tailwind.config.js. Las clases .btn/.card/.chip/.field viven en main.css.
+  - El tutor tiene su propio lenguaje visual (panel-tutor-adulto): tokens
+    tutor-*, piezas tutor-card/tutor-btn/tutor-badge/tutor-field/tutor-seg/
+    tutor-table/tutor-stats y .tutor-scope (Atkinson Hyperlegible Next para leer,
+    Fredoka en los títulos) en el contenedor de TeacherDashboard. NUNCA se
+    redefinen .card/.btn/.chip/.field para el tutor: los componentes que monta
+    también el niño eligen traje con variant="tutor", y su rama por defecto no
+    cambia. Ver docs/ESTADO-DEL-PROYECTO.md §2.5.
   - Adornos SVG en components/decor/, con aria-hidden y sin capturar el puntero,
     y sólo como iconos: nada de hojas ni flores sueltas por esquinas y cabeceras.
   - Los huecos de la mascota (.mascot-slot, ImagePlaceholder) se dejan VACÍOS a

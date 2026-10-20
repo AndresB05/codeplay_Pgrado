@@ -360,8 +360,54 @@ inspirado en CodeCombat, CodeMonkey y Scratch, sobre un bioma de selva tropical.
   se borró el 16-oct-2026, cuando la portada pasó a sus ilustraciones.
 
 **Alcance del tema selva.** Aplicado en: landing completa (héroe, mundos,
-tutores, cómo se aprende, pie), login, registro, panel del alumno, panel del
-tutor y ambas barras laterales. Ninguna pantalla en uso quedó fuera.
+tutores, cómo se aprende, pie), login, registro y panel del alumno. **El panel
+del tutor salió de él** el 20-oct-2026: ver el apartado siguiente.
+
+#### El tutor habla en voz de adulto, con `panel-tutor-adulto` (20-oct-2026)
+
+El área del tutor heredaba entero el lenguaje del niño —Fredoka en todo,
+contornos de 3 px en tinta, sombras sólidas, botones con relieve, chips
+saturados— y se leía como un juguete al que le faltaba densidad. Ahora tiene su
+propio lenguaje **dentro de la marca**: la lavanda de fondo, el morado de la
+marca como acento, Fredoka en los títulos, el leopardo en la barra superior y la
+insignia de cada salón donde hay sitio; y sin relieve ni contornos gruesos, con
+bordes de 1 px, radios de 12/8 px y tablas compactas.
+
+| Pieza | Dónde vive |
+| --- | --- |
+| 20 tokens `--tutor-*` (y `tutor.*` en Tailwind), con los contrastes medidos | `main.css` `:root` + `tailwind.config.js` |
+| Atkinson Hyperlegible Next para cuerpo, tablas y cifras (`font-tutor`, `tabular-nums`) | `@import` de `main.css`; la activa `.tutor-scope` |
+| Piezas `tutor-card`, `tutor-btn*`, `tutor-badge*`, `tutor-field`, `tutor-seg`, `tutor-table`, `tutor-section-head`, `tutor-stats` | Un bloque `@layer components` propio en `main.css` |
+| `.tutor-scope` en el contenedor del tutor | `pages/TeacherDashboard/TeacherDashboard.tsx`; los dos diálogos lo llevan aparte porque van por portal |
+| La pestaña de color del salón y la insignia `GroupBadge shape="plain"` | `teacher/TeacherSidebar.tsx`, `TeacherGroupsModule.tsx`, `TeacherGroupDetailModule.tsx` |
+
+**El niño no cambia, y es estructural.** Las clases `.card`, `.btn`, `.chip` y
+`.field` no se tocaron: el tutor usa las suyas. Los componentes que montan los
+dos roles ganaron una variante —`variant="tutor"` o `shape="plain"`— cuya rama
+por defecto es la de antes, y el niño no pasa la prop: `StatCard`,
+`StudentRosterTable`, `ClassroomPodium`, `GroupBadge`, `ConfirmDialog`,
+`StoreErrorNotice`, `RosterFilterBar`/`FilterSelect`, `ChangeNamePanel`,
+`ChangePasswordPanel`, `DeleteAccountPanel`, `SidebarToggle`, `TeacherIcons` y
+`SignupField` (que montan también el acceso y el registro). Comprobado con
+capturas píxel a píxel del niño, el acceso y la portada contra `c79f1a6`. La
+letra nueva no se descarga fuera del tutor.
+
+**Dos reglas que salen de los contrastes:** el texto `tutor-ink-faint` nunca va
+sobre `tutor-accent-soft` (4,36:1), y los campos van siempre sobre blanco (su
+borde da 2,93:1 sobre la lavanda). La tabla completa está en el `design.md` del
+cambio.
+
+**Lo que conviene saber al tocarlo:**
+
+- Los diálogos del tutor (`ConfirmDialog` en su variante y
+  `TeacherResourceDialog`) van por `createPortal` a `body`: el `<main>` del panel
+  es `relative isolate` y su `z-50` no salía de ese contexto. El del niño sigue
+  dentro, y por eso tiene la deuda de §4.14.
+- La tabla de seguimiento del tutor **no lleva la barra de XP**: mide el tramo del
+  nivel y en una columna se leía como comparación entre alumnos.
+- En el panel, «Ordenar» sigue siendo un `<select>` y la cabecera de la ficha
+  conserva la frase «N de M niveles superados · …»: los dos los consulta
+  `TeacherPanelModule.test.tsx` tal cual.
 
 ### 2.2 `auth-sesion` — Acceso, sesión y roles
 
@@ -4928,7 +4974,7 @@ Sigue en pie para lo que venga: ninguna vista habla con Supabase directamente.
 ### 4.4 El panel del tutor no es responsive
 
 Descubierto al revisar el aviso de error en móvil. Con el viewport a 375 px, la
-barra lateral ocupa **262 px fijos** y `main` se queda en **113 px**: todas las
+barra lateral ocupaba **262 px fijos** y `main` se quedaba en **113 px**: todas las
 secciones del panel —tarjetas de estadística, bandeja de solicitudes, tabla de
 seguimiento— miden 73 px de ancho. No es de una pantalla concreta; es la
 maquetación del panel entero, que nunca tuvo repliegue para pantallas
@@ -4942,6 +4988,11 @@ aquí porque hasta ahora nadie lo había medido, y porque es trabajo del **paso
 XP, así que a 375 px reparte los mismos 73 px entre una pista más. No se arregló
 ahí porque el repliegue es del panel entero y no de una tabla: hacerlo en una
 sola dejaría el resto igual de roto y con una excepción que explicar.
+
+**`panel-tutor-adulto` lo alivia sin resolverlo** (20-oct-2026): la barra
+lateral mide ahora 240 px desplegada y 64 px plegada, y las tablas se desplazan
+en horizontal dentro de su tarjeta. El escritorio estrecho con la barra plegada
+quedó cubierto; el móvil sigue siendo del paso 25.
 
 ### 4.5 `profile.service.ts` sigue devolviendo inglés
 
@@ -5346,6 +5397,22 @@ casilla a altura 5 a la de altura 2—:
 **Lo que cuesta, dicho en voz alta:** un paso que baja dura de dos a tres veces lo
 que uno normal. Es lo que se pidió, y quien quiera otra cosa tiene un solo número
 que mover.
+
+### 4.14 Con «Eliminar mi cuenta» abierto, la barra superior del niño queda sin velo
+
+Encontrado el 20-oct-2026 durante `panel-tutor-adulto`, al comparar capturas del
+niño. Con el diálogo de borrar cuenta abierto, el velo oscurece la página pero
+**no la barra superior** —logo, XP, racha y avatar quedan a plena luz—.
+
+**La causa:** `ConfirmDialog` se monta dentro del `<main>` del panel, que es
+`relative isolate`, y su `z-50` no sale de ese contexto de apilamiento. Lo mismo
+le pasaba al tutor, y se resolvió llevando su variante por `createPortal` a
+`body` (§2.1). La rama del niño no se tocó a propósito: el cambio era del tutor y
+el niño debía quedar idéntico.
+
+**El arreglo es el mismo:** portal también en la rama por defecto. La montan dos
+sitios —borrar cuenta del niño (`DeleteAccountPanel`) y el juego (`GameScene`)—,
+así que pide comprobar los dos.
 
 ## 5. Estado verificado
 

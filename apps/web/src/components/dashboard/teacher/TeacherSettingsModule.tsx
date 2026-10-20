@@ -34,7 +34,7 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
   };
 
   return (
-    <div className="tutor-scope px-6 py-6 lg:px-8">
+    <div className="px-6 py-6 lg:px-8">
       <div className="max-w-[980px]">
         <section className="flex flex-wrap items-start justify-between gap-4">
           <div>
