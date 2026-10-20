@@ -5,8 +5,8 @@ import { missionWorldOrder } from '../student/worldLock';
 import { formatDueDate } from '../../../lib/missionDue';
 import type { Mission } from '../../../types/classroom.types';
 import { TargetIcon } from '../teacher/TeacherIcons';
-import { TropicalFlower } from '../../decor/JungleDecor';
 import { TILT_ON_HOVER, pickTilt } from './pickTilt';
+import classroomStamp from '../../../assets/brand/settings-stamp-classroom.webp';
 
 const MissionCard = ({
   mission,
@@ -175,34 +175,59 @@ export const AssignedMissionsPanel = ({
 
   return (
     <section className="mt-8">
-      <div className="flex flex-wrap items-center gap-3">
-        <span
-          className={
-            onMap
-              ? 'flex h-[50px] w-[50px] -rotate-[4deg] items-center justify-center rounded-full border-[3px] border-dashed border-grape-dark bg-wood-bare/70'
-              : 'flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft'
-          }
-        >
-          <TargetIcon />
-        </span>
-        <h2 className={onMap ? 'map-title font-display text-[30px] text-sepia' : 'title-lg'}>
-          Misiones de tu salón
-        </h2>
-        {onMap ? (
-          <span className="ml-auto rotate-[3deg] rounded-md border-[3px] border-double border-jungle-dark bg-wood-bare/70 px-3 py-0.5 font-map text-[19px] font-normal text-jungle-dark">
-            {completedCount} de {missions.length} cumplidas
-          </span>
-        ) : (
-          <span className="chip chip-leaf ml-auto">
-            <TropicalFlower size={16} />
-            {completedCount} de {missions.length} cumplidas
-          </span>
-        )}
-      </div>
+      {onMap ? (
+        <>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="flex h-[50px] w-[50px] -rotate-[4deg] items-center justify-center rounded-full border-[3px] border-dashed border-grape-dark bg-wood-bare/70">
+              <TargetIcon />
+            </span>
+            <h2 className="map-title font-display text-[30px] text-sepia">Misiones de tu salón</h2>
+            <span className="ml-auto rotate-[3deg] rounded-md border-[3px] border-double border-jungle-dark bg-wood-bare/70 px-3 py-0.5 font-map text-[19px] font-normal text-jungle-dark">
+              {completedCount} de {missions.length} cumplidas
+            </span>
+          </div>
 
-      <p className={onMap ? 'mt-1 font-map text-[19px] font-normal text-sepia' : 'subtitle mt-1'}>
-        Tu tutor las eligió para ti. Dan más experiencia que un nivel normal.
-      </p>
+          <p className="mt-1 font-map text-[19px] font-normal text-sepia">
+            Tu tutor las eligió para ti. Dan más experiencia que un nivel normal.
+          </p>
+        </>
+      ) : (
+        /*
+         * En «Mundos», una tira del pasaporte del saludo: el sello del salón y
+         * una casilla por misión, que se sella al cumplirla. Va metida hasta la
+         * línea oscura del saludo, un poco menor, porque pesa menos que él.
+         */
+        <div className="passport-page mx-6 flex flex-wrap items-center gap-5 [border-width:29px]">
+          <img src={classroomStamp} alt="" className="h-[67px] w-[67px] -rotate-[8deg]" />
+          <div className="min-w-0 flex-1">
+            <h2 className="title-lg text-[23px]">Misiones de tu salón</h2>
+            <p className="subtitle text-[15px]">
+              Tu tutor las eligió para ti. Dan más experiencia que un nivel normal.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {missions.map((mission) =>
+              myCompletions.has(mission.key) ? (
+                <img
+                  key={mission.key}
+                  src={classroomStamp}
+                  alt=""
+                  className="h-9 w-9 -rotate-[10deg]"
+                />
+              ) : (
+                <span
+                  key={mission.key}
+                  aria-hidden
+                  className="h-9 w-9 rounded-full border-[3px] border-dashed border-sepia-soft"
+                />
+              )
+            )}
+            <span className="ml-1.5 font-display text-[15px] text-sepia">
+              {completedCount} de {missions.length} cumplidas
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
         {visibleMissions.map((mission) => (

@@ -10,7 +10,7 @@ import { useWorldLocks } from '../../../hooks/useWorldLocks';
 import { LockIcon } from './LockIcon';
 import { useProgress } from '../../../hooks/useProgress';
 import { worldsService } from '../../../services/worlds.service';
-import { MonsteraLeaf, TropicalFlower } from '../../decor/JungleDecor';
+import { MonsteraLeaf } from '../../decor/JungleDecor';
 import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import world1 from '../../../assets/brand/world-1-card.webp';
 import world2 from '../../../assets/brand/world-2-card.webp';
@@ -24,6 +24,8 @@ import worldBannerChild from '../../../assets/brand/world-banner-child.webp';
 const DIFFICULTY_BY_ORDER: DifficultyLabel[] = ['Fácil', 'Intermedio', 'Difícil'];
 
 const ALL = 'all';
+
+const SHOW_FILTERS = false;
 
 /*
  * Las ilustraciones van por orden, como la dificultad, con el mismo encuadre que
@@ -352,31 +354,22 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
 
   return (
     <div className="px-5 py-5">
-      <section className="card relative overflow-hidden px-5 py-5">
-        {/*
-         * La ilustración ocupa sólo la parte derecha de la tarjeta, a todo su
-         * alto, tocando el borde negro de arriba, abajo y la derecha. El
-         * overflow-hidden y el rounded-[26px] del `.card` recortan la imagen
-         * a esas mismas esquinas, sin necesidad de redondearla aparte.
-         */}
-        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[38%] lg:block">
+      {/*
+       * El saludo, en la página del pasaporte de «Mi cuenta». La ilustración va
+       * por dentro de la línea oscura del borde: los márgenes negativos la
+       * llevan hasta ella sin tapar las costuras.
+       */}
+      <section className="passport-page relative">
+        <div className="pointer-events-none absolute -bottom-4 -right-4 -top-4 hidden w-[40%] overflow-hidden rounded-r-[10px] lg:block">
           <img
             src={worldBannerChild}
             alt=""
             className="h-full w-full object-cover object-[55%_50%]"
           />
-          <div
-            className="absolute inset-y-0 left-0 w-[40%]"
-            style={{
-              background:
-                'linear-gradient(to right, #fff 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.4) 62%, rgba(255,255,255,0.15) 82%, transparent 100%)',
-            }}
-          />
+          <div className="passport-art-fade absolute inset-y-0 left-0 w-[55%]" />
         </div>
 
-        <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-jungle-soft lg:hidden" />
-
-        <div className="relative flex flex-wrap items-center gap-6 lg:pr-[40%]">
+        <div className="relative flex flex-wrap items-center gap-6 lg:flex-nowrap lg:pr-[44%]">
           <img
             src={pickMascotAvatar(user?.id, user?.fullName, user?.avatarKey)}
             alt=""
@@ -384,66 +377,67 @@ export const StudentWorldsModule = ({ user }: StudentWorldsModuleProps) => {
           />
 
           <div className="max-w-[560px]">
-            <span className="chip chip-leaf">
-              <TropicalFlower size={16} />
-              Expedición del día
-            </span>
-
-            <h1 className="title-xl mt-3">¡HOLA, {getHeroName(user?.fullName)}!</h1>
+            <h1 className="title-xl">¡HOLA, {getHeroName(user?.fullName)}!</h1>
             <p className="subtitle mt-1">
               Bienvenido de nuevo al código. ¿Listo para tu próxima expedición por la selva?
             </p>
           </div>
         </div>
 
-        {/* En pantallas angostas no hay espacio para el fondo completo: la ilustración baja debajo del saludo. */}
+        {/* En pantallas angostas no hay espacio al lado: la ilustración baja debajo del saludo. */}
         <img
           src={worldBannerChild}
           alt=""
-          className="relative mt-6 h-[160px] w-full rounded-[22px] object-cover lg:hidden"
+          className="relative mt-6 h-[160px] w-full rounded-[14px] object-cover lg:hidden"
         />
       </section>
 
       <AssignedMissionsPanel hideCompleted />
 
-      <section className="card mt-6 px-5 py-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft">
-              <FilterIcon />
-            </span>
-            <h2 className="title-lg">Filtros</h2>
-          </div>
+      {/*
+       * Apagados mientras haya tres mundos: cada filtro deja una sola tarjeta, la
+       * que ya lleva esa dificultad en la esquina. Vuelven cuando haya más.
+       */}
+      {SHOW_FILTERS ? (
+        <section className="card mt-6 px-5 py-4">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex items-center gap-3">
+              <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-sun-soft">
+                <FilterIcon />
+              </span>
+              <h2 className="title-lg">Filtros</h2>
+            </div>
 
-          <div className="flex flex-wrap gap-3">
-            <SelectField
-              label="Dificultad"
-              value={difficulty}
-              onChange={setDifficulty}
-              options={[
-                { value: ALL, label: 'Todas' },
-                ...DIFFICULTY_BY_ORDER.map((label) => ({ value: label, label })),
-              ]}
-            />
-            <SelectField
-              label="Tema"
-              value={theme}
-              onChange={setTheme}
-              options={[
-                { value: ALL, label: 'Todos' },
-                ...themeOptions.map((label) => ({ value: label, label })),
-              ]}
-            />
+            <div className="flex flex-wrap gap-3">
+              <SelectField
+                label="Dificultad"
+                value={difficulty}
+                onChange={setDifficulty}
+                options={[
+                  { value: ALL, label: 'Todas' },
+                  ...DIFFICULTY_BY_ORDER.map((label) => ({ value: label, label })),
+                ]}
+              />
+              <SelectField
+                label="Tema"
+                value={theme}
+                onChange={setTheme}
+                options={[
+                  { value: ALL, label: 'Todos' },
+                  ...themeOptions.map((label) => ({ value: label, label })),
+                ]}
+              />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="mt-8 pb-4">
-        <div className="flex items-center gap-3">
-          <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-ink bg-grape-soft">
+        <div className="classroom-cartouche flex w-fit items-center gap-3 px-[30px] py-1.5">
+          <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[16px] border-[3px] border-sepia">
             <MapIcon />
           </span>
-          <h2 className="title-lg">Mundos</h2>
+          <h2 className="map-title font-display text-[30px] text-sepia">Mundos</h2>
         </div>
 
         {/*

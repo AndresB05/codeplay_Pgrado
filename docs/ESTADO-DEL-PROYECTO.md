@@ -483,6 +483,12 @@ mundo (`.howto-sign-1/2/3`), la cabecera del nivel una tabla de madera
 con sellos de tinta, y las cargas, Leo caminando (`LoadingLeo`). Las pantallas de
 acceso sin ilustración propia llevan el valle de los paneles de fondo.
 
+En «Mundos» el saludo va en la misma página de pasaporte, con la ilustración
+fundida por dentro del borde (`.passport-art-fade`), y el título en la cartela
+de rollos (`.classroom-cartouche`). La cabecera de las misiones es una tira de
+pasaporte más estrecha, con una casilla por misión que se sella al cumplirla.
+Los filtros de dificultad y tema están apagados mientras haya tres mundos.
+
 Los adornos SVG sueltos (dosel de hojas, palmeras, flores en esquinas) **se
 retiraron de toda la web** el 16-oct-2026: no casaban con las ilustraciones. Los
 dibujos de `components/decor/` sólo quedan como iconos dentro de chips y tarjetas.

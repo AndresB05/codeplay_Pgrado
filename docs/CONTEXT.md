@@ -4653,6 +4653,22 @@ hasta que se recarga; las notas con información y las hojas de nivel no caen.
 La chincheta es un botón fuera del teclado y del lector de pantalla, como el
 mapa del podio; la fila de «Selecciona un nivel» no captura el puntero para
 que el clic llegue a las chinchetas de detrás.
+Mientras cae, la hoja se sale 140vh por abajo: el contenedor del panel del niño
+lleva `overflow-clip` (`Dashboard.tsx`) para que no alargue el scroll ni deje un
+hueco en blanco. Los niveles bloqueados van sólidos y en gris, sin transparencia
+(20-oct-2026).
+
+**La pantalla de Mundos** (`StudentWorldsModule.tsx`, 20-oct-2026): el saludo va
+en la página del pasaporte (`.passport-page`) con la ilustración de siempre por
+dentro de la línea oscura del borde, fundida por la izquierda
+(`.passport-art-fade`); el título «Mundos», en la cartela de rollos
+(`.classroom-cartouche`) alineada a la izquierda. **Los filtros están apagados**
+(`SHOW_FILTERS = false`) mientras haya tres mundos: cada filtro dejaba una sola
+tarjeta, la que ya dice su dificultad; sus tres pruebas quedan en `it.skip` y
+vuelven con ellos. La cabecera de las misiones del salón
+(`AssignedMissionsPanel.tsx`, sin `onMap`) es una tira del mismo pasaporte, metida
+hasta la línea oscura del saludo, con el sello del salón y una casilla por
+misión que se sella al cumplirla; en el salón (`onMap`) no cambia.
 
 **Las dos rachas en pergamino** (16-oct-2026): la de la barra superior
 (`topbar-streak-scroll-bold.webp`, sólo el número) y la del tronco de la barra

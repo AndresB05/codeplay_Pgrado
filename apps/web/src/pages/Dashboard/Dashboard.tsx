@@ -69,8 +69,9 @@ export const Dashboard = () => {
 
   const showSidebar = activeRoute !== ROUTES.SETTINGS;
 
+  // `overflow-clip`: las hojas del corcho caen hasta 140vh y alargarían el scroll mientras caen.
   return (
-    <div className="jungle-surface min-h-screen text-ink">
+    <div className="jungle-surface min-h-screen overflow-clip text-ink">
       <StudentTopBar user={user} />
 
       <div className={`min-h-[calc(100vh-84px)] ${showSidebar ? 'flex' : 'block'}`}>

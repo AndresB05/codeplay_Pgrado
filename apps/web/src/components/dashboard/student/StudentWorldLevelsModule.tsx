@@ -370,7 +370,7 @@ export const StudentWorldLevelsModule = ({ user, worldId }: StudentWorldLevelsMo
                   title={isLocked ? 'Supera el nivel anterior para abrirlo' : undefined}
                   className={`relative isolate flex flex-col px-5 pb-6 pt-5 text-left transition-transform duration-100 ${SHEET_TILTS[position % SHEET_TILTS.length]} ${
                     isLocked
-                      ? 'cursor-not-allowed opacity-60 grayscale'
+                      ? 'cursor-not-allowed grayscale'
                       : 'hover:-translate-y-1 active:translate-y-0'
                   }`}
                 >

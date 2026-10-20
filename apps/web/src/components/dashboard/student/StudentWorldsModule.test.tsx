@@ -89,7 +89,8 @@ describe('StudentWorldsModule', () => {
     expect(new Set(images).size).toBe(3);
   });
 
-  it('el filtro de dificultad deja sólo el mundo de esa dificultad', async () => {
+  // Los filtros están apagados con `SHOW_FILTERS` mientras haya tres mundos; vuelven con ellos.
+  it.skip('el filtro de dificultad deja sólo el mundo de esa dificultad', async () => {
     renderModule();
 
     await userEvent.selectOptions(filter('Dificultad'), 'Intermedio');
@@ -97,7 +98,7 @@ describe('StudentWorldsModule', () => {
     expect(visibleWorlds()).toEqual(['Cordillera de la Abstracción']);
   });
 
-  it('el filtro de tema ofrece los pilares de los mundos y filtra por ellos', async () => {
+  it.skip('el filtro de tema ofrece los pilares de los mundos y filtra por ellos', async () => {
     renderModule();
 
     await userEvent.selectOptions(filter('Tema'), 'Evaluación de problemas');
@@ -105,7 +106,7 @@ describe('StudentWorldsModule', () => {
     expect(visibleWorlds()).toEqual(['Encrucijada de las Decisiones']);
   });
 
-  it('una combinación sin mundos lo dice en vez de dejar la lista en blanco', async () => {
+  it.skip('una combinación sin mundos lo dice en vez de dejar la lista en blanco', async () => {
     renderModule();
 
     await userEvent.selectOptions(filter('Dificultad'), 'Fácil');
