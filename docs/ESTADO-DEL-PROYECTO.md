@@ -488,6 +488,9 @@ fundida por dentro del borde (`.passport-art-fade`), y el título en la cartela
 de rollos (`.classroom-cartouche`). La cabecera de las misiones es una tira de
 pasaporte más estrecha, con una casilla por misión que se sella al cumplirla.
 Los filtros de dificultad y tema están apagados mientras haya tres mundos.
+La pantalla del nivel sigue el mismo pasaporte: la escena enmarcada
+(`.passport-frame`), la bandeja de bloques y el lienzo en sus páginas, y los
+botones del juego como teclas de madera, con «Ejecutar» en verde (`.wood-key-go`).
 
 Los adornos SVG sueltos (dosel de hojas, palmeras, flores en esquinas) **se
 retiraron de toda la web** el 16-oct-2026: no casaban con las ilustraciones. Los

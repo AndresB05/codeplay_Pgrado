@@ -616,7 +616,8 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
        * también, así que un padre sin altura los deja a los dos en cero.
        */}
       <section className="marco-del-juego mt-5 grid h-[640px] gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="zona-del-juego relative overflow-hidden rounded-[28px]">
+        {/* La escena, el lienzo y los bloques, en páginas del pasaporte, como el saludo de «Mundos». */}
+        <div className="zona-del-juego passport-frame relative overflow-hidden">
           <GameSceneLoader
             key={attemptKey}
             level={state.level.config}
@@ -642,10 +643,10 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
             type="button"
             onClick={() => setHelpOpen((open) => !open)}
             aria-expanded={helpOpen}
-            className={`absolute left-4 top-[72px] z-20 text-left shadow-[0_6px_18px_rgba(42,27,69,0.28)] transition-transform hover:-translate-y-[1px] ${
+            className={`absolute left-4 top-[72px] z-20 text-left ${
               helpOpen
-                ? 'w-[340px] max-w-[calc(100%-2rem)] rounded-[24px] bg-mist px-5 pb-5 pt-4'
-                : 'flex h-11 w-11 items-center justify-center rounded-full bg-ink text-white'
+                ? 'passport-paper w-[340px] max-w-[calc(100%-2rem)] rounded-[24px] px-5 pb-5 pt-4 shadow-[0_6px_18px_rgba(42,27,69,0.28)] transition-transform hover:-translate-y-[1px]'
+                : 'wood-key flex h-11 w-11 items-center justify-center rounded-[14px] border-[3px] text-wood-ink'
             }`}
           >
             {helpOpen ? (
@@ -674,9 +675,9 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
 
           <div
             ref={measureTray}
-            className="bandeja-de-bloques absolute inset-x-4 bottom-4 rounded-[24px] bg-mist shadow-[0_10px_28px_rgba(42,27,69,0.16)] backdrop-blur-sm"
+            className="bandeja-de-bloques passport-page absolute inset-x-4 bottom-4 [border-width:16px]"
           >
-            <div className="flex items-center gap-3 px-4 pb-1 pt-2.5">
+            <div className="flex items-center gap-3 px-1">
               <BlocksIcon />
               <h2 className="shrink-0 font-display text-[18px] text-grape-dark">Bloques</h2>
 
@@ -701,12 +702,9 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
              * el alto del hueco, y un hueco a cero los dejaría encimados al
              * volver a abrir.
              */}
-            <div
-              style={{ height: trayOpen ? undefined : 0 }}
-              className={`overflow-hidden px-2 ${trayOpen ? 'pb-2' : ''}`}
-            >
-              <div className="relative rounded-[18px] bg-mist-soft">
-                <div ref={setBlockBox} className="relative h-[104px] w-full" />
+            <div style={{ height: trayOpen ? undefined : 0 }} className="overflow-hidden">
+              <div className="relative">
+                <div ref={setBlockBox} className="relative h-[72px] w-full" />
 
                 {halted && <HaltedLock />}
               </div>
@@ -714,17 +712,17 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
           </div>
         </div>
 
-        <div className="columna-del-lienzo relative flex min-h-0 flex-col rounded-[24px] bg-mist px-4 pb-4 pt-3.5 shadow-[0_8px_24px_rgba(42,27,69,0.12)]">
+        <div className="columna-del-lienzo passport-page relative flex min-h-0 flex-col px-0.5 [border-width:30px]">
           <div className="flex items-center gap-2.5">
             <CanvasIcon />
-            <h2 className="font-display text-[18px] text-grape-dark">Lienzo</h2>
+            <h2 className="title-lg">Lienzo</h2>
           </div>
 
           <div className="marco-del-lienzo relative mt-2.5 min-h-0 w-full flex-1 overflow-hidden">
-            <span className="pointer-events-none absolute inset-y-0 left-0 right-6 rounded-[18px] border-2 border-dashed border-mist-line bg-mist-soft" />
+            <span className="pointer-events-none absolute inset-y-0 left-0 right-6 rounded-[18px] border-2 border-dashed border-sepia-soft/40 bg-wood-bare/30" />
 
             {emptyCanvas && (
-              <p className="pointer-events-none absolute inset-y-0 left-0 right-6 flex items-center justify-center px-4 text-center font-display text-[15px] text-ink-faint">
+              <p className="pointer-events-none absolute inset-y-0 left-0 right-6 flex items-center justify-center px-4 text-center font-display text-[15px] text-sepia-soft">
                 Aquí verás la secuencia de bloques que crees.
               </p>
             )}

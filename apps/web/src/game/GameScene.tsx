@@ -1421,7 +1421,7 @@ export const GameScene = ({
        */}
       <button
         type="button"
-        className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-ink py-2 pl-3.5 pr-4 font-display text-[15px] text-white shadow-[0_6px_18px_rgba(42,27,69,0.28)] transition-transform hover:-translate-y-[1px]"
+        className="wood-key absolute left-4 top-4 flex items-center gap-2 rounded-[14px] border-[3px] py-1.5 pl-3 pr-3.5 font-display text-[15px] text-wood-ink"
         onClick={resetView}
       >
         <ViewCubeIcon />
@@ -1443,7 +1443,7 @@ export const GameScene = ({
        * números que se muevan. La ETIQUETA cambia con la magnitud, que es lo que
        * impide leer lo que queda como lo que se lleva.
        */}
-      <p className="pointer-events-none absolute right-4 top-4 flex items-center gap-2.5 rounded-full bg-ink px-4 py-2 font-display text-[17px] text-white shadow-[0_6px_18px_rgba(42,27,69,0.28)]">
+      <p className="wood-key pointer-events-none absolute right-4 top-4 flex items-center gap-2.5 rounded-[14px] border-[3px] px-3.5 py-1.5 font-display text-[17px] text-wood-ink">
         <StepsIcon />
         {remaining === null ? `Pasos: ${steps}` : `Pasos restantes: ${remaining}`}
       </p>
@@ -1486,7 +1486,7 @@ export const GameScene = ({
           <div className="flex items-stretch gap-2">
             <button
               type="button"
-              className="btn btn-sm btn-leaf flex-1 gap-2 px-3"
+              className="wood-key wood-key-go flex h-[44px] flex-1 items-center justify-center gap-2 rounded-[14px] border-[3px] px-3 font-display text-[15px]"
               onClick={start}
               disabled={isRunning}
             >
@@ -1495,7 +1495,7 @@ export const GameScene = ({
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-slate flex-col gap-0.5 px-3 leading-none"
+              className="wood-key flex h-[44px] flex-col items-center justify-center gap-0.5 rounded-[14px] border-[3px] px-3 font-display text-[13px] leading-none text-wood-ink"
               onClick={stop}
               disabled={!isRunning}
             >
@@ -1504,7 +1504,7 @@ export const GameScene = ({
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-ghost flex-col gap-0.5 px-3 leading-none"
+              className="wood-key flex h-[44px] flex-col items-center justify-center gap-0.5 rounded-[14px] border-[3px] px-3 font-display text-[13px] leading-none text-wood-ink"
               onClick={() => setConfirmingClear(true)}
               disabled={emptyCanvas || isRunning}
             >

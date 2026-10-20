@@ -574,6 +574,29 @@ a {
     filter: drop-shadow(0 6px 0 rgba(42, 27, 69, 0.18));
   }
 
+  .wood-key:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+    opacity: 0.6;
+  }
+
+  /*
+   * El marco del pasaporte sin el papel: para la escena del nivel, que tiene que
+   * seguir viendo su cielo por dentro.
+   */
+  .passport-frame {
+    border: 30px solid transparent;
+    border-image: url('./assets/brand/settings-passport-page.webp') 90 stretch;
+    /* Si no, el cielo de la escena asoma por las esquinas redondeadas del marco. */
+    background-clip: padding-box;
+  }
+
+  /* La barra de desplazamiento del lienzo, de la tinta del pasaporte y no gris. */
+  .columna-del-lienzo .blocklyScrollbarHandle {
+    fill: var(--sepia-soft);
+    fill-opacity: 0.35;
+  }
+
   /* La página del pasaporte: crece con los formularios, así que sólo se estira el papel. */
   .passport-page {
     border-style: solid;
@@ -581,6 +604,11 @@ a {
     border-width: 45px;
     border-image: url('./assets/brand/settings-passport-page.webp') 90 fill stretch;
     filter: drop-shadow(0 8px 0 rgba(42, 27, 69, 0.18));
+  }
+
+  /* El color liso del papel del pasaporte, para lo que flota encima sin marco. */
+  .passport-paper {
+    background-color: #fff6e5;
   }
 
   /* El papel del pasaporte, para fundir con él la ilustración del saludo de «Mundos». */
@@ -735,7 +763,7 @@ a {
   }
 
   @media (hover: hover) {
-    .wood-key:hover {
+    .wood-key:hover:not(:disabled) {
       transform: translateY(2px);
       box-shadow:
         0 3px 0 rgba(74, 42, 18, 0.85),
@@ -743,7 +771,7 @@ a {
     }
   }
 
-  .wood-key:active {
+  .wood-key:active:not(:disabled) {
     transform: translateY(5px);
     box-shadow: inset 0 3px 6px rgba(74, 42, 18, 0.35);
   }
@@ -764,6 +792,25 @@ a {
     transform: translateY(5px);
     box-shadow: inset 0 3px 6px rgba(74, 42, 18, 0.5);
   }
+
+  /* La tecla de «Ejecutar»: la misma madera, teñida de verde para que se vea primero. */
+  .wood-key-go {
+    background-color: var(--jungle-light);
+    border-color: var(--jungle-dark);
+    color: var(--jungle-dark);
+    box-shadow:
+      0 5px 0 var(--jungle-dark),
+      inset 0 -3px 0 rgba(18, 112, 61, 0.25);
+  }
+
+  @media (hover: hover) {
+    .wood-key-go:hover:not(:disabled) {
+      box-shadow:
+        0 3px 0 var(--jungle-dark),
+        inset 0 -3px 0 rgba(18, 112, 61, 0.25);
+    }
+  }
+
 
   @media (prefers-reduced-motion: reduce) {
     .wood-key {

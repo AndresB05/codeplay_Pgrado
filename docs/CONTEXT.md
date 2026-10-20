@@ -4670,6 +4670,16 @@ vuelven con ellos. La cabecera de las misiones del salón
 hasta la línea oscura del saludo, con el sello del salón y una casilla por
 misión que se sella al cumplirla; en el salón (`onMap`) no cambia.
 
+**La pantalla del nivel en pasaporte** (`StudentLevelModule.tsx`, 20-oct-2026):
+la escena va dentro del marco del pasaporte sin el papel (`.passport-frame`, con
+`background-clip: padding-box` para que el cielo no asome por las esquinas); la
+bandeja de bloques, en una página de borde fino y sin la caja interior; el lienzo,
+en otra página, con la zona punteada, el texto y la barra de Blockly en los
+tonos del pasaporte; las instrucciones, en su papel (`.passport-paper`). Los
+botones del juego (`game/GameScene.tsx`) son teclas de madera (`.wood-key`) y
+«Ejecutar», la verde (`.wood-key-go`); la tecla apagada sale en gris y no se
+hunde. El Laboratorio 3D comparte esos botones.
+
 **Las dos rachas en pergamino** (16-oct-2026): la de la barra superior
 (`topbar-streak-scroll-bold.webp`, sólo el número) y la del tronco de la barra
 lateral (`sidebar-streak-scroll-bold.webp`, «N días»), cada una una tira con su
