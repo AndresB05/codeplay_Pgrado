@@ -144,10 +144,10 @@ dejó fuera.
 | 33 | ★ [Misiones que el profesor asigna, ligadas al juego](#paso-33) | ✅ | `misiones-jugables` |
 | 27.1 | ★ [Despliegue provisional para la prueba](#paso-27-1) | ✅ | **usuario** |
 | — | 🔬 [Prueba preliminar](#prueba-preliminar) | ✅ | **usuario** |
+| 26 | [Ilustraciones con Gemini](#paso-26) | ✅ | P6 |
 | 14 | ★ [Política de privacidad y términos y condiciones](#paso-14) — el consentimiento del acudiente, aparcado | 🔄 | `invitaciones-sin-correo` + §3.4 |
 | 19 | [Invitaciones: enlace canjeable (hecho) y correo real (pendiente)](#paso-19) | 🔄 | `enlace-de-invitacion` + servicio |
 | 24 | Retirar la sesión de invitado — **no se hace**, ver §2.1 | ✅ | **usuario** |
-| 26 | [Ilustraciones con Gemini](#paso-26) | 🔄 | P6 |
 | 25 | ★ [Responsive, accesibilidad y `ErrorBoundary`](#paso-25) | ⬜ | — |
 | 30 | ★ [Migración al servidor de la universidad](#paso-30) | ⬜ | — |
 | 27.2 | ★ [Despliegue definitivo y URL de demo](#paso-27-2) | ⬜ | — |
@@ -748,6 +748,10 @@ esta mitad esquiva entera la decisión de privacidad de §3.4.
 contratado** (§2.2).
 
 #### <a id="paso-26"></a>26 · Ilustraciones con Gemini
+
+**HECHO el 21-oct-2026.** El panel del niño quedó entero ilustrado: mapas,
+corcho, pasaporte y madera, de la portada al nivel. El panel del tutor no entra
+en este paso. Ver `CONTEXT.md` §3 → P6.
 
 **Va ANTES del 25, ver §2.1**: hacer responsive un diseño que el apartado gráfico
 va a cambiar es hacerlo dos veces.
