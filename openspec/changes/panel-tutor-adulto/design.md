@@ -203,6 +203,16 @@ lista sale desplegada. El salón abierto nunca se esconde, pero plegada se ve
 veinte salones. El chevron sigue diciendo «plegada» y, al pulsarlo, despliega la
 lista entera y lo guarda.
 
+**Tanda 7 (del prototipo de Claude Design, sólo lo que escala con datos
+reales):** con más de 6 salones la lista desplegada gana un **buscador** y una
+**altura máxima** de unos 8 salones con scroll interno, así que el Panel de
+información y Ajustes quedan a la vista sin plegar nada. El buscador reutiliza el
+criterio que ya había —`matchesGroupSearch`, que ahora compara el nombre con
+`matchesName` y por tanto ignora acentos, y un ID público exacto que deja sólo
+ese salón— en vez de escribir otra normalización. Ojo: `matchesGroupSearch` la
+usa también el buscador de salones del niño, que con esto encuentra «Salón» al
+escribir «salon». Lo escrito no se guarda: es de esa visita.
+
 Barra lateral de 240 px desplegada y 64 px plegada: elementos de 36 px, el
 activo con fondo `tutor-accent-soft` y texto en el acento. Los salones cuelgan de
 «Salón de clases» con su pestaña de color, nombre y recuento. Plegada, cada salón

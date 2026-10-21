@@ -10,6 +10,7 @@ import {
   isExactIdSearch,
   isWorldFinished,
   matchesGroupSearch,
+  searchGroups,
   pickAvatarTone,
 } from './classroomsData';
 import type { CatalogWorld } from '../../../services/studentProgress.service';
@@ -136,6 +137,30 @@ describe('matchesGroupSearch', () => {
 
   it('devuelve false cuando no coincide con nada', () => {
     expect(matchesGroupSearch(group, 'química')).toBe(false);
+  });
+
+  it('coincide con el nombre sin distinguir acentos', () => {
+    expect(matchesGroupSearch(group, 'salon 1a')).toBe(true);
+  });
+});
+
+describe('searchGroups', () => {
+  const groups = [
+    buildTestGroup({ id: 'a', name: 'Salón 1A', publicId: 'CP-1A24' }),
+    buildTestGroup({ id: 'b', name: 'Robótica CP-1A24', publicId: 'CP-2B24' }),
+    buildTestGroup({ id: 'c', name: 'Música', publicId: 'CP-3C24' }),
+  ];
+
+  it('un ID público exacto devuelve sólo ese salón, aunque otro lo nombre', () => {
+    expect(searchGroups(groups, ' cp-1a24 ').map((group) => group.id)).toEqual(['a']);
+  });
+
+  it('si no es un ID, busca en el nombre sin acentos ni mayúsculas', () => {
+    expect(searchGroups(groups, 'MUSICA').map((group) => group.id)).toEqual(['c']);
+  });
+
+  it('la consulta vacía los deja a todos', () => {
+    expect(searchGroups(groups, '  ')).toHaveLength(3);
   });
 });
 

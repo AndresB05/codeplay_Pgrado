@@ -1,3 +1,4 @@
+import { matchesName } from '../shared/rosterFilters';
 import type { CatalogWorld } from '../../../services/studentProgress.service';
 import type {
   ClassGroup,
@@ -265,7 +266,7 @@ export const matchesGroupSearch = (group: ClassGroup, query: string): boolean =>
     return true;
   }
 
-  return group.name.toLowerCase().includes(normalized);
+  return matchesName(group.name, normalized);
 };
 
 /** `true` si la consulta apunta a un salón concreto por su ID público. */
@@ -275,6 +276,20 @@ export const isExactIdSearch = (groups: ClassGroup[], query: string): boolean =>
   return (
     normalized.length > 0 && groups.some((group) => group.publicId.toLowerCase() === normalized)
   );
+};
+
+/**
+ * Los salones que encuentra una búsqueda. Un ID público exacto devuelve sólo
+ * ese salón —quien lo escribe sabe a cuál va—; si no, coincide por nombre.
+ */
+export const searchGroups = (groups: ClassGroup[], query: string): ClassGroup[] => {
+  if (isExactIdSearch(groups, query)) {
+    const normalized = query.trim().toLowerCase();
+
+    return groups.filter((group) => group.publicId.toLowerCase() === normalized);
+  }
+
+  return groups.filter((group) => matchesGroupSearch(group, query));
 };
 
 const AVATAR_TONES = [

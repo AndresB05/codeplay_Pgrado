@@ -1,13 +1,18 @@
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
 import type { ClassGroup } from '../../../types/classroom.types';
 import { getGroupTheme } from '../shared/groupThemes';
+import { searchGroups } from './classroomsData';
 import { ChartIcon, GraduationIcon, LogoutIcon, SettingsIcon } from './TeacherIcons';
 import { useSidebarCollapsed } from '../../../hooks/useSidebarCollapsed';
 import { useTeacherGroupsFolded } from '../../../hooks/useTeacherGroupsFolded';
 import { SidebarToggle } from '../Sidebar/SidebarToggle';
+
+/* Con seis salones la lista cabe y se lee de un vistazo; a partir de ahí se busca. */
+const SEARCH_THRESHOLD = 6;
 
 interface TeacherSidebarProps {
   groups: ClassGroup[];
@@ -22,6 +27,9 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
   const { signOut } = useAuth();
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   const [groupsFolded, toggleGroupsFolded] = useTeacherGroupsFolded();
+  /* Lo escrito no se guarda: es de esta visita, como el de cualquier buscador. */
+  const [groupQuery, setGroupQuery] = useState('');
+  const activeGroupRef = useRef<HTMLButtonElement>(null);
 
   const totalPending = groups.reduce((total, group) => total + group.pendingRequests.length, 0);
 
@@ -33,9 +41,25 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
    * volvieran todos al entrar en uno, plegar no serviría de nada.
    */
   const groupsExpanded = !groupsFolded;
+  const showGroupSearch = groupsExpanded && !collapsed && groups.length > SEARCH_THRESHOLD;
   const listedGroups = groupsExpanded
-    ? groups
+    ? showGroupSearch
+      ? searchGroups(groups, groupQuery)
+      : groups
     : groups.filter((group) => group.id === activeGroupId);
+
+  /*
+   * La lista tiene altura máxima y se desplaza por dentro: el salón abierto
+   * puede quedar fuera, así que se lleva a la vista al entrar en él.
+   */
+  useEffect(() => {
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    activeGroupRef.current?.scrollIntoView?.({
+      block: 'nearest',
+      behavior: reduceMotion ? 'auto' : 'smooth',
+    });
+  }, [activeGroupId, collapsed, groupsExpanded]);
 
   /* Ver `Sidebar.tsx`: sin `signOut` la sesión de Supabase sobreviviría. */
   const handleLogout = async (): Promise<void> => {
@@ -155,11 +179,26 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
                * entre grupos. Aquí sólo va la pestaña de color; la insignia
                * ilustrada se queda donde hay sitio, en la tarjeta y la cabecera.
                */}
+              {item.route === ROUTES.TEACHER_GROUPS && showGroupSearch ? (
+                <div className="mt-1.5 pl-3 pr-1">
+                  <input
+                    type="search"
+                    value={groupQuery}
+                    onChange={(event) => setGroupQuery(event.target.value)}
+                    aria-label="Buscar salón"
+                    placeholder="Buscar salón…"
+                    className="tutor-field h-[32px] text-[13.5px]"
+                  />
+                </div>
+              ) : null}
+
               {item.route === ROUTES.TEACHER_GROUPS ? (
                 <div
                   id="teacher-groups-list"
                   hidden={listedGroups.length === 0}
-                  className={`mt-1 space-y-0.5 ${collapsed ? '' : 'pl-2'}`}
+                  className={`mt-1 max-h-[288px] space-y-0.5 overflow-y-auto overscroll-contain p-1 ${
+                    collapsed ? '' : 'pl-2'
+                  }`}
                 >
                   {listedGroups.map((group) => {
                     const isActive = isGroupsSection && activeGroupId === group.id;
@@ -168,6 +207,7 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
                     return (
                       <button
                         key={group.id}
+                        ref={isActive ? activeGroupRef : undefined}
                         type="button"
                         onClick={() => navigate(`${ROUTES.TEACHER_GROUPS}/${group.id}`)}
                         aria-label={collapsed ? group.name : undefined}
@@ -204,6 +244,14 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
                     );
                   })}
                 </div>
+              ) : null}
+
+              {item.route === ROUTES.TEACHER_GROUPS &&
+              showGroupSearch &&
+              listedGroups.length === 0 ? (
+                <p className="mt-1.5 pl-3 text-[13.5px] text-tutor-ink-faint">
+                  Ningún salón coincide
+                </p>
               ) : null}
             </div>
           );

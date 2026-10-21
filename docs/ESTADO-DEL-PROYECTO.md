@@ -605,6 +605,11 @@ La **barra superior** del tutor va en `grape-dark` liso con el texto en blanco
 visible en blanco, porque el contorno morado no se ve sobre el morado. El
 contenido de cada pantalla va centrado en su `<main>` (`mx-auto`).
 
+En la **barra lateral**, la lista de salones se pliega con su chevron y, con más
+de 6 salones, gana un buscador «Buscar salón…» (sin acentos ni mayúsculas; un ID
+público exacto deja sólo ese salón) y una altura máxima de unos 8 salones con
+scroll interno, para que Panel de información y Ajustes queden siempre a la vista.
+
 ---
 
 ## 3. Herramientas y stack

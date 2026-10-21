@@ -381,6 +381,7 @@ bordes de 1 px, radios de 12/8 px y tablas compactas.
 | `.tutor-scope` en el contenedor del tutor | `pages/TeacherDashboard/TeacherDashboard.tsx`; los dos diálogos lo llevan aparte porque van por portal |
 | La barra superior en `grape-dark` liso con texto blanco y foco en blanco (tanda 5, elegida por el usuario) | `teacher/TeacherTopBar.tsx` |
 | El contenido centrado en el `<main>` (`mx-auto`), para que en pantallas anchas no quede a la izquierda ni salte al plegar | Los cuatro módulos del tutor |
+| La lista de salones de la barra lateral: plegable (tanda 6) y, con más de 6 salones, con buscador y altura máxima con scroll (tanda 7) | `teacher/TeacherSidebar.tsx`; la búsqueda es `searchGroups` en `teacher/classroomsData.ts` |
 | La pestaña de color del salón y la insignia `GroupBadge shape="plain"` | `teacher/TeacherSidebar.tsx`, `TeacherGroupsModule.tsx`, `TeacherGroupDetailModule.tsx` |
 
 **El niño no cambia, y es estructural.** Las clases `.card`, `.btn`, `.chip` y

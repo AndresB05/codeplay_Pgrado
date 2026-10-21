@@ -29,7 +29,19 @@ const GROUPS = [
   buildGroup('g3', 'Salón C'),
 ];
 
-const renderSidebar = (activeGroupId: string | null = null) =>
+/* Ocho salones con tildes y mayúsculas, para que el buscador aparezca y tenga qué filtrar. */
+const MANY_GROUPS = [
+  buildGroup('m1', 'Robótica Tarde'),
+  buildGroup('m2', 'Música 3B'),
+  buildGroup('m3', 'Salón Ñandú'),
+  buildGroup('m4', 'Cuarto A'),
+  buildGroup('m5', 'Cuarto B'),
+  buildGroup('m6', 'Quinto A'),
+  buildGroup('m7', 'Quinto B'),
+  buildGroup('m8', 'Sexto A'),
+];
+
+const renderSidebar = (activeGroupId: string | null = null, groups: ClassGroup[] = GROUPS) =>
   render(
     <AuthContext.Provider value={buildAuthValue(buildUser({ role: 'tutor' }))}>
       <MemoryRouter initialEntries={['/inicio']}>
@@ -38,7 +50,7 @@ const renderSidebar = (activeGroupId: string | null = null) =>
             path="/inicio"
             element={
               <TeacherSidebar
-                groups={GROUPS}
+                groups={groups}
                 activeGroupId={activeGroupId}
                 activeSection={ROUTES.TEACHER_GROUPS}
               />
@@ -114,5 +126,53 @@ describe('TeacherSidebar, la lista de salones', () => {
     await userEvent.click(screen.getByRole('button', { name: /Salón de clases/ }));
 
     expect(screen.getByText('Mis salones')).toBeInTheDocument();
+  });
+});
+
+describe('TeacherSidebar, el buscador de salones', () => {
+  it('con seis salones no aparece; con siete, sí', () => {
+    const { unmount } = renderSidebar(null, MANY_GROUPS.slice(0, 6));
+    expect(screen.queryByRole('searchbox', { name: 'Buscar salón' })).not.toBeInTheDocument();
+    unmount();
+
+    renderSidebar(null, MANY_GROUPS.slice(0, 7));
+    expect(screen.getByRole('searchbox', { name: 'Buscar salón' })).toBeInTheDocument();
+  });
+
+  it('filtra por nombre sin acentos ni mayúsculas', async () => {
+    renderSidebar(null, MANY_GROUPS);
+
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar salón' }), 'ROBOTICA');
+
+    expect(screen.getByText('Robótica Tarde')).toBeVisible();
+    expect(screen.queryByText('Música 3B')).not.toBeInTheDocument();
+    expect(screen.queryByText('Cuarto A')).not.toBeInTheDocument();
+  });
+
+  it('un ID público exacto deja sólo ese salón', async () => {
+    renderSidebar(null, MANY_GROUPS);
+
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar salón' }), 'cp-m5');
+
+    expect(screen.getByText('Cuarto B')).toBeVisible();
+    expect(screen.queryByText('Cuarto A')).not.toBeInTheDocument();
+    expect(screen.queryByText('Quinto A')).not.toBeInTheDocument();
+  });
+
+  it('sin coincidencias lo dice', async () => {
+    renderSidebar(null, MANY_GROUPS);
+
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar salón' }), 'química');
+
+    expect(screen.getByText('Ningún salón coincide')).toBeInTheDocument();
+    expect(screen.queryByText('Cuarto A')).not.toBeInTheDocument();
+  });
+
+  it('al plegar la lista desaparece el buscador', async () => {
+    renderSidebar(null, MANY_GROUPS);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ocultar tus salones' }));
+
+    expect(screen.queryByRole('searchbox', { name: 'Buscar salón' })).not.toBeInTheDocument();
   });
 });
