@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -49,10 +49,10 @@ const ARTE = buildGroup('g2', 'Arte', [student('s3', 'Carla')]);
 const DetailFromRoute = () => <TeacherGroupDetailModule groupId={useParams().groupId} />;
 const CurrentPath = () => <p data-testid="ruta">{useLocation().pathname}</p>;
 
-const renderDetail = (groups: ClassGroup[]) =>
+const renderDetail = (groups: ClassGroup[], onlineStudentIds = new Set<string>()) =>
   render(
     <MemoryRouter initialEntries={['/teacher/groups/g1']}>
-      <ClassroomsContext.Provider value={buildClassroomsValue({ groups })}>
+      <ClassroomsContext.Provider value={buildClassroomsValue({ groups, onlineStudentIds })}>
         <Routes>
           <Route path="/teacher/groups/:groupId" element={<DetailFromRoute />} />
         </Routes>
@@ -110,5 +110,84 @@ describe('TeacherGroupDetailModule: ir a otro salón', () => {
     await userEvent.selectOptions(screen.getByLabelText('Ir a otro salón'), 'g2');
 
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' });
+  });
+});
+
+describe('TeacherGroupDetailModule: requiere tu atención', () => {
+  const DAY = 24;
+  const away = (id: string, name: string, days: number | null): ClassroomStudent => ({
+    ...student(id, name),
+    hoursSinceLastActivity: days === null ? null : days * DAY,
+  });
+
+  beforeEach(() => {
+    window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
+  });
+
+  it('sólo lista a quien lleva una semana o más sin jugar y no está conectado', () => {
+    renderDetail(
+      [
+        buildGroup('g1', 'Música', [
+          away('s1', 'Ana', 11),
+          away('s2', 'Bruno', 3),
+          away('s3', 'Carla', 8),
+          away('s4', 'Dani', null),
+          away('s5', 'Eva', 20),
+        ]),
+      ],
+      new Set(['s5'])
+    );
+
+    const block = within(
+      screen
+        .getByRole('heading', { name: 'Requiere tu atención' })
+        .closest('section') as HTMLElement
+    );
+
+    expect(
+      block
+        .getAllByRole('button', { name: /^Ver progreso de / })
+        .map((b) => b.getAttribute('aria-label'))
+    ).toEqual(['Ver progreso de Ana', 'Ver progreso de Carla']);
+    expect(block.getByText('Última actividad hace 11 días')).toBeInTheDocument();
+  });
+
+  it('sin nadie así, el bloque no sale', () => {
+    renderDetail([buildGroup('g1', 'Música', [away('s1', 'Ana', 2)])]);
+
+    expect(screen.queryByRole('heading', { name: 'Requiere tu atención' })).not.toBeInTheDocument();
+  });
+
+  it('enseña cuatro y «Ver todos» despliega el resto', async () => {
+    renderDetail([
+      buildGroup(
+        'g1',
+        'Música',
+        ['Ana', 'Bruno', 'Carla', 'Dani', 'Eva', 'Fede'].map((name, index) =>
+          away(`s${index}`, name, 30 - index)
+        )
+      ),
+    ]);
+
+    expect(screen.getAllByRole('button', { name: /^Ver progreso de / })).toHaveLength(4);
+
+    const more = screen.getByRole('button', { name: 'Ver todos (6)' });
+    expect(more).toHaveAttribute('aria-expanded', 'false');
+
+    await userEvent.click(more);
+
+    expect(screen.getAllByRole('button', { name: /^Ver progreso de / })).toHaveLength(6);
+    expect(screen.getByRole('button', { name: 'Ver menos' })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
+  });
+
+  it('«Ver progreso» abre su ficha en el panel', async () => {
+    renderDetail([buildGroup('g1', 'Música', [away('s1', 'Ana', 9)])]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ver progreso de Ana' }));
+
+    expect(screen.getByTestId('ruta')).toHaveTextContent('/teacher/panel/g1/s1');
   });
 });

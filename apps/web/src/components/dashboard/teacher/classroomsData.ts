@@ -330,6 +330,32 @@ export const sortGroups = (
   );
 };
 
+/* Una semana sin jugar: a partir de ahí el tutor debería preguntar qué pasa. */
+export const INACTIVE_HOURS = 7 * 24;
+
+/**
+ * Quién lleva una semana o más sin jugar, del que más al que menos. Quien está
+ * conectado ahora no cuenta aunque su última partida sea vieja: ya volvió. Y
+ * quien no ha jugado nunca tampoco: no hay fecha de la que medir la ausencia, y
+ * la tabla ya lo dice con «Sin actividad».
+ */
+export const inactiveStudents = (
+  students: ClassroomStudent[],
+  onlineIds: ReadonlySet<string>
+): ClassroomStudent[] =>
+  students
+    .filter(
+      (student) =>
+        !onlineIds.has(student.id) &&
+        student.hoursSinceLastActivity !== null &&
+        student.hoursSinceLastActivity >= INACTIVE_HOURS
+    )
+    .sort(
+      (a, b) =>
+        (b.hoursSinceLastActivity ?? 0) - (a.hoursSinceLastActivity ?? 0) ||
+        a.name.localeCompare(b.name, 'es')
+    );
+
 const AVATAR_TONES = [
   'bg-[#EFE5FF] text-[#7C3AED]',
   'bg-[#FFE8CC] text-[#C97A00]',

@@ -243,9 +243,15 @@ export const StudentRosterTable = ({
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          /*
+           * Con un salón de treinta, la tabla empujaba todo lo demás fuera de la
+           * pantalla: se desplaza por dentro y la cabecera se queda. El borde de la
+           * cabecera va como sombra porque, con `border-collapse`, el borde no
+           * acompaña a la celda fija.
+           */
+          <div className="max-h-[560px] overflow-auto overscroll-contain">
             <table className="tutor-table min-w-[720px]">
-              <thead>
+              <thead className="sticky top-0 z-[1] [&_th]:shadow-[inset_0_-1px_0_var(--tutor-rule)]">
                 <tr>
                   <th scope="col">Explorador</th>
                   <th scope="col">Mundo actual</th>

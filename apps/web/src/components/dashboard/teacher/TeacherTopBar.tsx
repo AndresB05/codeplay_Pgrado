@@ -9,9 +9,10 @@ interface TeacherTopBarProps {
   user: User | null;
 }
 
+/* «Recursos» es una pestaña del panel: el estado le dice cuál abrir. */
 const topLinks = [
-  { label: 'Inicio', route: ROUTES.TEACHER_GROUPS },
-  { label: 'Recursos', route: ROUTES.TEACHER_PANEL },
+  { label: 'Inicio', route: ROUTES.TEACHER_GROUPS, state: undefined },
+  { label: 'Recursos', route: ROUTES.TEACHER_PANEL, state: { panelTab: 'resources' } },
 ];
 
 export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
@@ -52,7 +53,7 @@ export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
             <button
               key={link.label}
               type="button"
-              onClick={() => navigate(link.route)}
+              onClick={() => navigate(link.route, { state: link.state })}
               aria-current={isActive ? 'page' : undefined}
               className={`tutor-focus h-[34px] rounded-[8px] px-3 text-[14.5px] font-semibold text-white transition-colors focus-visible:outline-white ${
                 isActive ? 'bg-white/15' : 'hover:bg-white/10'

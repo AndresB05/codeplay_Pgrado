@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import type { ClassroomStudent, Mission } from '../../../types/classroom.types';
 import { FilterSelect, RosterFilterBar } from '../shared/RosterFilterBar';
-import { filterRoster, NO_FILTERS, worldOptions, type RosterFilters } from '../shared/rosterFilters';
+import {
+  filterRoster,
+  NO_FILTERS,
+  worldOptions,
+  type RosterFilters,
+} from '../shared/rosterFilters';
 
 type StatusFilter = 'all' | 'done' | 'pending';
 
@@ -74,7 +79,13 @@ export const MissionCompletionTable = ({
         <table className="tutor-table min-w-[560px]">
           <thead>
             <tr>
-              <th scope="col">Explorador</th>
+              {/* Con muchas misiones la tabla se desplaza: el explorador se queda a la vista. */}
+              <th
+                scope="col"
+                className="sticky left-0 z-[1] shadow-[inset_-1px_0_0_var(--tutor-rule)]"
+              >
+                Explorador
+              </th>
               {missions.map((mission) => (
                 <th key={mission.key} scope="col">
                   {mission.title}
@@ -85,7 +96,9 @@ export const MissionCompletionTable = ({
           <tbody>
             {rows.map((student) => (
               <tr key={student.id}>
-                <td className="font-semibold text-tutor-ink">{student.name}</td>
+                <td className="sticky left-0 z-[1] bg-tutor-surface font-semibold text-tutor-ink shadow-[inset_-1px_0_0_var(--tutor-rule)]">
+                  {student.name}
+                </td>
                 {missions.map((mission) => {
                   const isCompleted = completedPairs.has(`${student.id}:${mission.key}`);
 

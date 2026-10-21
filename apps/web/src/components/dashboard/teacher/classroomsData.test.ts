@@ -11,6 +11,7 @@ import {
   isWorldFinished,
   matchesGroupSearch,
   searchGroups,
+  inactiveStudents,
   sortGroups,
   pickAvatarTone,
 } from './classroomsData';
@@ -711,5 +712,44 @@ describe('sortGroups', () => {
     sortGroups(groups, 'pending');
 
     expect(groups).toEqual(copy);
+  });
+});
+
+describe('inactiveStudents', () => {
+  const DAY = 24;
+  const NOBODY = new Set<string>();
+
+  it('deja a quien lleva siete días o más, del que más al que menos', () => {
+    const students = [
+      buildTestStudent({ id: 'a', name: 'Ana', hoursSinceLastActivity: 7 * DAY }),
+      buildTestStudent({ id: 'b', name: 'Beto', hoursSinceLastActivity: 7 * DAY - 1 }),
+      buildTestStudent({ id: 'c', name: 'Carla', hoursSinceLastActivity: 12 * DAY }),
+    ];
+
+    expect(inactiveStudents(students, NOBODY).map((student) => student.name)).toEqual([
+      'Carla',
+      'Ana',
+    ]);
+  });
+
+  it('no cuenta a quien está conectado ni a quien nunca jugó', () => {
+    const students = [
+      buildTestStudent({ id: 'a', name: 'Ana', hoursSinceLastActivity: 9 * DAY }),
+      buildTestStudent({ id: 'b', name: 'Beto', hoursSinceLastActivity: null }),
+    ];
+
+    expect(inactiveStudents(students, new Set(['a']))).toEqual([]);
+  });
+
+  it('en empate, por nombre', () => {
+    const students = [
+      buildTestStudent({ id: 'z', name: 'Zoe', hoursSinceLastActivity: 8 * DAY }),
+      buildTestStudent({ id: 'a', name: 'Álvaro', hoursSinceLastActivity: 8 * DAY }),
+    ];
+
+    expect(inactiveStudents(students, NOBODY).map((student) => student.name)).toEqual([
+      'Álvaro',
+      'Zoe',
+    ]);
   });
 });

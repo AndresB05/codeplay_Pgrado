@@ -623,6 +623,15 @@ lista; el salón nuevo se abre arriba y sin los filtros del anterior.
 En **móvil** (por debajo de `md`), la barra lateral del tutor va siempre en
 iconos y sin el botón para desplegarla, sin tocar la preferencia guardada.
 
+El **detalle del salón** abre con «Requiere tu atención» (quien lleva una semana
+o más sin jugar) y las solicitudes a la izquierda, y las cifras y el podio a la
+derecha; la tabla de seguimiento se desplaza por dentro con la cabecera fija.
+El **Panel de información** elige el salón en un desplegable y se reparte en
+pestañas —Progreso, Misiones y Recursos—, con las cifras en anillos y la lista de
+exploradores junto a su ficha. **Ajustes** tiene una tarjeta de perfil, las filas
+de nombre, correo y contraseña, los salones con su ocupación y «Eliminar cuenta»
+aparte; «Cerrar sesión» queda sólo en la barra lateral.
+
 ---
 
 ## 3. Herramientas y stack

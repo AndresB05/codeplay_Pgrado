@@ -239,6 +239,18 @@ escritorio. La barra del niño no resolvía el móvil, así que no había patró
 copiar. Con la franja «Solicitudes en espera» a la vista, el total junto a
 «Grupos de clase» se quita: decía lo mismo dos veces.
 
+**Tanda 9 (el prototipo en el detalle, el panel y ajustes, sólo con datos que ya
+existen):** el detalle pone a la izquierda lo que pide actuar —«Requiere tu
+atención» y las solicitudes— y a la derecha lo que se mira —las cifras y el
+podio—. «Requiere tu atención» usa la última actividad que ya pinta la tabla:
+una semana o más sin jugar, sin contar a quien está conectado ni a quien nunca
+jugó, porque de ése no hay fecha y la tabla ya dice «Sin actividad». El panel
+separa en pestañas lo que antes era una página larga, y la ficha del explorador
+queda junto a la lista para cambiar de uno a otro sin perderla de vista. Ajustes
+deja de duplicar «Cerrar sesión». Lo que el prototipo enseña sin dato detrás
+queda fuera: el «Nv» del explorador, las mascotas como avatar en las piezas
+nuevas, el «XP del salón» y la etiqueta de «Inactivo N días» como estado propio.
+
 Barra lateral de 240 px desplegada y 64 px plegada: elementos de 36 px, el
 activo con fondo `tutor-accent-soft` y texto en el acento. Los salones cuelgan de
 «Salón de clases» con su pestaña de color, nombre y recuento. Plegada, cada salón

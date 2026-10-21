@@ -48,7 +48,9 @@ export const DeleteAccountPanel = ({ variant = 'default' }: DeleteAccountPanelPr
   return (
     <div
       className={
-        tutor ? 'mt-6 border-t border-tutor-rule pt-5' : 'mt-6 border-t-[3px] border-line pt-6'
+        tutor
+          ? 'tutor-card border-tutor-danger/30 px-5 py-4'
+          : 'mt-6 border-t-[3px] border-line pt-6'
       }
     >
       <h3

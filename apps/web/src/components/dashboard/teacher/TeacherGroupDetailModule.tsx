@@ -12,7 +12,8 @@ import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { ClassroomPodium } from '../shared/ClassroomPodium';
 import { podiumRanking } from '../shared/podiumRanking';
 import { StudentRosterTable } from '../shared/StudentRosterTable';
-import { findClassGroup, getClassGroupStats, sortGroups } from './classroomsData';
+import { findClassGroup, getClassGroupStats, inactiveStudents, sortGroups } from './classroomsData';
+import { AttentionSection } from './AttentionSection';
 import { AddStudentsPanel } from './AddStudentsPanel';
 import { ExportReportMenu } from './ExportReportMenu';
 import { PendingRequestsSection } from './PendingRequestsSection';
@@ -90,7 +91,7 @@ const GroupDetail = ({ groupId }: TeacherGroupDetailModuleProps) => {
     navigate(ROUTES.TEACHER_GROUPS);
   };
 
-  /* El podio sólo existe si alguien ha ganado XP; sin él, las solicitudes ocupan la fila entera. */
+  /* El podio sólo existe si alguien ha ganado XP. */
   const hasPodium = podiumRanking(group.students).length > 0;
 
   return (
@@ -201,19 +202,17 @@ const GroupDetail = ({ groupId }: TeacherGroupDetailModuleProps) => {
           </div>
         ) : null}
 
-        <dl className="tutor-stats mt-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="Exploradores" value={String(stats.totalStudents)} variant="tutor" />
-          <StatCard title="Mundo más común" value={stats.averageWorldLabel} variant="tutor" />
-          <StatCard
-            title="Conectados ahora"
-            value={`${stats.connectedNow} de ${stats.totalStudents}`}
-            variant="tutor"
-          />
-          <StatCard title="Cupos libres" value={String(stats.freeSeats)} variant="tutor" />
-        </dl>
+        {/*
+         * A la izquierda, lo que pide hacer algo —quién se descuelga y quién
+         * espera entrar—; a la derecha, lo que sólo se mira.
+         */}
+        <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="flex min-w-0 flex-col gap-4">
+            <AttentionSection
+              students={inactiveStudents(group.students, onlineStudentIds)}
+              onOpen={(studentId) => navigate(`${ROUTES.TEACHER_PANEL}/${group.id}/${studentId}`)}
+            />
 
-        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-start">
-          <div className="min-w-0 flex-1">
             <PendingRequestsSection
               group={group}
               freeSeats={stats.freeSeats}
@@ -222,11 +221,20 @@ const GroupDetail = ({ groupId }: TeacherGroupDetailModuleProps) => {
             />
           </div>
 
-          {hasPodium ? (
-            <div className="lg:w-[320px] lg:shrink-0">
-              <ClassroomPodium students={group.students} variant="tutor" />
-            </div>
-          ) : null}
+          <div className="flex min-w-0 flex-col gap-4">
+            <dl className="tutor-stats grid-cols-2">
+              <StatCard title="Exploradores" value={String(stats.totalStudents)} variant="tutor" />
+              <StatCard
+                title="Conectados ahora"
+                value={`${stats.connectedNow} de ${stats.totalStudents}`}
+                variant="tutor"
+              />
+              <StatCard title="Mundo más común" value={stats.averageWorldLabel} variant="tutor" />
+              <StatCard title="Cupos libres" value={String(stats.freeSeats)} variant="tutor" />
+            </dl>
+
+            {hasPodium ? <ClassroomPodium students={group.students} variant="tutor" /> : null}
+          </div>
         </div>
 
         <section className="mt-8 pb-4">

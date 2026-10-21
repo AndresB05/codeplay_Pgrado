@@ -238,6 +238,17 @@ const renderPanel = (
     </MemoryRouter>
   );
 
+/*
+ * Las misiones y los recursos viven en su pestaña: se abre como lo haría el
+ * tutor antes de mirar nada de ellas.
+ */
+const renderPanelOn = async (tab: string, ...args: Parameters<typeof renderPanel>) => {
+  const view = renderPanel(...args);
+  await userEvent.click(screen.getByRole('tab', { name: tab }));
+
+  return view;
+};
+
 describe('TeacherPanelModule', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -282,7 +293,7 @@ describe('TeacherPanelModule', () => {
 
   describe('fecha límite de las misiones', () => {
     it('asignar pregunta hasta cuándo, y por defecto la deja sin límite', async () => {
-      renderPanel(TWO_GROUPS, null);
+      await renderPanelOn('Misiones', TWO_GROUPS, null);
 
       await waitFor(() => {
         expect(missionButton()).toHaveTextContent('Asignar misión');
@@ -299,7 +310,7 @@ describe('TeacherPanelModule', () => {
     });
 
     it('manda el día elegido en el calendario', async () => {
-      renderPanel(TWO_GROUPS, 'g1');
+      await renderPanelOn('Misiones', TWO_GROUPS, 'g1');
 
       await waitFor(() => {
         expect(missionButton()).toHaveTextContent('Asignar misión');
@@ -320,13 +331,14 @@ describe('TeacherPanelModule', () => {
         error: null,
       });
 
-      renderPanel(TWO_GROUPS, 'g1');
+      await renderPanelOn('Misiones', TWO_GROUPS, 'g1');
 
       expect(await screen.findByText('Vence el 25 de septiembre.')).toBeInTheDocument();
     });
 
     it('con la ficha de un alumno abierta avisa de que se asigna a todo el salón', async () => {
-      renderPanel(
+      await renderPanelOn(
+        'Misiones',
         [{ ...buildGroup('g1', 'Salón A'), students: [buildStudent()] }],
         'g1',
         undefined,
@@ -339,7 +351,11 @@ describe('TeacherPanelModule', () => {
     });
 
     it('sin alumno abierto no hace falta el aviso', async () => {
-      renderPanel([{ ...buildGroup('g1', 'Salón A'), students: [buildStudent()] }], 'g1');
+      await renderPanelOn(
+        'Misiones',
+        [{ ...buildGroup('g1', 'Salón A'), students: [buildStudent()] }],
+        'g1'
+      );
 
       await waitFor(() => {
         expect(missionButton()).toHaveTextContent('Asignar misión');
@@ -354,7 +370,7 @@ describe('TeacherPanelModule', () => {
         error: null,
       });
 
-      renderPanel(TWO_GROUPS, 'g1');
+      await renderPanelOn('Misiones', TWO_GROUPS, 'g1');
 
       await waitFor(() => {
         expect(missionButton()).toHaveTextContent('Asignar misión');
@@ -369,7 +385,7 @@ describe('TeacherPanelModule', () => {
         error: null,
       });
 
-      renderPanel(TWO_GROUPS, null);
+      await renderPanelOn('Misiones', TWO_GROUPS, null);
 
       await waitFor(() => {
         expect(missionButton()).toHaveTextContent('Asignada');
@@ -382,7 +398,7 @@ describe('TeacherPanelModule', () => {
         error: null,
       });
 
-      renderPanel(TWO_GROUPS, null);
+      await renderPanelOn('Misiones', TWO_GROUPS, null);
 
       expect(await screen.findByText('Asignada en 1 de 2 salones.')).toBeInTheDocument();
       expect(missionButton()).toHaveTextContent('Asignar en los demás');
@@ -394,7 +410,7 @@ describe('TeacherPanelModule', () => {
         error: null,
       });
 
-      renderPanel(TWO_GROUPS, 'g2');
+      await renderPanelOn('Misiones', TWO_GROUPS, 'g2');
 
       await waitFor(() => {
         expect(missionButton()).toHaveTextContent('Asignar misión');
@@ -404,7 +420,7 @@ describe('TeacherPanelModule', () => {
     it('sin ningún salón deja los botones deshabilitados y dice por qué', async () => {
       mocks.listAssignments.mockResolvedValue({ data: [], error: null });
 
-      renderPanel([], null);
+      await renderPanelOn('Misiones', [], null);
 
       await waitFor(() => {
         expect(missionButton()).toBeDisabled();
@@ -421,7 +437,7 @@ describe('TeacherPanelModule', () => {
         error: null,
       });
 
-      renderPanel(TWO_GROUPS, null);
+      await renderPanelOn('Misiones', TWO_GROUPS, null);
 
       await screen.findByText('Recorre el Sendero');
 
@@ -456,7 +472,7 @@ describe('TeacherPanelModule', () => {
         error: null,
       });
 
-      renderPanel([groupWithStudents], 'g1');
+      await renderPanelOn('Misiones', [groupWithStudents], 'g1');
 
       expect(await screen.findByText('Quién ha cumplido')).toBeInTheDocument();
       const table = within(screen.getByRole('table'));
@@ -494,7 +510,7 @@ describe('TeacherPanelModule', () => {
         error: null,
       });
 
-      renderPanel([groupWithTwo], 'g1');
+      await renderPanelOn('Misiones', [groupWithTwo], 'g1');
 
       await screen.findByText('Quién ha cumplido');
 
@@ -531,7 +547,7 @@ describe('TeacherPanelModule', () => {
         error: null,
       });
 
-      renderPanel([groupWithTwo], 'g1');
+      await renderPanelOn('Misiones', [groupWithTwo], 'g1');
 
       await screen.findByText('Quién ha cumplido');
 
@@ -557,7 +573,7 @@ describe('TeacherPanelModule', () => {
         error: null,
       });
 
-      renderPanel([buildGroup('g1', 'Salón A')], 'g1');
+      await renderPanelOn('Misiones', [buildGroup('g1', 'Salón A')], 'g1');
 
       expect(
         await screen.findByText(/todavía no tiene exploradores inscritos/i)
@@ -647,7 +663,7 @@ describe('TeacherPanelModule', () => {
     it('una dirección con alguien que no está en el alcance no abre ficha', async () => {
       renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'de-otro-salón');
 
-      await screen.findByText('Recorre el Sendero');
+      await screen.findByText('Elige un explorador');
 
       expect(screen.queryByText('Cordillera de la Abstracción')).not.toBeInTheDocument();
       expect(mocks.getDetail).not.toHaveBeenCalled();
@@ -689,7 +705,7 @@ describe('TeacherPanelModule', () => {
     it('cambiar de alcance suelta al explorador', async () => {
       renderPanel([GROUP_WITH_AXOLUK, buildGroup('g2', 'Salón B')], 'g1', undefined, 'kid-1');
 
-      await userEvent.click(await screen.findByRole('button', { name: 'Salón B' }));
+      await userEvent.selectOptions(await screen.findByLabelText('Salón'), 'g2');
 
       expect(currentPath()).toBe('/teacher/panel/g2');
     });
@@ -697,7 +713,7 @@ describe('TeacherPanelModule', () => {
     it('volver a «Todos» deja la dirección en el panel a secas', async () => {
       renderPanel([GROUP_WITH_AXOLUK], 'g1', undefined, 'kid-1');
 
-      await userEvent.click(await screen.findByRole('button', { name: 'Todos' }));
+      await userEvent.selectOptions(await screen.findByLabelText('Salón'), 'all');
 
       expect(currentPath()).toBe('/teacher/panel');
     });
@@ -748,7 +764,7 @@ describe('TeacherPanelModule', () => {
       const names = () =>
         screen
           .getAllByRole('button', { pressed: false })
-          .map((button) => button.textContent)
+          .map((button) => button.getAttribute('aria-label'))
           .filter((name) => ['Axoluk', 'Sofía Pérez', 'Luis Gómez'].includes(name ?? ''));
 
       await screen.findByLabelText('Buscar explorador');
@@ -771,7 +787,7 @@ describe('TeacherPanelModule', () => {
 
   describe('recursos educativos', () => {
     it('abre el recurso al pulsar su tarjeta, y Escape lo cierra', async () => {
-      renderPanel(TWO_GROUPS, null);
+      await renderPanelOn('Recursos', TWO_GROUPS, null);
 
       await userEvent.click(screen.getByRole('button', { name: /Acompañar sin dar la respuesta/ }));
 
@@ -784,7 +800,7 @@ describe('TeacherPanelModule', () => {
     });
 
     it('Tab no sale de la ventana, y al cerrar el foco vuelve a la tarjeta', async () => {
-      renderPanel(TWO_GROUPS, null);
+      await renderPanelOn('Recursos', TWO_GROUPS, null);
 
       const card = screen.getByRole('button', { name: /Qué significan los trofeos/ });
       await userEvent.click(card);
@@ -804,6 +820,135 @@ describe('TeacherPanelModule', () => {
 
       await userEvent.click(close);
       expect(card).toHaveFocus();
+    });
+  });
+
+  describe('desplegable de salón', () => {
+    it('ofrece «Todos los salones» con el recuento y los salones por nombre', async () => {
+      renderPanel([buildGroup('g2', 'Salón B'), buildGroup('g1', 'Salón A')], null);
+
+      const select = await screen.findByLabelText('Salón');
+
+      expect(select).toHaveValue('all');
+      expect(
+        Array.from((select as HTMLSelectElement).options).map((option) => option.textContent)
+      ).toEqual(['Todos los salones (2)', 'Salón A', 'Salón B']);
+    });
+
+    it('elegir un salón lo escribe en la dirección', async () => {
+      renderPanel(TWO_GROUPS, null);
+
+      await userEvent.selectOptions(await screen.findByLabelText('Salón'), 'g1');
+
+      expect(currentPath()).toBe('/teacher/panel/g1');
+    });
+  });
+
+  describe('pestañas', () => {
+    it('Progreso por defecto; Misiones y Recursos enseñan lo suyo y nada más', async () => {
+      renderPanel(TWO_GROUPS, null);
+
+      expect(screen.getByRole('tab', { name: 'Progreso' })).toHaveAttribute(
+        'aria-selected',
+        'true'
+      );
+      expect(screen.queryByText('Recorre el Sendero')).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('tab', { name: 'Misiones' }));
+      expect(await screen.findByText('Recorre el Sendero')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Qué significan los trofeos/ })).toBeNull();
+
+      await userEvent.click(screen.getByRole('tab', { name: 'Recursos' }));
+      expect(
+        screen.getByRole('button', { name: /Qué significan los trofeos/ })
+      ).toBeInTheDocument();
+      expect(screen.queryByText('Recorre el Sendero')).not.toBeInTheDocument();
+    });
+
+    it('«Recursos» de la barra superior llega con su pestaña abierta', () => {
+      render(
+        <MemoryRouter
+          initialEntries={[{ pathname: '/teacher/panel', state: { panelTab: 'resources' } }]}
+        >
+          <ClassroomsContext.Provider value={buildClassroomsValue({ groups: TWO_GROUPS })}>
+            <TeacherPanelModule groups={TWO_GROUPS} groupId={null} studentId={null} />
+          </ClassroomsContext.Provider>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole('tab', { name: 'Recursos' })).toHaveAttribute(
+        'aria-selected',
+        'true'
+      );
+    });
+
+    it('las flechas cambian de pestaña y se llevan el foco', async () => {
+      renderPanel(TWO_GROUPS, null);
+
+      const progress = screen.getByRole('tab', { name: 'Progreso' });
+      progress.focus();
+      await userEvent.keyboard('{ArrowRight}');
+
+      expect(screen.getByRole('tab', { name: 'Misiones' })).toHaveFocus();
+      expect(screen.getByRole('tab', { name: 'Misiones' })).toHaveAttribute(
+        'aria-selected',
+        'true'
+      );
+
+      await userEvent.keyboard('{ArrowLeft}{ArrowLeft}');
+      expect(screen.getByRole('tab', { name: 'Recursos' })).toHaveFocus();
+    });
+  });
+
+  describe('lista de exploradores y ficha', () => {
+    const SALON_A: ClassGroup = {
+      ...buildGroup('g1', 'Salón A'),
+      memberCount: 1,
+      students: [buildStudent()],
+    };
+    const SALON_B: ClassGroup = {
+      ...buildGroup('g2', 'Salón B'),
+      memberCount: 1,
+      students: [buildStudent({ id: 'kid-2', name: 'Beto' })],
+    };
+
+    it('sin nadie elegido pide elegir; elegido, abre su ficha al lado', async () => {
+      mocks.getDetail.mockResolvedValue({ data: AXOLUK_DETAIL, error: null });
+
+      const { rerender } = renderPanel([SALON_A], 'g1');
+
+      expect(await screen.findByText('Elige un explorador')).toBeInTheDocument();
+
+      rerender(
+        <MemoryRouter initialEntries={['/teacher/panel']}>
+          <ClassroomsContext.Provider value={buildClassroomsValue({ groups: [SALON_A] })}>
+            <TeacherPanelModule groups={[SALON_A]} groupId="g1" studentId="kid-1" />
+          </ClassroomsContext.Provider>
+        </MemoryRouter>
+      );
+
+      expect(await screen.findByText(/2 de 9 niveles superados/)).toBeInTheDocument();
+      expect(screen.queryByText('Elige un explorador')).not.toBeInTheDocument();
+    });
+
+    it('con «Todos», cada fila dice de qué salón es y cuántos niveles lleva', async () => {
+      renderPanel([SALON_A, SALON_B], null);
+
+      const beto = await screen.findByRole('button', { name: 'Beto' });
+
+      await waitFor(() => {
+        expect(beto).toHaveAccessibleDescription('Salón B · 2 de 9 niveles');
+      });
+    });
+
+    it('con un salón elegido, la fila no repite el salón', async () => {
+      renderPanel([SALON_A, SALON_B], 'g1');
+
+      const axoluk = await screen.findByRole('button', { name: 'Axoluk' });
+
+      await waitFor(() => {
+        expect(axoluk).toHaveAccessibleDescription('2 de 9 niveles');
+      });
     });
   });
 });

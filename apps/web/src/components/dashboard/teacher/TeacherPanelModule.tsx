@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import { ROUTES } from '../../../constants/routes';
 import { useClassrooms } from '../../../hooks/useClassrooms';
@@ -21,8 +21,9 @@ import type {
 } from '../../../types/classroom.types';
 import type { AppError } from '../../../errors/AppError';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
-import { StatCard } from '../shared/StatCard';
+import { ChevronIcon } from '../shared/RosterFilterBar';
 import { MissionCompletionTable } from './MissionCompletionTable';
+import { StatRing } from './StatRing';
 import { StudentPicker } from './StudentPicker';
 import { TeacherResourceDialog } from './TeacherResourceDialog';
 import { resourceReadMinutes, teacherResources } from './teacherResources';
@@ -31,6 +32,7 @@ import {
   formatLastActivity,
   getClassroomProgressSummary,
   isWorldFinished,
+  sortGroups,
   type StudentLevelProgress,
   type StudentWorldProgress,
 } from './classroomsData';
@@ -45,6 +47,24 @@ interface TeacherPanelModuleProps {
 }
 
 const ALL_GROUPS = 'all';
+
+type PanelTab = 'progress' | 'missions' | 'resources';
+
+const TABS: { key: PanelTab; label: string }[] = [
+  { key: 'progress', label: 'Progreso' },
+  { key: 'missions', label: 'Misiones' },
+  { key: 'resources', label: 'Recursos' },
+];
+
+/* La pestaña que pide quien navega hasta aquí, como «Recursos» en la barra superior. */
+const requestedTab = (state: unknown): PanelTab | null => {
+  const tab = (state as { panelTab?: unknown } | null)?.panelTab;
+
+  return TABS.some((item) => item.key === tab) ? (tab as PanelTab) : null;
+};
+
+/* Una proporción para el anillo; sin denominador no hay nada que dibujar. */
+const ratioOf = (part: number, whole: number): number | null => (whole > 0 ? part / whole : null);
 
 /* Hasta que el catálogo llegue no hay denominador, y sin él no se pinta ninguna fracción. */
 const EMPTY_CATALOG: CatalogWorld[] = [];
@@ -269,7 +289,7 @@ const StudentProgressCard = ({
 
   if (error) {
     return (
-      <div className="mt-4">
+      <div>
         <StoreErrorNotice error={error} variant="tutor" />
       </div>
     );
@@ -277,7 +297,7 @@ const StudentProgressCard = ({
 
   if (loading || !detail) {
     return (
-      <p className="tutor-card mt-4 px-4 py-3 text-tutor-ink-soft">
+      <p className="tutor-card px-4 py-3 text-tutor-ink-soft">
         Cargando el avance de {student.name}…
       </p>
     );
@@ -288,7 +308,7 @@ const StudentProgressCard = ({
   const finishedWorlds = worlds.filter(isWorldFinished).length;
 
   return (
-    <section className="tutor-card mt-4 overflow-x-auto">
+    <section className="tutor-card overflow-x-auto">
       <div className="flex items-center gap-3 border-b border-tutor-rule px-4 py-3">
         <img
           src={pickMascotAvatar(student.id, student.name)}
@@ -326,7 +346,10 @@ const StudentProgressCard = ({
       <table className="tutor-table min-w-[640px]">
         <thead>
           <tr>
-            <th scope="col">Nivel</th>
+            {/* Junto a la lista de exploradores la ficha es más estrecha: el nombre no se parte en tres. */}
+            <th scope="col" className="min-w-[200px]">
+              Nivel
+            </th>
             <th scope="col">Marca</th>
             <th scope="col" className="tutor-num">
               Intentos
@@ -516,6 +539,18 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
    * `TeacherDashboard`.
    */
   const selectedGroupId = groupId ?? ALL_GROUPS;
+  const location = useLocation();
+  const [tab, setTab] = useState<PanelTab>(() => requestedTab(location.state) ?? 'progress');
+
+  /* Con el panel ya abierto, «Recursos» navega a la misma dirección y no lo remonta. */
+  useEffect(() => {
+    const wanted = requestedTab(location.state);
+
+    if (wanted) {
+      setTab(wanted);
+    }
+  }, [location.key, location.state]);
+  const tabRefs = useRef<Partial<Record<PanelTab, HTMLButtonElement | null>>>({});
   const [openResourceId, setOpenResourceId] = useState<string | null>(null);
   const openResource = teacherResources.find((resource) => resource.id === openResourceId);
 
@@ -556,6 +591,19 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
     () => scopedGroups.flatMap((group) => group.students),
     [scopedGroups]
   );
+
+  /* Con «Todos», el salón de cada explorador para la lista. */
+  const groupNameById = useMemo(
+    () =>
+      new Map(
+        scopedGroups.flatMap((group) => group.students.map((student) => [student.id, group.name]))
+      ),
+    [scopedGroups]
+  );
+  const groupNameOf = (id: string) => groupNameById.get(id);
+
+  const catalogLevels =
+    catalog.length === 0 ? null : catalog.reduce((total, world) => total + world.levels.length, 0);
 
   const summary = useMemo(
     () => getClassroomProgressSummary(scopedGroups, catalog),
@@ -674,229 +722,290 @@ export const TeacherPanelModule = ({ groups, groupId, studentId }: TeacherPanelM
       ? 'Cómo van tus salones'
       : `Cómo va ${groups.find((group) => group.id === selectedGroupId)?.name ?? 'este salón'}`;
 
+  const activeIndex = TABS.findIndex((item) => item.key === tab);
+
+  /* Las flechas mueven entre pestañas, como pide el patrón de pestañas de la WAI. */
+  const handleTabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+
+    if (step === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    const next = TABS[(activeIndex + step + TABS.length) % TABS.length];
+    setTab(next.key);
+    tabRefs.current[next.key]?.focus();
+  };
+
   return (
     <div className="px-6 py-6 lg:px-8">
       <div className="mx-auto w-full max-w-[1160px]">
-        <section>
-          <h1 className="text-[26px] leading-tight text-tutor-ink">Panel de información</h1>
-          <p className="mt-1 text-tutor-ink-soft">
-            Cuánto llevan jugado tus exploradores y qué puedes hacer al respecto.
-          </p>
-        </section>
-
-        <section className="mt-5 flex flex-wrap items-center gap-2.5">
-          <span className="text-[13.5px] font-medium text-tutor-ink-soft">Salón</span>
+        <section className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-[26px] leading-tight text-tutor-ink">Panel de información</h1>
+            <p className="mt-1 text-tutor-ink-soft">
+              Cuánto llevan jugado tus exploradores y qué puedes hacer al respecto.
+            </p>
+          </div>
 
           {/*
            * Cambiar de alcance SUELTA al explorador: un alumno pertenece a un
            * solo salón, así que mantenerlo elegido dejaría abierta la ficha de
-           * alguien que ya no está en la lista de chips de debajo.
+           * alguien que ya no está en la lista de al lado.
            */}
-          <div role="group" aria-label="Salón" className="tutor-seg">
-            <button
-              type="button"
-              onClick={() => navigate(panelPath(ALL_GROUPS))}
-              aria-pressed={selectedGroupId === ALL_GROUPS}
-            >
-              Todos
-            </button>
-
-            {groups.map((group) => (
-              <button
-                key={group.id}
-                type="button"
-                onClick={() => navigate(panelPath(group.id))}
-                aria-pressed={selectedGroupId === group.id}
+          <label className="flex items-center gap-2.5">
+            <span className="text-[13.5px] font-medium text-tutor-ink-soft">Salón</span>
+            <span className="relative block w-[240px]">
+              <select
+                value={selectedGroupId}
+                onChange={(event) => navigate(panelPath(event.target.value))}
+                className="tutor-field appearance-none pr-9"
               >
-                {group.name}
+                <option value={ALL_GROUPS}>Todos los salones ({groups.length})</option>
+                {sortGroups(groups, 'name').map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronIcon variant="tutor" />
+            </span>
+          </label>
+        </section>
+
+        <div
+          role="tablist"
+          aria-label="Secciones del panel"
+          className="mt-5 flex gap-6 border-b border-tutor-rule"
+        >
+          {TABS.map((item) => {
+            const active = item.key === tab;
+
+            return (
+              <button
+                key={item.key}
+                ref={(node) => {
+                  tabRefs.current[item.key] = node;
+                }}
+                type="button"
+                role="tab"
+                id={`panel-tab-${item.key}`}
+                aria-selected={active}
+                aria-controls={`panel-section-${item.key}`}
+                tabIndex={active ? 0 : -1}
+                onClick={() => setTab(item.key)}
+                onKeyDown={handleTabKey}
+                className={`tutor-focus -mb-px border-b-2 pb-2.5 pt-1 text-[15px] font-semibold transition-colors ${
+                  active
+                    ? 'border-tutor-accent text-tutor-accent'
+                    : 'border-transparent text-tutor-ink-soft hover:text-tutor-ink'
+                }`}
+              >
+                {item.label}
               </button>
-            ))}
-          </div>
-        </section>
+            );
+          })}
+        </div>
 
-        <section className="mt-7">
-          <div className="tutor-section-head">
-            <h2>{progressTitle}</h2>
-          </div>
-
-          <p className="mt-2 max-w-[80ch] text-[14.5px] text-tutor-ink-soft">
-            Lo que los exploradores llevan jugado. Los que todavía no han entrado cuentan en el
-            total, pero no en el promedio de eficiencia.
-          </p>
-
-          {summary.totalStudents === 0 ? (
-            <p className="tutor-card mt-4 px-4 py-3 text-tutor-ink-soft">
-              Todavía no hay exploradores inscritos, así que no hay avance que contar.
-            </p>
-          ) : summary.activeStudents === 0 ? (
-            <p className="mt-4 rounded-[8px] border border-tutor-warn/30 bg-tutor-warn-soft px-4 py-3 font-semibold text-tutor-warn">
-              Ninguno de tus exploradores ha jugado todavía. En cuanto alguno empiece, aquí verás
-              cuánto lleva y cuánto le costó.
-            </p>
-          ) : (
-            <>
-              <dl className="tutor-stats mt-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard
-                  title="Han jugado"
-                  value={`${summary.activeStudents} de ${summary.totalStudents}`}
-                  variant="tutor"
-                />
-                <StatCard
-                  title="Niveles superados"
-                  value={`${summary.completedLevels} de ${summary.reachableLevels}`}
-                  variant="tutor"
-                />
-                <StatCard
-                  title="Mundos terminados"
-                  value={`${summary.completedWorlds} de ${summary.reachableWorlds}`}
-                  variant="tutor"
-                />
-                <StatCard
-                  title="Eficiencia media"
-                  value={
-                    summary.averageBestScore === null ? '—' : `${summary.averageBestScore}/100`
-                  }
-                  variant="tutor"
-                />
-              </dl>
-
-              {/* Los campos del buscador van sobre blanco: su borde no llega a 3:1 en la lavanda. */}
-              <div className="tutor-card mt-4 p-4">
-                <p className="mb-3 font-semibold text-tutor-ink">
-                  Elige un explorador para ver cuánto le costó cada nivel.
-                </p>
-
-                <StudentPicker
-                  key={selectedGroupId}
-                  students={scopedStudents}
-                  selectedId={studentId}
-                  onSelect={(id) => navigate(panelPath(selectedGroupId, id))}
-                />
-              </div>
-
-              {selectedStudent ? (
-                <StudentProgressCard
-                  student={selectedStudent}
-                  catalog={catalog}
-                  detail={detail}
-                  loading={detailLoading}
-                  error={detailError}
-                />
-              ) : null}
-            </>
-          )}
-        </section>
-
-        <section className="mt-9">
-          <div className="tutor-section-head">
-            <h2>Asignación de misiones</h2>
-          </div>
-
-          <p className="mt-2 max-w-[80ch] text-[14.5px] text-tutor-ink-soft">
-            Retos personalizados para {scopeLabel}. Dan más experiencia que un nivel normal, y el
-            niño sólo ve las que le asignas.
-          </p>
-
-          {/*
-           * Con la ficha de un alumno abierta encima, asignar parecía cosa suya. La
-           * asignación es del salón (0020): se dice para que nadie lo dude.
-           */}
-          {selectedStudent ? (
-            <p className="mt-3 rounded-[8px] border border-tutor-info/30 bg-tutor-info-soft px-4 py-2.5 font-semibold text-tutor-info">
-              Las misiones se asignan a {scopeLabel}, no sólo a {selectedStudent.name}.
-            </p>
-          ) : null}
-
-          {groups.length === 0 ? (
-            <p className="mt-4 rounded-[8px] border border-tutor-warn/30 bg-tutor-warn-soft px-4 py-3 font-semibold text-tutor-warn">
-              Todavía no tienes ningún salón, así que no hay a quién asignarle una misión. Crea uno
-              y vuelve por aquí.
-            </p>
-          ) : null}
-
-          <div className="mt-4">
-            <StoreErrorNotice error={missionsError} variant="tutor" />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {missionCatalog.map((mission) => (
-              <MissionCard
-                key={mission.key}
-                mission={mission}
-                assignedCount={dueDatesInScope(mission.key).length}
-                dueDates={dueDatesInScope(mission.key)}
-                scopeSize={scopedGroupIds.length}
-                busy={busyMissionId === mission.key}
-                onUnassign={() => {
-                  void unassignMission(mission.key);
-                }}
-                onAssign={(dueDate) => {
-                  void assignMission(mission.key, dueDate);
-                }}
-              />
-            ))}
-          </div>
-        </section>
-
-        {selectedGroup && assignedMissions.length > 0 ? (
-          <section className="mt-9">
-            <div className="tutor-section-head">
-              <h2>Quién ha cumplido</h2>
-            </div>
-
-            <p className="mt-2 text-[14.5px] text-tutor-ink-soft">
-              Misiones asignadas a {selectedGroup.name} y cómo va cada explorador.
-            </p>
-
-            {selectedGroup.students.length === 0 ? (
-              <p className="tutor-card mt-4 px-4 py-3 text-tutor-ink-soft">
-                Este salón todavía no tiene exploradores inscritos.
+        <div
+          role="tabpanel"
+          id={`panel-section-${tab}`}
+          aria-labelledby={`panel-tab-${tab}`}
+          className="mt-5"
+        >
+          {tab === 'progress' ? (
+            summary.totalStudents === 0 ? (
+              <p className="tutor-card px-4 py-3 text-tutor-ink-soft">
+                Todavía no hay exploradores inscritos, así que no hay avance que contar.
+              </p>
+            ) : summary.activeStudents === 0 ? (
+              <p className="rounded-[8px] border border-tutor-warn/30 bg-tutor-warn-soft px-4 py-3 font-semibold text-tutor-warn">
+                Ninguno de tus exploradores ha jugado todavía. En cuanto alguno empiece, aquí verás
+                cuánto lleva y cuánto le costó.
               </p>
             ) : (
-              <MissionCompletionTable
-                key={selectedGroup.id}
-                students={selectedGroup.students}
-                missions={assignedMissions}
-                completedPairs={completedPairs}
-                onlineIds={onlineStudentIds}
-              />
-            )}
-          </section>
-        ) : null}
+              <>
+                <h2 className="sr-only">{progressTitle}</h2>
 
-        <section className="mt-9 pb-4">
-          <div className="tutor-section-head">
-            <h2>Recursos educativos</h2>
-          </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <StatRing
+                    title="Han jugado"
+                    value={`${summary.activeStudents} de ${summary.totalStudents}`}
+                    ratio={ratioOf(summary.activeStudents, summary.totalStudents)}
+                    tone="accent"
+                  />
+                  <StatRing
+                    title="Niveles superados"
+                    value={`${summary.completedLevels} de ${summary.reachableLevels}`}
+                    ratio={ratioOf(summary.completedLevels, summary.reachableLevels)}
+                    tone="info"
+                  />
+                  <StatRing
+                    title="Mundos terminados"
+                    value={`${summary.completedWorlds} de ${summary.reachableWorlds}`}
+                    ratio={ratioOf(summary.completedWorlds, summary.reachableWorlds)}
+                    tone="ok"
+                  />
+                  <StatRing
+                    title="Eficiencia media"
+                    value={
+                      summary.averageBestScore === null ? '—' : `${summary.averageBestScore}/100`
+                    }
+                    ratio={
+                      summary.averageBestScore === null ? null : summary.averageBestScore / 100
+                    }
+                    tone="warn"
+                  />
+                </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {teacherResources.map((resource) => (
-              <button
-                key={resource.id}
-                type="button"
-                onClick={() => setOpenResourceId(resource.id)}
-                className="tutor-card tutor-focus p-4 text-left transition-colors hover:border-tutor-rule-strong hover:bg-tutor-sunken"
-              >
-                <span className="tutor-badge tutor-badge-info tutor-badge-plain">
-                  {resource.categoryLabel}
-                </span>
-
-                <h3 className="mt-2.5 text-[17px] leading-tight text-tutor-ink">
-                  {resource.title}
-                </h3>
-
-                <p className="mt-1.5 text-[14.5px] leading-[1.55] text-tutor-ink-soft">
-                  {resource.description}
+                <p className="mt-2 text-[13.5px] text-tutor-ink-soft">
+                  Los que todavía no han entrado cuentan en el total, pero no en el promedio de
+                  eficiencia.
                 </p>
 
-                <p className="mt-2.5 text-[14px] text-tutor-ink-soft">
-                  {resourceReadMinutes(resource)} min de lectura ·{' '}
-                  <span className="font-semibold text-tutor-accent">Leer</span>
+                <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+                  <StudentPicker
+                    key={selectedGroupId}
+                    students={scopedStudents}
+                    selectedId={studentId}
+                    onSelect={(id) => navigate(panelPath(selectedGroupId, id))}
+                    groupNameOf={selectedGroupId === ALL_GROUPS ? groupNameOf : undefined}
+                    totalLevels={catalogLevels}
+                  />
+
+                  {selectedStudent ? (
+                    <StudentProgressCard
+                      student={selectedStudent}
+                      catalog={catalog}
+                      detail={detail}
+                      loading={detailLoading}
+                      error={detailError}
+                    />
+                  ) : (
+                    <div className="rounded-[12px] border border-dashed border-tutor-rule-strong bg-tutor-surface px-6 py-12 text-center">
+                      <p className="text-[17px] font-semibold text-tutor-ink">
+                        Elige un explorador
+                      </p>
+                      <p className="mt-1 text-tutor-ink-soft">
+                        Verás cuánto le costó cada nivel, partida por partida.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )
+          ) : null}
+
+          {tab === 'missions' ? (
+            <>
+              <section>
+                <p className="max-w-[80ch] text-[14.5px] text-tutor-ink-soft">
+                  Retos personalizados para {scopeLabel}. Dan más experiencia que un nivel normal, y
+                  el niño sólo ve las que le asignas.
                 </p>
-              </button>
-            ))}
-          </div>
-        </section>
+
+                {/*
+                 * Con la ficha de un alumno abierta encima, asignar parecía cosa suya. La
+                 * asignación es del salón (0020): se dice para que nadie lo dude.
+                 */}
+                {selectedStudent ? (
+                  <p className="mt-3 rounded-[8px] border border-tutor-info/30 bg-tutor-info-soft px-4 py-2.5 font-semibold text-tutor-info">
+                    Las misiones se asignan a {scopeLabel}, no sólo a {selectedStudent.name}.
+                  </p>
+                ) : null}
+
+                {groups.length === 0 ? (
+                  <p className="mt-4 rounded-[8px] border border-tutor-warn/30 bg-tutor-warn-soft px-4 py-3 font-semibold text-tutor-warn">
+                    Todavía no tienes ningún salón, así que no hay a quién asignarle una misión.
+                    Crea uno y vuelve por aquí.
+                  </p>
+                ) : null}
+
+                <div className="mt-4">
+                  <StoreErrorNotice error={missionsError} variant="tutor" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                  {missionCatalog.map((mission) => (
+                    <MissionCard
+                      key={mission.key}
+                      mission={mission}
+                      assignedCount={dueDatesInScope(mission.key).length}
+                      dueDates={dueDatesInScope(mission.key)}
+                      scopeSize={scopedGroupIds.length}
+                      busy={busyMissionId === mission.key}
+                      onUnassign={() => {
+                        void unassignMission(mission.key);
+                      }}
+                      onAssign={(dueDate) => {
+                        void assignMission(mission.key, dueDate);
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              {selectedGroup && assignedMissions.length > 0 ? (
+                <section className="mt-9">
+                  <div className="tutor-section-head">
+                    <h2>Quién ha cumplido</h2>
+                  </div>
+
+                  <p className="mt-2 text-[14.5px] text-tutor-ink-soft">
+                    Misiones asignadas a {selectedGroup.name} y cómo va cada explorador.
+                  </p>
+
+                  {selectedGroup.students.length === 0 ? (
+                    <p className="tutor-card mt-4 px-4 py-3 text-tutor-ink-soft">
+                      Este salón todavía no tiene exploradores inscritos.
+                    </p>
+                  ) : (
+                    <MissionCompletionTable
+                      key={selectedGroup.id}
+                      students={selectedGroup.students}
+                      missions={assignedMissions}
+                      completedPairs={completedPairs}
+                      onlineIds={onlineStudentIds}
+                    />
+                  )}
+                </section>
+              ) : null}
+            </>
+          ) : null}
+
+          {tab === 'resources' ? (
+            <section className="pb-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {teacherResources.map((resource) => (
+                  <button
+                    key={resource.id}
+                    type="button"
+                    onClick={() => setOpenResourceId(resource.id)}
+                    className="tutor-card tutor-focus p-4 text-left transition-colors hover:border-tutor-rule-strong hover:bg-tutor-sunken"
+                  >
+                    <span className="tutor-badge tutor-badge-info tutor-badge-plain">
+                      {resource.categoryLabel}
+                    </span>
+
+                    <h3 className="mt-2.5 text-[17px] leading-tight text-tutor-ink">
+                      {resource.title}
+                    </h3>
+
+                    <p className="mt-1.5 text-[14.5px] leading-[1.55] text-tutor-ink-soft">
+                      {resource.description}
+                    </p>
+
+                    <p className="mt-2.5 text-[14px] text-tutor-ink-soft">
+                      {resourceReadMinutes(resource)} min de lectura ·{' '}
+                      <span className="font-semibold text-tutor-accent">Leer</span>
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
       </div>
 
       {openResource ? (
