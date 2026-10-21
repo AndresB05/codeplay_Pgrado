@@ -143,7 +143,8 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
                           style={{ background: theme.color }}
                         />
 
-                        <div className="min-w-0 flex-1">
+                        {/* Con base propia: en el móvil la ocupación baja de línea en vez de aplastar el nombre. */}
+                        <div className="min-w-0 flex-1 basis-[180px]">
                           <p className="truncate font-semibold text-tutor-ink" title={group.name}>
                             {group.name}
                           </p>

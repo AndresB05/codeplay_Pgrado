@@ -620,8 +620,8 @@ En el **detalle del salón**, con 2 salones o más, «Ir a otro salón» (un
 selector nativo junto a «‹ Mis salones») salta a otro salón sin pasar por la
 lista; el salón nuevo se abre arriba y sin los filtros del anterior.
 
-En **móvil** (por debajo de `md`), la barra lateral del tutor va siempre en
-iconos y sin el botón para desplegarla, sin tocar la preferencia guardada.
+En **móvil** (por debajo de `md`), los dos roles cambian la barra lateral por una
+barra inferior fija (paso 25).
 
 El **detalle del salón** abre con «Requiere tu atención» (quien lleva una semana
 o más sin jugar) y las solicitudes a la izquierda, y las cifras y el podio a la
@@ -883,7 +883,9 @@ todas las pantallas que antes desentonaban.
 Lo que queda hoy. El detalle medido de cada punto está en
 [`CONTEXT.md`](CONTEXT.md) §4; aquí va lo justo para no tropezar.
 
-### 4.1 El panel no funciona en móvil
+### 4.1 El panel no funciona en móvil — RESUELTO
+
+Cerrado el 21-oct-2026 en el paso 25: barra inferior y pantallas a 375 px (`CONTEXT.md` §2.1).
 
 Con el viewport a 375 px la barra lateral ocupa **262 px fijos** y al contenido
 le quedan **113**: cada sección del panel mide 73 px de ancho. No es una pantalla

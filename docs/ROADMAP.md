@@ -148,7 +148,7 @@ dejó fuera.
 | 14 | ★ [Política de privacidad y términos y condiciones](#paso-14) — el consentimiento del acudiente, aparcado | 🔄 | `invitaciones-sin-correo` + §3.4 |
 | 19 | [Invitaciones: enlace canjeable (hecho) y correo real (pendiente)](#paso-19) | 🔄 | `enlace-de-invitacion` + servicio |
 | 24 | Retirar la sesión de invitado — **no se hace**, ver §2.1 | ✅ | **usuario** |
-| 25 | ★ [Responsive, accesibilidad y `ErrorBoundary`](#paso-25) | ⬜ | — |
+| 25 | ★ [Responsive, accesibilidad y `ErrorBoundary`](#paso-25) | ✅ | `responsive-y-accesibilidad` |
 | 30 | ★ [Migración al servidor de la universidad](#paso-30) | ⬜ | — |
 | 27.2 | ★ [Despliegue definitivo y URL de demo](#paso-27-2) | ⬜ | — |
 

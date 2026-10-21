@@ -182,7 +182,7 @@ const GroupDetail = ({ groupId }: TeacherGroupDetailModuleProps) => {
               <ExportReportMenu group={group} />
 
               {/* Aparte y sin relleno: no puede quedar a mano de «Sumar alumnos» y pulsarse por inercia. */}
-              <span aria-hidden className="mx-1 h-[36px] w-px bg-tutor-rule" />
+              <span aria-hidden className="mx-1 h-[36px] w-px bg-tutor-rule max-sm:hidden" />
 
               <button
                 type="button"

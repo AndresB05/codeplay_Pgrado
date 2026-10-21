@@ -1,5 +1,6 @@
 import { useLocation, useParams } from 'react-router-dom';
 import { Sidebar } from '../../components/dashboard/Sidebar/Sidebar';
+import { StudentBottomNav } from '../../components/dashboard/Sidebar/StudentBottomNav';
 import { StudentClassroomModule } from '../../components/dashboard/student/StudentClassroomModule';
 import { StudentGameLabModule } from '../../components/dashboard/student/StudentGameLabModule';
 import { StudentLevelModule } from '../../components/dashboard/student/StudentLevelModule';
@@ -11,6 +12,7 @@ import { StudentWorldsModule } from '../../components/dashboard/student/StudentW
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useLastSeen } from '../../hooks/useLastSeen';
+import { useMinWidth } from '../../hooks/useMinWidth';
 import { DEV_TOOLS_ENABLED } from '../../config/devTools';
 import { PanelBackdrop } from '../../components/decor/PanelBackdrop';
 import { LoadingLeo } from '../../components/ui/LoadingLeo';
@@ -20,6 +22,11 @@ export const Dashboard = () => {
   const { levelId, worldId } = useParams();
   const { loading: authLoading, user } = useAuth();
   useLastSeen(user?.id ?? null);
+  /*
+   * En JS y no con `hidden md:flex`: con CSS estarían las dos navegaciones en
+   * la página a la vez, y un lector de pantalla oiría dos menús iguales.
+   */
+  const roomy = useMinWidth(768);
 
   const activeRoute =
     location.pathname === ROUTES.DASHBOARD || location.pathname.startsWith(`${ROUTES.WORLDS}/`)
@@ -67,7 +74,9 @@ export const Dashboard = () => {
     }
   };
 
-  const showSidebar = activeRoute !== ROUTES.SETTINGS;
+  const showNav = activeRoute !== ROUTES.SETTINGS;
+  const showSidebar = showNav && roomy;
+  const showBottomNav = showNav && !roomy;
 
   // `overflow-clip`: las hojas del corcho caen hasta 140vh y alargarían el scroll mientras caen.
   return (
@@ -77,7 +86,9 @@ export const Dashboard = () => {
       <div className={`min-h-[calc(100vh-84px)] ${showSidebar ? 'flex' : 'block'}`}>
         {showSidebar ? <Sidebar user={user} activeRoute={activeRoute} /> : null}
 
-        <main className="relative isolate min-w-0 flex-1">
+        <main
+          className={`relative isolate min-w-0 flex-1 ${showBottomNav ? 'bottom-nav-clearance' : ''}`}
+        >
           <PanelBackdrop
             surface={
               activeRoute === ROUTES.TROPHY_ROOM
@@ -93,6 +104,8 @@ export const Dashboard = () => {
           {renderStudentModule()}
         </main>
       </div>
+
+      {showBottomNav ? <StudentBottomNav activeRoute={activeRoute} /> : null}
     </div>
   );
 };

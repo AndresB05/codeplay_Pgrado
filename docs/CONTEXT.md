@@ -421,6 +421,10 @@ cambio.
   conserva la frase «N de M niveles superados · …»: los dos los consulta
   `TeacherPanelModule.test.tsx` tal cual.
 
+#### Móvil y accesibilidad, con `responsive-y-accesibilidad` (21-oct-2026, paso 25)
+
+Por debajo de `md` no hay barra lateral: la navegación va en una barra inferior fija (`Sidebar/StudentBottomNav.tsx`, `teacher/TeacherBottomNav.tsx`, montadas con `useMinWidth(768)` en `Dashboard.tsx` y `TeacherDashboard.tsx`, con `.bottom-nav` y `.bottom-nav-clearance` en `main.css`); todo el panel, el acceso y `/invite/:token` caben a 375 px, el XP del niño sigue en su barra superior, la navegación lleva `aria-current` y hay foco visible global (`:where(:focus-visible)`).
+
 ### 2.2 `auth-sesion` — Acceso, sesión y roles
 
 **Propósito.** Distinguir a los dos tipos de usuario —niño (`child`) y tutor
@@ -4986,7 +4990,9 @@ no puede contar alumnos—.
 
 Sigue en pie para lo que venga: ninguna vista habla con Supabase directamente.
 
-### 4.4 El panel del tutor no es responsive
+### 4.4 El panel del tutor no es responsive — RESUELTO
+
+**Cerrado el 21-oct-2026 con `responsive-y-accesibilidad` (paso 25), ver §2.1.** Queda como deuda jugar el nivel en un teléfono: cabe sin desbordar, pero Blockly y la escena no están pensados para 375 px.
 
 Descubierto al revisar el aviso de error en móvil. Con el viewport a 375 px, la
 barra lateral ocupaba **262 px fijos** y `main` se quedaba en **113 px**: todas las

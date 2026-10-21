@@ -294,8 +294,8 @@ export const Signup = () => {
                       alt=""
                       className={
                         role === 'child'
-                          ? 'h-[250px] w-auto max-w-none object-contain'
-                          : 'h-full w-auto max-w-none object-contain'
+                          ? 'h-[250px] w-auto max-w-full object-contain sm:max-w-none'
+                          : 'h-full w-auto max-w-full object-contain sm:max-w-none'
                       }
                     />
                   </div>

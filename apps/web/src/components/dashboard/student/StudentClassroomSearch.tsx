@@ -97,7 +97,7 @@ export const StudentClassroomSearch = ({ groups, onRequestJoin }: StudentClassro
             Buscar salón por nombre o ID
           </label>
 
-          <div className="note-paper mt-4 flex items-center gap-3 px-3 text-sepia">
+          <div className="note-paper mt-4 flex items-center gap-3 px-3 text-sepia focus-within:outline focus-within:outline-[3px] focus-within:outline-offset-2 focus-within:outline-grape-dark">
             <SearchIcon />
             <input
               id="classroom-search"
@@ -155,7 +155,10 @@ export const StudentClassroomSearch = ({ groups, onRequestJoin }: StudentClassro
                   onMouseEnter={pickTilt}
                   className={`relative isolate px-12 pb-10 pt-8 ${TILT_ON_HOVER}`}
                 >
-                  <div aria-hidden className="map-sheet pointer-events-none absolute inset-0 -z-10" />
+                  <div
+                    aria-hidden
+                    className="map-sheet pointer-events-none absolute inset-0 -z-10"
+                  />
 
                   <div className={`${band(0)} flex items-center gap-4`}>
                     <GroupBadge theme={theme} size={60} shape="seal" />

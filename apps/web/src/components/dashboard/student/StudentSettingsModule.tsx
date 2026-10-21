@@ -62,18 +62,18 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
     <div className="px-5 py-5">
       <div className="mx-auto max-w-[980px]">
         {/* La cuenta es la tienda del explorador: la cabecera, una banda de cuero con Leo y su pasaporte. */}
-        <section className="relative isolate flex min-h-[156px] flex-wrap items-center gap-5 px-12 py-5">
+        <section className="relative isolate flex min-h-[156px] flex-wrap items-center gap-5 px-7 py-5 sm:px-12">
           <div aria-hidden className="leather-band pointer-events-none absolute inset-0 -z-10" />
 
           <img
             src={passportLeopard}
             alt=""
             aria-hidden
-            className="pointer-events-none -my-10 h-[200px] w-auto shrink-0 drop-shadow-[0_4px_0_rgba(42,27,69,0.25)]"
+            className="pointer-events-none h-[130px] w-auto sm:-my-10 sm:h-[200px] shrink-0 drop-shadow-[0_4px_0_rgba(42,27,69,0.25)]"
           />
 
-          <div className="min-w-0 flex-1">
-            <h1 className="font-display text-[40px] leading-tight text-cream drop-shadow-[0_3px_0_rgba(42,27,69,0.45)]">
+          <div className="min-w-[180px] flex-1">
+            <h1 className="font-display text-[34px] sm:text-[40px] leading-tight text-cream drop-shadow-[0_3px_0_rgba(42,27,69,0.45)]">
               Mi cuenta
             </h1>
             <p className="mt-1 text-[17px] font-bold text-cream/85">
@@ -87,7 +87,7 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
         </section>
 
         {/* Los datos del niño, en la página de su pasaporte: crece con los formularios. */}
-        <section className="relative isolate mt-6 px-14 py-12">
+        <section className="relative isolate mt-6 px-8 py-10 sm:px-14 sm:py-12">
           <div aria-hidden className="passport-page pointer-events-none absolute inset-0 -z-10" />
 
           <h2 className="title-lg">Detalles del explorador</h2>
@@ -148,7 +148,7 @@ export const StudentSettingsModule = ({ user }: StudentSettingsModuleProps) => {
         </section>
 
         {/* Los atajos son sellos de visado: cada uno lleva a un sitio de la expedición. */}
-        <section className="relative isolate mt-6 flex flex-wrap items-center gap-6 px-12 py-6">
+        <section className="relative isolate mt-6 flex flex-wrap items-center gap-6 px-7 py-6 sm:px-12">
           <div aria-hidden className="leather-band pointer-events-none absolute inset-0 -z-10" />
 
           <div className="min-w-[220px] flex-1">

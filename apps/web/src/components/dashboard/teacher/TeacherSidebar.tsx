@@ -4,8 +4,7 @@ import { ROUTES } from '../../../constants/routes';
 import type { ClassGroup } from '../../../types/classroom.types';
 import { getGroupTheme } from '../shared/groupThemes';
 import { GROUP_SEARCH_THRESHOLD, searchGroups } from './classroomsData';
-import { ChartIcon, GraduationIcon, SettingsIcon } from './TeacherIcons';
-import { useMinWidth } from '../../../hooks/useMinWidth';
+import { pendingRequestsLabel, teacherNavItems } from './teacherNav';
 import { useSidebarCollapsed } from '../../../hooks/useSidebarCollapsed';
 import { useTeacherGroupsFolded } from '../../../hooks/useTeacherGroupsFolded';
 import { SidebarToggle } from '../Sidebar/SidebarToggle';
@@ -20,13 +19,7 @@ interface TeacherSidebarProps {
 
 export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: TeacherSidebarProps) => {
   const navigate = useNavigate();
-  const [storedCollapsed, toggleCollapsed] = useSidebarCollapsed();
-  /*
-   * Por debajo de `md`, desplegada se comería la pantalla: va siempre en iconos
-   * y sin el botón. No se guarda, para no pisar la preferencia de escritorio.
-   */
-  const roomy = useMinWidth(768);
-  const collapsed = storedCollapsed || !roomy;
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   const [groupsFolded, toggleGroupsFolded] = useTeacherGroupsFolded();
   /* Lo escrito no se guarda: es de esta visita, como el de cualquier buscador. */
   const [groupQuery, setGroupQuery] = useState('');
@@ -62,26 +55,7 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
     });
   }, [activeGroupId, collapsed, groupsExpanded]);
 
-  const navItems = [
-    {
-      route: ROUTES.TEACHER_GROUPS,
-      label: 'Salón de clases',
-      icon: GraduationIcon,
-      active: isGroupsSection && activeGroupId === null,
-    },
-    {
-      route: ROUTES.TEACHER_PANEL,
-      label: 'Panel de información',
-      icon: ChartIcon,
-      active: activeSection === ROUTES.TEACHER_PANEL,
-    },
-    {
-      route: ROUTES.TEACHER_SETTINGS,
-      label: 'Ajustes de cuenta',
-      icon: SettingsIcon,
-      active: activeSection === ROUTES.TEACHER_SETTINGS,
-    },
-  ];
+  const navItems = teacherNavItems(activeSection, activeGroupId);
 
   return (
     <aside
@@ -89,15 +63,13 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
         collapsed ? 'w-[64px] px-2' : 'w-[240px] px-3'
       }`}
     >
-      {roomy ? (
-        <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} variant="tutor" />
-      ) : null}
+      <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} variant="tutor" />
 
       <nav className={`${collapsed ? 'mt-10' : 'mt-8'} space-y-1`}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const showPending = item.route === ROUTES.TEACHER_GROUPS && totalPending > 0;
-          const pendingLabel = `${totalPending} ${totalPending === 1 ? 'solicitud' : 'solicitudes'} en espera`;
+          const pendingLabel = pendingRequestsLabel(totalPending);
           /* Plegada la barra, el icono no lleva chevron: la lista se gobierna desplegándola. */
           const hasGroupsToggle = item.route === ROUTES.TEACHER_GROUPS && !collapsed;
 

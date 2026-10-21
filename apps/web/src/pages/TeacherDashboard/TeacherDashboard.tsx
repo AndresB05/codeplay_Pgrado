@@ -3,11 +3,13 @@ import { TeacherGroupDetailModule } from '../../components/dashboard/teacher/Tea
 import { TeacherGroupsModule } from '../../components/dashboard/teacher/TeacherGroupsModule';
 import { TeacherPanelModule } from '../../components/dashboard/teacher/TeacherPanelModule';
 import { TeacherSettingsModule } from '../../components/dashboard/teacher/TeacherSettingsModule';
+import { TeacherBottomNav } from '../../components/dashboard/teacher/TeacherBottomNav';
 import { TeacherSidebar } from '../../components/dashboard/teacher/TeacherSidebar';
 import { TeacherTopBar } from '../../components/dashboard/teacher/TeacherTopBar';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { useClassrooms } from '../../hooks/useClassrooms';
+import { useMinWidth } from '../../hooks/useMinWidth';
 import { FALLBACK_TEACHER_NAME } from '../../services/classrooms.service';
 import { LoadingLeo } from '../../components/ui/LoadingLeo';
 
@@ -16,6 +18,8 @@ export const TeacherDashboard = () => {
   const { groupId, studentId } = useParams();
   const { loading: authLoading, user } = useAuth();
   const { groups, loading: classroomsLoading } = useClassrooms();
+  // Lateral o inferior en JS, como el niño: con CSS habría dos menús en la página.
+  const roomy = useMinWidth(768);
 
   /*
    * Se espera también a los salones: con la lista todavía vacía, el detalle
@@ -36,6 +40,8 @@ export const TeacherDashboard = () => {
     : location.pathname.startsWith(ROUTES.TEACHER_SETTINGS)
       ? ROUTES.TEACHER_SETTINGS
       : ROUTES.TEACHER_GROUPS;
+
+  const activeGroupId = activeSection === ROUTES.TEACHER_GROUPS ? (groupId ?? null) : null;
 
   const renderModule = () => {
     switch (activeSection) {
@@ -69,16 +75,26 @@ export const TeacherDashboard = () => {
       <TeacherTopBar user={user} />
 
       <div className="flex min-h-[calc(100vh-56px)]">
-        <TeacherSidebar
-          groups={groups}
-          activeGroupId={activeSection === ROUTES.TEACHER_GROUPS ? (groupId ?? null) : null}
-          activeSection={activeSection}
-        />
+        {roomy ? (
+          <TeacherSidebar
+            groups={groups}
+            activeGroupId={activeGroupId}
+            activeSection={activeSection}
+          />
+        ) : null}
 
-        <main className="relative isolate min-w-0 flex-1">
+        <main className={`relative isolate min-w-0 flex-1 ${roomy ? '' : 'bottom-nav-clearance'}`}>
           {renderModule()}
         </main>
       </div>
+
+      {roomy ? null : (
+        <TeacherBottomNav
+          groups={groups}
+          activeGroupId={activeGroupId}
+          activeSection={activeSection}
+        />
+      )}
     </div>
   );
 };

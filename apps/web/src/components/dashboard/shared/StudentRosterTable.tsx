@@ -229,7 +229,8 @@ export const StudentRosterTable = ({
       <div className="tutor-card overflow-hidden">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-tutor-rule px-4 py-3">
           {filterable && students.length > 0 ? (
-            <div className="min-w-0 flex-1">
+            // En el móvil, fila propia: encogida, los filtros se montaban sobre «Ordenar».
+            <div className="min-w-0 flex-1 max-md:basis-full">
               <RosterFilterBar
                 filters={filters}
                 onChange={setFilters}
@@ -283,8 +284,13 @@ export const StudentRosterTable = ({
             <table className="tutor-table min-w-[720px]">
               <thead className="sticky top-0 z-[1] [&_th]:shadow-[inset_0_-1px_0_var(--tutor-rule)]">
                 <tr>
-                  <th scope="col">Explorador</th>
-                  <th scope="col">Mundo actual</th>
+                  {/* Con mínimo propio: la tabla ya se desplaza, y sin él el nombre y el mundo partían en tres líneas. */}
+                  <th scope="col" className="min-w-[190px]">
+                    Explorador
+                  </th>
+                  <th scope="col" className="min-w-[190px]">
+                    Mundo actual
+                  </th>
                   <th scope="col">Última actividad</th>
                   <th scope="col" className="tutor-num">
                     Racha
@@ -490,210 +496,218 @@ export const StudentRosterTable = ({
             ))}
           </>
         ) : null}
-        <div
-          className={`grid ${gridColumns} ${look(
-            'rounded-lg border-b-2 border-dashed border-sepia-soft bg-sepia-soft/30 px-5 py-3 font-map text-[20px] text-sepia',
-            'border-b-[3px] border-ink bg-grape-soft px-5 py-4 font-display text-[15px] text-grape-dark'
-          )}`}
-        >
-          <div>Explorador</div>
-          {/* En el pergamino, cada notita arranca donde arranca su título. */}
-          <div>Mundo actual</div>
-          <div>Última actividad</div>
-          {onRemoveStudent ? null : <div>XP</div>}
-          <div>Racha</div>
-          {onRemoveStudent ? <div>XP</div> : null}
-          {onRemoveStudent ? <div className="text-right">Acciones</div> : null}
-        </div>
-
-        {students.length === 0 ? (
-          <p
-            className={`px-5 py-10 text-center ${look('font-map text-[19px] text-sepia-soft', 'text-[16px] font-semibold text-ink-faint')}`}
-          >
-            {emptyLabel}
-          </p>
-        ) : sortedStudents.length === 0 ? (
-          <div className="px-5 py-10 text-center">
-            <p className="text-[16px] font-semibold text-ink-faint">
-              Ningún explorador coincide con los filtros.
-            </p>
-            <button
-              type="button"
-              onClick={() => setFilters(NO_FILTERS)}
-              className="btn btn-sm btn-ghost mt-3"
+        {/*
+         * En una pantalla estrecha la tabla se desplaza dentro de la sección: las
+         * columnas apretadas partían cada nombre letra a letra.
+         */}
+        <div className="overflow-x-auto">
+          <div className={sortedStudents.length > 0 ? 'min-w-[920px]' : undefined}>
+            <div
+              className={`grid ${gridColumns} ${look(
+                'rounded-lg border-b-2 border-dashed border-sepia-soft bg-sepia-soft/30 px-5 py-3 font-map text-[20px] text-sepia',
+                'border-b-[3px] border-ink bg-grape-soft px-5 py-4 font-display text-[15px] text-grape-dark'
+              )}`}
             >
-              Quitar filtros
-            </button>
-          </div>
-        ) : (
-          <div>
-            {sortedStudents.map((student, index) => (
-              <div
-                key={student.id}
-                className={`grid ${gridColumns} items-center px-5 py-4 last:border-b-0 ${look(
-                  `border-b-2 border-dashed border-sepia-soft/50 text-sepia ${index % 2 === 1 ? 'bg-sepia-soft/15' : ''}`,
-                  `border-b-2 border-line text-[16px] text-ink ${index % 2 === 1 ? 'bg-cream' : 'bg-white'}`
-                )}`}
-              >
-                {/* La notita del mundo sobresale de su columna: el nombre se queda antes y baja a dos líneas. */}
-                <div className={`flex items-center gap-3 ${look('min-w-0 pr-14', '')}`}>
-                  {onMap ? (
-                    <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center">
-                      {(xpRank.get(student.id) ?? 0) <= 3 && student.xp > 0 ? (
-                        <img
-                          src={RANK_SEALS[(xpRank.get(student.id) ?? 1) - 1]}
-                          alt={`Puesto ${xpRank.get(student.id)}`}
-                          className="h-[34px] w-[34px]"
-                        />
-                      ) : (
-                        <span className="font-map text-[22px] text-sepia-soft">
-                          <span className="sr-only">Puesto </span>
-                          {xpRank.get(student.id)}.º
-                        </span>
-                      )}
-                    </span>
-                  ) : null}
-                  <div className="relative h-[44px] w-[44px] shrink-0">
-                    <div className="h-full w-full overflow-hidden rounded-full border-[3px] border-ink">
-                      <img
-                        src={pickMascotAvatar(student.id, student.name)}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    {onlineIds?.has(student.id) ? (
-                      <span
-                        aria-hidden="true"
-                        className="absolute -bottom-1 -right-1 h-[16px] w-[16px] rounded-full border-[3px] border-white bg-jungle-light"
-                      />
-                    ) : null}
-                  </div>
-                  <span
-                    className={look(
-                      'min-w-0 break-words font-map text-[21px] leading-tight',
-                      'font-bold'
-                    )}
-                  >
-                    {student.name}
-                  </span>
-                </div>
+              <div>Explorador</div>
+              {/* En el pergamino, cada notita arranca donde arranca su título. */}
+              <div>Mundo actual</div>
+              <div>Última actividad</div>
+              {onRemoveStudent ? null : <div>XP</div>}
+              <div>Racha</div>
+              {onRemoveStudent ? <div>XP</div> : null}
+              {onRemoveStudent ? <div className="text-right">Acciones</div> : null}
+            </div>
 
-                <div>
-                  {student.currentWorld ? (
-                    onMap ? (
-                      underTitle(
-                        'Mundo actual',
-                        <span
-                          onMouseEnter={pickTilt}
-                          className={`relative isolate inline-block whitespace-nowrap rotate-[1.5deg] px-4 py-5 ${TILT_ON_HOVER}`}
-                        >
-                          <span
-                            aria-hidden
-                            className="note-paper pointer-events-none absolute inset-0 -z-10"
+            {students.length === 0 ? (
+              <p
+                className={`px-5 py-10 text-center ${look('font-map text-[19px] text-sepia-soft', 'text-[16px] font-semibold text-ink-faint')}`}
+              >
+                {emptyLabel}
+              </p>
+            ) : sortedStudents.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <p className="text-[16px] font-semibold text-ink-faint">
+                  Ningún explorador coincide con los filtros.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFilters(NO_FILTERS)}
+                  className="btn btn-sm btn-ghost mt-3"
+                >
+                  Quitar filtros
+                </button>
+              </div>
+            ) : (
+              <div>
+                {sortedStudents.map((student, index) => (
+                  <div
+                    key={student.id}
+                    className={`grid ${gridColumns} items-center px-5 py-4 last:border-b-0 ${look(
+                      `border-b-2 border-dashed border-sepia-soft/50 text-sepia ${index % 2 === 1 ? 'bg-sepia-soft/15' : ''}`,
+                      `border-b-2 border-line text-[16px] text-ink ${index % 2 === 1 ? 'bg-cream' : 'bg-white'}`
+                    )}`}
+                  >
+                    {/* La notita del mundo sobresale de su columna: el nombre se queda antes y baja a dos líneas. */}
+                    <div className={`flex items-center gap-3 ${look('min-w-0 pr-14', '')}`}>
+                      {onMap ? (
+                        <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center">
+                          {(xpRank.get(student.id) ?? 0) <= 3 && student.xp > 0 ? (
+                            <img
+                              src={RANK_SEALS[(xpRank.get(student.id) ?? 1) - 1]}
+                              alt={`Puesto ${xpRank.get(student.id)}`}
+                              className="h-[34px] w-[34px]"
+                            />
+                          ) : (
+                            <span className="font-map text-[22px] text-sepia-soft">
+                              <span className="sr-only">Puesto </span>
+                              {xpRank.get(student.id)}.º
+                            </span>
+                          )}
+                        </span>
+                      ) : null}
+                      <div className="relative h-[44px] w-[44px] shrink-0">
+                        <div className="h-full w-full overflow-hidden rounded-full border-[3px] border-ink">
+                          <img
+                            src={pickMascotAvatar(student.id, student.name)}
+                            alt=""
+                            className="h-full w-full object-cover"
                           />
-                          <span className="inline-block -rotate-[2deg] rounded-md border-2 border-dashed border-jungle-dark px-2 font-map text-[17px] text-jungle-dark">
+                        </div>
+                        {onlineIds?.has(student.id) ? (
+                          <span
+                            aria-hidden="true"
+                            className="absolute -bottom-1 -right-1 h-[16px] w-[16px] rounded-full border-[3px] border-white bg-jungle-light"
+                          />
+                        ) : null}
+                      </div>
+                      <span
+                        className={look(
+                          'min-w-0 break-words font-map text-[21px] leading-tight',
+                          'font-bold'
+                        )}
+                      >
+                        {student.name}
+                      </span>
+                    </div>
+
+                    <div>
+                      {student.currentWorld ? (
+                        onMap ? (
+                          underTitle(
+                            'Mundo actual',
+                            <span
+                              onMouseEnter={pickTilt}
+                              className={`relative isolate inline-block whitespace-nowrap rotate-[1.5deg] px-4 py-5 ${TILT_ON_HOVER}`}
+                            >
+                              <span
+                                aria-hidden
+                                className="note-paper pointer-events-none absolute inset-0 -z-10"
+                              />
+                              <span className="inline-block -rotate-[2deg] rounded-md border-2 border-dashed border-jungle-dark px-2 font-map text-[17px] text-jungle-dark">
+                                {student.currentWorld}
+                              </span>
+                            </span>
+                          )
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-mint px-3 py-1 font-display text-[13px] text-white">
+                            <WorldBadgeIcon />
                             {student.currentWorld}
                           </span>
-                        </span>
-                      )
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-mint px-3 py-1 font-display text-[13px] text-white">
-                        <WorldBadgeIcon />
-                        {student.currentWorld}
-                      </span>
-                    )
-                  ) : (
-                    <span className={look('text-sepia-soft', 'text-ink-faint')}>—</span>
-                  )}
-                </div>
-
-                {onlineIds?.has(student.id) ? (
-                  <div>
-                    <span
-                      className={look(
-                        'inline-block -rotate-[3deg] rounded-md border-[3px] border-double border-jungle-dark px-2 font-map text-[19px] text-jungle-dark',
-                        'font-display text-[15px] text-jungle-dark'
+                        )
+                      ) : (
+                        <span className={look('text-sepia-soft', 'text-ink-faint')}>—</span>
                       )}
-                    >
-                      En línea
-                    </span>
-                  </div>
-                ) : (
-                  <div
-                    className={`flex items-center gap-2 ${look('font-map text-[19px] text-sepia-soft', 'font-semibold text-ink-soft')}`}
-                  >
-                    {student.hoursSinceLastActivity === null ? <SleepIcon /> : null}
-                    {formatLastActivity(student.hoursSinceLastActivity)}
-                  </div>
-                )}
+                    </div>
 
-                {onRemoveStudent ? null : (
-                  <div>{onMap ? underTitle('XP', xpCell(student.xp)) : xpCell(student.xp)}</div>
-                )}
-
-                <div>
-                  {student.streakDays !== null && onMap ? (
-                    /* La notita de la racha, apagada en gris si la racha está en cero. */
-                    <span
-                      onMouseEnter={pickTilt}
-                      className={`relative inline-block h-[84px] w-[84px] ${TILT_ON_HOVER} ${
-                        student.streakDays === 0 ? 'grayscale' : ''
-                      }`}
-                    >
-                      <img src={streakNote} alt="" className="h-full w-full" />
-                      <span className="absolute right-[12px] top-1/2 flex w-[30px] -translate-y-1/2 justify-center font-map text-[26px] leading-none text-sepia">
-                        <span className="sr-only">Racha de </span>
-                        {student.streakDays}
-                      </span>
-                    </span>
-                  ) : student.streakDays !== null ? (
-                    <span
-                      className={`inline-flex items-center gap-1.5 ${look('font-map text-[21px] text-sepia', 'font-display text-[18px] text-sun-dark')}`}
-                    >
-                      <FireIcon />
-                      {student.streakDays}
-                    </span>
-                  ) : (
-                    <span className="text-ink-faint">—</span>
-                  )}
-                </div>
-
-                {onRemoveStudent ? <div>{xpCell(student.xp)}</div> : null}
-
-                {onRemoveStudent ? (
-                  <div className="flex justify-end">
-                    {confirmingId === student.id ? (
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleRemove(student.id)}
-                          className="btn btn-sm btn-coral"
+                    {onlineIds?.has(student.id) ? (
+                      <div>
+                        <span
+                          className={look(
+                            'inline-block -rotate-[3deg] rounded-md border-[3px] border-double border-jungle-dark px-2 font-map text-[19px] text-jungle-dark',
+                            'font-display text-[15px] text-jungle-dark'
+                          )}
                         >
-                          Confirmar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmingId(null)}
-                          className="btn btn-sm btn-ghost"
-                        >
-                          Cancelar
-                        </button>
+                          En línea
+                        </span>
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => setConfirmingId(student.id)}
-                        className="rounded-full border-2 border-coral-dark bg-coral-soft px-4 py-1.5 font-display text-[14px] text-coral-dark transition-colors hover:bg-coral hover:text-white"
+                      <div
+                        className={`flex items-center gap-2 ${look('font-map text-[19px] text-sepia-soft', 'font-semibold text-ink-soft')}`}
                       >
-                        Quitar
-                      </button>
+                        {student.hoursSinceLastActivity === null ? <SleepIcon /> : null}
+                        {formatLastActivity(student.hoursSinceLastActivity)}
+                      </div>
                     )}
+
+                    {onRemoveStudent ? null : (
+                      <div>{onMap ? underTitle('XP', xpCell(student.xp)) : xpCell(student.xp)}</div>
+                    )}
+
+                    <div>
+                      {student.streakDays !== null && onMap ? (
+                        /* La notita de la racha, apagada en gris si la racha está en cero. */
+                        <span
+                          onMouseEnter={pickTilt}
+                          className={`relative inline-block h-[84px] w-[84px] ${TILT_ON_HOVER} ${
+                            student.streakDays === 0 ? 'grayscale' : ''
+                          }`}
+                        >
+                          <img src={streakNote} alt="" className="h-full w-full" />
+                          <span className="absolute right-[12px] top-1/2 flex w-[30px] -translate-y-1/2 justify-center font-map text-[26px] leading-none text-sepia">
+                            <span className="sr-only">Racha de </span>
+                            {student.streakDays}
+                          </span>
+                        </span>
+                      ) : student.streakDays !== null ? (
+                        <span
+                          className={`inline-flex items-center gap-1.5 ${look('font-map text-[21px] text-sepia', 'font-display text-[18px] text-sun-dark')}`}
+                        >
+                          <FireIcon />
+                          {student.streakDays}
+                        </span>
+                      ) : (
+                        <span className="text-ink-faint">—</span>
+                      )}
+                    </div>
+
+                    {onRemoveStudent ? <div>{xpCell(student.xp)}</div> : null}
+
+                    {onRemoveStudent ? (
+                      <div className="flex justify-end">
+                        {confirmingId === student.id ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleRemove(student.id)}
+                              className="btn btn-sm btn-coral"
+                            >
+                              Confirmar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingId(null)}
+                              className="btn btn-sm btn-ghost"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingId(student.id)}
+                            className="rounded-full border-2 border-coral-dark bg-coral-soft px-4 py-1.5 font-display text-[14px] text-coral-dark transition-colors hover:bg-coral hover:text-white"
+                          >
+                            Quitar
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
+        </div>
       </section>
     </div>
   );
