@@ -266,7 +266,7 @@ export const matchesGroupSearch = (group: ClassGroup, query: string): boolean =>
     return true;
   }
 
-  return matchesName(group.name, normalized);
+  return matchesName(group.name, normalized) || matchesName(group.gradeLabel, normalized);
 };
 
 /** `true` si la consulta apunta a un salón concreto por su ID público. */
@@ -298,7 +298,7 @@ export const searchGroups = (groups: ClassGroup[], query: string): ClassGroup[] 
  */
 export const GROUP_SEARCH_THRESHOLD = 6;
 
-export type GroupSortKey = 'name' | 'pending' | 'occupancy' | 'online';
+export type GroupSortKey = 'name' | 'pending' | 'students' | 'occupancy' | 'online';
 
 /**
  * Los salones en el orden elegido. El nombre va de la A a la Z; los demás, de
@@ -316,6 +316,10 @@ export const sortGroups = (
   const measure = (group: ClassGroup): number => {
     if (key === 'pending') {
       return group.pendingRequests.length;
+    }
+
+    if (key === 'students') {
+      return group.memberCount;
     }
 
     if (key === 'occupancy') {

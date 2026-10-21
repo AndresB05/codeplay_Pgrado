@@ -248,6 +248,9 @@ const GroupDetail = ({ groupId }: TeacherGroupDetailModuleProps) => {
               students={group.students}
               onlineIds={onlineStudentIds}
               onRemoveStudent={(studentId) => removeStudent(group.id, studentId)}
+              onOpenStudent={(studentId) =>
+                navigate(`${ROUTES.TEACHER_PANEL}/${group.id}/${studentId}`)
+              }
               variant="tutor"
             />
           </div>

@@ -8,6 +8,7 @@ import type { ClassGroup, ClassroomStudent, JoinRequest } from '../../../types/c
 import { TeacherGroupsModule } from './TeacherGroupsModule';
 
 const VIEW_KEY = 'dashboard:teacherGroupsView';
+const SEARCH = 'Buscar salón por nombre, grado o ID';
 
 const student = (id: string): ClassroomStudent => ({
   id,
@@ -86,18 +87,18 @@ const tableOrder = (): string[] =>
   within(screen.getByRole('table'))
     .getAllByRole('row')
     .slice(1)
-    .map((row) => (row as HTMLTableRowElement).cells[1].querySelector('span')?.textContent ?? '');
+    .map(
+      (row) =>
+        (row as HTMLTableRowElement).cells[1].querySelector('span.font-display')?.textContent ?? ''
+    );
 
 describe('TeacherGroupsModule con muchos salones', () => {
-  it('con seis salones no hay herramientas; con siete, sí', () => {
-    const { unmount } = renderModule(SEVEN.slice(0, 6));
-    expect(screen.queryByRole('searchbox', { name: 'Filtrar salones' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    unmount();
+  it('con un solo salón ya hay herramientas y la lista por defecto', () => {
+    renderModule(SEVEN.slice(0, 1));
 
-    renderModule();
-    expect(screen.getByRole('searchbox', { name: 'Filtrar salones' })).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: SEARCH })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Vista' })).toBeInTheDocument();
+    expect(screen.getByRole('table')).toBeInTheDocument();
   });
 
   it('con siete la lista es la vista por defecto, ordenada por nombre', () => {
@@ -117,7 +118,7 @@ describe('TeacherGroupsModule con muchos salones', () => {
 
   it('ordena por solicitudes, ocupación y conectados, y en empate por nombre', () => {
     renderModule();
-    const sort = screen.getByLabelText('Ordenar');
+    const sort = screen.getByLabelText('Ordenar salones');
 
     fireEvent.change(sort, { target: { value: 'pending' } });
     expect(tableOrder().slice(0, 3)).toEqual(['Música', 'Álgebra', 'Biología']);
@@ -142,7 +143,7 @@ describe('TeacherGroupsModule con muchos salones', () => {
   it('sin coincidencias lo dice y «Quitar filtros» las vuelve a enseñar', async () => {
     renderModule();
 
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Filtrar salones' }), 'química');
+    await userEvent.type(screen.getByRole('searchbox', { name: SEARCH }), 'química');
     expect(screen.getByText('Ningún salón coincide')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Quitar filtros' }));
@@ -165,21 +166,27 @@ describe('TeacherGroupsModule con muchos salones', () => {
     expect(screen.getAllByRole('button', { name: 'Ver salón' })).toHaveLength(7);
   });
 
-  it('con la franja a la vista no repite el total junto al título; con seis, sí lo enseña', () => {
-    const { unmount } = renderModule();
-    expect(screen.getByText('Solicitudes en espera')).toBeInTheDocument();
-    expect(screen.queryByText('3 en espera')).not.toBeInTheDocument();
-    unmount();
+  it('el total de solicitudes va en las cifras y no junto al título', () => {
+    renderModule(SEVEN.slice(0, 2));
 
-    renderModule(SEVEN.slice(0, 6));
-    expect(screen.queryByText('Solicitudes en espera')).not.toBeInTheDocument();
-    expect(screen.getByText('3 en espera')).toBeInTheDocument();
+    const stat = screen.getByText('Solicitudes en espera', { selector: 'dt' });
+    expect(stat.nextElementSibling).toHaveTextContent('2');
+    expect(screen.queryByText('2 en espera', { selector: 'h2 ~ span' })).not.toBeInTheDocument();
+  });
+
+  it('busca también por grado', async () => {
+    renderModule([...SEVEN.slice(0, 2), { ...SEVEN[2], gradeLabel: 'Quinto de primaria' }]);
+
+    await userEvent.type(screen.getByRole('searchbox', { name: SEARCH }), 'quinto');
+
+    expect(tableOrder()).toEqual(['Cálculo']);
   });
 
   it('la franja de solicitudes lleva al salón', async () => {
     renderModule();
 
-    const strip = screen.getByText('Solicitudes en espera').parentElement as HTMLElement;
+    const strip = screen.getByText('Solicitudes en espera', { selector: 'span' })
+      .parentElement as HTMLElement;
     await userEvent.click(within(strip).getByRole('button', { name: /Álgebra/ }));
 
     expect(screen.getByTestId('ruta')).toHaveTextContent('/teacher/groups/g4');

@@ -6,11 +6,15 @@ import sealBronze from '../../../assets/brand/podium-seal-bronze.webp';
 import sealGold from '../../../assets/brand/podium-seal-gold.webp';
 import sealSilver from '../../../assets/brand/podium-seal-silver.webp';
 import streakNote from '../../../assets/brand/streak-note.webp';
-import { explorerLevel } from '../../../constants/progress';
+import {
+  explorerLevel,
+  XP_PER_EXPLORER_LEVEL,
+  xpIntoExplorerLevel,
+} from '../../../constants/progress';
 import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import type { ClassroomStudent } from '../../../types/classroom.types';
 import { XPBar } from '../../ui/XPBar';
-import { formatLastActivity } from '../teacher/classroomsData';
+import { formatLastActivity, INACTIVE_HOURS } from '../teacher/classroomsData';
 import { pickTilt, TILT_ON_HOVER } from './pickTilt';
 import { sortRoster, type RosterSortKey } from './podiumRanking';
 import { RosterFilterBar } from './RosterFilterBar';
@@ -80,6 +84,8 @@ interface StudentRosterTableProps {
    * del salón. Solo el tutor la recibe.
    */
   onRemoveStudent?: (studentId: string) => void;
+  /** Sólo en `tutor`: abre la ficha del explorador en el panel. */
+  onOpenStudent?: (studentId: string) => void;
   /** Quién tiene CodePlay abierto ahora: lleva el punto verde y «En línea». */
   onlineIds?: ReadonlySet<string>;
   /**
@@ -91,6 +97,29 @@ interface StudentRosterTableProps {
 
 const streakLabel = (days: number): string => (days === 1 ? '1 día' : `${days} días`);
 
+/*
+ * La actividad del tutor como pastilla: verde si está ahora, ámbar desde la
+ * semana sin jugar —el mismo corte que «Requiere tu atención»—, gris si nunca
+ * jugó y azul en lo demás.
+ */
+const activityBadge = (hours: number | null, online: boolean): { label: string; tone: string } => {
+  if (online) {
+    return { label: 'En línea', tone: 'tutor-badge-ok' };
+  }
+
+  const label = formatLastActivity(hours);
+  const capitalized = label.charAt(0).toUpperCase() + label.slice(1);
+
+  if (hours === null) {
+    return { label: capitalized, tone: 'tutor-badge-mute' };
+  }
+
+  return {
+    label: capitalized,
+    tone: hours >= INACTIVE_HOURS ? 'tutor-badge-warn' : 'tutor-badge-info',
+  };
+};
+
 /**
  * Tabla de seguimiento de los niños de un salón. La usan tanto el panel del
  * tutor como la vista de "Salón de clases" del niño.
@@ -99,6 +128,7 @@ export const StudentRosterTable = ({
   students,
   emptyLabel = 'Todavía no hay exploradores en este salón.',
   onRemoveStudent,
+  onOpenStudent,
   onlineIds,
   variant = 'card',
 }: StudentRosterTableProps) => {
@@ -270,6 +300,7 @@ export const StudentRosterTable = ({
               <tbody>
                 {sortedStudents.map((student) => {
                   const online = onlineIds?.has(student.id) ?? false;
+                  const activity = activityBadge(student.hoursSinceLastActivity, online);
 
                   return (
                     <tr key={student.id}>
@@ -297,19 +328,11 @@ export const StudentRosterTable = ({
                       </td>
 
                       <td>
-                        {online ? (
-                          <span className="tutor-badge tutor-badge-ok">En línea</span>
-                        ) : (
-                          <span
-                            className={
-                              student.hoursSinceLastActivity === null
-                                ? 'text-tutor-ink-faint'
-                                : 'text-tutor-ink-soft'
-                            }
-                          >
-                            {formatLastActivity(student.hoursSinceLastActivity)}
-                          </span>
-                        )}
+                        <span
+                          className={`tutor-badge tutor-badge-plain whitespace-nowrap ${activity.tone}`}
+                        >
+                          {activity.label}
+                        </span>
                       </td>
 
                       <td className="tutor-num whitespace-nowrap">
@@ -321,15 +344,30 @@ export const StudentRosterTable = ({
                       </td>
 
                       {/*
-                       * SIN BARRA, a diferencia del niño: la barra mide el tramo del
-                       * nivel, y en una columna se lee como comparación entre
-                       * alumnos —quien acaba de subir sale casi vacío—. Al profesor
-                       * le basta el número, que es lo que ordena.
+                       * La barra es el tramo del Nivel Explorador, no una comparación
+                       * entre alumnos: quien acaba de subir sale casi vacío. Por eso
+                       * el número va delante y en negrita, que es lo que ordena.
                        */}
                       <td className="py-1.5">
-                        <span className="block whitespace-nowrap">{student.xp} XP</span>
-                        <span className="block whitespace-nowrap text-[12.5px] text-tutor-ink-faint">
-                          Nivel Explorador {explorerLevel(student.xp)}
+                        <span className="flex w-[150px] items-baseline justify-between gap-2 whitespace-nowrap">
+                          <span className="font-bold text-tutor-ink">{student.xp} XP</span>
+                          <span className="text-[13px] text-tutor-ink-soft">
+                            <abbr title="Nivel Explorador" className="no-underline">
+                              Nv
+                            </abbr>{' '}
+                            {explorerLevel(student.xp)}
+                          </span>
+                        </span>
+                        <span
+                          aria-hidden
+                          className="mt-1 block h-[4px] w-[150px] overflow-hidden rounded-full bg-tutor-rule"
+                        >
+                          <span
+                            className="block h-full rounded-full bg-tutor-accent"
+                            style={{
+                              width: `${(xpIntoExplorerLevel(student.xp) / XP_PER_EXPLORER_LEVEL) * 100}%`,
+                            }}
+                          />
                         </span>
                       </td>
 
@@ -353,13 +391,25 @@ export const StudentRosterTable = ({
                               </button>
                             </div>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => setConfirmingId(student.id)}
-                              className="tutor-btn tutor-btn-danger tutor-btn-sm"
-                            >
-                              Quitar
-                            </button>
+                            <div className="flex items-center justify-end gap-1">
+                              {onOpenStudent ? (
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenStudent(student.id)}
+                                  aria-label={`Ver ficha de ${student.name}`}
+                                  className="tutor-btn tutor-btn-secondary tutor-btn-sm"
+                                >
+                                  Ver ficha
+                                </button>
+                              ) : null}
+                              <button
+                                type="button"
+                                onClick={() => setConfirmingId(student.id)}
+                                className="tutor-focus rounded-[6px] px-2 py-1 text-[13.5px] font-semibold text-tutor-ink-soft transition-colors hover:text-tutor-danger"
+                              >
+                                Quitar
+                              </button>
+                            </div>
                           )}
                         </td>
                       ) : null}

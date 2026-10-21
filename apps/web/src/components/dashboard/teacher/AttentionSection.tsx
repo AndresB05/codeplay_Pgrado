@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { pickMascotAvatar } from '../../../constants/mascotAvatars';
 import type { ClassroomStudent } from '../../../types/classroom.types';
 import { formatLastActivity } from './classroomsData';
 
@@ -38,9 +39,14 @@ export const AttentionSection = ({
         {shown.map((student) => (
           <li
             key={student.id}
-            className="flex items-center justify-between gap-3 border-b border-tutor-rule px-4 py-2.5 last:border-b-0"
+            className="flex items-center gap-2.5 border-b border-tutor-rule px-4 py-2.5 last:border-b-0"
           >
-            <p className="min-w-0">
+            <img
+              src={pickMascotAvatar(student.id, student.name)}
+              alt=""
+              className="h-[30px] w-[30px] shrink-0 rounded-full border border-tutor-rule object-cover"
+            />
+            <p className="min-w-0 flex-1">
               <span className="block truncate font-semibold text-tutor-ink">{student.name}</span>
               <span className="block text-[13.5px] text-tutor-ink-soft">
                 Última actividad {formatLastActivity(student.hoursSinceLastActivity)}

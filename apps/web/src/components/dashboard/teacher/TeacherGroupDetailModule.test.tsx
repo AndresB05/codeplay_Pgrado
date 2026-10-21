@@ -190,4 +190,21 @@ describe('TeacherGroupDetailModule: requiere tu atención', () => {
 
     expect(screen.getByTestId('ruta')).toHaveTextContent('/teacher/panel/g1/s1');
   });
+
+  it('en la tabla, «Ver ficha» abre la ficha del explorador en el panel', async () => {
+    renderDetail([buildGroup('g1', 'Música', [away('s1', 'Ana', 2)])]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ver ficha de Ana' }));
+
+    expect(screen.getByTestId('ruta')).toHaveTextContent('/teacher/panel/g1/s1');
+  });
+
+  it('la actividad de una semana o más va en ámbar; la reciente, no', () => {
+    renderDetail([buildGroup('g1', 'Música', [away('s1', 'Ana', 7), away('s2', 'Bruno', 6)])]);
+
+    const table = within(screen.getByRole('table'));
+
+    expect(table.getByText('Hace 7 días')).toHaveClass('tutor-badge-warn');
+    expect(table.getByText('Hace 6 días')).not.toHaveClass('tutor-badge-warn');
+  });
 });

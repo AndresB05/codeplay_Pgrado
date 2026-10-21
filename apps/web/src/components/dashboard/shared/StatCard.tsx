@@ -14,7 +14,17 @@ interface StatCardProps {
    * `tutor`: una celda de la franja `tutor-stats`; la franja la pone quien la monta.
    */
   variant?: 'card' | 'map' | 'tutor';
+  /** Sólo en `tutor`: el color de la cifra, de los tokens que pasan 4,5:1 sobre blanco. */
+  tutorTone?: 'ink' | 'accent' | 'ok' | 'info' | 'warn';
 }
+
+const TUTOR_TONES = {
+  ink: 'text-tutor-ink',
+  accent: 'text-tutor-accent',
+  ok: 'text-tutor-ok',
+  info: 'text-tutor-info',
+  warn: 'text-tutor-warn',
+};
 
 /* «3 de 4»: el total va más pequeño para que la cifra que importa se lea primero. */
 const FRACTION = /^(\d+) (de \d+.*)$/;
@@ -33,6 +43,7 @@ export const StatCard = ({
   value,
   tone = 'grape',
   variant = 'card',
+  tutorTone = 'ink',
 }: StatCardProps) => {
   const styles = TONE_STYLES[tone];
 
@@ -44,7 +55,7 @@ export const StatCard = ({
         <dt className="text-[13.5px] font-medium text-tutor-ink-soft">{title}</dt>
         {/* Un nombre, como el del mundo más común, baja de tamaño para caber en una línea. */}
         <dd
-          className={`mt-0.5 font-bold leading-tight text-tutor-ink ${
+          className={`mt-0.5 font-bold leading-tight ${TUTOR_TONES[tutorTone]} ${
             /^\d/.test(value) ? 'text-[22px]' : 'text-[17px]'
           }`}
         >
