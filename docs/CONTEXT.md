@@ -998,6 +998,8 @@ escribirse; la que quede de una sesión anterior es inerte y puede borrarse.
 | --- | --- |
 | `dev:skipAuth` | Marca de sesión de invitado. Sólo en desarrollo |
 | `dev:guestRole` | Rol de la sesión de invitado: `child` o `tutor` |
+| `dashboard:sidebarCollapsed` | Si la barra lateral está plegada (los dos roles) |
+| `dashboard:teacherGroupsFolded` | Si el tutor plegó la lista de salones de su barra lateral. Sin la clave, desplegada; plegada y con un salón abierto, se ve sólo ése. Es preferencia de la vista y no pasa por `useClassrooms()` |
 
 ### 2.6 `contenido-mundos` — Mundos, niveles y trofeos (rol niño)
 

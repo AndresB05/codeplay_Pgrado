@@ -193,6 +193,16 @@ activo, 6,65:1; sobre el hover, 7,51:1; «Tutor» al 80 %, 6,52:1. Y el contenid
 de cada pantalla va **centrado en el `<main>`** (`mx-auto`): sin él, en una
 pantalla ancha quedaba pegado a la izquierda y al plegar la barra saltaba entero.
 
+**Tanda 6 (pedida por el usuario):** la lista de salones bajo «Salón de clases»
+se **pliega** con un botón propio junto al enlace —dos objetivos, nunca un botón
+dentro de otro—, para que con muchos salones el Panel de información y Ajustes no
+queden lejos. Es una preferencia de la vista y no un dato de salón, así que se
+guarda en `localStorage` fuera de `useClassrooms()`, y sin almacenamiento la
+lista sale desplegada. El salón abierto nunca se esconde, pero plegada se ve
+**sólo ése**: si volvieran todos al entrar en uno, plegar no serviría de nada con
+veinte salones. El chevron sigue diciendo «plegada» y, al pulsarlo, despliega la
+lista entera y lo guarda.
+
 Barra lateral de 240 px desplegada y 64 px plegada: elementos de 36 px, el
 activo con fondo `tutor-accent-soft` y texto en el acento. Los salones cuelgan de
 «Salón de clases» con su pestaña de color, nombre y recuento. Plegada, cada salón

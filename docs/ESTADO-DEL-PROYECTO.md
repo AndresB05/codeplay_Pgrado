@@ -819,6 +819,7 @@ borrarla. Lo que sí vive en el navegador:
 | `classrooms:pendingInvitationToken` | El token de un enlace abierto sin sesión. Es lo que le permite sobrevivir al registro, incluido el viaje a Google |
 | `auth:pendingSignupRole` | El rol elegido antes de ir a Google, para fijarlo a la vuelta |
 | `dashboard:sidebarCollapsed` | Si la barra lateral está plegada |
+| `dashboard:teacherGroupsFolded` | Si el tutor plegó la lista de salones de su barra lateral. Sin la clave, desplegada |
 
 Ningún componente lee `localStorage` directamente: cada clave pasa por su helper
 en `context/` (`guest`, `invitationToken`, `oauthRole` y `sidebar`).

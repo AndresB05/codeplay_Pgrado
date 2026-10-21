@@ -6,6 +6,7 @@ import type { ClassGroup } from '../../../types/classroom.types';
 import { getGroupTheme } from '../shared/groupThemes';
 import { ChartIcon, GraduationIcon, LogoutIcon, SettingsIcon } from './TeacherIcons';
 import { useSidebarCollapsed } from '../../../hooks/useSidebarCollapsed';
+import { useTeacherGroupsFolded } from '../../../hooks/useTeacherGroupsFolded';
 import { SidebarToggle } from '../Sidebar/SidebarToggle';
 
 interface TeacherSidebarProps {
@@ -20,10 +21,21 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
+  const [groupsFolded, toggleGroupsFolded] = useTeacherGroupsFolded();
 
   const totalPending = groups.reduce((total, group) => total + group.pendingRequests.length, 0);
 
   const isGroupsSection = activeSection === ROUTES.TEACHER_GROUPS;
+
+  /*
+   * Con muchos salones, plegar la lista deja a mano el Panel de información y
+   * Ajustes. El salón abierto nunca se esconde, pero plegada sólo se ve ése: si
+   * volvieran todos al entrar en uno, plegar no serviría de nada.
+   */
+  const groupsExpanded = !groupsFolded;
+  const listedGroups = groupsExpanded
+    ? groups
+    : groups.filter((group) => group.id === activeGroupId);
 
   /* Ver `Sidebar.tsx`: sin `signOut` la sesión de Supabase sobreviviría. */
   const handleLogout = async (): Promise<void> => {
@@ -61,45 +73,82 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
     >
       <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} variant="tutor" />
 
-      <nav className={`${collapsed ? 'mt-10' : 'mt-1'} space-y-1`}>
+      <nav className={`${collapsed ? 'mt-10' : 'mt-8'} space-y-1`}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const showPending = item.route === ROUTES.TEACHER_GROUPS && totalPending > 0;
           const pendingLabel = `${totalPending} ${totalPending === 1 ? 'solicitud' : 'solicitudes'} en espera`;
+          /* Plegada la barra, el icono no lleva chevron: la lista se gobierna desplegándola. */
+          const hasGroupsToggle = item.route === ROUTES.TEACHER_GROUPS && !collapsed;
 
           return (
             <div key={item.route}>
-              <button
-                type="button"
-                onClick={() => navigate(item.route)}
-                aria-label={
-                  collapsed ? `${item.label}${showPending ? `, ${pendingLabel}` : ''}` : undefined
-                }
-                aria-current={item.active ? 'page' : undefined}
-                title={collapsed ? item.label : undefined}
-                className={`tutor-focus relative flex h-[36px] w-full items-center gap-2.5 rounded-[8px] text-left text-[14.5px] font-semibold transition-colors ${
-                  collapsed ? 'justify-center px-0' : 'px-2.5'
-                } ${
-                  item.active
-                    ? 'bg-tutor-accent-soft text-tutor-accent'
-                    : 'text-tutor-ink-soft hover:bg-tutor-canvas hover:text-tutor-ink'
-                }`}
-              >
-                <Icon variant="tutor" />
-                {collapsed ? null : <span className="flex-1 truncate">{item.label}</span>}
+              <div className={hasGroupsToggle ? 'flex items-center gap-1' : undefined}>
+                <button
+                  type="button"
+                  onClick={() => navigate(item.route)}
+                  aria-label={
+                    collapsed ? `${item.label}${showPending ? `, ${pendingLabel}` : ''}` : undefined
+                  }
+                  aria-current={item.active ? 'page' : undefined}
+                  title={collapsed ? item.label : undefined}
+                  className={`tutor-focus relative flex h-[36px] items-center gap-2.5 rounded-[8px] ${
+                    hasGroupsToggle ? 'min-w-0 flex-1' : 'w-full'
+                  } text-left text-[14.5px] font-semibold transition-colors ${
+                    collapsed ? 'justify-center px-0' : 'px-2.5'
+                  } ${
+                    item.active
+                      ? 'bg-tutor-accent-soft text-tutor-accent'
+                      : 'text-tutor-ink-soft hover:bg-tutor-canvas hover:text-tutor-ink'
+                  }`}
+                >
+                  <Icon variant="tutor" />
+                  {collapsed ? null : <span className="flex-1 truncate">{item.label}</span>}
 
-                {showPending ? (
-                  <span
-                    title={pendingLabel}
-                    className={`flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-tutor-warn-soft px-1.5 text-[12.5px] font-semibold text-tutor-warn ${
-                      collapsed ? 'absolute -right-1 -top-1 ring-2 ring-tutor-surface' : ''
-                    }`}
+                  {showPending ? (
+                    <span
+                      title={pendingLabel}
+                      className={`flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-tutor-warn-soft px-1.5 text-[12.5px] font-semibold text-tutor-warn ${
+                        collapsed ? 'absolute -right-1 -top-1 ring-2 ring-tutor-surface' : ''
+                      }`}
+                    >
+                      {totalPending}
+                      <span className="sr-only"> {pendingLabel}</span>
+                    </span>
+                  ) : null}
+                </button>
+
+                {hasGroupsToggle ? (
+                  <button
+                    type="button"
+                    onClick={toggleGroupsFolded}
+                    aria-expanded={groupsExpanded}
+                    aria-controls="teacher-groups-list"
+                    aria-label={groupsExpanded ? 'Ocultar tus salones' : 'Mostrar tus salones'}
+                    title={groupsExpanded ? 'Ocultar tus salones' : 'Mostrar tus salones'}
+                    className="tutor-btn tutor-btn-ghost h-[28px] w-[28px] shrink-0 px-0"
                   >
-                    {totalPending}
-                    <span className="sr-only"> {pendingLabel}</span>
-                  </span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                      className={`transition-transform motion-reduce:transition-none ${
+                        groupsExpanded ? 'rotate-90' : ''
+                      }`}
+                    >
+                      <path
+                        d="M9 5L16 12L9 19"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
                 ) : null}
-              </button>
+              </div>
 
               {/*
                * Los salones cuelgan de "Salón de clases": es la navegación rápida
@@ -107,8 +156,12 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
                * ilustrada se queda donde hay sitio, en la tarjeta y la cabecera.
                */}
               {item.route === ROUTES.TEACHER_GROUPS ? (
-                <div className={`mt-1 space-y-0.5 ${collapsed ? '' : 'pl-2'}`}>
-                  {groups.map((group) => {
+                <div
+                  id="teacher-groups-list"
+                  hidden={listedGroups.length === 0}
+                  className={`mt-1 space-y-0.5 ${collapsed ? '' : 'pl-2'}`}
+                >
+                  {listedGroups.map((group) => {
                     const isActive = isGroupsSection && activeGroupId === group.id;
                     const theme = getGroupTheme(group.id);
 
