@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { useClassrooms } from '../../../hooks/useClassrooms';
@@ -6,12 +6,13 @@ import { useFreshClassrooms } from '../../../hooks/useFreshClassrooms';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { GroupBadge } from '../shared/GroupBadge';
 import { getGroupTheme } from '../shared/groupThemes';
+import { ChevronIcon } from '../shared/RosterFilterBar';
 import { StatCard } from '../shared/StatCard';
 import { StoreErrorNotice } from '../shared/StoreErrorNotice';
 import { ClassroomPodium } from '../shared/ClassroomPodium';
 import { podiumRanking } from '../shared/podiumRanking';
 import { StudentRosterTable } from '../shared/StudentRosterTable';
-import { findClassGroup, getClassGroupStats } from './classroomsData';
+import { findClassGroup, getClassGroupStats, sortGroups } from './classroomsData';
 import { AddStudentsPanel } from './AddStudentsPanel';
 import { ExportReportMenu } from './ExportReportMenu';
 import { PendingRequestsSection } from './PendingRequestsSection';
@@ -21,7 +22,16 @@ interface TeacherGroupDetailModuleProps {
   groupId: string | undefined;
 }
 
-export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModuleProps) => {
+/*
+ * La ruta de otro salón monta el mismo componente con otro `groupId`, y React lo
+ * reutilizaría: los filtros del roster o el panel de sumar alumnos pasarían de un
+ * salón al siguiente. La `key` lo obliga a empezar de cero.
+ */
+export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModuleProps) => (
+  <GroupDetail key={groupId ?? ''} groupId={groupId} />
+);
+
+const GroupDetail = ({ groupId }: TeacherGroupDetailModuleProps) => {
   const navigate = useNavigate();
   const {
     groups,
@@ -37,6 +47,15 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
   useFreshClassrooms();
   const [addStudentsOpen, setAddStudentsOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  /*
+   * Nadie restaura el scroll al navegar: sin esto, el salón nuevo se abre a media
+   * altura. `instant` porque el `html` lleva `scroll-behavior: smooth`, y subir
+   * animando parecería un desplazamiento dentro del mismo salón.
+   */
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
 
   const group = findClassGroup(groups, groupId);
 
@@ -77,14 +96,39 @@ export const TeacherGroupDetailModule = ({ groupId }: TeacherGroupDetailModulePr
   return (
     <div className="px-6 py-6 lg:px-8">
       <div className="mx-auto w-full max-w-[1160px]">
-        <button
-          type="button"
-          onClick={() => navigate(ROUTES.TEACHER_GROUPS)}
-          className="tutor-focus mb-3 inline-flex items-center gap-1 rounded-[6px] text-[14.5px] font-semibold text-tutor-accent hover:underline"
-        >
-          <BackIcon variant="tutor" />
-          Mis salones
-        </button>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <button
+            type="button"
+            onClick={() => navigate(ROUTES.TEACHER_GROUPS)}
+            className="tutor-focus inline-flex items-center gap-1 rounded-[6px] text-[14.5px] font-semibold text-tutor-accent hover:underline"
+          >
+            <BackIcon variant="tutor" />
+            Mis salones
+          </button>
+
+          {groups.length > 1 ? (
+            <label className="flex w-full flex-col gap-1.5 sm:w-auto sm:flex-row sm:items-center sm:gap-2.5">
+              <span className="text-[13.5px] font-medium text-tutor-ink-soft sm:shrink-0">
+                Ir a otro salón
+              </span>
+              <span className="relative block sm:w-[260px]">
+                <select
+                  value={group.id}
+                  onChange={(event) => navigate(`${ROUTES.TEACHER_GROUPS}/${event.target.value}`)}
+                  className="tutor-field appearance-none pr-9"
+                >
+                  {sortGroups(groups, 'name').map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name} · {option.memberCount}{' '}
+                      {option.memberCount === 1 ? 'alumno' : 'alumnos'}
+                    </option>
+                  ))}
+                </select>
+                <ChevronIcon variant="tutor" />
+              </span>
+            </label>
+          ) : null}
+        </div>
 
         <StoreErrorNotice error={error} variant="tutor" />
 

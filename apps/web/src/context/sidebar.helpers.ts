@@ -45,3 +45,29 @@ export const saveTeacherGroupsFolded = (folded: boolean): void => {
     /* Sin almacenamiento la lista sigue plegándose; sólo no se recuerda. */
   }
 };
+
+/*
+ * La vista que el tutor eligió para «Mis salones» cuando tiene muchos: lista o
+ * tarjetas. `null` si nunca eligió, y entonces manda el número de salones.
+ */
+export type TeacherGroupsView = 'list' | 'cards';
+
+const TEACHER_GROUPS_VIEW_KEY = 'dashboard:teacherGroupsView';
+
+export const readTeacherGroupsView = (): TeacherGroupsView | null => {
+  try {
+    const stored = window.localStorage.getItem(TEACHER_GROUPS_VIEW_KEY);
+
+    return stored === 'list' || stored === 'cards' ? stored : null;
+  } catch {
+    return null;
+  }
+};
+
+export const saveTeacherGroupsView = (view: TeacherGroupsView): void => {
+  try {
+    window.localStorage.setItem(TEACHER_GROUPS_VIEW_KEY, view);
+  } catch {
+    /* Sin almacenamiento la vista sigue cambiando; sólo no se recuerda. */
+  }
+};

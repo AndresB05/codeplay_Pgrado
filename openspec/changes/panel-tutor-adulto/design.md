@@ -213,6 +213,32 @@ ese salón— en vez de escribir otra normalización. Ojo: `matchesGroupSearch` 
 usa también el buscador de salones del niño, que con esto encuentra «Salón» al
 escribir «salon». Lo escrito no se guarda: es de esa visita.
 
+**Tanda 8 (vista de lista en «Mis salones», sólo con datos que ya existen):**
+con más de 6 salones —el mismo umbral, ahora una constante compartida— la
+pantalla gana una barra de herramientas (buscar, ordenar, «Con solicitudes» y
+«Lista | Tarjetas») y la lista pasa a ser la vista por defecto, porque diez
+tarjetas obligan a desplazarse para comparar. La vista elegida se recuerda en el
+navegador; por debajo de `md` la tabla no cabe y se fuerzan las tarjetas. La
+franja «Solicitudes en espera» sólo sale con más de 6 salones: con menos, cada
+tarjeta ya enseña sus solicitudes a la vista, y así la pantalla de siempre no
+cambia ni un píxel. Contrastes medidos: etiqueta `tutor-warn` sobre
+`tutor-warn-soft` 5,24:1; en la pastilla blanca, el nombre en `tutor-ink`
+16,96:1 y el número en `tutor-warn` 5,93:1.
+
+En el detalle, **«Ir a otro salón»** (con 2 salones o más) es un `<select>`
+nativo: ya trae el teclado, la búsqueda por letra y la lista del sistema en el
+móvil. Cambiar de salón remonta el detalle con una `key` por salón —si no, React
+reutilizaría el componente y los filtros del roster pasarían al salón nuevo— y
+lo deja arriba sin animar.
+
+**Móvil:** por debajo de `md` la barra lateral desplegada dejaba al contenido
+unos 135 px a 375. Va siempre plegada en iconos y sin el botón para desplegarla:
+es la opción más simple que deja el contenido a todo el ancho, sin una capa
+superpuesta que gestionar. No se guarda, para no pisar la preferencia de
+escritorio. La barra del niño no resolvía el móvil, así que no había patrón que
+copiar. Con la franja «Solicitudes en espera» a la vista, el total junto a
+«Grupos de clase» se quita: decía lo mismo dos veces.
+
 Barra lateral de 240 px desplegada y 64 px plegada: elementos de 36 px, el
 activo con fondo `tutor-accent-soft` y texto en el acento. Los salones cuelgan de
 «Salón de clases» con su pestaña de color, nombre y recuento. Plegada, cada salón

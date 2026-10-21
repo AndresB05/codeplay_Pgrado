@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ROUTES } from '../../../constants/routes';
 import { AuthContext } from '../../../context/AuthContext';
 import { buildAuthValue } from '../../../test/buildAuthValue';
@@ -174,5 +174,27 @@ describe('TeacherSidebar, el buscador de salones', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Ocultar tus salones' }));
 
     expect(screen.queryByRole('searchbox', { name: 'Buscar salón' })).not.toBeInTheDocument();
+  });
+});
+
+describe('TeacherSidebar en una pantalla estrecha', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('por debajo de md sale en iconos, sin botón para desplegarla y sin tocar la preferencia', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+
+    renderSidebar();
+
+    expect(screen.queryByText('Salón de clases')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Salón B' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /barra lateral/ })).not.toBeInTheDocument();
+    expect(window.localStorage.getItem('dashboard:sidebarCollapsed')).toBeNull();
   });
 });

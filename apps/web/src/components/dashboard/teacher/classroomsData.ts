@@ -292,6 +292,44 @@ export const searchGroups = (groups: ClassGroup[], query: string): ClassGroup[] 
   return groups.filter((group) => matchesGroupSearch(group, query));
 };
 
+/*
+ * Con seis salones la lista cabe y se lee de un vistazo; a partir de ahí el
+ * tutor busca, ordena y filtra. Lo comparten la barra lateral y «Mis salones».
+ */
+export const GROUP_SEARCH_THRESHOLD = 6;
+
+export type GroupSortKey = 'name' | 'pending' | 'occupancy' | 'online';
+
+/**
+ * Los salones en el orden elegido. El nombre va de la A a la Z; los demás, de
+ * mayor a menor y, en empate, por nombre, para que dos recargas no cambien el
+ * orden. La ocupación es la proporción de cupos usados, no el número de niños:
+ * un salón de 10 lleno va antes que uno de 30 a medias.
+ */
+export const sortGroups = (
+  groups: ClassGroup[],
+  key: GroupSortKey,
+  onlineIds: ReadonlySet<string> = new Set()
+): ClassGroup[] => {
+  const byName = (a: ClassGroup, b: ClassGroup) => a.name.localeCompare(b.name, 'es');
+
+  const measure = (group: ClassGroup): number => {
+    if (key === 'pending') {
+      return group.pendingRequests.length;
+    }
+
+    if (key === 'occupancy') {
+      return group.capacity > 0 ? group.memberCount / group.capacity : 0;
+    }
+
+    return getClassGroupStats(group, onlineIds).connectedNow;
+  };
+
+  return [...groups].sort((a, b) =>
+    key === 'name' ? byName(a, b) : measure(b) - measure(a) || byName(a, b)
+  );
+};
+
 const AVATAR_TONES = [
   'bg-[#EFE5FF] text-[#7C3AED]',
   'bg-[#FFE8CC] text-[#C97A00]',

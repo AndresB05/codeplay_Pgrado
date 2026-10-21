@@ -14,7 +14,7 @@ const ACTIVITY_OPTIONS: { value: ActivityFilter; label: string }[] = [
 
 type Variant = 'default' | 'tutor';
 
-const ChevronIcon = ({ variant = 'default' }: { variant?: Variant }) => (
+export const ChevronIcon = ({ variant = 'default' }: { variant?: Variant }) => (
   <span
     aria-hidden="true"
     className={`pointer-events-none absolute inset-y-0 flex items-center ${

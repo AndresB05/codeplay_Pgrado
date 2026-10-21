@@ -610,6 +610,19 @@ de 6 salones, gana un buscador «Buscar salón…» (sin acentos ni mayúsculas;
 público exacto deja sólo ese salón) y una altura máxima de unos 8 salones con
 scroll interno, para que Panel de información y Ajustes queden siempre a la vista.
 
+En **«Mis salones»**, con más de 6 salones aparece una barra para buscar, ordenar
+(nombre, solicitudes, ocupación o conectados), dejar sólo los que tienen
+solicitudes y elegir entre lista y tarjetas; la lista es la vista por defecto y
+encima va la franja «Solicitudes en espera», con una pastilla por salón. Por
+debajo de `md`, siempre tarjetas. Con 6 o menos, la pantalla de siempre.
+
+En el **detalle del salón**, con 2 salones o más, «Ir a otro salón» (un
+selector nativo junto a «‹ Mis salones») salta a otro salón sin pasar por la
+lista; el salón nuevo se abre arriba y sin los filtros del anterior.
+
+En **móvil** (por debajo de `md`), la barra lateral del tutor va siempre en
+iconos y sin el botón para desplegarla, sin tocar la preferencia guardada.
+
 ---
 
 ## 3. Herramientas y stack
@@ -825,6 +838,7 @@ borrarla. Lo que sí vive en el navegador:
 | `auth:pendingSignupRole` | El rol elegido antes de ir a Google, para fijarlo a la vuelta |
 | `dashboard:sidebarCollapsed` | Si la barra lateral está plegada |
 | `dashboard:teacherGroupsFolded` | Si el tutor plegó la lista de salones de su barra lateral. Sin la clave, desplegada |
+| `dashboard:teacherGroupsView` | Lista o tarjetas en «Mis salones» con más de 6 salones. Sin la clave, lista |
 
 Ningún componente lee `localStorage` directamente: cada clave pasa por su helper
 en `context/` (`guest`, `invitationToken`, `oauthRole` y `sidebar`).

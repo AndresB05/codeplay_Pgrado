@@ -5,14 +5,12 @@ import { endGuestSession } from '../../../context/guest.helpers';
 import { useAuth } from '../../../hooks/useAuth';
 import type { ClassGroup } from '../../../types/classroom.types';
 import { getGroupTheme } from '../shared/groupThemes';
-import { searchGroups } from './classroomsData';
+import { GROUP_SEARCH_THRESHOLD, searchGroups } from './classroomsData';
 import { ChartIcon, GraduationIcon, LogoutIcon, SettingsIcon } from './TeacherIcons';
+import { useMinWidth } from '../../../hooks/useMinWidth';
 import { useSidebarCollapsed } from '../../../hooks/useSidebarCollapsed';
 import { useTeacherGroupsFolded } from '../../../hooks/useTeacherGroupsFolded';
 import { SidebarToggle } from '../Sidebar/SidebarToggle';
-
-/* Con seis salones la lista cabe y se lee de un vistazo; a partir de ahí se busca. */
-const SEARCH_THRESHOLD = 6;
 
 interface TeacherSidebarProps {
   groups: ClassGroup[];
@@ -25,7 +23,13 @@ interface TeacherSidebarProps {
 export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: TeacherSidebarProps) => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
+  const [storedCollapsed, toggleCollapsed] = useSidebarCollapsed();
+  /*
+   * Por debajo de `md`, desplegada se comería la pantalla: va siempre en iconos
+   * y sin el botón. No se guarda, para no pisar la preferencia de escritorio.
+   */
+  const roomy = useMinWidth(768);
+  const collapsed = storedCollapsed || !roomy;
   const [groupsFolded, toggleGroupsFolded] = useTeacherGroupsFolded();
   /* Lo escrito no se guarda: es de esta visita, como el de cualquier buscador. */
   const [groupQuery, setGroupQuery] = useState('');
@@ -41,7 +45,7 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
    * volvieran todos al entrar en uno, plegar no serviría de nada.
    */
   const groupsExpanded = !groupsFolded;
-  const showGroupSearch = groupsExpanded && !collapsed && groups.length > SEARCH_THRESHOLD;
+  const showGroupSearch = groupsExpanded && !collapsed && groups.length > GROUP_SEARCH_THRESHOLD;
   const listedGroups = groupsExpanded
     ? showGroupSearch
       ? searchGroups(groups, groupQuery)
@@ -95,7 +99,9 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
         collapsed ? 'w-[64px] px-2' : 'w-[240px] px-3'
       }`}
     >
-      <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} variant="tutor" />
+      {roomy ? (
+        <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} variant="tutor" />
+      ) : null}
 
       <nav className={`${collapsed ? 'mt-10' : 'mt-8'} space-y-1`}>
         {navItems.map((item) => {

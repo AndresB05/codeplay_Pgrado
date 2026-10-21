@@ -382,6 +382,9 @@ bordes de 1 px, radios de 12/8 px y tablas compactas.
 | La barra superior en `grape-dark` liso con texto blanco y foco en blanco (tanda 5, elegida por el usuario) | `teacher/TeacherTopBar.tsx` |
 | El contenido centrado en el `<main>` (`mx-auto`), para que en pantallas anchas no quede a la izquierda ni salte al plegar | Los cuatro módulos del tutor |
 | La lista de salones de la barra lateral: plegable (tanda 6) y, con más de 6 salones, con buscador y altura máxima con scroll (tanda 7) | `teacher/TeacherSidebar.tsx`; la búsqueda es `searchGroups` en `teacher/classroomsData.ts` |
+| «Mis salones» con más de 6 salones: buscar, ordenar, «Con solicitudes», vista de lista por defecto o tarjetas, y la franja «Solicitudes en espera» (tanda 8). Con 6 o menos, igual que antes | `teacher/TeacherGroupsModule.tsx`; `sortGroups` y `GROUP_SEARCH_THRESHOLD` en `teacher/classroomsData.ts`; `hooks/useTeacherGroupsView.ts`, `hooks/useMinWidth.ts` |
+| «Ir a otro salón» en el detalle (con 2 salones o más): cambia de salón sin volver a la lista y empieza de cero, arriba y sin filtros (tanda 8) | `teacher/TeacherGroupDetailModule.tsx` |
+| Móvil: por debajo de `md`, la barra lateral siempre en iconos y sin botón, sin guardarlo; a 375 no hay scroll horizontal en ninguna pantalla del tutor (tanda 8) | `teacher/TeacherSidebar.tsx` con `hooks/useMinWidth.ts`; `TeacherGroupsModule.tsx`, `TeacherTopBar.tsx` |
 | La pestaña de color del salón y la insignia `GroupBadge shape="plain"` | `teacher/TeacherSidebar.tsx`, `TeacherGroupsModule.tsx`, `TeacherGroupDetailModule.tsx` |
 
 **El niño no cambia, y es estructural.** Las clases `.card`, `.btn`, `.chip` y
@@ -1001,6 +1004,7 @@ escribirse; la que quede de una sesión anterior es inerte y puede borrarse.
 | `dev:guestRole` | Rol de la sesión de invitado: `child` o `tutor` |
 | `dashboard:sidebarCollapsed` | Si la barra lateral está plegada (los dos roles) |
 | `dashboard:teacherGroupsFolded` | Si el tutor plegó la lista de salones de su barra lateral. Sin la clave, desplegada; plegada y con un salón abierto, se ve sólo ése. Es preferencia de la vista y no pasa por `useClassrooms()` |
+| `dashboard:teacherGroupsView` | `list` o `cards`: la vista elegida para «Mis salones» con más de 6 salones. Sin la clave, lista; por debajo de `md`, siempre tarjetas. Tampoco pasa por `useClassrooms()` |
 
 ### 2.6 `contenido-mundos` — Mundos, niveles y trofeos (rol niño)
 

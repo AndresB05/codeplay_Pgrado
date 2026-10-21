@@ -67,7 +67,7 @@ export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
       <button
         type="button"
         onClick={() => navigate(ROUTES.TEACHER_SETTINGS)}
-        className="tutor-focus ml-auto flex h-[40px] items-center gap-2.5 rounded-[8px] pl-1 pr-2.5 transition-colors hover:bg-white/10 focus-visible:outline-white"
+        className="tutor-focus ml-auto flex h-[40px] min-w-0 items-center gap-2.5 rounded-[8px] pl-1 pr-2.5 transition-colors hover:bg-white/10 focus-visible:outline-white"
         aria-label="Ajustes de cuenta"
       >
         <img
@@ -75,7 +75,9 @@ export const TeacherTopBar = ({ user }: TeacherTopBarProps) => {
           alt=""
           className="h-[32px] w-[32px] rounded-full border-2 border-white bg-tutor-sunken object-cover"
         />
-        <span className="text-[14.5px] font-semibold">{displayName}</span>
+        <span className="text-[14.5px] font-semibold max-sm:max-w-[120px] max-sm:truncate">
+          {displayName}
+        </span>
       </button>
     </header>
   );

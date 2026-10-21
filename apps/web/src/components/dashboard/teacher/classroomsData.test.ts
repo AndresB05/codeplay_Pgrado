@@ -11,6 +11,7 @@ import {
   isWorldFinished,
   matchesGroupSearch,
   searchGroups,
+  sortGroups,
   pickAvatarTone,
 } from './classroomsData';
 import type { CatalogWorld } from '../../../services/studentProgress.service';
@@ -376,7 +377,9 @@ describe('getClassroomProgressSummary', () => {
 
   it('deja la eficiencia en null cuando nadie ha superado nada', () => {
     const group = buildTestGroup({
-      students: [buildTestStudent({ attemptedLevels: 0, completedLevels: 0, averageBestScore: null })],
+      students: [
+        buildTestStudent({ attemptedLevels: 0, completedLevels: 0, averageBestScore: null }),
+      ],
     });
 
     expect(getClassroomProgressSummary([group], CATALOG).averageBestScore).toBeNull();
@@ -643,5 +646,70 @@ describe('pickAvatarTone', () => {
     ];
 
     expect(tones).toContain(pickAvatarTone('s1'));
+  });
+});
+
+describe('sortGroups', () => {
+  const request = (id: string) => ({
+    id,
+    studentId: `kid-${id}`,
+    studentName: 'Pide',
+    initials: 'PI',
+    avatarTone: 'bg-grape',
+    requestedAtIso: '2026-10-20T10:00:00.000Z',
+  });
+
+  /* «Dibujo» entra antes que «Álgebra»: empatan, y sólo el desempate por nombre los ordena. */
+  const groups = [
+    buildTestGroup({ id: 'b', name: 'Biología', capacity: 30, memberCount: 15 }),
+    buildTestGroup({
+      id: 'd',
+      name: 'Dibujo',
+      capacity: 10,
+      memberCount: 9,
+      pendingRequests: [request('4')],
+    }),
+    buildTestGroup({
+      id: 'a',
+      name: 'Álgebra',
+      capacity: 10,
+      memberCount: 9,
+      pendingRequests: [request('1')],
+      students: [buildTestStudent({ id: 'on-1' })],
+    }),
+    buildTestGroup({
+      id: 'c',
+      name: 'Cálculo',
+      capacity: 20,
+      memberCount: 17,
+      pendingRequests: [request('2'), request('3')],
+      students: [buildTestStudent({ id: 'on-2' }), buildTestStudent({ id: 'on-3' })],
+    }),
+  ];
+  const ids = (sorted: ClassGroup[]) => sorted.map((group) => group.id);
+
+  it('por nombre, de la A a la Z y con las tildes en su sitio', () => {
+    expect(ids(sortGroups(groups, 'name'))).toEqual(['a', 'b', 'c', 'd']);
+  });
+
+  it('por solicitudes, de más a menos y en empate por nombre', () => {
+    expect(ids(sortGroups(groups, 'pending'))).toEqual(['c', 'a', 'd', 'b']);
+  });
+
+  it('por ocupación, por la proporción de cupos y no por el número de niños', () => {
+    expect(ids(sortGroups(groups, 'occupancy'))).toEqual(['a', 'd', 'c', 'b']);
+  });
+
+  it('por conectados, contando sólo a los que están en línea', () => {
+    const online = new Set(['on-1', 'on-2', 'on-3']);
+
+    expect(ids(sortGroups(groups, 'online', online))).toEqual(['c', 'a', 'b', 'd']);
+  });
+
+  it('no cambia el arreglo que recibe', () => {
+    const copy = [...groups];
+    sortGroups(groups, 'pending');
+
+    expect(groups).toEqual(copy);
   });
 });
