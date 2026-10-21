@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '../../../context/AuthContext';
 import { buildAuthValue } from '../../../test/buildAuthValue';
 import { buildUser } from '../../../test/renderClassrooms';
@@ -44,9 +44,9 @@ const GROUPS = [buildGroup('g1', 'Salón A', 5), buildGroup('g2', 'Salón B', 15
 
 const CurrentPath = () => <p data-testid="ruta">{useLocation().pathname}</p>;
 
-const renderSettings = () =>
+const renderSettings = (signOut = vi.fn(async () => true)) =>
   render(
-    <AuthContext.Provider value={buildAuthValue(TUTOR)}>
+    <AuthContext.Provider value={{ ...buildAuthValue(TUTOR), signOut }}>
       <MemoryRouter initialEntries={['/teacher/settings']}>
         <TeacherSettingsModule user={TUTOR} groups={GROUPS} />
         <CurrentPath />
@@ -106,9 +106,13 @@ describe('TeacherSettingsModule', () => {
     expect(screen.getByTestId('ruta')).toHaveTextContent('/teacher/groups/g2');
   });
 
-  it('no repite «Cerrar sesión», que ya está en la barra lateral', () => {
-    renderSettings();
+  it('«Cerrar sesión» está en Ajustes y cierra la sesión de verdad', async () => {
+    const signOut = vi.fn(async () => true);
+    renderSettings(signOut);
 
-    expect(screen.queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
+
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('ruta').textContent).toBe('/');
   });
 });

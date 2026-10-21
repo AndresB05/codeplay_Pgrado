@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
-import { endGuestSession } from '../../../context/guest.helpers';
-import { useAuth } from '../../../hooks/useAuth';
 import type { ClassGroup } from '../../../types/classroom.types';
 import { getGroupTheme } from '../shared/groupThemes';
 import { GROUP_SEARCH_THRESHOLD, searchGroups } from './classroomsData';
-import { ChartIcon, GraduationIcon, LogoutIcon, SettingsIcon } from './TeacherIcons';
+import { ChartIcon, GraduationIcon, SettingsIcon } from './TeacherIcons';
 import { useMinWidth } from '../../../hooks/useMinWidth';
 import { useSidebarCollapsed } from '../../../hooks/useSidebarCollapsed';
 import { useTeacherGroupsFolded } from '../../../hooks/useTeacherGroupsFolded';
@@ -22,7 +20,6 @@ interface TeacherSidebarProps {
 
 export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: TeacherSidebarProps) => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
   const [storedCollapsed, toggleCollapsed] = useSidebarCollapsed();
   /*
    * Por debajo de `md`, desplegada se comería la pantalla: va siempre en iconos
@@ -64,13 +61,6 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
       behavior: reduceMotion ? 'auto' : 'smooth',
     });
   }, [activeGroupId, collapsed, groupsExpanded]);
-
-  /* Ver `Sidebar.tsx`: sin `signOut` la sesión de Supabase sobreviviría. */
-  const handleLogout = async (): Promise<void> => {
-    endGuestSession();
-    await signOut();
-    navigate(ROUTES.LANDING);
-  };
 
   const navItems = [
     {
@@ -263,21 +253,6 @@ export const TeacherSidebar = ({ groups, activeGroupId, activeSection }: Teacher
           );
         })}
       </nav>
-
-      <div className="mt-auto pt-6">
-        <button
-          type="button"
-          onClick={() => void handleLogout()}
-          aria-label={collapsed ? 'Cerrar sesión' : undefined}
-          title={collapsed ? 'Cerrar sesión' : undefined}
-          className={`tutor-focus flex h-[36px] w-full items-center gap-2.5 rounded-[8px] text-left text-[14.5px] font-semibold text-tutor-danger transition-colors hover:bg-tutor-danger-soft ${
-            collapsed ? 'justify-center px-0' : 'px-2.5'
-          }`}
-        >
-          <LogoutIcon variant="tutor" />
-          {collapsed ? null : 'Cerrar sesión'}
-        </button>
-      </div>
     </aside>
   );
 };

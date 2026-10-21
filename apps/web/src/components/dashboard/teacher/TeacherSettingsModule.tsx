@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
+import { endGuestSession } from '../../../context/guest.helpers';
+import { useAuth } from '../../../hooks/useAuth';
 import { FALLBACK_TEACHER_NAME } from '../../../services/classrooms.service';
 import type { ClassGroup } from '../../../types/classroom.types';
 import type { User } from '../../../types/user.types';
@@ -8,19 +10,24 @@ import { ChangeNamePanel } from '../shared/ChangeNamePanel';
 import { ChangePasswordPanel } from '../shared/ChangePasswordPanel';
 import { DeleteAccountPanel } from '../shared/DeleteAccountPanel';
 import { getGroupTheme } from '../shared/groupThemes';
+import { LogoutIcon } from './TeacherIcons';
 
 interface TeacherSettingsModuleProps {
   user: User | null;
   groups: ClassGroup[];
 }
 
-/*
- * «Cerrar sesión» no está aquí: vive al pie de la barra lateral, que se ve desde
- * todas las pantallas, y dos botones para lo mismo hacían dudar de si eran dos
- * cosas distintas.
- */
+/* «Cerrar sesión» vive aquí y no en la barra lateral, como en el prototipo. */
 export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModuleProps) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  /* Ver `Sidebar.tsx`: sin `signOut` la sesión de Supabase sobreviviría. */
+  const handleLogout = async (): Promise<void> => {
+    endGuestSession();
+    await signOut();
+    navigate(ROUTES.LANDING);
+  };
 
   const displayName = user?.fullName || FALLBACK_TEACHER_NAME;
   const email = user?.email;
@@ -35,42 +42,53 @@ export const TeacherSettingsModule = ({ user, groups }: TeacherSettingsModulePro
         </section>
 
         <div className="mt-6 grid grid-cols-1 items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <section aria-label="Tu perfil" className="tutor-card overflow-hidden text-center">
-            <div aria-hidden className="h-[56px] bg-tutor-accent" />
-            <img
-              src={TUTOR_AVATAR}
-              alt=""
-              className="mx-auto -mt-[40px] h-[80px] w-[80px] rounded-full border-4 border-tutor-surface bg-tutor-sunken object-cover"
-            />
+          <div className="flex min-w-0 flex-col gap-3">
+            <section aria-label="Tu perfil" className="tutor-card overflow-hidden text-center">
+              <div aria-hidden className="h-[56px] bg-tutor-accent" />
+              <img
+                src={TUTOR_AVATAR}
+                alt=""
+                className="mx-auto -mt-[40px] h-[80px] w-[80px] rounded-full border-4 border-tutor-surface bg-tutor-sunken object-cover"
+              />
 
-            <h2 className="mt-2 break-words px-4 text-[20px] leading-tight text-tutor-ink">
-              {displayName}
-            </h2>
-            <p className="mt-1.5">
-              <span className="tutor-badge tutor-badge-ok tutor-badge-plain">Tutor</span>
-            </p>
-            <p className="mt-1.5 break-words px-4 text-[14px] text-tutor-ink-soft">
-              {email ?? 'Sin correo asociado'}
-            </p>
+              <h2 className="mt-2 break-words px-4 text-[20px] leading-tight text-tutor-ink">
+                {displayName}
+              </h2>
+              <p className="mt-1.5">
+                <span className="tutor-badge tutor-badge-ok tutor-badge-plain">Tutor</span>
+              </p>
+              <p className="mt-1.5 break-words px-4 text-[14px] text-tutor-ink-soft">
+                {email ?? 'Sin correo asociado'}
+              </p>
 
-            {/* La cifra arriba y el rótulo debajo, pero en el orden de lectura va primero el rótulo. */}
-            <dl className="mt-4 grid grid-cols-2 border-t border-tutor-rule">
-              <div className="flex flex-col-reverse border-r border-tutor-rule px-3 py-3">
-                <dt className="text-[13px] text-tutor-ink-soft">
-                  {groups.length === 1 ? 'salón' : 'salones'}
-                </dt>
-                <dd className="text-[22px] font-bold leading-tight text-tutor-ink">
-                  {groups.length}
-                </dd>
-              </div>
-              <div className="flex flex-col-reverse px-3 py-3">
-                <dt className="text-[13px] text-tutor-ink-soft">niños a cargo</dt>
-                <dd className="text-[22px] font-bold leading-tight text-tutor-ink">
-                  {totalStudents}
-                </dd>
-              </div>
-            </dl>
-          </section>
+              {/* La cifra arriba y el rótulo debajo, pero en el orden de lectura va primero el rótulo. */}
+              <dl className="mt-4 grid grid-cols-2 border-t border-tutor-rule">
+                <div className="flex flex-col-reverse border-r border-tutor-rule px-3 py-3">
+                  <dt className="text-[13px] text-tutor-ink-soft">
+                    {groups.length === 1 ? 'salón' : 'salones'}
+                  </dt>
+                  <dd className="text-[22px] font-bold leading-tight text-tutor-ink">
+                    {groups.length}
+                  </dd>
+                </div>
+                <div className="flex flex-col-reverse px-3 py-3">
+                  <dt className="text-[13px] text-tutor-ink-soft">niños a cargo</dt>
+                  <dd className="text-[22px] font-bold leading-tight text-tutor-ink">
+                    {totalStudents}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="tutor-btn tutor-btn-secondary w-full text-tutor-danger"
+            >
+              <LogoutIcon variant="tutor" />
+              Cerrar sesión
+            </button>
+          </div>
 
           <div className="flex min-w-0 flex-col gap-4">
             <section className="tutor-card px-5 pb-1 pt-4">

@@ -198,3 +198,13 @@ describe('TeacherSidebar en una pantalla estrecha', () => {
     expect(window.localStorage.getItem('dashboard:sidebarCollapsed')).toBeNull();
   });
 });
+
+describe('TeacherSidebar, sin salida', () => {
+  it('ya no lleva «Cerrar sesión», ni desplegada ni en iconos', async () => {
+    renderSidebar();
+    expect(screen.queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ocultar la barra lateral' }));
+    expect(screen.queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument();
+  });
+});

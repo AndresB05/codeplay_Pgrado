@@ -808,7 +808,7 @@ con las del tutor.
 | Generar un enlace de invitación canjeable, copiarlo y retirarlo | ✅ | `teacher/AddStudentsPanel.tsx` + `services/invitations.service.ts` + `hooks/useInvitations.ts` — paso 19, mitad A |
 | Lista de enlaces con sus **tres** estados y purga de los caducados | ✅ | `useInvitations.ts` + `readState()` en `invitations.service.ts` |
 | Recursos educativos | 🟡 | Tarjetas informativas sin destino |
-| Ajustes de cuenta: cambiar nombre y contraseña; salir, desde la barra lateral (tanda 9) | ✅ | `teacher/TeacherSettingsModule.tsx` + `shared/ChangeNamePanel.tsx`, `shared/ChangePasswordPanel.tsx` — desde el paso 13, ver §2.2 |
+| Ajustes de cuenta: cambiar nombre y contraseña, y salir («Cerrar sesión» bajo la tarjeta de perfil; ya no está en la barra lateral) | ✅ | `teacher/TeacherSettingsModule.tsx` + `shared/ChangeNamePanel.tsx`, `shared/ChangePasswordPanel.tsx` — desde el paso 13, ver §2.2 |
 
 **Verificado en el navegador el 14-oct-2026** (cambio `panel-tutor-conectados-y-filtros`), con
 el tutor de prueba en `http://[::1]:5174` y el niño de prueba en `localhost:5174`
