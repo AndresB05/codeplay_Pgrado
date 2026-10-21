@@ -365,6 +365,8 @@ del tutor salió de él** el 20-oct-2026: ver el apartado siguiente.
 
 #### El tutor habla en voz de adulto, con `panel-tutor-adulto` (20-oct-2026)
 
+Archivado el 21-oct-2026 en `openspec/changes/archive/2026-10-21-panel-tutor-adulto/`; sus requisitos pasan a `openspec/specs/sistema-visual/spec.md`.
+
 El área del tutor heredaba entero el lenguaje del niño —Fredoka en todo,
 contornos de 3 px en tinta, sombras sólidas, botones con relieve, chips
 saturados— y se leía como un juguete al que le faltaba densidad. Ahora tiene su
