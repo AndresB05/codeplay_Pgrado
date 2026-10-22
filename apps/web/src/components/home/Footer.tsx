@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { SectionContainer } from './shared';
 import { BrandLogo } from '../ui/BrandLogo';
 
@@ -10,8 +12,16 @@ export const Footer = () => {
           CodePlay
         </div>
 
-        <div className="text-center">
-          © 2026 CodePlay · Acompañando el pensamiento computacional
+        <div className="flex flex-col items-center gap-1 text-center md:items-end md:text-right">
+          <nav aria-label="Textos legales" className="flex gap-4">
+            <Link to={ROUTES.TERMS} className="text-grape-dark underline-offset-4 hover:underline">
+              Términos y condiciones
+            </Link>
+            <Link to={ROUTES.PRIVACY} className="text-grape-dark underline-offset-4 hover:underline">
+              Política de privacidad
+            </Link>
+          </nav>
+          <span>© 2026 CodePlay · Acompañando el pensamiento computacional</span>
         </div>
       </SectionContainer>
     </footer>

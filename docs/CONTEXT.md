@@ -363,6 +363,11 @@ inspirado en CodeCombat, CodeMonkey y Scratch, sobre un bioma de selva tropical.
 tutores, cómo se aprende, pie), login, registro y panel del alumno. **El panel
 del tutor salió de él** el 20-oct-2026: ver el apartado siguiente.
 
+**Textos legales** (21-oct-2026): `/terminos` y `/privacidad`, sin guarda,
+enlazados desde el pie de la portada. Una sola página (`pages/Legal/LegalPage.tsx`)
+y el texto de los dos .docx en `pages/Legal/legalContent.ts`, con sus huecos
+entre corchetes aún por rellenar.
+
 #### El tutor habla en voz de adulto, con `panel-tutor-adulto` (20-oct-2026)
 
 Archivado el 21-oct-2026 en `openspec/changes/archive/2026-10-21-panel-tutor-adulto/`; sus requisitos pasan a `openspec/specs/sistema-visual/spec.md`.

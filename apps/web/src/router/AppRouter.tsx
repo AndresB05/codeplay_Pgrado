@@ -7,6 +7,8 @@ import { ROUTES } from '../constants/routes';
 import { ForgotPassword } from '../pages/ForgotPassword/ForgotPassword';
 import { Invite } from '../pages/Invite/Invite';
 import { Landing } from '../pages/Landing/Landing';
+import { LegalPage } from '../pages/Legal/LegalPage';
+import { PRIVACY, TERMS } from '../pages/Legal/legalContent';
 import { Login } from '../pages/Login/Login';
 import { ResetPassword } from '../pages/ResetPassword/ResetPassword';
 import { Signup } from '../pages/Signup/Signup';
@@ -132,6 +134,10 @@ export const AppRouter = () => {
                * esta ruta.
                */}
               <Route path={`${ROUTES.INVITE}/:token`} element={<Invite />} />
+
+              {/* Sin guarda: los textos legales los lee cualquiera, con sesión o sin ella. */}
+              <Route path={ROUTES.TERMS} element={<LegalPage document={TERMS} />} />
+              <Route path={ROUTES.PRIVACY} element={<LegalPage document={PRIVACY} />} />
 
               {/* Panel del niño */}
               <Route
