@@ -13,7 +13,7 @@ parte. El foco visible sólo existe en el tutor (`.tutor-focus`, `.tutor-btn`,
 la lista del spec sin scroll horizontal a 375 px; `aria-current`, foco visible y
 nombres accesibles; escritorio idéntico.
 
-**Non-Goals:** rehacer la pantalla del nivel para jugar en un teléfono; colores,
+**Non-Goals:** colores,
 tokens o ilustraciones nuevos; tocar el store de salones o el esquema.
 
 ## Decisions
@@ -42,6 +42,22 @@ tokens o ilustraciones nuevos; tocar el store de salones o el esquema.
   `groups` que ya le pasa `TeacherDashboard` desde `useClassrooms()`; no habla
   con Supabase ni con el navegador. La frontera no se toca.
 
+- **Tanda 4, el nivel en el móvil (por debajo de `lg`):** pestañas «Bloques |
+  Tablero» en la fila de la cabecera, apiladas en un marco que se queda con el
+  alto libre de una columna flexible del alto de la ventana
+  (`.level-compact-page`): si el mensaje crece, cede el juego y no aparece
+  scroll. La oculta va `invisible` y no
+  `display: none`, que dejaría en cero los lienzos de three y de Blockly. La caja
+  va bajo el lienzo, con alto para dos filas, y `BlockEditor` reparte los
+  bloques en dos y los encoge lo justo si en una no caben. «Ejecutar» lleva al
+  tablero con un clic nativo en el hueco de los botones, porque los pinta la
+  escena por un portal y su evento de React no pasa por la pantalla. La barra
+  inferior se queda también en el nivel, por decisión del usuario.
+- **Tanda 4, tablones de trofeos:** opción A del usuario. Por debajo de `sm`,
+  `.wood-board`, `.trophy-log` y `.trophy-board` se dibujan con CSS en los
+  colores de madera del tema; la clase va doble para ganar a los rellenos de
+  utilidad pensados para los bordes de la ilustración.
+
 ## Risks / Trade-offs
 
 - **El alto de la barra está en dos sitios** (la barra y el relleno de `main`) →
@@ -50,5 +66,8 @@ tokens o ilustraciones nuevos; tocar el store de salones o el esquema.
   headless** → se miden en el dev con las herramientas de desarrollo y el panel
   del navegador a 375 px (`scrollWidth` frente a `innerWidth`), y Edge headless
   se usa para las públicas y para las capturas que se pueda.
-- **La pantalla del nivel a 375 px** queda jugable sólo a medias: se acepta y se
-  anota en `CONTEXT.md` como deuda.
+- **A 360×640 con barra inferior el lienzo mide 234 px** con la barra superior
+  de 60 px en el nivel y el mensaje de reposo callado; un aviso en pantalla se
+  lo come en parte, porque la columna cede del juego.
+- **La emulación táctil de CDP no es fiable con Blockly**: se probó con eventos
+  de puntero `touch`. Falta probarlo en un teléfono de verdad.

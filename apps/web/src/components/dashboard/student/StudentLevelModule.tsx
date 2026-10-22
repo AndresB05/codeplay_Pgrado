@@ -6,6 +6,7 @@ import { BlockEditorLoader } from '../../../game/BlockEditorLoader';
 import type { LevelFinish } from '../../../game/GameScene';
 import { GameSceneLoader } from '../../../game/GameSceneLoader';
 import { useAuth } from '../../../hooks/useAuth';
+import { useMinWidth } from '../../../hooks/useMinWidth';
 import { openLevel, type PlayableLevel } from '../../../game/levelConfig';
 import type { Program } from '../../../game/program';
 import { scoreForSteps } from '../../../game/score';
@@ -203,6 +204,13 @@ type StudentLevelModuleProps = {
  * carga (§7), y por eso la comprobación corre por encima de las dos fronteras
  * diferidas: un nivel que no se puede leer no descarga el motor 3D.
  */
+type LevelTab = 'blocks' | 'board';
+
+const LEVEL_TABS: { key: LevelTab; label: string }[] = [
+  { key: 'blocks', label: 'Bloques' },
+  { key: 'board', label: 'Tablero' },
+];
+
 export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -221,11 +229,54 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
   const [program, setProgram] = useState<Program | null>(null);
   const handleProgramChange = useCallback((next: Program) => setProgram(next), []);
 
-  const [blockBox, setBlockBox] = useState<HTMLDivElement | null>(null);
+  /*
+   * EL HUECO DE LA CAJA ES UN NODO FIJO que se cuelga donde toque. La bandeja
+   * cambia de sitio al cruzar `lg` (girar una tableta), y con un hueco nuevo el
+   * editor se montaba otra vez y el niño perdía los bloques del lienzo.
+   */
+  const [blockBox] = useState(() => {
+    const host = document.createElement('div');
+    host.className = 'relative h-full w-full touch-none';
+    return host;
+  });
+  const placeBlockBox = useCallback(
+    (slot: HTMLDivElement | null) => {
+      slot?.appendChild(blockBox);
+    },
+    [blockBox]
+  );
   const [controlsHost, setControlsHost] = useState<HTMLDivElement | null>(null);
   const [messageHost, setMessageHost] = useState<HTMLDivElement | null>(null);
 
   const [trayOpen, setTrayOpen] = useState(true);
+
+  /*
+   * Por debajo de `lg` el juego no cabe en dos columnas: escena y lienzo pasan a
+   * dos pestañas que llenan el alto que queda.
+   */
+  const compact = !useMinWidth(1024);
+  const [mobileTab, setMobileTab] = useState<LevelTab>('blocks');
+
+  /*
+   * «Ejecutar» lleva al tablero. Los botones los pinta la escena por un portal y
+   * sus eventos de React suben por la escena, no por aquí: se escucha el clic
+   * nativo en el hueco, que sí es de esta pantalla.
+   */
+  useEffect(() => {
+    if (!compact || controlsHost === null) {
+      return undefined;
+    }
+
+    const showBoard = (event: MouseEvent) => {
+      if ((event.target as Element | null)?.closest('.wood-key-go')) {
+        setMobileTab('board');
+      }
+    };
+
+    controlsHost.addEventListener('click', showBoard);
+
+    return () => controlsHost.removeEventListener('click', showBoard);
+  }, [compact, controlsHost]);
 
   const [helpOpen, setHelpOpen] = useState(false);
 
@@ -580,44 +631,189 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
   // El sobre vacío es `{}`, así que esto distingue «no hay bloques» de «no ha llegado».
   const emptyCanvas = program === null || Object.keys(program.workspace).length === 0;
 
+  /*
+   * La bandeja de bloques: en el escritorio flota sobre el pie de la escena; en
+   * el móvil va bajo el lienzo, en la misma pestaña, para arrastrar sin cruzar
+   * de panel. El mensaje de la escena sale de ella en el móvil y va junto a los
+   * botones, que se ven desde las dos pestañas.
+   */
+  const tray = (
+    <div
+      ref={compact ? undefined : measureTray}
+      className={`bandeja-de-bloques passport-page ${
+        compact
+          ? 'relative shrink-0 [border-width:12px]'
+          : 'absolute inset-x-4 bottom-4 [border-width:16px]'
+      }`}
+    >
+      <div className={`flex items-center gap-3 px-1 ${compact ? 'hidden' : ''}`}>
+        <BlocksIcon />
+        <h2 className="shrink-0 font-display text-[18px] text-grape-dark">Bloques</h2>
+
+        {/* El hueco del mensaje, que lo pinta la escena con un portal. */}
+        {compact ? null : <div ref={setMessageHost} className="min-w-0" />}
+
+        <button
+          type="button"
+          onClick={() => setTrayOpen((open) => !open)}
+          className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-grape-dark transition-colors hover:bg-mist-soft"
+          aria-expanded={trayOpen}
+        >
+          <ChevronIcon up={!trayOpen} />
+          <span className="sr-only">{trayOpen ? 'Plegar los bloques' : 'Abrir los bloques'}</span>
+        </button>
+      </div>
+
+      {/*
+       * Se pliega el MARCO y no el hueco: la caja coloca sus bloques con
+       * el alto del hueco, y un hueco a cero los dejaría encimados al
+       * volver a abrir.
+       */}
+      <div style={{ height: trayOpen ? undefined : 0 }} className="overflow-hidden">
+        <div className="relative">
+          {/*
+           * En el móvil, alto para dos filas: en una, los bloques no caben a un
+           * tamaño que se pueda coger. El hueco lleva `touch-none`, como el lienzo
+           * de Blockly: si no, el navegador se queda el gesto del dedo.
+           */}
+          <div
+            ref={placeBlockBox}
+            className={`relative w-full ${compact ? 'h-[96px]' : 'h-[72px]'}`}
+          />
+
+          {halted && <HaltedLock />}
+        </div>
+      </div>
+    </div>
+  );
+
+  const panelHidden = (tab: LevelTab) =>
+    compact && mobileTab !== tab ? 'invisible pointer-events-none' : '';
+
   return (
-    <div className="px-5 py-5">
+    <div className={compact ? 'level-compact-page flex flex-col px-5 py-2' : 'px-5 py-5'}>
       {/*
        * La cabecera es una tabla de madera, la misma de los logros: volver, el
-       * nombre del nivel en una placa clara y la ayuda del mundo.
+       * nombre del nivel en una placa clara y la ayuda del mundo. En el móvil, una
+       * sola fila: la flecha y la ayuda se quedan en icono.
        */}
-      <section className="wood-board flex flex-wrap items-center justify-between gap-3 py-2">
-        <BackSign onClick={backToLevels}>Volver a los niveles</BackSign>
-
-        <div className="wood-bare rounded-[12px] px-5 py-1.5">
-          <h1 className="wood-deep text-center font-display text-[26px] leading-tight">
-            {state.title}
-          </h1>
-        </div>
-
-        {introBubbles !== null && (
+      <section
+        className={`wood-board flex items-center justify-between gap-3 ${
+          compact ? 'h-[50px] shrink-0 flex-nowrap gap-2' : 'flex-wrap py-2'
+        }`}
+      >
+        {compact ? (
           <button
             type="button"
-            onClick={() => setIntroOpen(true)}
-            className={`howto-sign ${HOWTO_SIGNS[state.worldPosition] ?? HOWTO_SIGNS[0]} wood-carved gap-2 font-display text-[16px]`}
+            onClick={backToLevels}
+            aria-label="Volver a los niveles"
+            className="wood-key flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] border-[3px] text-wood-ink"
           >
-            <img
-              src={leoExplains}
-              alt=""
-              className="h-8 w-8 rounded-full border-2 border-wood-ink bg-cream object-cover object-top"
-            />
-            ¿Cómo se juega aquí?
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M15 5L8 12L15 19"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
+        ) : (
+          <BackSign onClick={backToLevels}>Volver a los niveles</BackSign>
         )}
+
+        {/*
+         * En el móvil las pestañas ocupan el sitio del título, que se queda para
+         * el lector de pantalla: en una fila aparte se comían el alto del lienzo.
+         */}
+        {compact ? (
+          <>
+            <h1 className="sr-only">{state.title}</h1>
+            <div
+              role="tablist"
+              aria-label="Vista del nivel"
+              className="flex min-w-0 flex-1 gap-1.5"
+            >
+              {LEVEL_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  id={`level-tab-${tab.key}`}
+                  aria-selected={mobileTab === tab.key}
+                  aria-controls={`level-panel-${tab.key}`}
+                  onClick={() => setMobileTab(tab.key)}
+                  className={`h-9 min-w-0 flex-1 rounded-[12px] border-[3px] px-1 font-display text-[14px] ${
+                    mobileTab === tab.key ? 'wood-key wood-key-current' : 'wood-key text-wood-ink'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="wood-bare rounded-[12px] px-5 py-1.5">
+            <h1 className="wood-deep text-center font-display text-[26px] leading-tight">
+              {state.title}
+            </h1>
+          </div>
+        )}
+
+        {introBubbles !== null &&
+          (compact ? (
+            <button
+              type="button"
+              onClick={() => setIntroOpen(true)}
+              aria-label="¿Cómo se juega aquí?"
+              className="shrink-0 rounded-full border-2 border-wood-ink bg-cream"
+            >
+              <img
+                src={leoExplains}
+                alt=""
+                className="h-9 w-9 rounded-full object-cover object-top"
+              />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIntroOpen(true)}
+              className={`howto-sign ${HOWTO_SIGNS[state.worldPosition] ?? HOWTO_SIGNS[0]} wood-carved gap-2 font-display text-[16px]`}
+            >
+              <img
+                src={leoExplains}
+                alt=""
+                className="h-8 w-8 rounded-full border-2 border-wood-ink bg-cream object-cover object-top"
+              />
+              ¿Cómo se juega aquí?
+            </button>
+          ))}
       </section>
 
       {/*
        * Alto fijo a propósito: la escena se ajusta a su padre y el lienzo
-       * también, así que un padre sin altura los deja a los dos en cero.
+       * también, así que un padre sin altura los deja a los dos en cero. En el
+       * móvil, el alto que queda en la pantalla, y las dos pestañas apiladas en él:
+       * la oculta se esconde con `invisible` y no con `display: none`, que dejaría
+       * en cero el lienzo de la escena y el de Blockly.
        */}
-      <section className="marco-del-juego mt-5 grid h-[640px] gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <section
+        className={`marco-del-juego ${
+          compact
+            ? 'relative mt-2 min-h-[200px] flex-1'
+            : 'mt-5 grid h-[640px] gap-4 lg:grid-cols-[minmax(0,1fr)_340px]'
+        }`}
+      >
         {/* La escena, el lienzo y los bloques, en páginas del pasaporte, como el saludo de «Mundos». */}
-        <div className="zona-del-juego passport-frame relative overflow-hidden">
+        <div
+          id="level-panel-board"
+          role={compact ? 'tabpanel' : undefined}
+          aria-labelledby={compact ? 'level-tab-board' : undefined}
+          className={`zona-del-juego passport-frame overflow-hidden ${
+            compact ? `absolute inset-0 ${panelHidden('board')}` : 'relative'
+          }`}
+        >
           <GameSceneLoader
             key={attemptKey}
             level={state.level.config}
@@ -628,7 +824,8 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
             onClear={requestClear}
             restartSignal={restartSignal}
             onFinish={handleFinish}
-            freeHeight={trayTop}
+            freeHeight={compact ? null : trayTop}
+            quietWhenIdle={compact}
             centerPillar={state.centerPillar}
             islands
             fillGaps={state.fillGaps}
@@ -673,52 +870,31 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
             )}
           </button>
 
-          <div
-            ref={measureTray}
-            className="bandeja-de-bloques passport-page absolute inset-x-4 bottom-4 [border-width:16px]"
-          >
-            <div className="flex items-center gap-3 px-1">
-              <BlocksIcon />
-              <h2 className="shrink-0 font-display text-[18px] text-grape-dark">Bloques</h2>
-
-              {/* El hueco del mensaje, que lo pinta la escena con un portal. */}
-              <div ref={setMessageHost} className="min-w-0" />
-
-              <button
-                type="button"
-                onClick={() => setTrayOpen((open) => !open)}
-                className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-grape-dark transition-colors hover:bg-mist-soft"
-                aria-expanded={trayOpen}
-              >
-                <ChevronIcon up={!trayOpen} />
-                <span className="sr-only">
-                  {trayOpen ? 'Plegar los bloques' : 'Abrir los bloques'}
-                </span>
-              </button>
-            </div>
-
-            {/*
-             * Se pliega el MARCO y no el hueco: la caja coloca sus bloques con
-             * el alto del hueco, y un hueco a cero los dejaría encimados al
-             * volver a abrir.
-             */}
-            <div style={{ height: trayOpen ? undefined : 0 }} className="overflow-hidden">
-              <div className="relative">
-                <div ref={setBlockBox} className="relative h-[72px] w-full" />
-
-                {halted && <HaltedLock />}
-              </div>
-            </div>
-          </div>
+          {compact ? null : tray}
         </div>
 
-        <div className="columna-del-lienzo passport-page relative flex min-h-0 flex-col px-0.5 [border-width:30px]">
-          <div className="flex items-center gap-2.5">
-            <CanvasIcon />
-            <h2 className="title-lg">Lienzo</h2>
-          </div>
+        <div
+          id="level-panel-blocks"
+          role={compact ? 'tabpanel' : undefined}
+          aria-labelledby={compact ? 'level-tab-blocks' : undefined}
+          className={`columna-del-lienzo passport-page flex min-h-0 flex-col ${
+            compact
+              ? `absolute inset-0 gap-1.5 px-0 [border-width:12px] ${panelHidden('blocks')}`
+              : 'relative px-0.5 [border-width:30px]'
+          }`}
+        >
+          {compact ? null : (
+            <div className="flex items-center gap-2.5">
+              <CanvasIcon />
+              <h2 className="title-lg">Lienzo</h2>
+            </div>
+          )}
 
-          <div className="marco-del-lienzo relative mt-2.5 min-h-0 w-full flex-1 overflow-hidden">
+          <div
+            className={`marco-del-lienzo relative w-full min-h-0 flex-1 overflow-hidden ${
+              compact ? '' : 'mt-2.5'
+            }`}
+          >
             <span className="pointer-events-none absolute inset-y-0 left-0 right-6 rounded-[18px] border-2 border-dashed border-sepia-soft/40 bg-wood-bare/30" />
 
             {emptyCanvas && (
@@ -727,23 +903,34 @@ export const StudentLevelModule = ({ levelId, worldId }: StudentLevelModuleProps
               </p>
             )}
 
-            {blockBox !== null && (
-              <BlockEditorLoader
-                onProgramChange={handleProgramChange}
-                flyoutHost={blockBox}
-                starterWorkspace={state.level.workspace}
-                withJump={state.withJump}
-                clearSignal={clearSignal}
-              />
-            )}
+            <BlockEditorLoader
+              onProgramChange={handleProgramChange}
+              flyoutHost={blockBox}
+              starterWorkspace={state.level.workspace}
+              withJump={state.withJump}
+              clearSignal={clearSignal}
+            />
 
             {halted && <HaltedLock onChangeBlocks={requestRestart} />}
           </div>
 
+          {compact ? tray : null}
+
           {/* El hueco de los tres botones, que los pinta la escena con un portal. */}
-          <div ref={setControlsHost} className="mt-3.5" />
+          {compact ? null : <div ref={setControlsHost} className="mt-3.5" />}
         </div>
       </section>
+
+      {/*
+       * En el móvil, mensaje y botones bajo las dos pestañas: se ven desde las
+       * dos, y «Ejecutar» lleva al tablero para ver moverse al personaje.
+       */}
+      {compact ? (
+        <div className="mt-1.5 flex shrink-0 flex-col gap-1.5">
+          <div ref={setMessageHost} className="rounded-[12px] bg-cream/90 px-3 py-1 empty:hidden" />
+          <div ref={setControlsHost} />
+        </div>
+      ) : null}
 
       {introOpen && introBubbles !== null && (
         <WorldIntro image={leoExplains} bubbles={introBubbles} onClose={closeIntro} />

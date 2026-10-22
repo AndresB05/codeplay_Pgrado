@@ -91,7 +91,7 @@ export const LevelCompleteDialog = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="level-complete-title"
-        className="card w-full max-w-[480px] p-7 text-center shadow-[0_16px_0_rgba(42,27,69,0.18)]"
+        className="card max-h-[calc(100dvh-2rem)] w-full max-w-[480px] overflow-y-auto p-7 text-center shadow-[0_16px_0_rgba(42,27,69,0.18)]"
       >
         <h2 id="level-complete-title" className="title-xl">
           {perfect ? '¡Nivel perfecto!' : '¡Nivel completado!'}
@@ -145,23 +145,44 @@ export const LevelCompleteDialog = ({
           </p>
         )}
 
+        {/*
+         * Cada botón entero en su línea de texto: repartidos a partes iguales, el
+         * modal de 480 px dejaba 135 por botón y «Volver a intentar» salía en tres
+         * líneas, también en el escritorio. El que no cabe baja a la fila de abajo.
+         */}
         <div className="mt-7 flex flex-wrap gap-3">
-          <button type="button" onClick={onExit} className="btn btn-ghost flex-1">
+          <button
+            type="button"
+            onClick={onExit}
+            className="btn btn-ghost flex-auto whitespace-nowrap"
+          >
             Salir al mundo
           </button>
 
-          <button type="button" onClick={onRetry} className="btn btn-sky flex-1">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="btn btn-sky flex-auto whitespace-nowrap"
+          >
             Volver a intentar
           </button>
 
           {onNext !== undefined && (
-            <button type="button" onClick={onNext} className="btn btn-mint flex-1">
+            <button
+              type="button"
+              onClick={onNext}
+              className="btn btn-mint flex-auto whitespace-nowrap"
+            >
               Siguiente nivel
             </button>
           )}
 
           {onNextWorld !== undefined && (
-            <button type="button" onClick={onNextWorld} className="btn btn-mint flex-1">
+            <button
+              type="button"
+              onClick={onNextWorld}
+              className="btn btn-mint flex-auto whitespace-nowrap"
+            >
               Siguiente mundo
             </button>
           )}

@@ -979,6 +979,11 @@ interface GameSceneProps {
    * medida todavía, se encuadra en el alto entero.
    */
   freeHeight?: number | null;
+  /*
+   * Callar el mensaje de reposo. En el móvil el lienzo vacío ya dice qué hacer,
+   * y su fila le quitaba alto al lienzo; los demás mensajes salen igual.
+   */
+  quietWhenIdle?: boolean;
   // PRUEBA DE ASSETS: el pilar de «Dos caminos». Ver `CenterPillar`.
   centerPillar?: boolean;
   // PRUEBA DE ASSETS: las islas de decorado alrededor del tablero. Ver `islands.ts`.
@@ -1123,6 +1128,7 @@ export const GameScene = ({
   onClear,
   restartSignal = 0,
   freeHeight = null,
+  quietWhenIdle = false,
   centerPillar = false,
   islands = false,
   fillGaps = false,
@@ -1362,6 +1368,7 @@ export const GameScene = ({
    * suelto y ejecute se comería la misma frase dos veces seguidas.
    */
   const notice = !isRunning && warning === null && looseStacks;
+  const quiet = quietWhenIdle && outcome === OUTCOME_MESSAGES.idle && warning === null && !notice;
 
   return (
     <div className="relative h-full w-full">
@@ -1458,6 +1465,7 @@ export const GameScene = ({
        * Los tres textos van en una línea y no apilados: la franja es una franja.
        */}
       {messageHost !== null &&
+        !quiet &&
         createPortal(
           <div className="flex flex-wrap items-baseline gap-x-3">
             <p className="text-[14px] font-semibold leading-[1.5] text-ink-soft">{outcome}</p>

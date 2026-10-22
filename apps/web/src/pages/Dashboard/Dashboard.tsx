@@ -27,6 +27,9 @@ export const Dashboard = () => {
    * la página a la vez, y un lector de pantalla oiría dos menús iguales.
    */
   const roomy = useMinWidth(768);
+  // El nivel en pantalla estrecha lleva la barra de arriba más baja: el alto es del lienzo.
+  const wide = useMinWidth(1024);
+  const slimTopBar = Boolean(levelId) && !wide;
 
   const activeRoute =
     location.pathname === ROUTES.DASHBOARD || location.pathname.startsWith(`${ROUTES.WORLDS}/`)
@@ -80,8 +83,10 @@ export const Dashboard = () => {
 
   // `overflow-clip`: las hojas del corcho caen hasta 140vh y alargarían el scroll mientras caen.
   return (
-    <div className="jungle-surface min-h-screen overflow-clip text-ink">
-      <StudentTopBar user={user} />
+    <div
+      className={`jungle-surface min-h-screen overflow-clip text-ink ${slimTopBar ? 'student-top-slim' : ''}`}
+    >
+      <StudentTopBar user={user} slim={slimTopBar} />
 
       <div className={`min-h-[calc(100vh-84px)] ${showSidebar ? 'flex' : 'block'}`}>
         {showSidebar ? <Sidebar user={user} activeRoute={activeRoute} /> : null}

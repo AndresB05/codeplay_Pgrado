@@ -76,3 +76,25 @@ paneles, en la portada y en el acceso.
 
 - **WHEN** alguien recorre el login con la tecla Tab
 - **THEN** cada campo, botón y enlace muestra un indicador de foco visible al recibirlo
+
+### Requirement: El nivel se puede jugar en un teléfono
+
+Por debajo de 1024 px de ancho, la pantalla del nivel del child SHALL repartir el
+juego en dos pestañas que llenan el alto disponible: «Bloques», con el lienzo y
+la caja de bloques juntos, y «Tablero», con la escena. Los botones Ejecutar,
+Detener y Limpiar y el mensaje de la partida SHALL verse desde las dos pestañas,
+y pulsar Ejecutar SHALL llevar a «Tablero». Un bloque SHALL poder arrastrarse
+con el dedo de la caja al lienzo sin que la página se desplace. La caja SHALL
+enseñar todos los bloques del nivel enteros, en una fila o en dos. A partir de
+1024 px la pantalla del nivel SHALL verse como antes del cambio.
+
+#### Scenario: Armar y ejecutar un programa en un teléfono
+
+- **WHEN** un child abre un nivel a 360×640 y arrastra con el dedo «avanzar» de la caja al lienzo
+- **THEN** el bloque queda en el lienzo y la página no se ha desplazado
+- **AND** al pulsar Ejecutar la pantalla pasa a «Tablero» y el personaje se mueve
+
+#### Scenario: El nivel en el escritorio
+
+- **WHEN** un child abre un nivel a 1280 px
+- **THEN** la escena y el lienzo se ven lado a lado, como antes del cambio, sin pestañas

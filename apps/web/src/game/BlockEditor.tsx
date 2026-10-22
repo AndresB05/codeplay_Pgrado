@@ -2,6 +2,7 @@ import * as Blockly from 'blockly/core';
 import * as SpanishMessages from 'blockly/msg/es';
 import { useEffect, useRef } from 'react';
 import { defineGameBlocks, flyoutBlocks } from './blocks';
+import { TopAnchoredMetrics } from './topAnchoredMetrics';
 import { sealProgram, type Program, type WorkspaceState } from './program';
 
 /*
@@ -64,6 +65,12 @@ const BOX_SLOTS = 6;
 const BOX_ROWS = 3;
 const BOX_SCALE = 0.72;
 
+/** Alto de bandeja desde el que los bloques se reparten en dos filas si en una no caben. */
+const TWO_LINE_TRAY_HEIGHT = 96;
+
+/** Hueco vertical mínimo entre las dos filas de la bandeja y contra sus bordes. */
+const LINE_GAP = 6;
+
 /*
  * EL ASPECTO DE LOS BLOQUES SALE DEL RENDERIZADOR, no de CSS. Blockly dibuja
  * cada bloque como un `<path>` calculado, así que redondearlos o engordarlos no
@@ -80,25 +87,6 @@ const gameTheme = Blockly.Theme.defineTheme('codeplay', {
   base: Blockly.Themes.Zelos,
   fontStyle: { family: "'Fredoka', 'Quicksand', sans-serif", weight: '600', size: 11 },
 });
-
-/*
- * EL LIENZO NO TIENE SITIO POR ENCIMA DE SUS BLOQUES. De fábrica Blockly deja
- * media vista de margen por arriba —y una entera con el lienzo vacío—, así que
- * con la vista en el origen la barra no está al tope: aparecía a media altura, o
- * abajo del todo, como si hubiera algo encima. Los bloques se encadenan hacia
- * abajo, así que el margen sólo hace falta por debajo.
- */
-class TopAnchoredMetrics extends Blockly.MetricsManager {
-  protected override getPaddedContent_(
-    viewMetrics: Blockly.MetricsManager.ContainerRegion,
-    contentMetrics: Blockly.MetricsManager.ContainerRegion,
-  ) {
-    const padded = super.getPaddedContent_(viewMetrics, contentMetrics);
-    const top = Math.min(contentMetrics.top, 0);
-
-    return { ...padded, top, bottom: Math.max(padded.bottom, top + viewMetrics.height) };
-  }
-}
 
 interface BlockEditorProps {
   onProgramChange: (program: Program) => void;
@@ -277,7 +265,15 @@ export const BlockEditor = ({
     const inRow = () => flyoutHost.clientWidth > flyoutHost.clientHeight;
     const boxScale = () => (inRow() && !jumpInBox.current ? 1 : BOX_SCALE);
 
-    flyout.getFlyoutScale = boxScale;
+    /*
+     * EN LA BANDEJA ESTRECHA DEL MÓVIL LA FILA NO CABE. Si el hueco da para dos
+     * filas, los bloques se reparten en dos; si aun así no caben, se encogen lo
+     * justo. La escala que se use queda guardada: Blockly la vuelve a pedir al
+     * soltar el bloque, para que caiga donde se suelta.
+     */
+    let fittedScale: number | null = null;
+
+    flyout.getFlyoutScale = () => fittedScale ?? boxScale();
 
     /*
      * LA CAJA COLOCA EN REJILLA Y NO EN UNA COLUMNA. De fábrica apila hacia
@@ -289,16 +285,51 @@ export const BlockEditor = ({
      * que no estiren el contenido a lo alto.
      */
     const layoutBox = (contents: Blockly.FlyoutItem[]) => {
-      const scale = boxScale();
-      flyoutWorkspace.scale = scale;
+      const blocks = contents.filter((item) => item.getType() === 'block');
+      const widthOf = (item: Blockly.FlyoutItem) =>
+        item.getElement().getBoundingRectangle().getWidth();
+      const lineWidth = (line: Blockly.FlyoutItem[]) =>
+        line.reduce((total, item) => total + widthOf(item), 0);
+      const lineFit = (line: Blockly.FlyoutItem[]) =>
+        flyoutHost.clientWidth / (lineWidth(line) + BOX_INSET * (line.length + 1));
+      const lineHeight = (line: Blockly.FlyoutItem[]) =>
+        Math.max(0, ...line.map((item) => item.getElement().getBoundingRectangle().getHeight()));
 
       /*
        * Un hueco más ancho que alto es una BANDEJA —la de la pantalla de nivel,
-       * bajo el juego— y ahí los seis huecos van en una sola fila. La columna del
-       * laboratorio sigue con su rejilla de tres por dos.
+       * bajo el juego— y ahí los bloques van en una fila, o en dos si no caben y
+       * hay alto. La columna del laboratorio sigue con su rejilla de tres por dos.
        */
-      const rows = inRow() ? 1 : BOX_ROWS;
-      const columns = BOX_SLOTS / rows;
+      const half = Math.ceil(blocks.length / 2);
+      const twoLines =
+        inRow() &&
+        blocks.length > 1 &&
+        lineFit(blocks) < boxScale() &&
+        flyoutHost.clientHeight >= TWO_LINE_TRAY_HEIGHT;
+      const lines = twoLines ? [blocks.slice(0, half), blocks.slice(half)] : [blocks];
+      // Con dos filas también manda el alto: la C de «saltar» es más alta que media bandeja.
+      const linesHeight = lines.reduce((total, line) => total + lineHeight(line), 0);
+      const heightFit = twoLines
+        ? flyoutHost.clientHeight / (linesHeight + LINE_GAP * (lines.length + 1))
+        : Infinity;
+      const scale = inRow()
+        ? Math.min(boxScale(), heightFit, ...lines.map(lineFit))
+        : boxScale();
+      fittedScale = scale;
+
+      /*
+       * Una escala distinta de la que dejó `show` no llega al SVG hasta que algo
+       * vuelve a trasladar el espacio: sin esto, al recolocar la caja por un
+       * cambio de tamaño, los bloques se pintaban a la escala vieja en los sitios
+       * de la nueva y se salían de la bandeja.
+       */
+      if (flyoutWorkspace.scale !== scale) {
+        flyoutWorkspace.scale = scale;
+        flyoutWorkspace.translate(flyoutWorkspace.scrollX, flyoutWorkspace.scrollY);
+      }
+
+      const rows = inRow() ? lines.length : BOX_ROWS;
+      const columns = BOX_SLOTS / BOX_ROWS;
 
       // El hueco se mide en píxeles; la rejilla coloca en unidades del espacio.
       const cellWidth = flyoutHost.clientWidth / columns / scale;
@@ -312,16 +343,24 @@ export const BlockEditor = ({
        * estrecha encimaba el bloque ancho sobre el siguiente, y seguidos desde
        * la izquierda dejaban media bandeja vacía.
        */
-      const blocks = contents.filter((item) => item.getType() === 'block');
-      const blocksWidth = blocks.reduce(
-        (total, item) => total + item.getElement().getBoundingRectangle().getWidth(),
-        0,
-      );
-      const rowGap = Math.max(
-        inset,
-        (flyoutHost.clientWidth / scale - blocksWidth) / (blocks.length + 1),
-      );
-      let rowX = rowGap;
+      const inLine = new Map<Blockly.FlyoutItem, { x: number; top: number; height: number }>();
+      const lineGapY = (flyoutHost.clientHeight / scale - linesHeight) / (lines.length + 1);
+      let lineTop = lineGapY;
+
+      lines.forEach((line) => {
+        const rowGap = Math.max(
+          inset,
+          (flyoutHost.clientWidth / scale - lineWidth(line)) / (line.length + 1),
+        );
+        let rowX = rowGap;
+
+        for (const item of line) {
+          inLine.set(item, { x: rowX, top: lineTop, height: lineHeight(line) });
+          rowX += widthOf(item) + rowGap;
+        }
+
+        lineTop += lineHeight(line) + lineGapY;
+      });
 
       for (const item of contents) {
         const element = item.getElement();
@@ -332,9 +371,10 @@ export const BlockEditor = ({
           continue;
         }
 
-        if (rows === 1) {
-          element.moveBy(rowX - at.left, (cellHeight - at.getHeight()) / 2 - at.top);
-          rowX += at.getWidth() + rowGap;
+        const slot = inLine.get(item);
+
+        if (inRow() && slot !== undefined) {
+          element.moveBy(slot.x - at.left, slot.top + (slot.height - at.getHeight()) / 2 - at.top);
           continue;
         }
 
@@ -613,7 +653,15 @@ export const BlockEditor = ({
 
     const observer = new ResizeObserver(() => {
       Blockly.svgResize(workspace);
-      scrollToTop();
+
+      /*
+       * Sólo con el lienzo vacío: en el móvil el lienzo encoge cuando el mensaje
+       * de la partida ocupa más líneas, y volver arriba con bloques puestos los
+       * dejaba fuera de la vista, por debajo del borde.
+       */
+      if (workspace.getTopBlocks(false).length === 0) {
+        scrollToTop();
+      }
 
       // La caja se recoloca con el lienzo, aunque ya no herede ni alto ni ancho.
       flyout.position();

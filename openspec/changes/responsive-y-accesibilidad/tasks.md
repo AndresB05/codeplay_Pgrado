@@ -25,7 +25,18 @@ Hecho: XP en la barra superior del niño a 375 (`StudentTopBar.tsx`), cabecera d
 
 Hecho: foco en `main.css` y en el buscador de salón del niño (`StudentClassroomSearch.tsx`), imagen del registro en `Signup.tsx`, columnas del seguimiento del tutor; ningún botón sin nombre accesible en las pantallas medidas. **Sin verificar** (las cuentas de prueba no tienen ese estado): el buscador del niño sin salón e «Ir a otro salón» del tutor.
 
-## 4. Cierre
+## 4. Tanda 4 — Correcciones tras probar en el móvil
 
-- [x] 4.1 `npm run lint`, `npm run test:run` y `npm run build`
-- [x] 4.2 `docs/CONTEXT.md` §4.4 cerrado (una línea) y la entrada en «aplicadas»
+- [x] 4.1 Remaches de las bandas de cuero y del pasaporte de «Mi cuenta» a 375 (`main.css`, `StudentSettingsModule.tsx`)
+- [x] 4.2 Nivel jugable por debajo de `lg`: pestañas Bloques/Tablero en la cabecera, caja en dos filas con `touch-none`, Ejecutar lleva al tablero, pantalla en columna flexible del alto de la ventana (`StudentLevelModule.tsx`, `game/BlockEditor.tsx`, `.level-compact-page`)
+- [x] 4.3 Barra inferior también en el nivel, decidido por el usuario; el alto se gana en la cabecera, los marcos y la barra superior (lienzo de 234 px a 360×640 y 406 a 375×812)
+- [x] 4.4 Tablones de la Sala de Trofeos: opción A elegida por el usuario, madera dibujada con CSS por debajo de `sm` (`main.css`) y hueco de la foto del gran trofeo con alto propio (`StudentTrophiesModule.tsx`)
+- [x] 4.5 Más alto para el lienzo en el nivel estrecho: barra superior de 60 px (`StudentTopBar` con `slim`) y sin fila de mensaje en reposo (`quietWhenIdle` en `GameScene`)
+- [x] 4.6 Al soltar un bloque la vista del lienzo no se mueve: el área desplazable incluye siempre la vista actual (`game/topAnchoredMetrics.ts`, con test); antes un bloque asomando por arriba arrastraba la vista. Ya pasaba antes del paso 25
+- [x] 4.7 Los botones de `LevelCompleteDialog` y del `ConfirmDialog` del niño no parten el texto: `flex-auto` y `whitespace-nowrap`, y el que no cabe baja de fila (también en escritorio, donde el modal de 480 px los partía igual)
+- [x] 4.8 Cruzar `lg` (girar una tableta) ya no vacía el lienzo: el hueco de la caja es un nodo fijo y el editor no se vuelve a montar
+
+## 5. Cierre
+
+- [x] 5.1 `npm run lint`, `npm run test:run` y `npm run build`
+- [x] 5.2 `docs/CONTEXT.md` §4.4 cerrado (una línea) y la entrada en «aplicadas»

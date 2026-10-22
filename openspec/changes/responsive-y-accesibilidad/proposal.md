@@ -62,6 +62,7 @@ Ninguna.
 - **Tests:** `TeacherSidebar.test.tsx` y los de los módulos deben seguir en
   verde; se añade uno para la barra inferior de cada rol.
 - **Supabase:** no interviene. No hay migración ni `db push`.
-- **Fuera de alcance:** rehacer la pantalla del nivel para jugar en un teléfono
-  (Blockly y la escena a 375 px): aquí sólo se garantiza que no desborda en
-  horizontal. También el `SidebarNav.tsx` que no monta nadie.
+- **Nivel en el móvil (tanda 4, pedido por el usuario tras probarlo):** pestañas
+  Bloques/Tablero en `StudentLevelModule.tsx` y caja en dos filas en
+  `game/BlockEditor.tsx`.
+- **Fuera de alcance:** el `SidebarNav.tsx` que no monta nadie.

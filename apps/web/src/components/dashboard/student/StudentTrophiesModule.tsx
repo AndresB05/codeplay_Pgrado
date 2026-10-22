@@ -101,7 +101,6 @@ const WORLD_TROPHIES: {
 /* Los de mundo ya tienen su tarjeta grande: repetirlos abajo los contaba dos veces. */
 const WORLD_TROPHY_KEYS = new Set(WORLD_TROPHIES.map((trophy) => trophy.key));
 
-
 const BigTrophyCard = ({
   title,
   description,
@@ -182,7 +181,8 @@ const BigTrophyCard = ({
            * girada lo mismo que su ventana; los porcentajes salen de medir esa
            * ventana en `trophy-polaroid.webp`, así que cambian con la imagen.
            */}
-          <div className="relative aspect-[3/2] sm:aspect-auto">
+          {/* En el móvil, alto para la foto entera: con la proporción de antes sobresalía hasta el tronco de abajo. */}
+          <div className="relative h-[270px] sm:h-auto">
             <div className="absolute left-1/2 top-1/2 z-20 aspect-[440/589] w-[180px] -translate-x-1/2 -translate-y-1/2">
               <img
                 src={image}
@@ -199,7 +199,7 @@ const BigTrophyCard = ({
        * Tapa el borde de abajo del tablón, pero la foto que sobresale va por
        * encima de él: por eso el tronco lleva `z-10` y la foto `z-20`.
        */}
-      <div className="trophy-log relative z-10 -mt-6 h-[84px]" aria-hidden="true" />
+      <div className="trophy-log relative z-10 -mt-6 h-[44px] sm:h-[84px]" aria-hidden="true" />
     </article>
   );
 };

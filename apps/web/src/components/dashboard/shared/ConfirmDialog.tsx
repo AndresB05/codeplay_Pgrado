@@ -99,11 +99,12 @@ export const ConfirmDialog = ({
 
         <div className="mt-3 text-[16px] leading-[1.7] text-[#5A5170]">{children}</div>
 
+        {/* Enteros en una línea: a medias, a 360 px «Sí, quitar todo» se salía del botón. */}
         <div className="mt-7 flex flex-wrap gap-3">
           <button
             type="button"
             onClick={onConfirm}
-            className="h-[52px] flex-1 rounded-full border-b-[5px] border-[#B32020] bg-[#FF4D4D] px-6 text-[16px] font-extrabold text-white transition-all hover:brightness-105 active:translate-y-[3px] active:border-b-[2px]"
+            className="h-[52px] flex-auto whitespace-nowrap rounded-full border-b-[5px] border-[#B32020] bg-[#FF4D4D] px-6 text-[16px] font-extrabold text-white transition-all hover:brightness-105 active:translate-y-[3px] active:border-b-[2px]"
           >
             {confirmLabel}
           </button>
@@ -111,7 +112,7 @@ export const ConfirmDialog = ({
           <button
             type="button"
             onClick={onCancel}
-            className="h-[52px] flex-1 rounded-full border-b-[5px] border-[#C9BEE4] bg-[#EFE9FB] px-6 text-[16px] font-extrabold text-[#5A4B7C] transition-all hover:brightness-[0.98] active:translate-y-[3px] active:border-b-[2px]"
+            className="h-[52px] flex-auto whitespace-nowrap rounded-full border-b-[5px] border-[#C9BEE4] bg-[#EFE9FB] px-6 text-[16px] font-extrabold text-[#5A4B7C] transition-all hover:brightness-[0.98] active:translate-y-[3px] active:border-b-[2px]"
           >
             {cancelLabel}
           </button>

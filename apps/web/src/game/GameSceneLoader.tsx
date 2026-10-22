@@ -83,6 +83,8 @@ interface GameSceneLoaderProps {
   restartSignal?: number;
   /* El alto que la bandeja deja libre, para el encuadre. */
   freeHeight?: number | null;
+  /* Callar el mensaje de reposo, en el móvil. */
+  quietWhenIdle?: boolean;
   centerPillar?: boolean;
   islands?: boolean;
   fillGaps?: boolean;
@@ -98,6 +100,7 @@ export const GameSceneLoader = ({
   onClear,
   restartSignal,
   freeHeight,
+  quietWhenIdle,
   centerPillar,
   islands,
   fillGaps,
@@ -121,6 +124,7 @@ export const GameSceneLoader = ({
         onClear={onClear}
         restartSignal={restartSignal}
         freeHeight={freeHeight}
+        quietWhenIdle={quietWhenIdle}
         centerPillar={centerPillar}
         islands={islands}
         fillGaps={fillGaps}
