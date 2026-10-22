@@ -181,8 +181,8 @@ const BigTrophyCard = ({
            * girada lo mismo que su ventana; los porcentajes salen de medir esa
            * ventana en `trophy-polaroid.webp`, así que cambian con la imagen.
            */}
-          {/* En el móvil, alto para la foto entera: con la proporción de antes sobresalía hasta el tronco de abajo. */}
-          <div className="relative h-[270px] sm:h-auto">
+          {/* En el móvil no hay foto, elegido por el usuario: el tablón se queda a la medida del texto. */}
+          <div className="relative hidden sm:block">
             <div className="absolute left-1/2 top-1/2 z-20 aspect-[440/589] w-[180px] -translate-x-1/2 -translate-y-1/2">
               <img
                 src={image}
@@ -233,8 +233,9 @@ export const StudentTrophiesModule = () => {
   return (
     <div className="px-5 py-5">
       <section className="trophy-log px-2 py-3">
+        {/* En el móvil sólo el texto: el trofeo y la etiqueta añadían dos filas al tronco. */}
         <div className="flex flex-wrap items-center gap-4">
-          <span className="wood-well wood-carved flex h-[56px] w-[56px] items-center justify-center rounded-[18px]">
+          <span className="wood-well wood-carved hidden h-[56px] w-[56px] items-center justify-center rounded-[18px] sm:flex">
             <TrophyIcon />
           </span>
 
@@ -245,7 +246,7 @@ export const StudentTrophiesModule = () => {
             </p>
           </div>
 
-          <span className="chip wood-well wood-carved ml-auto py-0.5">
+          <span className="chip wood-well wood-carved ml-auto hidden py-0.5 sm:inline-flex">
             <TropicalFlower size={16} />
             Sigue coleccionando
           </span>

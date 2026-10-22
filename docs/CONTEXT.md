@@ -4992,7 +4992,7 @@ Sigue en pie para lo que venga: ninguna vista habla con Supabase directamente.
 
 ### 4.4 El panel del tutor no es responsive — RESUELTO
 
-**Cerrado el 21-oct-2026 con `responsive-y-accesibilidad` (paso 25), ver §2.1.** El nivel se juega en el teléfono desde la tanda 4: pestañas Bloques/Tablero por debajo de `lg` (`StudentLevelModule.tsx`) y caja en dos filas (`game/BlockEditor.tsx`). En el móvil, los tablones de trofeos se dibujan con CSS en vez de estirar la ilustración (opción A del usuario, `main.css`).
+**Cerrado el 21-oct-2026 con `responsive-y-accesibilidad` (paso 25), ver §2.1.** El nivel se juega en el teléfono desde la tanda 4: pestañas Bloques/Tablero por debajo de `lg` (`StudentLevelModule.tsx`) y caja en dos filas (`game/BlockEditor.tsx`). En el móvil, el tablón de los logros normales se dibuja con CSS en vez de estirar la ilustración (opción A del usuario, `main.css`); los títulos y los grandes trofeos conservan sus ilustraciones, y en la Sala de Trofeos se quitan el icono y la etiqueta del encabezado y la foto de los grandes trofeos (`StudentTrophiesModule.tsx`).
 
 Descubierto al revisar el aviso de error en móvil. Con el viewport a 375 px, la
 barra lateral ocupaba **262 px fijos** y `main` se quedaba en **113 px**: todas las

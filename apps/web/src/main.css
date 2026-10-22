@@ -361,41 +361,24 @@ a {
   }
 
   /*
-   * En el móvil las tres maderas pasan a dibujarse con CSS, elegido por el
-   * usuario: en una tarjeta estrecha y alta las ilustraciones, muy apaisadas, se
-   * estiraban hasta cinco veces a lo alto. La clase va doble para ganar a los
-   * rellenos de utilidad que llevan las tarjetas, pensados para los bordes anchos
-   * de la ilustración.
+   * En el móvil el tablón de los logros pasa a dibujarse con CSS, elegido por el
+   * usuario: en una tarjeta estrecha y alta la ilustración, muy apaisada, se
+   * estiraba hasta cinco veces a lo alto. Los títulos y los grandes trofeos
+   * conservan sus ilustraciones, también elección suya. La clase va doble para
+   * ganar a los rellenos de utilidad que llevan las tarjetas, pensados para los
+   * bordes anchos de la ilustración.
    */
   @media (max-width: 639px) {
-    .wood-board.wood-board,
-    .trophy-log.trophy-log,
-    .trophy-board.trophy-board {
+    .wood-board.wood-board {
       border: 4px solid var(--wood-ink);
       border-image: none;
       border-radius: 18px;
+      background-color: var(--wood-light);
       background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 45%),
         repeating-linear-gradient(178deg, transparent 0 14px, rgba(74, 42, 18, 0.1) 14px 16px);
       box-shadow: inset 0 -4px 0 rgba(74, 42, 18, 0.25);
-    }
-
-    .wood-board.wood-board,
-    .trophy-board.trophy-board {
-      background-color: var(--wood-light);
-    }
-
-    .wood-board.wood-board {
       padding: 10px 12px;
-    }
-
-    .trophy-log.trophy-log {
-      background-color: var(--wood-bark);
-      padding: 8px 10px;
-    }
-
-    .trophy-board.trophy-board {
-      padding: 16px 12px;
     }
   }
 
