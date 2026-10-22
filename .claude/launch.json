@@ -15,6 +15,13 @@
       "port": 5174
     },
     {
+      "name": "codeplay-web-devtools-5175",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "-w", "@codeplay/web", "--", "--port", "5175", "--strictPort"],
+      "env": { "VITE_ENABLE_DEV_TOOLS": "true" },
+      "port": 5175
+    },
+    {
       "name": "codeplay-web-preview",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "preview", "-w", "@codeplay/web", "--", "--port", "4173", "--strictPort"],
