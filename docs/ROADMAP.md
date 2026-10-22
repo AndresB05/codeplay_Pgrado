@@ -145,7 +145,7 @@ dejó fuera.
 | 27.1 | ★ [Despliegue provisional para la prueba](#paso-27-1) | ✅ | **usuario** |
 | — | 🔬 [Prueba preliminar](#prueba-preliminar) | ✅ | **usuario** |
 | 26 | [Ilustraciones con Gemini](#paso-26) | ✅ | P6 |
-| 14 | ★ [Política de privacidad y términos y condiciones](#paso-14) — el consentimiento del acudiente, aparcado | 🔄 | `invitaciones-sin-correo` + §3.4 |
+| 14 | ★ [Política de privacidad y términos y condiciones](#paso-14) — el consentimiento del acudiente, aparcado | ✅ | `invitaciones-sin-correo` + §3.4 |
 | 19 | [Invitaciones: enlace canjeable (hecho) y correo real (pendiente)](#paso-19) | 🔄 | `enlace-de-invitacion` + servicio |
 | 24 | Retirar la sesión de invitado — **no se hace**, ver §2.1 | ✅ | **usuario** |
 | 25 | ★ [Responsive, accesibilidad y `ErrorBoundary`](#paso-25) | ✅ | `responsive-y-accesibilidad` |
@@ -715,6 +715,10 @@ público**, y eso queda anotado en §2.1 como riesgo asumido, no como descuido.
 **HECHA el 25-sep-2026.** Dejó errores por corregir, que se abordan después.
 
 #### <a id="paso-14"></a>14 · Consentimiento del acudiente y política de privacidad
+
+**HECHO el 21-oct-2026.** Publicadas en `/terminos` y `/privacidad`, enlazadas
+desde el pie de la portada. Quedan en el texto los huecos entre corchetes del
+documento (contacto, alojamiento, país del servidor, plazos), por rellenar.
 
 **Adelantado en parte y el resto DETRÁS de la prueba preliminar, ver §2.1 y
 §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó
