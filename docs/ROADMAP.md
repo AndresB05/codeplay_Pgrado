@@ -718,7 +718,8 @@ público**, y eso queda anotado en §2.1 como riesgo asumido, no como descuido.
 
 **HECHO el 21-oct-2026.** Publicadas en `/terminos` y `/privacidad`, enlazadas
 desde el pie de la portada. Quedan en el texto los huecos entre corchetes del
-documento (contacto, alojamiento, país del servidor, plazos), por rellenar.
+documento (equipo, contacto, alojamiento, correos, país del servidor): esperan a
+la migración al servidor de la universidad (paso 30), aún sin acceso.
 
 **Adelantado en parte y el resto DETRÁS de la prueba preliminar, ver §2.1 y
 §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó

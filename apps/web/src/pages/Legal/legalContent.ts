@@ -314,7 +314,7 @@ export const PRIVACY: LegalDocument = {
               text: 'El tratamiento de datos de niños, niñas y adolescentes responde a su interés superior y respeta sus derechos fundamentales.',
             },
             {
-              text: 'Cuando el usuario es menor de edad, el tratamiento requiere la autorización de su padre, madre o acudiente, y se tiene en cuenta la opinión del menor según su madurez. [Describe aquí cómo se obtiene: por el colegio, por el docente, por formulario.]',
+              text: 'Cuando el usuario es menor de edad, el tratamiento requiere la autorización de su padre, madre o acudiente, y se tiene en cuenta la opinión del menor según su madurez. El tutor encargado del menor (su padre, madre, acudiente o profesor) se hace responsable de las actividades que este realice en la plataforma.',
             },
             {
               text: 'Los padres o acudientes pueden consultar, corregir o pedir la eliminación de los datos del menor.',
@@ -386,7 +386,7 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'Usamos únicamente el almacenamiento del navegador estrictamente necesario para mantener tu sesión iniciada. No usamos cookies publicitarias ni de seguimiento. [Confirma si hay analítica.]',
+          text: 'Usamos únicamente el almacenamiento del navegador estrictamente necesario para mantener tu sesión iniciada. No usamos cookies publicitarias ni de seguimiento, y actualmente no usamos herramientas de analítica.',
         },
       ],
     },
@@ -404,7 +404,7 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'Conservamos tus datos mientras tu cuenta esté activa. Si la eliminas o lo solicitas, borramos tus datos personales, salvo los que debamos conservar por obligación legal. Los datos usados con fines académicos se conservan codificados y agregados, y los archivos de la investigación se eliminan al concluir el proyecto. [Ajusta los plazos.]',
+          text: 'Conservamos tus datos mientras tu cuenta esté activa. Si la eliminas o lo solicitas, borramos tus datos personales, salvo los que debamos conservar por obligación legal. Los datos usados con fines académicos se conservan codificados y agregados, y los archivos de la investigación se eliminan al concluir el proyecto, el 12 de noviembre de 2026, fecha de finalización del semestre.',
         },
       ],
     },
