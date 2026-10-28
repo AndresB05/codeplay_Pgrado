@@ -8,14 +8,12 @@
 > idéntico a `apps/web/src/types/database.types.ts`). Las claves foráneas salen
 > de `supabase/migrations/`.
 >
-> Las fuentes son los bloques Mermaid de este archivo (GitHub los dibuja); las
-> imágenes para el documento escrito están en [`diagramas/`](diagramas/).
+> La fuente son los bloques Mermaid de este archivo, que GitHub dibuja. Los PNG
+> para el documento escrito se exportan a `docs/diagramas/`, que no se versiona.
 
 ---
 
 ## 1. Diagrama de componentes
-
-![Diagrama de componentes](diagramas/componentes.png)
 
 ```mermaid
 flowchart TB
@@ -88,8 +86,6 @@ la arquitectura se ven en el diagrama:
 
 ## 2. Diagrama de despliegue
 
-![Diagrama de despliegue](diagramas/despliegue.png)
-
 ```mermaid
 flowchart LR
     subgraph CLIENTE["«dispositivo» Computador o tableta del usuario"]
@@ -154,8 +150,6 @@ El modelo se parte en dos diagramas para que quepa en una página; los une
 `auth.users`, que aparece en ambos.
 
 ### 3.1 Usuarios, contenido y progreso
-
-![Modelo entidad–relación: usuarios, contenido y progreso](diagramas/er-contenido-progreso.png)
 
 ```mermaid
 erDiagram
@@ -257,8 +251,6 @@ erDiagram
 ```
 
 ### 3.2 Salones y misiones
-
-![Modelo entidad–relación: salones y misiones](diagramas/er-salones-misiones.png)
 
 ```mermaid
 erDiagram
