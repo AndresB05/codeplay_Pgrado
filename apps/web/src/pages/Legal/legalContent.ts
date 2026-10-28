@@ -231,7 +231,7 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'La responsable es la Corporación Universitaria Adventista (UNAC), Medellín, Colombia, a través del equipo del proyecto [nombre del equipo o programa]. Para cualquier consulta sobre tus datos: [correo de contacto].',
+          text: 'La responsable es la Corporación Universitaria Adventista (UNAC), Medellín, Colombia, a través del equipo del proyecto de grado CodePlay. Para cualquier consulta sobre tus datos, dirígete a la UNAC por sus canales oficiales de atención.',
         },
       ],
     },
@@ -359,11 +359,10 @@ export const PRIVACY: LegalDocument = {
           items: [
             { lead: 'Supabase:', text: 'base de datos y autenticación.' },
             {
-              lead: '[Proveedor de alojamiento: Vercel / servidor de la universidad]:',
+              lead: 'Servidor de la UNAC:',
               text: 'publicación de la plataforma.',
             },
             { lead: 'Google:', text: 'solo si usas el inicio de sesión con Google.' },
-            { lead: '[Servicio de envío de correos]:', text: 'solo para las invitaciones.' },
           ],
         },
         {
@@ -377,7 +376,7 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'Algunos proveedores pueden almacenar datos fuera de Colombia. En ese caso nos aseguramos de que ofrezcan niveles adecuados de protección. [Indica el país del servidor cuando lo confirmes.]',
+          text: 'Algunos proveedores pueden almacenar datos fuera de Colombia. En ese caso nos aseguramos de que ofrezcan niveles adecuados de protección. La base de datos se aloja en Supabase, en servidores ubicados en São Paulo, Brasil.',
         },
       ],
     },
@@ -429,7 +428,7 @@ export const PRIVACY: LegalDocument = {
         },
         {
           kind: 'paragraph',
-          text: 'Para ejercerlos, escríbenos a [correo de contacto]. Responderemos en los plazos que fija la ley.',
+          text: 'Para ejercerlos, dirígete a la UNAC por sus canales oficiales de atención. Responderemos en los plazos que fija la ley.',
         },
       ],
     },

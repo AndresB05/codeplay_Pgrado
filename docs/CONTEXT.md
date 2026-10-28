@@ -4272,9 +4272,8 @@ con la lista delante. El razonamiento entero está en `ROADMAP.md` §2.1.
 **Qué falta exactamente, y qué está ya decidido, está en `ROADMAP.md` §3.4**, en
 una lista que sirve de encargo sin releer nada más. De lo decidido, lo que toca
 a este documento: el **responsable del tratamiento es el usuario como persona
-natural**, y el plazo de conservación es el de §2.7. Quedan por decidir el
-correo de contacto y el domicilio de la política, que **no pueden ser los
-personales** porque el repositorio es público.
+natural**, y el plazo de conservación es el de §2.7. La política no lleva
+correo de contacto: remite a los canales oficiales de la UNAC (28-oct-2026).
 
 ### P4 — `integracion-juego`: apartado de implementación de los niveles
 

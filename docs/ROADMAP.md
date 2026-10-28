@@ -717,9 +717,10 @@ público**, y eso queda anotado en §2.1 como riesgo asumido, no como descuido.
 #### <a id="paso-14"></a>14 · Consentimiento del acudiente y política de privacidad
 
 **HECHO el 21-oct-2026.** Publicadas en `/terminos` y `/privacidad`, enlazadas
-desde el pie de la portada. Quedan en el texto los huecos entre corchetes del
-documento (equipo, contacto, alojamiento, correos, país del servidor): esperan a
-la migración al servidor de la universidad (paso 30), aún sin acceso.
+desde el pie de la portada. **Huecos rellenados el 28-oct-2026**, tras el paso
+30: equipo del proyecto de grado CodePlay, alojamiento en el servidor de la UNAC
+y base en Supabase `sa-east-1` (São Paulo). Sin correo de contacto, por decisión
+del usuario: se remite a los canales oficiales de la UNAC.
 
 **Adelantado en parte y el resto DETRÁS de la prueba preliminar, ver §2.1 y
 §3.4.** Ya está aplicado su primer trozo, `invitaciones-sin-correo`, que eliminó
@@ -1289,9 +1290,8 @@ de cada niño. No cambia lo que el tutor ve, sólo dónde puede guardarlo, pero
 **la política tendrá que nombrar la exportación**: a partir de ahí esos datos
 viven en archivos que la plataforma no controla.
 
-**Por decidir antes de redactar:** el **correo de contacto y el domicilio** que
-figurarán en la política. **No pueden ser los personales**: este repositorio es
-público y la política se publica con la aplicación.
+**Decidido el 28-oct-2026:** la política **no lleva correo de contacto**; remite
+a los canales oficiales de la UNAC, y el domicilio es el de la UNAC en Medellín.
 
 El texto legal citado se verificó en fuente primaria —Ley 1581 de 2012 art. 7,
 Decreto 1377 de 2013 arts. 7, 8, 10, 11, 12, 13 y 15—, pero **la lectura
