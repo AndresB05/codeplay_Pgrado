@@ -176,11 +176,11 @@ ella decide la segunda.
   alejada. Hoy se decide por el `slug`; si se aprueba, tiene que pasar a ser un
   campo del nivel.
 - **Los muros** siguen siendo el cojín rojo del KayKit Platformer Pack.
-- **El personaje sigue siendo el de cubos.** El explorador de Meshy entró, pero
-  pesa 17 MB y en el despliegue tardaba más de un minuto en bajar, frenando al
-  tablero: queda apagado con `CHARACTER_MODEL_ENABLED` hasta que se aligere, con
-  sus archivos en `public/models/character/`. Los modelos se guardan un día en
-  el navegador (`vercel.json`), así que la segunda visita no los vuelve a bajar.
+- **El personaje es Leo, en gris** (28-oct-2026): `public/models/character/leo.glb`,
+  exportado de `docs/modelos/leo.blend`, de 0,5 MB y tan alto como la bandera.
+  Va sin textura porque las generadas no casaban con la malla; el usuario lo
+  pintará más adelante. El explorador de Meshy, de 17 MB y apagado por pesar
+  tanto, se retiró; el de cubos queda sólo mientras Leo carga.
 - **La pantalla de nivel se reordenó**: la caja de bloques pasa a una bandeja
   bajo el juego, el lienzo a la columna derecha con los botones debajo, y las
   instrucciones son un botón «?» que empieza cerrado.

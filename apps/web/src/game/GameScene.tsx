@@ -1,4 +1,4 @@
-import { Clone, OrbitControls, useFBX, useGLTF, useTexture } from '@react-three/drei';
+import { Clone, OrbitControls, useGLTF } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
   Suspense,
@@ -17,7 +17,6 @@ import { withBase } from '../config/baseUrl';
 import {
   Box3,
   MeshStandardMaterial,
-  SRGBColorSpace,
   Vector3,
   type Group,
   type Mesh,
@@ -212,8 +211,8 @@ const FLAG_MODEL = withBase('models/platformer/flag.glb');
 const WALL_MODEL = withBase('models/kaykit/barrier_1x1x1_red.gltf');
 
 /*
- * La bandera mide 0,9 y el personaje 0,82: se escala para que la meta se vea por
- * encima de él. El mástil está en el origen del modelo, así que sin desplazarla
+ * La bandera mide 0,9 y el personaje de cubos 0,82: se escala para que la meta
+ * se vea por encima de él. El mástil está en el origen del modelo, así que sin desplazarla
  * queda en el centro de la casilla.
  */
 const FLAG_SCALE = 1.5;
@@ -645,38 +644,23 @@ const Board = ({
 };
 
 /*
- * PRUEBA DE ASSETS: el explorador de Meshy como personaje. Llega en FBX con la
- * textura aparte, así que el color se le pone aquí. Se mide al cargar y se
- * escala a la altura de la casilla, apoyado en el suelo y centrado: el modelo
- * trae sus propias unidades y su propio origen.
+ * Leo, la mascota, exportado de `docs/modelos/leo.blend`. Va gris a propósito:
+ * las texturas generadas no casaban con la malla y el usuario lo pintará más
+ * adelante. Sin ellas pesa medio mega; el explorador de Meshy que lo precedió se
+ * apagó por pesar 17. Se mide al cargar y se escala, apoyado en el suelo y
+ * centrado: el modelo trae sus propias unidades y su propio origen.
  */
-const CHARACTER_MODEL = withBase('models/character/safari-spotter.fbx');
-const CHARACTER_TEXTURE = withBase('models/character/safari-spotter.png');
-const CHARACTER_HEIGHT = 1.6;
+const CHARACTER_MODEL = withBase('models/character/leo.glb');
+// Tan alto como la bandera ya escalada.
+const CHARACTER_HEIGHT = 0.9 * FLAG_SCALE;
 // El modelo mira a +z y aquí el frente del personaje es −z.
 const CHARACTER_TURN = Math.PI;
 
-/*
- * APAGADO PARA LA PRUEBA PRELIMINAR: el explorador pesa 17 MB y en el despliegue
- * tardaba más de un minuto en bajar, frenando de paso al tablero. Mientras no se
- * aligere —GLB comprimido y textura pequeña—, el personaje es el de cubos.
- */
-const CHARACTER_MODEL_ENABLED = false;
-
 const CharacterModel = () => {
-  const fbx = useFBX(CHARACTER_MODEL);
-  const texture = useTexture(CHARACTER_TEXTURE);
+  const { scene } = useGLTF(CHARACTER_MODEL);
 
   const model = useMemo(() => {
-    texture.colorSpace = SRGBColorSpace;
-
-    const clone = fbx.clone(true);
-    const material = new MeshStandardMaterial({ map: texture, roughness: 0.8 });
-    clone.traverse((node) => {
-      if ((node as Mesh).isMesh) {
-        (node as Mesh).material = material;
-      }
-    });
+    const clone = scene.clone(true);
 
     clone.updateMatrixWorld(true);
     const size = new Box3().setFromObject(clone).getSize(new Vector3());
@@ -692,7 +676,7 @@ const CharacterModel = () => {
     );
 
     return clone;
-  }, [fbx, texture]);
+  }, [scene]);
 
   return (
     <group rotation={[0, CHARACTER_TURN, 0]}>
@@ -858,13 +842,9 @@ const Character = ({ config, pose, step, nextStep, stepIndex, onStepDone }: Char
       position={[x, y, z]}
       rotation={[0, FACING_ANGLE[pose.facing], 0]}
     >
-      {CHARACTER_MODEL_ENABLED ? (
-        <Suspense fallback={<PlaceholderBody />}>
-          <CharacterModel />
-        </Suspense>
-      ) : (
-        <PlaceholderBody />
-      )}
+      <Suspense fallback={<PlaceholderBody />}>
+        <CharacterModel />
+      </Suspense>
     </group>
   );
 };
