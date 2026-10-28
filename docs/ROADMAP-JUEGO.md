@@ -1,8 +1,8 @@
 # CodePlay — Hoja de ruta del juego
 
 > **En qué orden se construye el juego.** Escrita el 3 de septiembre de 2026.
-> Última actualización: **23 de septiembre de 2026** — del J1 al J12 hechos, el
-> J13 en curso.
+> Última actualización: **28 de octubre de 2026** — del J1 al J12 hechos; del
+> J13 sólo falta pintar a Leo.
 
 Esto es **sólo el juego**. El orden del proyecto entero está en
 [`ROADMAP.md`](ROADMAP.md), y aquí no se repite.
@@ -89,157 +89,42 @@ sabe qué piezas hacen falta de verdad.
 
 Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente
 
+Los pasos con enlace tienen su detalle en §3.1: qué se decidió, por qué y qué
+acabó siendo.
+
 | Nº | Paso | Se ve funcionar cuando… | Estado |
 | --- | --- | --- | --- |
-| **J1** | Esqueleto: las dos dependencias y un componente que pinta una escena 3D vacía dentro de la aplicación, cargado en diferido | Aparece algo en 3D en una pantalla del panel | ✅ |
-| **J2** | La cuadrícula y el personaje, montados desde un objeto de configuración **escrito a mano en el código** | Se ve el tablero y el personaje se mueve llamando funciones desde la consola | ✅ |
-| **J3** | **Fijar el formato** de `config` y de `program` | Está escrito en el contrato, no en la cabeza de nadie | ✅ |
-| **J4** | Blockly con el juego mínimo de bloques: avanzar N, girar a un lado y al otro | Se arrastran bloques y se ve el JSON que producen | ✅ |
-| **J5** | El intérprete: ejecutar el programa, animar al personaje y detectar si llegó a la meta | **Un nivel se resuelve de principio a fin, sin backend** | ✅ |
-| **J6** | Recuento de pasos y pantalla de resultado | Al terminar dice cuántos pasos usó y cuántos eran óptimos | ✅ |
-| J6.1 | **El contador, en vivo**: mientras construye y mientras se ejecuta | ~~El niño ve lo que cuesta su programa sin contar los pasos a ojo~~ — **revertido a medias por el J6.2** | ✅ |
-| J6.2 | **Quitar el coste al construir** y llevar el contador a la pantalla del juego | El niño ve subir sus pasos en la esquina, y nada le presiona antes de jugar | ✅ |
-| J6.3 | **El ensayo general**: el laboratorio compuesto como estará el nivel, y la cámara movible | Se ve dónde va cada cosa y el mapa se gira y se acerca con el ratón | ✅ |
-| J6.4 | **Assets de tanteo** en el laboratorio, para ver por dónde puede ir | Se vio por dónde puede ir, y **no era por ahí**: hecho, no satisfactorio. De él sale mover el apartado gráfico entero al **J13** | ✅ |
-| **J7** | **Sembrar el mundo 1** — partido en tres, uno por nivel | Los tres niveles se juegan leyendo su definición de la base | ✅ |
-| J7.1 | Nivel 1: el puzle diseñado, su migración y su siembra — **y, por decisión del usuario, la pantalla de nivel entera adelantando el J8, los assets fuera y el tablero rediseñado dos veces** | Se juega el nivel 1 leyendo su fila, en su pantalla, no el objeto escrito a mano del J2 | ✅ |
-| J7.2 | Nivel 2, igual — **el primero con giros y huecos, montado y enseñado en el laboratorio antes de sembrarlo, con su `optimalSteps` comprobado por un test** | Se juega el nivel 2 desde la base | ✅ |
-| J7.3 | Nivel 3, igual — **sin «repetir», por decisión del usuario: la escalera del centro se escribe con los tres bloques de siempre** | Se juega el nivel 3 desde la base | ✅ |
-| **J8** | ~~Conectar la pantalla de nivel al backend y montar el juego dentro~~ — **lo hizo el J7.1**, por decisión del usuario: montar la pantalla dos veces era hacerlo dos veces. Le queda **mandar el intento**, que es lo que el J9 escribe | Se elige un nivel en la web y arranca el que se eligió | ✅ |
-| **J9** | Mandar el intento al servidor con el programa — **y arreglar el contador de mundos**, que contaba las filas de progreso sin mirar si el nivel estaba superado (`docs/CONTEXT.md` §4.12) | La partida aparece guardada en la base: intento, progreso y XP, con éxito y sin él (`mandar-el-intento`) | ✅ |
-| **J10** | La migración del XP: contar pasos y conceder por marca de agua — **y la regla que faltaba, de pasos a puntuación**, que el usuario eligió el 17-sep-2026 tras ver los números de tres candidatas | Medido jugando: **87** al superar «La escalera» con 23 pasos contra 20, **+13** al mejorarlo a perfecto y **cero** al volver a empeorarlo. Nunca más de 100 (`migracion-del-xp`) | ✅ |
-| **J11** | La barra de XP por tramos de 300, con el **Nivel Explorador** que sube al llenarse — y el XP al día sin recargar, que no lo estaba | Medido jugando: de 93/300 a 193, a 293, y al llegar a 900 la ventana dice «¡Subiste a Nivel Explorador 4!» (`nivel-explorador`) | ✅ |
-| **J12** | **Mundos 2 y 3** — partido en siete, con el mismo patrón que el J7 | Hay nueve niveles jugables | ✅ |
-| J12.1 · .2 · .3 | Los tres niveles del mundo 2 — **empezó por el 2**, `salta-y-sube`, el primero con subidas, que trajo el bloque «saltar» y las alturas (`salto-y-alturas`). **Y se cerraron juntos en `mundo-2-completo`**, por decisión del usuario: `salta-y-sube` bajó al 1, y el 2 y el 3 —`el-gran-rodeo` y `la-torre`— entraron en la misma migración, la 0029 | Los tres niveles del mundo 2 se juegan desde la base | ✅ |
-| J12.4 | **El máximo de pasos**, la mecánica del mundo 3: `stepLimit` en `config`, el recorrido que se corta al agotarlo y el contador en cuenta atrás (`limite-de-pasos`). Va antes que los tableros porque el lector descartaba en silencio los campos que no conocía | Un nivel con máximo congela al personaje al llegar a cero y le pide reiniciar | ✅ |
-| J12.5 · .6 | Los niveles 1 y 2 del mundo 3, **los primeros con máximo de pasos**: `dos-caminos` —anillo llano con dos pilares que deciden por qué lado rodearlo, 10 pasos contra 11— y `el-faro` —torre de altura 5 con una sola entrada, 17—. Los dos en la 0030 (`mundo-3-niveles-1-y-2`) | Los dos se juegan desde la base, con el contador en cuenta atrás | ✅ |
-| J12.7 | El nivel 3 del mundo 3, `muchos-caminos` (la 0031, retocada por la **0032**). **Cierra el J12 y con él la deuda de los nueve puzles.** El retoque subió una altura para pasar de 13 pasos con cuatro caminos correctos a **14 con dos**, entre 48 recorridos posibles: el usuario rechazó a propósito las variantes de un único camino, «una línea recta entre caminos curvados» | Los nueve niveles se juegan desde la base | ✅ |
-| **J13** | **Assets y diseño de los tres mundos**, en una sola pasada y con los nueve puzles jugándose | Los nueve niveles dejan los cubos: suelo, decorado, cámara y luz, y por último el personaje — **la primera pasada, aprobada para la prueba preliminar, está hecha; ver «Lo que lleva el J13». Desde el 28-oct-2026 sólo falta pintar a Leo**, que hace el usuario | 🔄 |
+| **J1** | Esqueleto: una escena 3D vacía dentro de la aplicación, cargada en diferido | Aparece algo en 3D en una pantalla del panel | ✅ |
+| **J2** | La cuadrícula y el personaje, desde una configuración escrita a mano | Se ve el tablero y el personaje se mueve desde la consola | ✅ |
+| **J3** | [Fijar el formato de `config` y de `program`](#j3) | Está escrito en el contrato | ✅ |
+| **J4** | Blockly con los bloques mínimos: avanzar N y girar | Se arrastran bloques y se ve el JSON que producen | ✅ |
+| **J5** | El intérprete: ejecutar, animar y detectar la meta | **Un nivel se resuelve sin backend** | ✅ |
+| **J6** | Recuento de pasos y pantalla de resultado | Dice cuántos pasos usó y cuántos eran óptimos | ✅ |
+| J6.1 | [El contador, en vivo](#j6-1) | Revertido a medias por el J6.2 | ✅ |
+| J6.2 | [Quitar el coste al construir](#j6-2) y llevar el contador al juego | Los pasos suben en la esquina del juego | ✅ |
+| J6.3 | [El ensayo general](#j6-3): composición y cámara movible | El mapa se gira y se acerca con el ratón | ✅ |
+| J6.4 | [Assets de tanteo](#j6-3) | Hecho, no satisfactorio: de él sale el J13 | ✅ |
+| **J7** | Sembrar el mundo 1, un nivel por paso | Los tres niveles se juegan desde la base | ✅ |
+| J7.1 | [Nivel 1](#j7-1), y con él la pantalla de nivel | Se juega leyendo su fila, en su pantalla | ✅ |
+| J7.2 | [Nivel 2](#j7-2-y-j7-3) | Se juega desde la base | ✅ |
+| J7.3 | [Nivel 3](#j7-2-y-j7-3) | Se juega desde la base | ✅ |
+| **J8** | [Pantalla de nivel conectada al backend](#j8) — la hizo el J7.1 | Se elige un nivel y arranca ese | ✅ |
+| **J9** | [Mandar el intento al servidor](#j9-a-j11) | La partida queda guardada en la base | ✅ |
+| **J10** | [La migración del XP](#j9-a-j11) | Nunca más de 100, medido jugando | ✅ |
+| **J11** | [La barra de XP y el Nivel Explorador](#j9-a-j11) | Sube de nivel al llenarse la barra | ✅ |
+| **J12** | [Mundos 2 y 3](#j12), un nivel por paso | Hay nueve niveles jugables | ✅ |
+| J12.1 · .2 · .3 | [Los tres niveles del mundo 2](#j12) | Se juegan desde la base | ✅ |
+| J12.4 | [El máximo de pasos](#j12) | Al llegar a cero el personaje se congela y pide reiniciar | ✅ |
+| J12.5 · .6 | [Mundo 3, niveles 1 y 2](#j12) | Se juegan con el contador en cuenta atrás | ✅ |
+| J12.7 | [Mundo 3, nivel 3](#j12) | Los nueve niveles se juegan desde la base | ✅ |
+| **J13** | [Assets y diseño de los tres mundos](#j13) — sólo falta pintar a Leo | Los nueve niveles dejan los cubos | 🔄 |
 
-### El apartado gráfico va al final, en una sola pasada
+### 3.1 Detalle de cada paso
 
-Decidido por el usuario el 4-sep-2026, porque **no era de nadie**: los doce pasos
-de arriba no tenían ninguno que fuera la cámara, la luz, los modelos o el encaje
-con el tema selva de la plataforma. Estaba repartido entre el J2, el J8 y el J12,
-que es como un apartado se queda sin hacer.
+En el orden de la tabla. Sólo aparecen los pasos que tienen algo que contar
+además de su fila.
 
-**La regla es una: primero el mundo funciona, después se viste.** Funcionar es lo
-vital —moverse por la rejilla, ejecutar el programa, terminar el nivel—; vestirlo
-es una pasada aparte con los modelos de `apps/web/public/models/`. Y dentro de
-esa pasada, **primero los assets del nivel y después el del personaje**.
-
-**Y ya tiene número: el J13**, uno solo y detrás de los nueve puzles. Lo decidió
-el usuario el 11-sep-2026, al ver lo que dio el J6.4. Antes iba repartido en tres
-—uno por mundo, detrás de los niveles de cada uno—, y se juntó por lo que enseñó
-ese paso: **el aspecto no se acierta contra un tablero de pega**. Vestir el mundo
-1 sin tener delante los otros dos lleva a decidir tres veces lo mismo y a
-descubrir a la tercera que la primera estaba mal. Con los nueve niveles
-jugándose, la pasada gráfica ve de una vez todo lo que tiene que vestir.
-
-**La regla de arriba no cambia, sólo se aplica una vez**: primero funciona, luego
-se viste; y dentro de la pasada, primero los assets del nivel y después el del
-personaje.
-
-**Lo que sí hay que respetar desde el J2**, y es la única atadura que deja esta
-decisión: **el paso de la rejilla es la constante 1,0 y no se deduce de ningún
-modelo.** Medido en los kits: `block-grass` ocupa 1,082 × 1,000 × 1,082 y
-`ground_grass` 1,000 × 0 × 1,000. Ese 0,082 es el labio de hierba, que se solapa
-a propósito. Código que saque el paso del tamaño del modelo produce rendijas
-entre casillas, y con los modelos entrando tarde el fallo aparecería con la
-mecánica ya escrita encima.
-
-**El personaje trae 25 animaciones con esqueleto** —`idle`, `walk`, `jump`,
-`emote-yes`, `emote-no`—, así que cuando llegue su pasada no habrá que inventar
-el andar: el clip mueve las piernas mientras algo interpola la posición entre
-casillas. **Eso lo hace hoy el propio J5 con `useFrame`, y `@react-spring/three`
-no llegó a entrar**: interpolar entre dos casillas no traía nada nuevo, y el
-reloj que anima es el mismo que decide cuándo termina un paso — dos
-planificadores para una cosa. La decisión se revisa en el J13, con el modelo
-delante, que es donde §2 dice que entran las librerías: en el paso que primero
-las importe.
-
-### Lo que lleva el J13 (22-sep-2026)
-
-Una **primera pasada**, aprobada por el usuario para la prueba preliminar. No
-cierra el paso: es el aspecto con el que se hace la prueba, y lo que salga de
-ella decide la segunda.
-
-- **El tablero** usa el bloque de hierba de Kenney con el pasto chorreando: las
-  columnas vecinas se funden, la tierra baja hasta el suelo y la hierba va en
-  damero para que se cuenten las casillas. La meta lleva la bandera grande y
-  centrada; la salida no se marca.
-- **Islas de decorado generadas por reglas** (`game/islands.ts`, con tests), con
-  una semilla sacada del tablero: cada nivel sale distinto y siempre igual. Nada
-  tapa casillas por delante; los bloques altos van detrás y los adornos del lado
-  de la cámara.
-- **«Dos caminos»** lleva un pilar que tapa el camino de atrás y la cámara más
-  alejada. Hoy se decide por el `slug`; si se aprueba, tiene que pasar a ser un
-  campo del nivel.
-- **Los muros** siguen siendo el cojín rojo del KayKit Platformer Pack.
-- **El personaje es Leo, en gris** (28-oct-2026): `public/models/character/leo.glb`,
-  exportado de `docs/modelos/leo.blend`, de 0,5 MB y tan alto como la bandera.
-  Va sin textura porque las generadas no casaban con la malla; el usuario lo
-  pintará más adelante. El explorador de Meshy, de 17 MB y apagado por pesar
-  tanto, se retiró; el de cubos queda sólo mientras Leo carga.
-- **La pantalla de nivel se reordenó**: la caja de bloques pasa a una bandeja
-  bajo el juego, el lienzo a la columna derecha con los botones debajo, y las
-  instrucciones son un botón «?» que empieza cerrado.
-
-**Lo que queda del J13**: pintar a Leo. Lo demás —aligerarlo y los ajustes de
-la prueba preliminar— está hecho.
-
-### Los nueve puzles no existen, y los diseña el usuario
-
-`DISENO-DEL-JUEGO.md` §2 lo explica con la prueba delante. Resumen: en la base
-hay nueve **títulos** de un juego anterior —el de escribir JavaScript—, no nueve
-niveles. Ninguna fila tiene rejilla, salida, meta ni pasos óptimos.
-
-**Ninguna sesión se inventa un puzle.** El J7 y el J12 siembran lo que el usuario
-haya diseñado, y no antes. Los títulos se rediseñan con ellos, decidido el
-4-sep-2026: el título sale del puzle y no al revés, así que la migración del J7
-reescribe además título, narrativa y `validation_rules`.
-
-**Cuándo hace falta el primer diseño, corregido el 4-sep-2026.** Decía aquí que
-en el J2, y era pasarse: ese paso monta la cuadrícula desde «un objeto de
-configuración escrito a mano», y para eso vale una rejilla de pega —5×5, salida
-en una esquina y meta en otra—. De hecho conviene que lo sea: depurar el pintado
-del tablero contra un puzle que además importa es depurar dos cosas a la vez.
-
-**El J6 tampoco lo necesita, corregido el 5-sep-2026 por el usuario.** Decía
-aquí que el diseño de verdad hacía falta en el J6 por ser el primero que compara
-contra un número de pasos óptimo, y no se sigue: comparar contra un número no
-exige que ese número sea el de un puzle bueno. El J6 se construye contra
-`debugLevel` y su `optimalSteps` de 10 —que es el ejemplo resuelto del contrato
-§4.4, y trae de regalo dos programas contados a mano contra los que comprobar el
-recuento—. Vale el mismo argumento del párrafo de arriba: verificar el recuento y
-la pantalla contra un puzle que además importa es verificar dos cosas a la vez.
-
-El diseño de verdad hace falta en el **J7.1**, que es el primero que lo escribe
-en una migración, y no antes.
-
-**Lo que sí había que fijar antes del J2, y lo decidió el usuario el 4-sep-2026:
-la rejilla ADMITE huecos y muros.** No es siempre un rectángulo lleno. Los
-niveles tipo Lightbot casi nunca lo son, y el mundo 3 ya está señalado como
-candidato a «si hay pared, gira»; meterlo después obligaría a rehacer el pintado.
-
-Para el J2 basta un concepto: **cada casilla es transitable o no lo es**. Eso
-cubre las dos cosas —un hueco es una casilla que no existe, un muro es una que
-existe y no se pisa—, y distinguirlas es cuestión de cómo se pintan, no de la
-estructura. **Sin alturas**: el diseño no las menciona en ninguna parte y §3 dice
-que un paso es una casilla recorrida o un giro, no un escalón. *(Verdad hasta el
-13-sep-2026: el mundo 2 las trajo con el bloque «saltar», y el contrato §4.2 las
-describe desde `salto-y-alturas`.)*
-
-El formato definitivo lo fija el J3 igualmente; el del J2 es provisional y a
-mano.
-
-**Cuidado con «Puente Condicional»**, el nivel 2 sembrado del mundo 1: pide una
-condición, y §3 del diseño avisa de que las condiciones que dependen del entorno
-rompen el recuento de pasos —lo señalaba como riesgo del mundo 3—. Al rediseñar
-los títulos con los puzles, eso deja de ser un choque; queda anotado para que no
-se recupere sin querer.
-
-### J3 es más importante de lo que parece, y por eso va antes que Blockly
+#### <a id="j3"></a>J3 es más importante de lo que parece, y por eso va antes que Blockly
 
 El formato del programa **lo leen tres sitios distintos**: el juego para
 ejecutarlo, el cliente para contar los pasos que enseña al niño, y el servidor
@@ -293,7 +178,7 @@ repeticiones sean **números presentes en el programa**. Es lo que permite conta
 los pasos sin simular el juego. Está explicado en el contrato §3 y contado con un
 ejemplo en su §4.4.
 
-### El recuento se ve mientras se juega, no sólo al final
+#### <a id="j6-1"></a>El recuento se ve mientras se juega, no sólo al final
 
 **Decidido por el usuario el 7-sep-2026, al ver el J6 terminado.** El J6 enseña
 el recuento **al terminar**, y su propuesta dejó fuera el recuento en vivo sin
@@ -320,7 +205,7 @@ rehacer la barra. Si al implementarlas se enredan, está mal montado.
 contador durante la ejecución—: el usuario la descartó por poco práctica. No se
 recupera sin volver a preguntárselo.
 
-### Y el coste al construir se retira: el J6.2
+#### <a id="j6-2"></a>Y el coste al construir se retira: el J6.2
 
 **Decidido por el usuario el 7-sep-2026, con el J6.1 ya terminado y delante.**
 La pieza de «mientras construye» **se quita**, y con ella el óptimo del nivel
@@ -355,61 +240,7 @@ lienzo, que es un detalle de maquetación y no de escena.
 contra los de la mejor solución. Ahí el número es una lección y no una
 exigencia, y el usuario no lo ha discutido.
 
-### El editor va al lado del juego, y eso es del J8
-
-**Decidido por el usuario el 5-sep-2026, y hasta hoy no estaba escrito en
-ninguna parte.** Cuando exista la pantalla de nivel real, **el editor de bloques
-va en el mismo cuadro que el juego, a la derecha** — no en tarjetas apiladas,
-que es como están hoy en el laboratorio.
-
-Hoy la escena y el editor son dos `card` una debajo de otra en
-`StudentGameLabModule.tsx`, cada una de 420 px de alto. Eso está bien para un
-banco de pruebas —donde además hay que ver el JSON que sale—, y está mal para
-jugar: el niño arrastra un bloque arriba y el resultado ocurre fuera de la
-pantalla, así que no puede ver lo que su programa hace mientras lo escribe.
-
-**Va en el J8** (paso 20 del roadmap principal), que es el que monta esa
-pantalla, y **no en el J6**: el J6 se sigue viendo funcionar en el laboratorio,
-con las tarjetas como están. Mover la maquetación antes de que exista la
-pantalla que la necesita es rehacerla dos veces.
-
-La barra de controles no se reescribe: vive dentro de `GameScene.tsx` a
-propósito, debajo del `<Canvas>`, para que la pantalla del J8 la herede.
-
-### Lo que el J7.1 acabó siendo, que es más de lo que su línea decía
-
-**Se hizo en la pantalla de nivel de verdad y no en el laboratorio**, decidido
-por el usuario el 11-sep-2026 —«para ser rápidos, hagámoslo directamente donde
-debería ir, en el nivel»—. Eso **adelanta el J8** entero: la ruta
-`/dashboard/worlds/:worldId/:levelId`, la pantalla, la lista de niveles leyendo
-de la base y el juego montado dentro. Al J8 le queda mandar el intento, que es
-J9.
-
-**Y el aspecto dio dos vueltas más, las dos suyas y con la pantalla delante:**
-
-1. **Cero assets.** «Quiero los assets eliminados, 0 assets, y las plataformas
-   originales sin assets.» Se fueron los diez `.glb` que usaba la escena —el
-   tablero, la meta, la roca, el tocón y las seis piezas del decorado— y con
-   ellos `Scenery`, `Obstacles`, el `GLTFLoader` y el `Clone` de drei. El trozo
-   del motor bajó **55,34 kB**. **Los 233 archivos se quedan en
-   `public/models/`**, decidido por él: los hereda el J13.
-2. **El tablero, rediseñado dos veces.** Empezó siendo 1 × 4 —sembrado y jugado
-   así— y acabó en **5 × 1**: «añade una columna más, que se ve más corto de lo
-   que pensé» y «lo quiero vertical». Eso costó una **segunda migración**, la
-   `202606030024`, porque la 0023 ya estaba aplicada y una migración aplicada no
-   se edita.
-3. **Las casillas son cubos, no losas**, también suyo y también mirando la
-   pantalla.
-
-**Lo que el J13 hereda ya no es lo que dejó el J6.4**: no hereda un tablero
-vestido con el kit, hereda cubos de colores otra vez y los 233 modelos sin usar.
-
-**Y una lección de método que costó una migración**: el tablero se dio por bueno
-sobre el papel y el usuario lo corrigió **en cuanto lo vio jugándose**. Lo que
-hay que enseñarle es la pantalla, no el JSON — el J7.2 y el J7.3 harían bien en
-enseñar su puzle antes de escribir el SQL.
-
-### El ensayo general antes de sembrar: J6.3 y J6.4
+#### <a id="j6-3"></a>El ensayo general antes de sembrar: J6.3 y J6.4
 
 **Pedidos por el usuario el 7-sep-2026, con la fase A terminada.** Van **antes
 del J7** y con un boceto suyo delante. El motivo es el orden de los errores:
@@ -432,7 +263,7 @@ es maquetación.
 
 **J6.4 — assets de tanteo.** Meter modelos de `apps/web/public/models/` en el
 laboratorio **para ver por dónde puede ir**, no para dejarlo hecho. El apartado
-gráfico de verdad es el **J13**, con la regla de arriba: primero el nivel,
+gráfico de verdad es el **J13**, con la regla de [su apartado](#j13): primero el nivel,
 después el personaje.
 
 **Y lo que salió, que es por lo que el J13 existe.** El paso está **hecho y no
@@ -475,7 +306,232 @@ modelo que no llega se lleve la aplicación, y las medidas del kit— y están e
 sale de la narrativa de la fila (J8); en el laboratorio se escribe a mano y no se
 inventa contenido de producto.
 
-### Las migraciones y sus paradas
+#### <a id="j7-1"></a>Lo que el J7.1 acabó siendo, que es más de lo que su línea decía
+
+**Se hizo en la pantalla de nivel de verdad y no en el laboratorio**, decidido
+por el usuario el 11-sep-2026 —«para ser rápidos, hagámoslo directamente donde
+debería ir, en el nivel»—. Eso **adelanta el J8** entero: la ruta
+`/dashboard/worlds/:worldId/:levelId`, la pantalla, la lista de niveles leyendo
+de la base y el juego montado dentro. Al J8 le queda mandar el intento, que es
+J9.
+
+**Y el aspecto dio dos vueltas más, las dos suyas y con la pantalla delante:**
+
+1. **Cero assets.** «Quiero los assets eliminados, 0 assets, y las plataformas
+   originales sin assets.» Se fueron los diez `.glb` que usaba la escena —el
+   tablero, la meta, la roca, el tocón y las seis piezas del decorado— y con
+   ellos `Scenery`, `Obstacles`, el `GLTFLoader` y el `Clone` de drei. El trozo
+   del motor bajó **55,34 kB**. **Los 233 archivos se quedan en
+   `public/models/`**, decidido por él: los hereda el J13.
+2. **El tablero, rediseñado dos veces.** Empezó siendo 1 × 4 —sembrado y jugado
+   así— y acabó en **5 × 1**: «añade una columna más, que se ve más corto de lo
+   que pensé» y «lo quiero vertical». Eso costó una **segunda migración**, la
+   `202606030024`, porque la 0023 ya estaba aplicada y una migración aplicada no
+   se edita.
+3. **Las casillas son cubos, no losas**, también suyo y también mirando la
+   pantalla.
+
+**Lo que el J13 hereda ya no es lo que dejó el J6.4**: no hereda un tablero
+vestido con el kit, hereda cubos de colores otra vez y los 233 modelos sin usar.
+
+**Y una lección de método que costó una migración**: el tablero se dio por bueno
+sobre el papel y el usuario lo corrigió **en cuanto lo vio jugándose**. Lo que
+hay que enseñarle es la pantalla, no el JSON — el J7.2 y el J7.3 harían bien en
+enseñar su puzle antes de escribir el SQL.
+
+#### <a id="j7-2-y-j7-3"></a>J7.2 y J7.3
+
+- **J7.2** es el primero con giros y huecos. Se montó y se enseñó en el
+  laboratorio antes de sembrarlo, con su `optimalSteps` comprobado por un test.
+- **J7.3** va **sin «repetir»**, por decisión del usuario: la escalera del centro
+  se escribe con los tres bloques de siempre.
+
+#### <a id="j8"></a>El editor va al lado del juego, y eso es del J8
+
+**Decidido por el usuario el 5-sep-2026, y hasta hoy no estaba escrito en
+ninguna parte.** Cuando exista la pantalla de nivel real, **el editor de bloques
+va en el mismo cuadro que el juego, a la derecha** — no en tarjetas apiladas,
+que es como están hoy en el laboratorio.
+
+Hoy la escena y el editor son dos `card` una debajo de otra en
+`StudentGameLabModule.tsx`, cada una de 420 px de alto. Eso está bien para un
+banco de pruebas —donde además hay que ver el JSON que sale—, y está mal para
+jugar: el niño arrastra un bloque arriba y el resultado ocurre fuera de la
+pantalla, así que no puede ver lo que su programa hace mientras lo escribe.
+
+**Va en el J8** (paso 20 del roadmap principal), que es el que monta esa
+pantalla, y **no en el J6**: el J6 se sigue viendo funcionar en el laboratorio,
+con las tarjetas como están. Mover la maquetación antes de que exista la
+pantalla que la necesita es rehacerla dos veces.
+
+La barra de controles no se reescribe: vive dentro de `GameScene.tsx` a
+propósito, debajo del `<Canvas>`, para que la pantalla del J8 la herede.
+
+#### <a id="j9-a-j11"></a>J9, J10 y J11
+
+- **J9** manda el intento con el programa (`mandar-el-intento`), con éxito y sin
+  él: intento, progreso y XP. **Y arregló el contador de mundos**, que contaba
+  las filas de progreso sin mirar si el nivel estaba superado
+  (`docs/CONTEXT.md` §4.12).
+- **J10** cuenta los pasos y concede XP por marca de agua (`migracion-del-xp`).
+  Trajo **la regla que faltaba, de pasos a puntuación**, que el usuario eligió el
+  17-sep-2026 tras ver los números de tres candidatas. Medido jugando: **87** al
+  superar «La escalera» con 23 pasos contra 20, **+13** al mejorarlo a perfecto y
+  **cero** al volver a empeorarlo.
+- **J11** pone la barra de XP por tramos de 300, con el **Nivel Explorador** que
+  sube al llenarse, y el XP al día sin recargar, que no lo estaba
+  (`nivel-explorador`). Medido jugando: de 93/300 a 193, a 293, y al llegar a 900
+  la ventana dice «¡Subiste a Nivel Explorador 4!».
+
+#### <a id="j12"></a>J12 · Mundos 2 y 3
+
+Partido en siete, con el mismo patrón que el J7.
+
+- **J12.1 · .2 · .3**, el mundo 2. **Empezó por el 2**, `salta-y-sube`, el
+  primero con subidas, que trajo el bloque «saltar» y las alturas
+  (`salto-y-alturas`). Los tres se cerraron juntos en `mundo-2-completo`, por
+  decisión del usuario: `salta-y-sube` bajó al 1, y el 2 y el 3 —`el-gran-rodeo`
+  y `la-torre`— entraron en la misma migración, la 0029.
+- **J12.4**, el máximo de pasos, la mecánica del mundo 3: `stepLimit` en
+  `config`, el recorrido que se corta al agotarlo y el contador en cuenta atrás
+  (`limite-de-pasos`). Va antes que los tableros porque el lector descartaba en
+  silencio los campos que no conocía.
+- **J12.5 · .6**, los dos primeros con máximo de pasos: `dos-caminos` —anillo
+  llano con dos pilares que deciden por qué lado rodearlo, 10 pasos contra 11— y
+  `el-faro` —torre de altura 5 con una sola entrada, 17—. Los dos en la 0030
+  (`mundo-3-niveles-1-y-2`).
+- **J12.7**, `muchos-caminos` (la 0031, retocada por la **0032**). **Cierra el J12
+  y con él la deuda de los nueve puzles.** El retoque subió una altura para pasar
+  de 13 pasos con cuatro caminos correctos a **14 con dos**, entre 48 recorridos
+  posibles: el usuario rechazó a propósito las variantes de un único camino, «una
+  línea recta entre caminos curvados».
+
+#### <a id="j13"></a>El apartado gráfico va al final, en una sola pasada
+
+Decidido por el usuario el 4-sep-2026, porque **no era de nadie**: los doce pasos
+de la tabla no tenían ninguno que fuera la cámara, la luz, los modelos o el encaje
+con el tema selva de la plataforma. Estaba repartido entre el J2, el J8 y el J12,
+que es como un apartado se queda sin hacer.
+
+**La regla es una: primero el mundo funciona, después se viste.** Funcionar es lo
+vital —moverse por la rejilla, ejecutar el programa, terminar el nivel—; vestirlo
+es una pasada aparte con los modelos de `apps/web/public/models/`. Y dentro de
+esa pasada, **primero los assets del nivel y después el del personaje**.
+
+**Y ya tiene número: el J13**, uno solo y detrás de los nueve puzles. Lo decidió
+el usuario el 11-sep-2026, al ver lo que dio el J6.4. Antes iba repartido en tres
+—uno por mundo, detrás de los niveles de cada uno—, y se juntó por lo que enseñó
+ese paso: **el aspecto no se acierta contra un tablero de pega**. Vestir el mundo
+1 sin tener delante los otros dos lleva a decidir tres veces lo mismo y a
+descubrir a la tercera que la primera estaba mal. Con los nueve niveles
+jugándose, la pasada gráfica ve de una vez todo lo que tiene que vestir.
+
+**La regla de arriba no cambia, sólo se aplica una vez**: primero funciona, luego
+se viste; y dentro de la pasada, primero los assets del nivel y después el del
+personaje.
+
+**Lo que sí hay que respetar desde el J2**, y es la única atadura que deja esta
+decisión: **el paso de la rejilla es la constante 1,0 y no se deduce de ningún
+modelo.** Medido en los kits: `block-grass` ocupa 1,082 × 1,000 × 1,082 y
+`ground_grass` 1,000 × 0 × 1,000. Ese 0,082 es el labio de hierba, que se solapa
+a propósito. Código que saque el paso del tamaño del modelo produce rendijas
+entre casillas, y con los modelos entrando tarde el fallo aparecería con la
+mecánica ya escrita encima.
+
+**El personaje trae 25 animaciones con esqueleto** —`idle`, `walk`, `jump`,
+`emote-yes`, `emote-no`—, así que cuando llegue su pasada no habrá que inventar
+el andar: el clip mueve las piernas mientras algo interpola la posición entre
+casillas. **Eso lo hace hoy el propio J5 con `useFrame`, y `@react-spring/three`
+no llegó a entrar**: interpolar entre dos casillas no traía nada nuevo, y el
+reloj que anima es el mismo que decide cuándo termina un paso — dos
+planificadores para una cosa. La decisión se revisa en el J13, con el modelo
+delante, que es donde §2 dice que entran las librerías: en el paso que primero
+las importe.
+
+#### Lo que lleva el J13 (22-sep-2026)
+
+Una **primera pasada**, aprobada por el usuario para la prueba preliminar. No
+cierra el paso: es el aspecto con el que se hace la prueba, y lo que salga de
+ella decide la segunda.
+
+- **El tablero** usa el bloque de hierba de Kenney con el pasto chorreando: las
+  columnas vecinas se funden, la tierra baja hasta el suelo y la hierba va en
+  damero para que se cuenten las casillas. La meta lleva la bandera grande y
+  centrada; la salida no se marca.
+- **Islas de decorado generadas por reglas** (`game/islands.ts`, con tests), con
+  una semilla sacada del tablero: cada nivel sale distinto y siempre igual. Nada
+  tapa casillas por delante; los bloques altos van detrás y los adornos del lado
+  de la cámara.
+- **«Dos caminos»** lleva un pilar que tapa el camino de atrás y la cámara más
+  alejada. Hoy se decide por el `slug`; si se aprueba, tiene que pasar a ser un
+  campo del nivel.
+- **Los muros** siguen siendo el cojín rojo del KayKit Platformer Pack.
+- **El personaje es Leo, en gris** (28-oct-2026): `public/models/character/leo.glb`,
+  exportado de `docs/modelos/leo.blend`, de 0,5 MB y tan alto como la bandera.
+  Va sin textura porque las generadas no casaban con la malla; el usuario lo
+  pintará más adelante. El explorador de Meshy, de 17 MB y apagado por pesar
+  tanto, se retiró; el de cubos queda sólo mientras Leo carga.
+- **La pantalla de nivel se reordenó**: la caja de bloques pasa a una bandeja
+  bajo el juego, el lienzo a la columna derecha con los botones debajo, y las
+  instrucciones son un botón «?» que empieza cerrado.
+
+**Lo que queda del J13**: pintar a Leo. Lo demás —aligerarlo y los ajustes de
+la prueba preliminar— está hecho.
+
+### 3.2 Lo que cruza varios pasos
+
+#### Los nueve puzles no existen, y los diseña el usuario
+
+`DISENO-DEL-JUEGO.md` §2 lo explica con la prueba delante. Resumen: en la base
+hay nueve **títulos** de un juego anterior —el de escribir JavaScript—, no nueve
+niveles. Ninguna fila tiene rejilla, salida, meta ni pasos óptimos.
+
+**Ninguna sesión se inventa un puzle.** El J7 y el J12 siembran lo que el usuario
+haya diseñado, y no antes. Los títulos se rediseñan con ellos, decidido el
+4-sep-2026: el título sale del puzle y no al revés, así que la migración del J7
+reescribe además título, narrativa y `validation_rules`.
+
+**Cuándo hace falta el primer diseño, corregido el 4-sep-2026.** Decía aquí que
+en el J2, y era pasarse: ese paso monta la cuadrícula desde «un objeto de
+configuración escrito a mano», y para eso vale una rejilla de pega —5×5, salida
+en una esquina y meta en otra—. De hecho conviene que lo sea: depurar el pintado
+del tablero contra un puzle que además importa es depurar dos cosas a la vez.
+
+**El J6 tampoco lo necesita, corregido el 5-sep-2026 por el usuario.** Decía
+aquí que el diseño de verdad hacía falta en el J6 por ser el primero que compara
+contra un número de pasos óptimo, y no se sigue: comparar contra un número no
+exige que ese número sea el de un puzle bueno. El J6 se construye contra
+`debugLevel` y su `optimalSteps` de 10 —que es el ejemplo resuelto del contrato
+§4.4, y trae de regalo dos programas contados a mano contra los que comprobar el
+recuento—. Vale el mismo argumento del párrafo de arriba: verificar el recuento y
+la pantalla contra un puzle que además importa es verificar dos cosas a la vez.
+
+El diseño de verdad hace falta en el **J7.1**, que es el primero que lo escribe
+en una migración, y no antes.
+
+**Lo que sí había que fijar antes del J2, y lo decidió el usuario el 4-sep-2026:
+la rejilla ADMITE huecos y muros.** No es siempre un rectángulo lleno. Los
+niveles tipo Lightbot casi nunca lo son, y el mundo 3 ya está señalado como
+candidato a «si hay pared, gira»; meterlo después obligaría a rehacer el pintado.
+
+Para el J2 basta un concepto: **cada casilla es transitable o no lo es**. Eso
+cubre las dos cosas —un hueco es una casilla que no existe, un muro es una que
+existe y no se pisa—, y distinguirlas es cuestión de cómo se pintan, no de la
+estructura. **Sin alturas**: el diseño no las menciona en ninguna parte y §3 dice
+que un paso es una casilla recorrida o un giro, no un escalón. *(Verdad hasta el
+13-sep-2026: el mundo 2 las trajo con el bloque «saltar», y el contrato §4.2 las
+describe desde `salto-y-alturas`.)*
+
+El formato definitivo lo fija el J3 igualmente; el del J2 es provisional y a
+mano.
+
+**Cuidado con «Puente Condicional»**, el nivel 2 sembrado del mundo 1: pide una
+condición, y §3 del diseño avisa de que las condiciones que dependen del entorno
+rompen el recuento de pasos —lo señalaba como riesgo del mundo 3—. Al rediseñar
+los títulos con los puzles, eso deja de ser un choque; queda anotado para que no
+se recupere sin querer.
+
+#### Las migraciones y sus paradas
 
 `ROADMAP.md` §1.3 punto 9: **el SQL se lee antes de aplicarlo, y quien hace
 cumplir esa parada es el usuario**, porque sólo él lanza `supabase db push`. No
@@ -516,7 +572,7 @@ nivel funcionando antes de diseñar el siguiente.
   queda el recuento **del cliente**, que es contra lo que el del servidor se puede
   contrastar.
 
-### Qué comparte con el roadmap principal
+#### Qué comparte con el roadmap principal
 
 Tres pasos de aquí son la cara «juego» de pasos que ya existen allí. **No son
 trabajo duplicado: son el mismo trabajo mirado desde el otro lado**, y conviene
