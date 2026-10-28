@@ -2,9 +2,11 @@
 
 > Diagramas del **objetivo 2** del proyecto de grado: arquitectura de
 > componentes, arquitectura de despliegue y modelo entidad–relación.
-> Hechos contra el código y el esquema a 27-oct-2026: las tablas y columnas
-> salen de `apps/web/src/types/database.types.ts`, que se genera de la base
-> real, y las claves foráneas de `supabase/migrations/`.
+> Medidos contra la plataforma desplegada el 28-oct-2026: el sitio de la UNAC
+> (cabeceras, archivos servidos y hosts a los que llama el bundle publicado) y
+> la base de Supabase (las 48 migraciones aplicadas y el esquema regenerado,
+> idéntico a `apps/web/src/types/database.types.ts`). Las claves foráneas salen
+> de `supabase/migrations/`.
 >
 > Las fuentes son los bloques Mermaid de este archivo (GitHub los dibuja); las
 > imágenes para el documento escrito están en [`diagramas/`](diagramas/).
@@ -100,11 +102,11 @@ flowchart LR
         BUILD["Equipo del desarrollador<br/>npm run build:unac"]
     end
 
-    subgraph UNAC["«nodo» Servidor UNAC · Ubuntu 22.04"]
-        APACHE["Apache 2.4 · mod_userdir<br/>~/public_html estático<br/>.htaccess FallbackResource"]
+    subgraph UNAC["«nodo» Servidor UNAC"]
+        APACHE["Ubuntu 22.04 · Apache 2.4.52<br/>mod_userdir · ~/public_html estático<br/>.htaccess FallbackResource"]
     end
 
-    subgraph SUPABASE["«nodo» Supabase Cloud · proyecto CodePlay"]
+    subgraph SUPABASE["«nodo» Supabase Cloud · sa-east-1"]
         GOTRUE["Auth (GoTrue)"]
         POSTGREST["PostgREST"]
         REALTIME["Realtime"]
@@ -113,6 +115,7 @@ flowchart LR
     end
 
     GOOGLE["«nodo externo» Google Identity"]
+    FONTS["«nodo externo» Google Fonts<br/>fonts.googleapis.com · fonts.gstatic.com"]
 
     REPO -- "push / pull request" --> CI
     REPO --> BUILD
@@ -122,6 +125,7 @@ flowchart LR
     BROWSER -- "HTTPS · sesión" --> GOTRUE
     BROWSER -- "WSS · suscripciones" --> REALTIME
     BROWSER -- "redirección OAuth" --> GOOGLE
+    BROWSER -- "HTTPS · tipografías" --> FONTS
     GOTRUE -- "OAuth 2.0" --> GOOGLE
     GOTRUE --> DB
     POSTGREST --> DB
@@ -136,7 +140,11 @@ manual porque el usuario no tiene `sudo` y el servidor sólo se alcanza con la
 VPN. El provisional de la prueba preliminar del 25-sep-2026 sigue en Vercel
 (`https://codeplay-pgrado-web.vercel.app`) y no se dibuja.
 
-El navegador habla **directamente** con Supabase: Apache sólo sirve archivos.
+El navegador habla **directamente** con Supabase: Apache sólo sirve archivos
+(la app, sus fragmentos de JS y los modelos `.glb`). Además pide las
+tipografías a Google Fonts en cada visita; es la única dependencia externa del
+bundle en tiempo de ejecución aparte de Supabase y del inicio de sesión con
+Google. La base está en la región `sa-east-1` (São Paulo).
 La clave anónima viaja en el bundle por diseño; lo que protege los datos es el
 JWT de la sesión y las políticas RLS de la base.
 
