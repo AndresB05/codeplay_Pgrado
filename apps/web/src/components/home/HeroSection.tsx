@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import heroLeopard from '../../assets/brand/hero-leopard.webp';
 import { ROUTES } from '../../constants/routes';
-import { TropicalFlower } from '../decor/JungleDecor';
 import { SectionContainer } from './shared';
 
 export const HeroSection = () => {
@@ -24,12 +23,7 @@ export const HeroSection = () => {
 
       <SectionContainer className="relative z-10 flex items-center py-[48px] sm:py-[56px] lg:min-h-[600px] lg:py-[64px]">
         <div className="w-full max-w-[575px] pt-1">
-          <span className="chip chip-leaf">
-            <TropicalFlower size={18} />
-            Expedición para exploradores
-          </span>
-
-          <h1 className="mt-4 max-w-[520px] font-display text-[38px] leading-[1.05] text-grape-dark sm:text-[48px] lg:text-[58px]">
+          <h1 className="max-w-[520px] font-display text-[38px] leading-[1.05] text-grape-dark sm:text-[48px] lg:text-[58px]">
             ¡Aprender a programar jugando!
           </h1>
 
@@ -48,11 +42,6 @@ export const HeroSection = () => {
             <a href="#como-aprender" className="btn btn-ghost">
               ¿Cómo se juega?
             </a>
-          </div>
-
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            <span className="chip chip-sun">🌿 3 mundos abiertos</span>
-            <span className="chip chip-mint">👦 Para niños de 7 a 14</span>
           </div>
 
           {/* En una sola columna no hay lado derecho: la ilustración baja debajo del texto. */}
