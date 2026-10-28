@@ -729,10 +729,10 @@ puede hacer. Los tres primeros se leen con la clave anónima en
 | Ajuste | Estado | Qué implica |
 | --- | --- | --- |
 | **Confirm email** | **APAGADO** (`mailer_autoconfirm: true`) | Un alta devuelve sesión inmediata. Por eso `/auth/v1/signup` con un correo nuevo **crea la cuenta y no es una sonda de existencia**: preguntar si una cuenta existe se le pide al usuario, que ve el panel |
-| **Google** | **`true` desde el 28-ago-2026** | Era la puerta del paso 15 y **ya está abierta**. El usuario dio de alta el cliente en Google Cloud —pantalla de consentimiento externa en modo prueba— y pegó las credenciales. Comprobado, no relatado: `/auth/v1/authorize?provider=google` redirige a Google con `redirect_uri` igual al callback de Supabase y `scope=email profile`, y Google devuelve su pantalla de acceso, no `invalid_client` ni `redirect_uri_mismatch`. Lo que queda es de la aplicación: **la ruta de vuelta todavía no está en Redirect URLs**, porque la decide el paso 15 |
+| **Google** | **`true` desde el 28-ago-2026** | Era la puerta del paso 15 y **ya está abierta**. El usuario dio de alta el cliente en Google Cloud —pantalla de consentimiento externa en modo prueba— y pegó las credenciales. Comprobado, no relatado: `/auth/v1/authorize?provider=google` redirige a Google con `redirect_uri` igual al callback de Supabase y `scope=email profile`, y Google devuelve su pantalla de acceso, no `invalid_client` ni `redirect_uri_mismatch`. La ruta de vuelta, `/auth/callback`, la añadió el paso 15 |
 | Altas abiertas | `disable_signup: false` | Cualquiera puede registrarse con la clave anónima; ver arriba la decisión del rol elegido por el navegador |
-| **Site URL** | `http://localhost:5173` | Sin él, el enlace del correo no vuelve a la aplicación |
-| **Redirect URLs** | `/reset-password`, `/auth/callback` y el comodín `http://localhost:5173/**` | Sin la entrada, Supabase **no da error**: devuelve en silencio al Site URL y el fallo parece del código. **Al desplegar (paso 27) hay que hacer DOS cosas, no una: añadir las del dominio real Y RETIRAR EL COMODÍN.** El comodín enmascara errores de ruta —una vuelta equivocada casa igual— y, con el flujo `implicit` que usa este cliente, sobre el dominio real dejaría que **cualquier** ruta reciba un refresh token en el fragmento de la URL |
+| **Site URL** | `https://ingenieria.unac.edu.co/~andres.blanco/` desde el 28-oct-2026 | Sin él, el enlace del correo no vuelve a la aplicación |
+| **Redirect URLs** | `/reset-password` y `/auth/callback` de la UNAC, más los de Vercel por si se retoma. **El comodín `http://localhost:5173/**` está sin confirmar**: hay que mirarlo en el panel | Sin la entrada, Supabase **no da error**: devuelve en silencio al Site URL y el fallo parece del código. **Al desplegar (paso 27) hay que hacer DOS cosas, no una: añadir las del dominio real Y RETIRAR EL COMODÍN.** El comodín enmascara errores de ruta —una vuelta equivocada casa igual— y, con el flujo `implicit` que usa este cliente, sobre el dominio real dejaría que **cualquier** ruta reciba un refresh token en el fragmento de la URL |
 
 #### Quién decide el destino tras autenticarse
 
@@ -4271,8 +4271,7 @@ con la lista delante. El razonamiento entero está en `ROADMAP.md` §2.1.
 
 **Qué falta exactamente, y qué está ya decidido, está en `ROADMAP.md` §3.4**, en
 una lista que sirve de encargo sin releer nada más. De lo decidido, lo que toca
-a este documento: el **responsable del tratamiento es el usuario como persona
-natural**, y el plazo de conservación es el de §2.7. La política no lleva
+a este documento: el **responsable del tratamiento es la UNAC**, y el plazo de conservación es el de §2.7. La política no lleva
 correo de contacto: remite a los canales oficiales de la UNAC (28-oct-2026).
 
 ### P4 — `integracion-juego`: apartado de implementación de los niveles

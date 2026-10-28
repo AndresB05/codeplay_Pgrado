@@ -134,7 +134,7 @@ dejó fuera.
 | 29 | ★ [Nombre editable desde Ajustes](#paso-29) | ✅ | `nombre-editable` |
 | 16 | [Persistir la asignación de misiones](#paso-16) | ✅ | `misiones-asignadas` |
 | 18 | ★ [Sincronización en vivo (Supabase Realtime)](#paso-18) | ✅ | `sincronizacion-en-vivo` |
-| 23 | ★ [Integración del juego — sólo falta el personaje animado](#paso-23) | 🔄 | 23.1 directo · 23.2 salvo el J13 |
+| 23 | ★ [Integración del juego — sólo falta pintar a Leo](#paso-23) | 🔄 | 23.1 directo · 23.2 salvo el J13 |
 | 17 | [Reportes sobre progreso real](#paso-17) | ✅ | `reportes-de-progreso-real` |
 | 31 | ★ [Seguimiento por alumno en el panel del tutor](#paso-31) | ✅ | `avance-por-mundos` |
 | 20 | [Pantalla de nivel y puente hacia el juego](#paso-20) | ✅ | P4 |
@@ -536,6 +536,8 @@ personaje principal animado**, y es trabajo suyo —meter el modelo y ponerle
 huesos para animarlo—, no de una sesión. El diseño está en [`DISENO-DEL-JUEGO.md`](DISENO-DEL-JUEGO.md) y el
 detalle paso a paso en [`ROADMAP-JUEGO.md`](ROADMAP-JUEGO.md).
 
+**Desde el 28-oct-2026 Leo está dentro y aligerado: sólo falta pintarlo.**
+
 #### <a id="paso-17"></a>17 · Reportes sobre progreso real
 
 ~~Reportes de habilidades~~ **sobre progreso real — HECHO el 18-sep-2026, y el
@@ -712,7 +714,7 @@ el 14 puede seguir detrás.
 **Lo que sí cambia es que habrá datos personales de terceros en un despliegue
 público**, y eso queda anotado en §2.1 como riesgo asumido, no como descuido.
 
-**HECHA el 25-sep-2026.** Dejó errores por corregir, que se abordan después.
+**HECHA el 25-sep-2026.** Los errores que dejó ya están corregidos.
 
 #### <a id="paso-14"></a>14 · Consentimiento del acudiente y política de privacidad
 
@@ -1264,10 +1266,10 @@ seguir sembrando por migración.
    ninguna parte—, y decidir si el tutor ve el nombre vigente, un historial, o un
    campo que el niño no controle.
 
-**Decidido, no se vuelve a discutir:** el **responsable del tratamiento es el
-usuario como persona natural** —lo que además le exime del Registro Nacional de
-Bases de Datos, que desde el Decreto 090 de 2018 sólo alcanza a sociedades y
-entidades con activos sobre 100.000 UVT y a entidades públicas—; el **plazo de
+**Decidido, no se vuelve a discutir:** el **responsable del tratamiento es la
+UNAC** (28-oct-2026; antes era el usuario como persona natural, y con ello caía
+la exención del Registro Nacional de Bases de Datos, que pasa a ser cosa de la
+universidad); el **plazo de
 conservación** está en `CONTEXT.md` §2.7; y la comparación entre compañeros se
 queda (§3.2).
 
