@@ -32,3 +32,6 @@ docs/capturas/
 
 # --- Modelos 3D de trabajo (no se versionan) ---
 docs/modelos/
+
+# --- Diagramas exportados (no se versionan; la fuente es docs/ARQUITECTURA.md) ---
+docs/diagramas/
