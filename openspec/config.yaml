@@ -207,6 +207,9 @@ context: |
   - Componentes: `export const Foo = () => {}`, nunca export default. Props
     tipadas con interface o type justo encima del componente.
   - Servicios: todos devuelven `{ data, error }` con AppError. Nunca lanzan.
+  - Nada colgado de `/`: recursos de public/ con withBase y enlaces externos
+    con absoluteUrl (config/baseUrl.ts). En la universidad la app vive en
+    /~andres.blanco/ (npm run build:unac, que emite el .htaccess).
   - Estilos: Tailwind con los nombres de color del tema, nunca hex sueltos. Los
     tokens están duplicados a propósito en src/main.css (variables CSS) y en
     tailwind.config.js. Las clases .btn/.card/.chip/.field viven en main.css.

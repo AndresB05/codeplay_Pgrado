@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { absoluteUrl } from '../../../config/baseUrl';
 import { ROUTES } from '../../../constants/routes';
 import { useInvitations } from '../../../hooks/useInvitations';
 import type { Invitation, InvitationState } from '../../../services/invitations.service';
@@ -11,7 +12,7 @@ interface AddStudentsPanelProps {
 
 /** Enlace absoluto que el tutor comparte por donde quiera. */
 const buildInviteUrl = (token: string): string =>
-  `${window.location.origin}${ROUTES.INVITE}/${token}`;
+  absoluteUrl(`${ROUTES.INVITE}/${token}`);
 
 /*
  * TRES estados y no dos. El panel anterior a `invitaciones-sin-correo` pintaba

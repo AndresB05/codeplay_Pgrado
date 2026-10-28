@@ -1,3 +1,4 @@
+import { withBase } from '../config/baseUrl';
 import { TILE_SIZE, type LevelConfig } from './level';
 
 /*
@@ -28,8 +29,8 @@ import { TILE_SIZE, type LevelConfig } from './level';
  *    ENCERRADOS entre casillas son agujeros del puzle y también.
  */
 
-const KIT = '/models/platformer';
-const SURVIVAL = '/models/survival';
+const KIT = withBase('models/platformer');
+const SURVIVAL = withBase('models/survival');
 
 export type Side = 'north' | 'south' | 'east' | 'west';
 

@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { BASE_PATH } from '../../config/baseUrl';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -51,7 +52,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             >
               Recargar la página
             </button>
-            <a href="/" className="btn btn-ghost w-full">
+            <a href={BASE_PATH} className="btn btn-ghost w-full">
               Ir al inicio
             </a>
           </div>

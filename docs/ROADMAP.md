@@ -149,8 +149,8 @@ dejó fuera.
 | 19 | [Invitaciones: enlace canjeable (hecho) y correo real (pendiente)](#paso-19) | 🔄 | `enlace-de-invitacion` + servicio |
 | 24 | Retirar la sesión de invitado — **no se hace**, ver §2.1 | ✅ | **usuario** |
 | 25 | ★ [Responsive, accesibilidad y `ErrorBoundary`](#paso-25) | ✅ | `responsive-y-accesibilidad` |
-| 30 | ★ [Migración al servidor de la universidad](#paso-30) | ⬜ | — |
-| 27.2 | ★ [Despliegue definitivo y URL de demo](#paso-27-2) | ⬜ | — |
+| 30 | ★ [Migración al servidor de la universidad](#paso-30) | ✅ | **usuario** |
+| 27.2 | ★ [Despliegue definitivo y URL de demo](#paso-27-2) | ✅ | — |
 
 ### 2.1 Decisiones de orden que conviene no deshacer
 
@@ -795,11 +795,15 @@ lo gordo**: el repliegue del panel para móvil y la accesibilidad.
 usuarios; lo definitivo va al servidor de la universidad. **Qué se mueve depende
 de lo que ofrezcan**, y eso se pregunta antes de planificarlo.
 
+**Resuelto el 28-oct-2026: se mueve sólo el front.** La universidad da un usuario SSH sin `sudo` en un Ubuntu 22.04 y su Apache publica `~/public_html` con `mod_userdir`; el profesor pidió usar Apache y la ruta de usuario. Postgres, Auth, Realtime y las RPC **se quedan en Supabase**: nada de eso se reimplementa.
+
 #### <a id="paso-27-2"></a>27.2 · Despliegue definitivo y URL de demo
 
 Va detrás del 30 porque el destino bueno es el servidor de la universidad, no
 Supabase. Lo que el 27.1 monte para la prueba es desechable y no condiciona a
 éste.
+
+**Hecho el 28-oct-2026: https://ingenieria.unac.edu.co/~andres.blanco/**. Para subir hace falta la VPN de la universidad (FortiClient, `andres.blanco@192.168.51.107`). `npm run build:unac` compila con esa base y emite el `.htaccess` con `FallbackResource`; la subida es `tar` + `scp` a `~/public_html`. La Site URL de Supabase apunta aquí y Vercel sigue en Redirect URLs por si se retoma.
 
 ---
 

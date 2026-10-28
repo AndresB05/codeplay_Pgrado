@@ -20,6 +20,7 @@
 | [`docs/CONTRATO-DE-INTEGRACION.md`](CONTRATO-DE-INTEGRACION.md) | Qué debe cumplir el juego para integrarse y qué le garantiza la plataforma. **Es el único documento del proyecto escrito para quien NO conoce este repositorio**: se sostiene solo y no remite a ningún otro | Al construir el juego, o al implementar el puente del lado web |
 | [`README.md`](../README.md) | Puesta en marcha, comandos y convenciones de integración del juego | Al configurar el entorno |
 | [`supabase/README.md`](../supabase/README.md) | Detalle migración por migración del esquema SQL | Al tocar la base de datos |
+| [`docs/ARQUITECTURA.md`](ARQUITECTURA.md) | Diagramas de componentes, despliegue y entidad–relación (objetivo 2), con sus PNG en `docs/diagramas/` | Al cambiar el esquema, el despliegue o las capas del front: hay que redibujarlos |
 | [`openspec/config.yaml`](../openspec/config.yaml) | Versión resumida de §1 que OpenSpec inyecta a la IA al crear artefactos | Al cambiar stack, convenciones o prioridades — **hay que actualizarlo a la vez que este documento** |
 
 `ESTADO-DEL-PROYECTO.md` **no se elimina ni se reemplaza**: sigue siendo la
@@ -236,6 +237,8 @@ redundantes: el código de este repo es deliberadamente parco en ellos.
 
 **Servicios.** Todo servicio devuelve `{ data, error }` con `AppError`
 (`errors/AppError.ts`, construido con `createAppError.ts`). Nunca lanzan.
+
+**Rutas absolutas.** Nada se escribe colgado de `/`: los recursos de `public/` pasan por `withBase` y los enlaces que salen de la app (Supabase, invitaciones) por `absoluteUrl`, ambos en `config/baseUrl.ts`. En la universidad la app vive en `/~andres.blanco/` (`npm run build:unac`, que además emite el `.htaccess` con `FallbackResource`).
 
 **Estilos.** Tailwind con los **nombres de color del tema**, nunca hex sueltos.
 Los tokens viven duplicados a propósito en `src/main.css` (variables CSS) y en

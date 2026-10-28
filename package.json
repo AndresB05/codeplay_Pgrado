@@ -14,6 +14,7 @@
   "scripts": {
     "dev": "npm run dev -w @codeplay/web",
     "build": "npm run build -w @codeplay/web",
+    "build:unac": "npm run build:unac -w @codeplay/web",
     "preview": "npm run preview -w @codeplay/web",
     "lint": "npm run lint -w @codeplay/web",
     "test": "npm run test -w @codeplay/web",

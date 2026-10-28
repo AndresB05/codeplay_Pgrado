@@ -13,6 +13,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { ConfirmDialog } from '../components/dashboard/shared/ConfirmDialog';
+import { withBase } from '../config/baseUrl';
 import {
   Box3,
   MeshStandardMaterial,
@@ -206,9 +207,9 @@ const topOf = (config: LevelConfig, row: number, column: number): number =>
  * PRUEBA DE ASSETS (rama `prueba/kaykit-platformer`), no definitiva: el tablero
  * con el bloque de hierba del Platformer Kit de Kenney.
  */
-const GRASS_MODEL = '/models/platformer/block-grass-overhang-low.glb';
-const FLAG_MODEL = '/models/platformer/flag.glb';
-const WALL_MODEL = '/models/kaykit/barrier_1x1x1_red.gltf';
+const GRASS_MODEL = withBase('models/platformer/block-grass-overhang-low.glb');
+const FLAG_MODEL = withBase('models/platformer/flag.glb');
+const WALL_MODEL = withBase('models/kaykit/barrier_1x1x1_red.gltf');
 
 /*
  * La bandera mide 0,9 y el personaje 0,82: se escala para que la meta se vea por
@@ -229,7 +230,7 @@ const FLAG_SCALE = 1.5;
  * esquinas del agujero —a 1,5 del centro— hace falta escalarlo por 1,65, y los
  * lados se montan un poco sobre las plataformas en vez de dejar huecos.
  */
-const PILLAR_MODEL = '/models/platformer/block-grass-overhang-large.glb';
+const PILLAR_MODEL = withBase('models/platformer/block-grass-overhang-large.glb');
 const PILLAR_WIDTH_SCALE = 1.65;
 const PILLAR_HEIGHT = 6;
 const PILLAR_BOTTOM_LIMIT = 0.3;
@@ -649,8 +650,8 @@ const Board = ({
  * escala a la altura de la casilla, apoyado en el suelo y centrado: el modelo
  * trae sus propias unidades y su propio origen.
  */
-const CHARACTER_MODEL = '/models/character/safari-spotter.fbx';
-const CHARACTER_TEXTURE = '/models/character/safari-spotter.png';
+const CHARACTER_MODEL = withBase('models/character/safari-spotter.fbx');
+const CHARACTER_TEXTURE = withBase('models/character/safari-spotter.png');
 const CHARACTER_HEIGHT = 1.6;
 // El modelo mira a +z y aquí el frente del personaje es −z.
 const CHARACTER_TURN = Math.PI;

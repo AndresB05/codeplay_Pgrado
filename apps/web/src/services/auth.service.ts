@@ -1,4 +1,5 @@
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { absoluteUrl } from '../config/baseUrl';
 import { ROUTES } from '../constants/routes';
 import { AppError } from '../errors/AppError';
 import { supabase } from '../lib/supabase';
@@ -97,7 +98,7 @@ const authError = (error: unknown, fallbackMessage: string, fallbackCode: string
  * rol rebotaría a la mitad de la gente enseñando de paso el panel del otro.
  */
 const getOAuthRedirectUrl = (): string => {
-  return new URL(ROUTES.AUTH_CALLBACK, window.location.origin).toString();
+  return absoluteUrl(ROUTES.AUTH_CALLBACK);
 };
 
 /*
@@ -106,7 +107,7 @@ const getOAuthRedirectUrl = (): string => {
  * aparecería dentro del correo, que es lo más caro de depurar del proyecto.
  */
 const getPasswordResetRedirectUrl = (): string => {
-  return new URL(ROUTES.RESET_PASSWORD, window.location.origin).toString();
+  return absoluteUrl(ROUTES.RESET_PASSWORD);
 };
 
 const applyNewPassword = async (newPassword: string): ServiceResult<void> => {

@@ -14,6 +14,7 @@ import { ResetPassword } from '../pages/ResetPassword/ResetPassword';
 import { Signup } from '../pages/Signup/Signup';
 import { PrivateRoute } from './PrivateRoute';
 import { PublicRoute } from './PublicRoute';
+import { BASE_PATH } from '../config/baseUrl';
 import { DEV_TOOLS_ENABLED } from '../config/devTools';
 import { RouteLoading } from './RouteLoading';
 
@@ -35,7 +36,7 @@ const TeacherDashboard = lazy(() =>
 
 export const AppRouter = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={BASE_PATH}>
       <AuthProvider>
         <ClassroomsProvider>
           <Suspense fallback={<RouteLoading />}>
