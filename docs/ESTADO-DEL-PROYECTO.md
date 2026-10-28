@@ -77,7 +77,6 @@ En la interfaz se etiqueta "Tutor"; el nombre del profesor se muestra por salón
 | Asignación de misiones | ✅ | Cuatro misiones del catálogo de la base (`mission_catalog`), asignadas al salón. **Se cumplen jugando**: el servidor lo comprueba leyendo el historial, y asignar pone al día a quien ya cumplía |
 | Fecha límite de una misión | ✅ | «Sin fecha límite» o «Hasta el» un día; vencida deja de verse y **reasignarla es la segunda oportunidad** |
 | Enlace de invitación que lleva al salón | ✅ | El tutor genera un enlace y lo comparte por donde quiera; quien lo abre entra **sin pasar por la bandeja**. Caduca a los 14 días |
-| Invitar alumnos por correo | ⛔ | El enlace se comparte a mano. **Enviarlo automáticamente requiere contratar un servicio de correo**, y ninguna tabla guarda direcciones a propósito |
 | La bandeja se actualiza sola | ✅ | Si un niño solicita mientras el panel está abierto, la solicitud aparece sin recargar |
 | Ajustes de cuenta | ✅ | Cambiar el nombre, cambiar la contraseña y **eliminar la cuenta** —con confirmación; al tutor se le van sus salones— |
 | Panel de información sobre progreso real | ✅ | `TeacherPanelModule.tsx` — niveles superados, mundos terminados y eficiencia media. **Las cinco barras de habilidades se retiraron**: el juego tiene cuatro bloques y sólo «secuencias» tenía con qué entrenarse |
@@ -865,7 +864,6 @@ Lo que sigue pendiente:
 
 | Herramienta | Necesaria para | Situación |
 | --- | --- | --- |
-| **Servicio de correo** (Resend, SendGrid…) | Enviar la invitación en vez de que el tutor pase el enlace a mano | Sin elegir, y **hay que contratarlo**. No bloquea nada: el enlace ya funciona |
 | **Servidor de la universidad** | El despliegue definitivo; Supabase era para probar | Sin preguntar qué ofrece. Hace falta saber si dan Postgres y con qué versión, HTTPS, si dejan correr procesos y si hay algo equivalente a Realtime y a OAuth |
 
 

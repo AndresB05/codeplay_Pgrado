@@ -857,7 +857,7 @@ tres, y quitar los filtros vuelve el estado a «Todos».
   **entra sin pasar por la bandeja**, porque el tutor ya consintió al generarlo
   y pedirle que apruebe otra vez sería aprobar dos veces lo mismo. Los dos
   conviven en `AddStudentsPanel.tsx`, y **ninguno pide ni guarda una dirección
-  de correo**: el envío real sigue sin existir y es la mitad B del paso 19.
+  de correo**: el envío por correo (mitad B del paso 19) se descartó.
 - **Los tres estados del enlace se calculan de DOS datos**, `status` y
   `expires_at`, nunca de uno. El panel anterior a `invitaciones-sin-correo`
   pintaba `status === 'pending' ? 'Pendiente' : 'Aceptada'` y una invitación
@@ -1436,7 +1436,7 @@ acortar, y por eso queda anotado en vez de darse por menor:
 Hoy sólo puede insertar el tutor del salón, y sólo en el suyo, así que el daño se
 lo hace a sí mismo, y **no se migró en este paso a propósito**. Pero **ningún
 requisito puede prometer los catorce días como propiedad del sistema**, y quien
-llegue al paso 14 o a la mitad B del 19 tiene que saber que ahí no hay barrera:
+llegue al paso 14 tiene que saber que ahí no hay barrera:
 ponerla sería acotar la columna en el esquema.
 
 **Estado de la base de pruebas: limpia otra vez, RECOGIDA EN EL PASO 18.** El
@@ -4326,7 +4326,6 @@ obliguen a nadie, ni build que copiar. Ver `DISENO-DEL-JUEGO.md` §5.
 
 | Funcionalidad | Descripción | Dependencias |
 | --- | --- | --- |
-| Envío real de invitaciones (**mitad B del paso 19**) | Elegir servicio de correo (Resend, SendGrid…) y enviarlo. Hoy el tutor comparte el enlace a mano, que es lo que hace la mitad A | P1 + **servicio contratado** |
 | Editar o archivar un salón | No existe | P1 |
 | Progreso, XP y rachas reales | **El progreso y el XP están hechos**: el J9 escribe cada partida, el J10 puntúa contando el programa y concede por marca de agua, y el J11 (17-sep-2026) pone la barra por tramos de 300 con el **Nivel Explorador** y refresca el XP sin recargar. **Y desde el paso 17 el tutor los ve** (§2.10). Lo que falta es **la racha**, que no la escribe nadie: la columna «Racha» de la tabla de seguimiento enseña un cero verdadero, pero es un cero que no se va a mover hasta el paso 22 | P4 |
 | Recursos educativos con destino | Hoy son tarjetas informativas sin enlace | Contenido |

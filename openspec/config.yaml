@@ -542,8 +542,8 @@ context: |
     Son dos agujeros distintos y solo el primero esta cerrado.
   - NINGUNA tabla guarda el correo de alguien que no tiene cuenta. invitations
     lo hacía y la migración 0016 lo eliminó: era el dato de un tercero que nadie
-    había autorizado, que nada borraba y cuya finalidad —el envío, que es el
-    paso 19— no se ejecuta. Si un cambio necesita el correo de un tercero, esa
+    había autorizado, que nada borraba y cuya finalidad —el envío por correo,
+    descartado del paso 19— no se ejecuta. Si un cambio necesita el correo de un tercero, esa
     es una decisión que se toma explícitamente, no una columna que se rellena.
   - Conservación: los datos personales viven mientras exista la cuenta y se van
     con ella por las cascadas contra auth.users de las migraciones 0002, 0004,
